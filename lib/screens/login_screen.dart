@@ -72,12 +72,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     if (!_validateInputs()) return;
-
     setState(() {
       _isLoading = true;
       _errorMessage = '';
     });
-
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
@@ -90,13 +88,9 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } on FirebaseAuthException catch (e) {
-      setState(() {
-        _errorMessage = _getFirebaseErrorMessage(e.code);
-      });
+      setState(() => _errorMessage = _getFirebaseErrorMessage(e.code));
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Beklenmeyen bir hata oluştu.';
-      });
+      setState(() => _errorMessage = 'Beklenmeyen bir hata oluştu.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -107,26 +101,19 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
       _errorMessage = '';
     });
-
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn();
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-
       if (googleUser == null) {
         if (mounted) setState(() => _isLoading = false);
         return;
       }
-
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
         idToken: googleAuth.idToken,
         accessToken: googleAuth.accessToken,
       );
-
       await FirebaseAuth.instance.signInWithCredential(credential);
-
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -134,13 +121,9 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } on FirebaseAuthException catch (e) {
-      setState(() {
-        _errorMessage = _getFirebaseErrorMessage(e.code);
-      });
+      setState(() => _errorMessage = _getFirebaseErrorMessage(e.code));
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Google ile giriş yapılamadı. Tekrar deneyin.';
-      });
+      setState(() => _errorMessage = 'Google ile giriş yapılamadı. Tekrar deneyin.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -148,41 +131,42 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _resetPassword() async {
     final resetEmailController = TextEditingController();
-
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Şifremi Unuttum',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        title: Text('Şifremi Unuttum',
+            style: GoogleFonts.roboto(fontWeight: FontWeight.w500, fontSize: 16)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'E-posta adresinize şifre sıfırlama bağlantısı göndereceğiz.',
-              style: TextStyle(color: Colors.grey, fontSize: 13),
+              style: GoogleFonts.roboto(color: const Color(0xFF757575), fontSize: 13),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: resetEmailController,
               keyboardType: TextInputType.emailAddress,
+              style: GoogleFonts.roboto(fontSize: 14),
               decoration: InputDecoration(
                 hintText: 'ornek@email.com',
-                prefixIcon:
-                    const Icon(Icons.email_outlined, color: Colors.grey),
+                hintStyle: GoogleFonts.roboto(color: const Color(0xFFBDBDBD)),
+                prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF9E9E9E), size: 20),
                 filled: true,
-                fillColor: Colors.grey.shade100,
+                fillColor: const Color(0xFFF5F5F5),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+                  borderRadius: BorderRadius.circular(4),
+                  borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(4),
+                  borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                      color: Colors.deepOrangeAccent, width: 1.5),
+                  borderRadius: BorderRadius.circular(4),
+                  borderSide: const BorderSide(color: Color(0xFF3C3C3C), width: 1.5),
                 ),
               ),
             ),
@@ -191,9 +175,10 @@ class _LoginScreenState extends State<LoginScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('İptal', style: TextStyle(color: Colors.grey)),
+            child: Text('İptal',
+                style: GoogleFonts.roboto(color: const Color(0xFF757575))),
           ),
-          ElevatedButton(
+          TextButton(
             onPressed: () async {
               if (resetEmailController.text.trim().isEmpty) return;
               try {
@@ -203,9 +188,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 if (context.mounted) {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Şifre sıfırlama e-postası gönderildi.'),
-                      backgroundColor: Colors.green,
+                    SnackBar(
+                      content: Text('Şifre sıfırlama e-postası gönderildi.',
+                          style: GoogleFonts.roboto()),
+                      backgroundColor: const Color(0xFF3C3C3C),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                     ),
                   );
                 }
@@ -216,19 +204,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 }
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.deepOrangeAccent,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-              elevation: 0,
-            ),
-            child:
-                const Text('Gönder', style: TextStyle(color: Colors.white)),
+            child: Text('Gönder',
+                style: GoogleFonts.roboto(
+                    color: const Color(0xFF3C3C3C), fontWeight: FontWeight.w600)),
           ),
         ],
       ),
     );
-
     resetEmailController.dispose();
   }
 
@@ -245,130 +227,75 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(height: h * 0.08),
+              SizedBox(height: h * 0.10),
 
-              // Logo
-              Center(
-                child: Container(
-                  width: h * 0.11,
-                  height: h * 0.11,
-                  decoration: BoxDecoration(
-                    color: Colors.deepOrangeAccent.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Icon(Icons.language,
-                          size: h * 0.06, color: Colors.deepOrangeAccent),
-                      Positioned(
-                        right: h * 0.01,
-                        bottom: h * 0.01,
-                        child: Icon(Icons.flight,
-                            size: h * 0.027, color: Colors.deepOrangeAccent),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: h * 0.025),
-
-              // Uygulama adı
+              // İste logosu
               Center(
                 child: Text(
-                  'Glocal',
-                  style: GoogleFonts.lobster(
-                    fontSize: h * 0.05,
-                    color: Colors.deepOrangeAccent,
+                  'İste',
+                  style: GoogleFonts.pacifico(
+                    fontSize: 64,
+                    color: const Color(0xFFE53935),
+                    height: 1,
                   ),
                 ),
               ),
               SizedBox(height: h * 0.005),
-              const Center(
+              Center(
                 child: Text(
                   'Hesabına giriş yap',
-                  style: TextStyle(fontSize: 15, color: Colors.grey),
+                  style: GoogleFonts.roboto(
+                    fontSize: 14,
+                    color: const Color(0xFF9E9E9E),
+                  ),
                 ),
               ),
-              SizedBox(height: h * 0.04),
+              SizedBox(height: h * 0.05),
 
               // E-posta
-              const Text(
-                'E-posta',
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87),
-              ),
+              Text('E-posta',
+                  style: GoogleFonts.roboto(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF424242))),
               SizedBox(height: h * 0.008),
-              TextField(
+              _LoginInput(
                 controller: _emailController,
                 focusNode: _emailFocusNode,
+                hint: 'ornek@email.com',
+                icon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
-                onSubmitted: (_) {
-                  FocusScope.of(context).requestFocus(_passwordFocusNode);
-                },
-                decoration: InputDecoration(
-                  hintText: 'ornek@email.com',
-                  prefixIcon:
-                      const Icon(Icons.email_outlined, color: Colors.grey),
-                  filled: true,
-                  fillColor: Colors.grey.shade100,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                        color: Colors.deepOrangeAccent, width: 1.5),
-                  ),
-                ),
+                onSubmitted: (_) =>
+                    FocusScope.of(context).requestFocus(_passwordFocusNode),
               ),
-              SizedBox(height: h * 0.02),
+              SizedBox(height: h * 0.022),
 
               // Şifre
-              const Text(
-                'Şifre',
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87),
-              ),
+              Text('Şifre',
+                  style: GoogleFonts.roboto(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF424242))),
               SizedBox(height: h * 0.008),
-              TextField(
+              _LoginInput(
                 controller: _passwordController,
                 focusNode: _passwordFocusNode,
-                obscureText: _obscurePassword,
+                hint: '••••••••',
+                icon: Icons.lock_outline,
+                obscure: _obscurePassword,
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _login(),
-                decoration: InputDecoration(
-                  hintText: '••••••••',
-                  prefixIcon:
-                      const Icon(Icons.lock_outline, color: Colors.grey),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
-                      color: Colors.grey,
-                    ),
-                    onPressed: () {
-                      setState(() => _obscurePassword = !_obscurePassword);
-                    },
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: const Color(0xFF9E9E9E),
+                    size: 20,
                   ),
-                  filled: true,
-                  fillColor: Colors.grey.shade100,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                        color: Colors.deepOrangeAccent, width: 1.5),
-                  ),
+                  onPressed: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
                 ),
               ),
 
@@ -382,10 +309,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  child: const Text(
+                  child: Text(
                     'Şifremi unuttum',
-                    style: TextStyle(
-                        color: Colors.deepOrangeAccent, fontSize: 13),
+                    style: GoogleFonts.roboto(
+                        color: const Color(0xFF757575), fontSize: 12),
                   ),
                 ),
               ),
@@ -393,96 +320,96 @@ class _LoginScreenState extends State<LoginScreen> {
               // Hata mesajı
               if (_errorMessage.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
+                  padding: const EdgeInsets.only(bottom: 8),
                   child: Row(
                     children: [
                       const Icon(Icons.error_outline,
-                          color: Colors.red, size: 16),
+                          color: Color(0xFFE53935), size: 15),
                       const SizedBox(width: 6),
                       Expanded(
-                        child: Text(
-                          _errorMessage,
-                          style: const TextStyle(
-                              color: Colors.red, fontSize: 13),
-                        ),
+                        child: Text(_errorMessage,
+                            style: GoogleFonts.roboto(
+                                color: const Color(0xFFE53935), fontSize: 12)),
                       ),
                     ],
                   ),
                 ),
 
-              SizedBox(height: h * 0.02),
+              SizedBox(height: h * 0.022),
 
               // Giriş butonu
               SizedBox(
                 width: double.infinity,
-                height: h * 0.065,
+                height: 48,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _login,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepOrangeAccent,
-                    disabledBackgroundColor:
-                        Colors.deepOrangeAccent.withValues(alpha: 0.6),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                    backgroundColor: const Color(0xFF3C3C3C),
+                    disabledBackgroundColor: const Color(0xFFBDBDBD),
+                    shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.zero),
                     elevation: 0,
                   ),
                   child: _isLoading
                       ? const SizedBox(
-                          width: 22,
-                          height: 22,
+                          width: 20,
+                          height: 20,
                           child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2.5,
-                          ),
+                              color: Colors.white, strokeWidth: 2),
                         )
-                      : const Text(
-                          'Giriş Yap',
-                          style: TextStyle(
+                      : Text('Giriş Yap',
+                          style: GoogleFonts.roboto(
                               color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600),
-                        ),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500)),
                 ),
               ),
-              SizedBox(height: h * 0.02),
+              SizedBox(height: h * 0.018),
 
               // Ayırıcı
               Row(
                 children: [
-                  Expanded(child: Divider(color: Colors.grey.shade300)),
+                  Expanded(
+                      child: Divider(color: Colors.grey.shade300, thickness: 1)),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Text('veya',
-                        style: TextStyle(color: Colors.grey.shade500)),
+                        style: GoogleFonts.roboto(
+                            color: const Color(0xFFBDBDBD), fontSize: 12)),
                   ),
-                  Expanded(child: Divider(color: Colors.grey.shade300)),
+                  Expanded(
+                      child: Divider(color: Colors.grey.shade300, thickness: 1)),
                 ],
               ),
-              SizedBox(height: h * 0.02),
+              SizedBox(height: h * 0.018),
 
               // Google butonu
               SizedBox(
                 width: double.infinity,
-                height: h * 0.065,
-                child: OutlinedButton.icon(
+                height: 48,
+                child: OutlinedButton(
                   onPressed: _isLoading ? null : _loginWithGoogle,
-                  icon: const Icon(Icons.g_mobiledata,
-                      size: 28, color: Colors.red),
-                  label: const Text(
-                    'Google ile Giriş Yap',
-                    style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black87),
-                  ),
                   style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    side: BorderSide(color: Colors.grey.shade300),
+                    shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.zero),
+                    side: const BorderSide(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.g_mobiledata,
+                          size: 26, color: Color(0xFFE53935)),
+                      const SizedBox(width: 8),
+                      Text('Google ile Giriş Yap',
+                          style: GoogleFonts.roboto(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFF424242))),
+                    ],
                   ),
                 ),
               ),
-              SizedBox(height: h * 0.015),
+              SizedBox(height: h * 0.02),
 
               // Kayıt ol
               Center(
@@ -495,15 +422,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     );
                   },
                   child: RichText(
-                    text: const TextSpan(
-                      text: 'Hesabın yok mu? ',
-                      style: TextStyle(color: Colors.grey),
+                    text: TextSpan(
+                      style: GoogleFonts.roboto(
+                          color: const Color(0xFF9E9E9E), fontSize: 13),
                       children: [
+                        const TextSpan(text: 'Hesabın yok mu? '),
                         TextSpan(
                           text: 'Kayıt ol',
-                          style: TextStyle(
-                              color: Colors.deepOrangeAccent,
-                              fontWeight: FontWeight.w600),
+                          style: GoogleFonts.roboto(
+                              color: const Color(0xFF3C3C3C),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13),
                         ),
                       ],
                     ),
@@ -514,6 +443,67 @@ class _LoginScreenState extends State<LoginScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _LoginInput extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final String hint;
+  final IconData icon;
+  final bool obscure;
+  final TextInputType keyboardType;
+  final TextInputAction textInputAction;
+  final ValueChanged<String>? onSubmitted;
+  final Widget? suffixIcon;
+
+  const _LoginInput({
+    required this.controller,
+    required this.focusNode,
+    required this.hint,
+    required this.icon,
+    this.obscure = false,
+    this.keyboardType = TextInputType.text,
+    this.textInputAction = TextInputAction.next,
+    this.onSubmitted,
+    this.suffixIcon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      focusNode: focusNode,
+      obscureText: obscure,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      onSubmitted: onSubmitted,
+      style: GoogleFonts.roboto(fontSize: 14, color: const Color(0xFF212121)),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle:
+            GoogleFonts.roboto(color: const Color(0xFFBDBDBD), fontSize: 14),
+        prefixIcon: Icon(icon, color: const Color(0xFF9E9E9E), size: 20),
+        suffixIcon: suffixIcon,
+        filled: true,
+        fillColor: const Color(0xFFF5F5F5),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(4),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(4),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(4),
+          borderSide:
+              const BorderSide(color: Color(0xFF3C3C3C), width: 1.5),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       ),
     );
   }
