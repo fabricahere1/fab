@@ -1,9 +1,7 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'home_screen.dart';
+import 'login_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -16,30 +14,31 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  final List<_OnboardingData> _pages = [
+  final List<_OnboardingData> _pages = const [
     _OnboardingData(
       emoji: '🌍',
-      baslik: 'Dünyanın her yerinden',
-      altBaslik: 'Yurt dışında olan biri mi var?\nOnlardan bir şeyler getirtebilirsin.',
+      title: 'Dünyanın her yerinden',
+      subtitle: '',
     ),
     _OnboardingData(
       emoji: '🛍️',
-      baslik: 'Ne istersen iste',
-      altBaslik: 'Elektronik, kozmetik, kıyafet...\nAklına gelen her şeyi talep et.',
+      title: 'Ne istersen iste',
+      subtitle: 'Elektronik, kozmetik, kıyafet...\nAklına gelen her şeyi talep et.',
     ),
     _OnboardingData(
       emoji: '✈️',
-      baslik: 'Yeterki sen iste',
-      altBaslik: 'Yurt dışından gelenler sana\nulaşsın, sen de onlara.',
+      title: 'Yeterki sen iste',
+      subtitle: 'Yurt dışından gelenler sana ulaşsın,\nsen de onlara.',
     ),
   ];
 
-  void _devamEt() async {
+  Future<void> _tamamla() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('onboarding_tamamlandi', true);
     if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
       );
     }
   }
@@ -53,33 +52,37 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final h = MediaQuery.of(context).size.height;
-    final w = MediaQuery.of(context).size.width;
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
-            // Atla butonu
+            // Skip butonu
             Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: _devamEt,
-                child: const Text(
-                  'Atla',
-                  style: TextStyle(color: Colors.grey, fontSize: 14),
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 12, right: 16),
+                child: TextButton(
+                  onPressed: _tamamla,
+                  child: Text(
+                    'Geç',
+                    style: GoogleFonts.roboto(
+                      color: const Color(0xFF9E9E9E),
+                      fontSize: 14,
+                    ),
+                  ),
                 ),
               ),
             ),
 
-            // Sayfa içeriği
+            // PageView
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() => _currentPage = index);
-                },
                 itemCount: _pages.length,
+                onPageChanged: (index) =>
+                    setState(() => _currentPage = index),
                 itemBuilder: (context, index) {
                   final page = _pages[index];
                   return Padding(
@@ -87,44 +90,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Emoji / İllüstrasyon
-                        Container(
-                          width: w * 0.45,
-                          height: w * 0.45,
-                          decoration: BoxDecoration(
-                            color: Colors.deepOrangeAccent.withValues(alpha: 0.08),
-                            shape: BoxShape.circle,
+                        Text(
+                          page.emoji,
+                          style: const TextStyle(fontSize: 72),
+                        ),
+                        SizedBox(height: h * 0.04),
+                        Text(
+                          page.title,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.roboto(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF212121),
+                            height: 1.2,
                           ),
-                          child: Center(
-                            child: Text(
-                              page.emoji,
-                              style: TextStyle(fontSize: h * 0.1),
+                        ),
+                        if (page.subtitle.isNotEmpty) ...[
+                          SizedBox(height: h * 0.02),
+                          Text(
+                            page.subtitle,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.roboto(
+                              fontSize: 15,
+                              color: const Color(0xFF757575),
+                              height: 1.6,
                             ),
                           ),
-                        ),
-                        SizedBox(height: h * 0.06),
-
-                        // Başlık
-                        Text(
-                          page.baslik,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.lobster(
-                            fontSize: 28,
-                            color: Colors.deepOrangeAccent,
-                          ),
-                        ),
-                        SizedBox(height: h * 0.02),
-
-                        // Alt başlık
-                        Text(
-                          page.altBaslik,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            color: Colors.black54,
-                            height: 1.6,
-                          ),
-                        ),
+                        ],
                       ],
                     ),
                   );
@@ -132,30 +124,30 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
 
-            // Nokta göstergesi
+            // Dots
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
                 _pages.length,
                 (index) => AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
+                  duration: const Duration(milliseconds: 200),
                   margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width: _currentPage == index ? 20 : 8,
-                  height: 8,
+                  width: _currentPage == index ? 20 : 6,
+                  height: 6,
                   decoration: BoxDecoration(
                     color: _currentPage == index
-                        ? Colors.deepOrangeAccent
-                        : Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(4),
+                        ? const Color(0xFF3C3C3C)
+                        : const Color(0xFFE0E0E0),
+                    borderRadius: BorderRadius.circular(3),
                   ),
                 ),
               ),
             ),
-            SizedBox(height: h * 0.04),
+            const SizedBox(height: 32),
 
-            // Buton
+            // İleri / Başla butonu
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
+              padding: const EdgeInsets.symmetric(horizontal: 28),
               child: SizedBox(
                 width: double.infinity,
                 height: 52,
@@ -167,26 +159,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         curve: Curves.easeInOut,
                       );
                     } else {
-                      _devamEt();
+                      _tamamla();
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepOrangeAccent,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
+                    backgroundColor: const Color(0xFF3C3C3C),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.zero,
+                    ),
                     elevation: 0,
                   ),
                   child: Text(
-                    _currentPage < _pages.length - 1 ? 'Devam' : 'Başla',
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600),
+                    _currentPage < _pages.length - 1 ? 'İleri' : 'Başla',
+                    style: GoogleFonts.roboto(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ),
             ),
-            SizedBox(height: h * 0.05),
+            const SizedBox(height: 32),
           ],
         ),
       ),
@@ -196,12 +190,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
 class _OnboardingData {
   final String emoji;
-  final String baslik;
-  final String altBaslik;
-
+  final String title;
+  final String subtitle;
   const _OnboardingData({
     required this.emoji,
-    required this.baslik,
-    required this.altBaslik,
+    required this.title,
+    required this.subtitle,
   });
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+

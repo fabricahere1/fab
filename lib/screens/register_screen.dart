@@ -3,30 +3,38 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'home_screen.dart';
-
+import 'profil_tamamla_screen.dart';
+ 
+const _primary = Color(0xFF3C3C3C);
+const _surface = Color(0xFFF5F5F5);
+const _divider = Color(0xFFE0E0E0);
+const _textPrimary = Color(0xFF212121);
+const _textSecondary = Color(0xFF757575);
+const _red = Color(0xFFE53935);
+ 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
-
+ 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
-
+ 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _adSoyadController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-
+ 
   final _adFocusNode = FocusNode();
   final _emailFocusNode = FocusNode();
   final _passwordFocusNode = FocusNode();
   final _confirmFocusNode = FocusNode();
-
+ 
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   String _errorMessage = '';
-
+ 
   @override
   void dispose() {
     _adSoyadController.dispose();
@@ -39,13 +47,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _confirmFocusNode.dispose();
     super.dispose();
   }
-
+ 
   bool _validate() {
     final ad = _adSoyadController.text.trim();
     final email = _emailController.text.trim();
     final sifre = _passwordController.text;
     final sifreTekrar = _confirmPasswordController.text;
-
+ 
     if (ad.isEmpty) {
       setState(() => _errorMessage = 'Ad Soyad boş olamaz.');
       return false;
@@ -68,7 +76,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
     return true;
   }
-
+ 
   String _getFirebaseErrorMessage(String code) {
     switch (code) {
       case 'email-already-in-use':
@@ -83,29 +91,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return 'Bir hata oluştu. Lütfen tekrar deneyin.';
     }
   }
-
+ 
   Future<void> _register() async {
     if (!_validate()) return;
-
+ 
     setState(() {
       _isLoading = true;
       _errorMessage = '';
     });
-
+ 
     try {
       final credential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-
+ 
       final user = credential.user;
       final adSoyad = _adSoyadController.text.trim();
-
-      // Firebase Auth displayName güncelle
+ 
       await user?.updateDisplayName(adSoyad);
-
-      // Firestore'a kullanıcı kaydı
+ 
       if (user != null) {
         await FirebaseFirestore.instance
             .collection('kullanicilar')
@@ -118,30 +124,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
           'olusturmaTarihi': FieldValue.serverTimestamp(),
         });
       }
-
+ 
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(
+              builder: (_) => const ProfilTamamlaScreen(ilkGiris: true)),
         );
       }
     } on FirebaseAuthException catch (e) {
-      setState(() {
-        _errorMessage = _getFirebaseErrorMessage(e.code);
-      });
+      setState(() => _errorMessage = _getFirebaseErrorMessage(e.code));
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Beklenmeyen bir hata oluştu.';
-      });
+      setState(() => _errorMessage = 'Beklenmeyen bir hata oluştu.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
-
+ 
   @override
   Widget build(BuildContext context) {
     final h = MediaQuery.of(context).size.height;
-
+ 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -149,7 +152,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new,
-              color: Colors.black87, size: 20),
+              color: _textPrimary, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -161,30 +164,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(height: h * 0.01),
-
-              // Başlık
+ 
+              // Logo
               Center(
                 child: Text(
-                  'Glocal',
-                  style: GoogleFonts.lobster(
-                    fontSize: h * 0.045,
-                    color: Colors.deepOrangeAccent,
+                  'İSTE',
+                  style: GoogleFonts.roboto(
+                    fontSize: 48,
+                    fontWeight: FontWeight.w900,
+                    fontStyle: FontStyle.italic,
+                    color: _red,
+                    letterSpacing: 3,
+                    height: 1,
                   ),
                 ),
               ),
               SizedBox(height: h * 0.005),
-              const Center(
+              Center(
                 child: Text(
                   'Yeni hesap oluştur',
-                  style: TextStyle(fontSize: 15, color: Colors.grey),
+                  style: GoogleFonts.roboto(
+                    fontSize: 14,
+                    color: _textSecondary,
+                  ),
                 ),
               ),
-              SizedBox(height: h * 0.035),
-
+              SizedBox(height: h * 0.04),
+ 
               // Ad Soyad
-              _Label('Ad Soyad'),
+              _Etiket('Ad Soyad'),
               SizedBox(height: h * 0.008),
-              _InputField(
+              _RegisterInput(
                 controller: _adSoyadController,
                 focusNode: _adFocusNode,
                 hint: 'Adınız Soyadınız',
@@ -193,12 +203,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 onSubmitted: (_) =>
                     FocusScope.of(context).requestFocus(_emailFocusNode),
               ),
-              SizedBox(height: h * 0.02),
-
+              SizedBox(height: h * 0.022),
+ 
               // E-posta
-              _Label('E-posta'),
+              _Etiket('E-posta'),
               SizedBox(height: h * 0.008),
-              _InputField(
+              _RegisterInput(
                 controller: _emailController,
                 focusNode: _emailFocusNode,
                 hint: 'ornek@email.com',
@@ -208,12 +218,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 onSubmitted: (_) =>
                     FocusScope.of(context).requestFocus(_passwordFocusNode),
               ),
-              SizedBox(height: h * 0.02),
-
+              SizedBox(height: h * 0.022),
+ 
               // Şifre
-              _Label('Şifre'),
+              _Etiket('Şifre'),
               SizedBox(height: h * 0.008),
-              _InputField(
+              _RegisterInput(
                 controller: _passwordController,
                 focusNode: _passwordFocusNode,
                 hint: '••••••••',
@@ -227,18 +237,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     _obscurePassword
                         ? Icons.visibility_off_outlined
                         : Icons.visibility_outlined,
-                    color: Colors.grey,
+                    color: _textSecondary,
+                    size: 20,
                   ),
                   onPressed: () =>
                       setState(() => _obscurePassword = !_obscurePassword),
                 ),
               ),
-              SizedBox(height: h * 0.02),
-
+              SizedBox(height: h * 0.022),
+ 
               // Şifre Tekrar
-              _Label('Şifre Tekrar'),
+              _Etiket('Şifre Tekrar'),
               SizedBox(height: h * 0.008),
-              _InputField(
+              _RegisterInput(
                 controller: _confirmPasswordController,
                 focusNode: _confirmFocusNode,
                 hint: '••••••••',
@@ -251,48 +262,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     _obscureConfirm
                         ? Icons.visibility_off_outlined
                         : Icons.visibility_outlined,
-                    color: Colors.grey,
+                    color: _textSecondary,
+                    size: 20,
                   ),
                   onPressed: () =>
                       setState(() => _obscureConfirm = !_obscureConfirm),
                 ),
               ),
-              SizedBox(height: h * 0.015),
-
+              SizedBox(height: h * 0.02),
+ 
               // Hata mesajı
               if (_errorMessage.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8.0),
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline,
-                          color: Colors.red, size: 16),
+                      const Icon(Icons.error_outline, color: _red, size: 15),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
                           _errorMessage,
-                          style:
-                              const TextStyle(color: Colors.red, fontSize: 13),
+                          style: GoogleFonts.roboto(
+                              color: _red, fontSize: 12),
                         ),
                       ),
                     ],
                   ),
                 ),
-
+ 
               SizedBox(height: h * 0.01),
-
+ 
               // Kayıt ol butonu
               SizedBox(
                 width: double.infinity,
-                height: h * 0.065,
+                height: 48,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _register,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepOrangeAccent,
-                    disabledBackgroundColor:
-                        Colors.deepOrangeAccent.withValues(alpha: 0.6),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                    backgroundColor: _primary,
+                    disabledBackgroundColor: const Color(0xFFBDBDBD),
+                    shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.zero),
                     elevation: 0,
                   ),
                   child: _isLoading
@@ -300,33 +310,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           width: 22,
                           height: 22,
                           child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2.5),
+                              color: Colors.white, strokeWidth: 2),
                         )
-                      : const Text(
+                      : Text(
                           'Kayıt Ol',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600),
+                          style: GoogleFonts.roboto(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                 ),
               ),
               SizedBox(height: h * 0.02),
-
+ 
               // Giriş yap
               Center(
                 child: TextButton(
                   onPressed: () => Navigator.pop(context),
                   child: RichText(
-                    text: const TextSpan(
-                      text: 'Zaten hesabın var mı? ',
-                      style: TextStyle(color: Colors.grey),
+                    text: TextSpan(
+                      style: GoogleFonts.roboto(
+                          color: _textSecondary, fontSize: 13),
                       children: [
+                        const TextSpan(text: 'Zaten hesabın var mı? '),
                         TextSpan(
                           text: 'Giriş yap',
-                          style: TextStyle(
-                              color: Colors.deepOrangeAccent,
-                              fontWeight: FontWeight.w600),
+                          style: GoogleFonts.roboto(
+                            color: _primary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
@@ -341,24 +355,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 }
-
-// ── Yardımcı widget'lar ──────────────────────────────
-
-class _Label extends StatelessWidget {
+ 
+// ── Yardımcı Widget'lar ───────────────────────────────────
+ 
+class _Etiket extends StatelessWidget {
   final String text;
-  const _Label(this.text);
-
+  const _Etiket(this.text);
+ 
   @override
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
-          fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black87),
+      style: GoogleFonts.roboto(
+        fontSize: 13,
+        fontWeight: FontWeight.w500,
+        color: const Color(0xFF424242),
+      ),
     );
   }
 }
-
-class _InputField extends StatelessWidget {
+ 
+class _RegisterInput extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final String hint;
@@ -368,8 +385,8 @@ class _InputField extends StatelessWidget {
   final TextInputAction textInputAction;
   final ValueChanged<String>? onSubmitted;
   final Widget? suffixIcon;
-
-  const _InputField({
+ 
+  const _RegisterInput({
     required this.controller,
     required this.focusNode,
     required this.hint,
@@ -380,7 +397,7 @@ class _InputField extends StatelessWidget {
     this.onSubmitted,
     this.suffixIcon,
   });
-
+ 
   @override
   Widget build(BuildContext context) {
     return TextField(
@@ -390,21 +407,30 @@ class _InputField extends StatelessWidget {
       keyboardType: keyboardType,
       textInputAction: textInputAction,
       onSubmitted: onSubmitted,
+      style: GoogleFonts.roboto(
+          fontSize: 14, color: _textPrimary),
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: Icon(icon, color: Colors.grey),
+        hintStyle: GoogleFonts.roboto(
+            color: const Color(0xFFBDBDBD), fontSize: 14),
+        prefixIcon: Icon(icon, color: const Color(0xFF9E9E9E), size: 20),
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: Colors.grey.shade100,
+        fillColor: _surface,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(4),
+          borderSide: const BorderSide(color: _divider),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(4),
+          borderSide: const BorderSide(color: _divider),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide:
-              const BorderSide(color: Colors.deepOrangeAccent, width: 1.5),
+          borderRadius: BorderRadius.circular(4),
+          borderSide: const BorderSide(color: _primary, width: 1.5),
         ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       ),
     );
   }

@@ -12,20 +12,7 @@
           "package_name": "com.example.yeni_proje"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "405772402645-otnn9p3s6hn46cmlhe7fod66pj3qbia5.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.yeni_proje",
-            "certificate_hash": "230665ed8d0f4059eafdf4478fef612e2a406bb3"
-          }
-        },
-        {
-          "client_id": "405772402645-4ek3ca64am0u6djph788bbncut8ffbm5.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
           "current_key": "AIzaSyDAKheJCtb7IZjJXNm8VgtGMS_XR6Sd548"
@@ -33,12 +20,7 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "405772402645-4ek3ca64am0u6djph788bbncut8ffbm5.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

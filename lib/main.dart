@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -10,25 +11,32 @@ import 'screens/onboarding_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/profil_tamamla_screen.dart';
-
+ 
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+}
+ 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
+ 
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+ 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
     ),
   );
-
+ 
   runApp(const IsteApp());
 }
-
+ 
 class IsteApp extends StatelessWidget {
   const IsteApp({super.key});
-
+ 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -52,55 +60,54 @@ class IsteApp extends StatelessWidget {
     );
   }
 }
-
+ 
 // ── Splash Screen ──────────────────────────────────────────
-
+ 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
-
+ 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
-
+ 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
   late Animation<double> _scaleAnim;
-
+ 
   @override
   void initState() {
     super.initState();
-
+ 
     _animController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-
+ 
     _fadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeIn),
     );
-
+ 
     _scaleAnim = Tween<double>(begin: 0.85, end: 1.0).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeOut),
     );
-
+ 
     _animController.forward();
-
+ 
     Future.delayed(const Duration(milliseconds: 2500), () async {
       if (!mounted) return;
-
+ 
       final prefs = await SharedPreferences.getInstance();
       final onboardingTamamlandi =
           prefs.getBool('onboarding_tamamlandi') ?? false;
-
+ 
       if (!mounted) return;
-
+ 
       await _animController.reverse();
-
+ 
       if (!mounted) return;
-
-      // Onboarding tamamlanmamışsa oraya git
+ 
       if (!onboardingTamamlandi) {
         Navigator.pushReplacement(
           context,
@@ -113,12 +120,16 @@ class _SplashScreenState extends State<SplashScreen>
         );
         return;
       }
-
-      // Kullanıcı giriş yapmış mı?
+ 
       final user = FirebaseAuth.instance.currentUser;
-
+ 
+      debugPrint('=== SPLASH DEBUG ===');
+      debugPrint('user: $user');
+      debugPrint('user uid: ${user?.uid}');
+      debugPrint('user email: ${user?.email}');
+ 
       if (user == null) {
-        // Giriş yapılmamış → login ekranı
+        debugPrint('user null → LoginScreen');
         Navigator.pushReplacement(
           context,
           PageRouteBuilder(
@@ -130,17 +141,23 @@ class _SplashScreenState extends State<SplashScreen>
         );
         return;
       }
-
-      // Giriş yapılmış → profil tamamlanmış mı?
+ 
+      await _fcmTokenKaydet(user.uid);
+ 
       final doc = await FirebaseFirestore.instance
           .collection('kullanicilar')
           .doc(user.uid)
           .get();
-      final telefon = doc.data()?['telefon'] ?? '';
-      final profilTamamlandi = telefon.toString().trim().isNotEmpty;
-
+ 
+      debugPrint('doc exists: ${doc.exists}');
+      debugPrint('doc data: ${doc.data()}');
+ 
+      final profilTamamlandi = doc.data()?['profilTamamlandi'] == true;
+      debugPrint('profilTamamlandi: $profilTamamlandi');
+      debugPrint('=== SPLASH DEBUG END ===');
+ 
       if (!mounted) return;
-
+ 
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
@@ -154,13 +171,42 @@ class _SplashScreenState extends State<SplashScreen>
       );
     });
   }
-
+ 
+  Future<void> _fcmTokenKaydet(String uid) async {
+    try {
+      final messaging = FirebaseMessaging.instance;
+ 
+      await messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+ 
+      final token = await messaging.getToken();
+      if (token != null) {
+        await FirebaseFirestore.instance
+            .collection('kullanicilar')
+            .doc(uid)
+            .update({'fcmToken': token});
+      }
+ 
+      messaging.onTokenRefresh.listen((yeniToken) {
+        FirebaseFirestore.instance
+            .collection('kullanicilar')
+            .doc(uid)
+            .update({'fcmToken': yeniToken});
+      });
+    } catch (_) {
+      // Token alınamazsa sessizce geç
+    }
+  }
+ 
   @override
   void dispose() {
     _animController.dispose();
     super.dispose();
   }
-
+ 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
