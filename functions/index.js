@@ -1,32 +1,83 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * const {onCall} = require("firebase-functions/v2/https");
- * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
+const functions = require("firebase-functions/v2");
+const admin = require("firebase-admin");
 
-const {setGlobalOptions} = require("firebase-functions");
-const {onRequest} = require("firebase-functions/https");
-const logger = require("firebase-functions/logger");
+admin.initializeApp();
 
-// For cost control, you can set the maximum number of containers that can be
-// running at the same time. This helps mitigate the impact of unexpected
-// traffic spikes by instead downgrading performance. This limit is a
-// per-function limit. You can override the limit for each function using the
-// `maxInstances` option in the function's options, e.g.
-// `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// In the v1 API, each function can only serve one request per container, so
-// this will be the maximum concurrent request count.
-setGlobalOptions({ maxInstances: 10 });
+exports.mesajBildirimiGonder = functions.firestore
+  .onDocumentCreated(
+    "sohbetler/{sohbetId}/mesajlar/{mesajId}",
+    async (event) => {
+      const mesaj = event.data.data();
+      const sohbetId = event.params.sohbetId;
 
-// Create and deploy your first functions
-// https://firebase.google.com/docs/functions/get-started
+      const gondereId = mesaj.gondereId;
+      const gondereAd = mesaj.gondereAd ?? "Biri";
+      const metin = mesaj.metin ?? "";
 
-// exports.helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+      const sohbetDoc = await admin
+        .firestore()
+        .collection("sohbetler")
+        .doc(sohbetId)
+        .get();
+
+      if (!sohbetDoc.exists) return;
+
+      const sohbet = sohbetDoc.data();
+      const kullanicilar = sohbet.kullanicilar ?? [];
+
+      const aliciId = kullanicilar.find((uid) => uid !== gondereId);
+      if (!aliciId) return;
+
+      const aliciDoc = await admin
+        .firestore()
+        .collection("kullanicilar")
+        .doc(aliciId)
+        .get();
+
+      if (!aliciDoc.exists) return;
+
+      const fcmToken = aliciDoc.data().fcmToken;
+      if (!fcmToken) return;
+
+      const ilanBaslik = sohbet.ilanBaslik ?? "";
+      const bildirimBaslik = gondereAd;
+      const bildirimMetin = metin.length > 100
+        ? metin.substring(0, 100) + "..."
+        : metin;
+
+      try {
+        await admin.messaging().send({
+          token: fcmToken,
+          notification: {
+            title: bildirimBaslik,
+            body: bildirimMetin || "Yeni mesaj",
+          },
+          data: {
+            sohbetId: sohbetId,
+            gondereId: gondereId,
+            gondereAd: gondereAd,
+            ilanBaslik: ilanBaslik,
+            tip: "mesaj",
+          },
+          android: {
+            notification: {
+              channelId: "mesaj_bildirimleri",
+              priority: "high",
+              sound: "default",
+            },
+          },
+        });
+      } catch (hata) {
+        if (
+          hata.code === "messaging/registration-token-not-registered" ||
+          hata.code === "messaging/invalid-registration-token"
+        ) {
+          await admin
+            .firestore()
+            .collection("kullanicilar")
+            .doc(aliciId)
+            .update({ fcmToken: admin.firestore.FieldValue.delete() });
+        }
+      }
+    }
+  );

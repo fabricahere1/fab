@@ -9,6 +9,28 @@ import 'sohbet_screen.dart';
 import 'degerlendirme_screen.dart';
 import '../auth_gate.dart';
  
+ 
+ 
+ 
+ 
+ 
+// ── Kategori Sabitleri ────────────────────────────────────
+const Map<String, String> kKategoriler = {
+  'giyim': '👗 Giyim & Aksesuar',
+  'elektronik': '📱 Elektronik',
+  'guzellik': '💄 Güzellik & Sağlık',
+  'ev': '🏠 Ev & Yaşam',
+  'spor': '⚽ Spor & Outdoor',
+  'kultur': '📚 Kültür & Eğlence',
+  'gida': '🍫 Gıda & İçecek',
+  'diger': '📦 Diğer',
+};
+ 
+String kategoriAdi(String? key) {
+  if (key == null || key.isEmpty) return '';
+  return kKategoriler[key] ?? '📦 Diğer';
+}
+ 
 class FavorilerPage extends StatelessWidget {
   const FavorilerPage({super.key});
  
@@ -169,6 +191,16 @@ class FavorilerPage extends StatelessWidget {
                                               fontSize: 12,
                                               fontWeight: FontWeight.w500,
                                               color: GColors.textPrimary)),
+                                    ],
+                                    if (data['kategori'] != null &&
+                                        data['kategori'] != '') ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        kategoriAdi(data['kategori']),
+                                        style: GoogleFonts.dmSans(
+                                            fontSize: 11,
+                                            color: GColors.textSecondary),
+                                      ),
                                     ],
                                   ],
                                 ),

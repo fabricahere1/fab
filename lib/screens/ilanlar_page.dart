@@ -1,22 +1,44 @@
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'g_colors.dart';
-import 'profil_karti_sheet.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'g_colors.dart';
+import 'profil_karti_sheet.dart';
 import 'degerlendirme_screen.dart';
 import 'register_screen.dart';
 import '../auth_gate.dart';
  
+// ── Kategori Sabitleri ────────────────────────────────────
+const Map<String, String> kKategoriler = {
+  'giyim': '👗 Giyim & Aksesuar',
+  'elektronik': '📱 Elektronik',
+  'guzellik': '💄 Güzellik & Sağlık',
+  'ev': '🏠 Ev & Yaşam',
+  'spor': '⚽ Spor & Outdoor',
+  'kultur': '📚 Kültür & Eğlence',
+  'gida': '🍫 Gıda & İçecek',
+  'diger': '📦 Diğer',
+};
+ 
+String kategoriAdi(String? key) {
+  if (key == null || key.isEmpty) return '';
+  return kKategoriler[key] ?? '📦 Diğer';
+}
+ 
+ 
+ 
+ 
+ 
 class IlanlarPage extends StatefulWidget {
   final ValueChanged<int> onTabChanged;
   final TabController tabController;
-  const IlanlarPage(
-      {super.key,
-      required this.onTabChanged,
-      required this.tabController});
+  const IlanlarPage({
+    super.key,
+    required this.onTabChanged,
+    required this.tabController,
+  });
  
   @override
   State<IlanlarPage> createState() => _IlanlarPageState();
@@ -29,11 +51,6 @@ class _IlanlarPageState extends State<IlanlarPage> {
   void initState() {
     super.initState();
     _tabController = widget.tabController;
-  }
- 
-  @override
-  void dispose() {
-    super.dispose();
   }
  
   @override
@@ -70,10 +87,11 @@ class _IlanlarPageState extends State<IlanlarPage> {
                   child: GestureDetector(
                     onTap: () => widget.onTabChanged(3),
                     child: avatarWidget(
-                        isim: isim,
-                        fotoUrl: user.photoURL,
-                        radius: 17,
-                        fontSize: 13),
+                      isim: isim,
+                      fotoUrl: user.photoURL,
+                      radius: 17,
+                      fontSize: 13,
+                    ),
                   ),
                 );
               }
@@ -167,6 +185,9 @@ class _MasonryBoardState extends State<_MasonryBoard> {
   bool _hepsiyuklendi = false;
   DocumentSnapshot? _sonDoc;
   String _siralama = 'tarih';
+  String? _filtreKategori;
+  String _filtreNereye = '';
+  final _filtreController = TextEditingController();
  
   @override
   void initState() {
@@ -178,6 +199,7 @@ class _MasonryBoardState extends State<_MasonryBoard> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _filtreController.dispose();
     super.dispose();
   }
  
@@ -188,12 +210,33 @@ class _MasonryBoardState extends State<_MasonryBoard> {
     }
   }
  
+  // Filtrelenmiş docs — client-side filtre
+  List<QueryDocumentSnapshot> get _filtrelenmis {
+    var liste = _docs;
+    // Kategori filtresi (sadece istek ilanları)
+    if (_filtreKategori != null && widget.tip == 'istek') {
+      liste = liste.where((d) {
+        final data = d.data() as Map<String, dynamic>;
+        return (data['kategori'] ?? 'diger') == _filtreKategori;
+      }).toList();
+    }
+    // Şehir filtresi — sadece nereye alanında ara
+    if (_filtreNereye.isNotEmpty) {
+      final q = _filtreNereye.toLowerCase();
+      liste = liste.where((d) {
+        final data = d.data() as Map<String, dynamic>;
+        final nereye = (data['nereye'] ?? '').toString().toLowerCase();
+        return nereye.contains(q);
+      }).toList();
+    }
+    return liste;
+  }
+ 
   Future<void> _ilkYukle() async {
     if (_yukleniyor) return;
     setState(() => _yukleniyor = true);
     try {
       List<QueryDocumentSnapshot> yeniDocs = [];
- 
       if (widget.tip == 'tasiyici' && _siralama == 'tarih') {
         final bugun = Timestamp.fromDate(DateTime(
             DateTime.now().year, DateTime.now().month, DateTime.now().day));
@@ -228,7 +271,6 @@ class _MasonryBoardState extends State<_MasonryBoard> {
         _sonDoc = query.docs.isNotEmpty ? query.docs.last : null;
         _hepsiyuklendi = query.docs.length < _sayfaBoyutu;
       }
- 
       if (mounted) {
         setState(() {
           _docs.addAll(yeniDocs);
@@ -270,12 +312,7 @@ class _MasonryBoardState extends State<_MasonryBoard> {
         });
       }
     } catch (e) {
-      if (mounted) {
-        setState(() => _yukleniyor = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Daha fazla ilan yüklenemedi.')),
-        );
-      }
+      if (mounted) setState(() => _yukleniyor = false);
     }
   }
  
@@ -290,12 +327,13 @@ class _MasonryBoardState extends State<_MasonryBoard> {
  
   @override
   Widget build(BuildContext context) {
+    final filtrelenmis = _filtrelenmis;
+ 
     if (_yukleniyor && _docs.isEmpty) {
       return const Center(
-          child: CircularProgressIndicator(
-              color: GColors.red, strokeWidth: 2));
+          child:
+              CircularProgressIndicator(color: GColors.red, strokeWidth: 2));
     }
- 
     if (_docs.isEmpty) {
       return Center(
         child: Column(
@@ -324,12 +362,31 @@ class _MasonryBoardState extends State<_MasonryBoard> {
           controller: _scrollController,
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
           itemCount:
-              _docs.length + 1 + (_yukleniyor || _hepsiyuklendi ? 1 : 0),
+              filtrelenmis.length + 1 + (_yukleniyor || _hepsiyuklendi ? 1 : 0),
           itemBuilder: (context, index) {
             if (index == 0) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: Row(
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _FiltreBar(
+                    filtreController: _filtreController,
+                    filtreNereye: _filtreNereye,
+                    filtreKategori: null, // tasiyici icin kategori yok
+                    tip: widget.tip,
+                    onNereyeChanged: (v) => setState(() => _filtreNereye = v),
+                    onKategoriChanged: null,
+                    onTemizle: () {
+                      _filtreController.clear();
+                      setState(() {
+                        _filtreNereye = '';
+                        _filtreKategori = null;
+                      });
+                    },
+                    kategoriler: kKategoriler,
+                  ),
+                  Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     GestureDetector(
@@ -341,7 +398,8 @@ class _MasonryBoardState extends State<_MasonryBoard> {
                               borderRadius: BorderRadius.vertical(
                                   top: Radius.circular(16))),
                           builder: (_) => Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+                            padding:
+                                const EdgeInsets.fromLTRB(20, 16, 20, 32),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,8 +441,7 @@ class _MasonryBoardState extends State<_MasonryBoard> {
                                   onTap: () {
                                     Navigator.pop(context);
                                     if (_siralama != 'olusturma') {
-                                      setState(
-                                          () => _siralama = 'olusturma');
+                                      setState(() => _siralama = 'olusturma');
                                       _yenile();
                                     }
                                   },
@@ -423,11 +480,12 @@ class _MasonryBoardState extends State<_MasonryBoard> {
                     ),
                   ],
                 ),
+                ),
+                ],
               );
             }
- 
             final realIndex = index - 1;
-            if (realIndex == _docs.length) {
+            if (realIndex == filtrelenmis.length) {
               if (_yukleniyor) {
                 return const Padding(
                   padding: EdgeInsets.symmetric(vertical: 16),
@@ -445,7 +503,7 @@ class _MasonryBoardState extends State<_MasonryBoard> {
                 ),
               );
             }
-            final doc = _docs[realIndex];
+            final doc = filtrelenmis[realIndex];
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: _IlanKarti(
@@ -462,15 +520,34 @@ class _MasonryBoardState extends State<_MasonryBoard> {
     return RefreshIndicator(
       color: GColors.red,
       onRefresh: _yenile,
-      child: MasonryGridView.count(
+      child: Column(
+        children: [
+          _FiltreBar(
+            filtreController: _filtreController,
+            filtreNereye: _filtreNereye,
+            filtreKategori: _filtreKategori,
+            tip: widget.tip,
+            onNereyeChanged: (v) => setState(() => _filtreNereye = v),
+            onKategoriChanged: (v) => setState(() => _filtreKategori = v),
+            onTemizle: () {
+              _filtreController.clear();
+              setState(() {
+                _filtreNereye = '';
+                _filtreKategori = null;
+              });
+            },
+            kategoriler: kKategoriler,
+          ),
+          Expanded(
+            child: MasonryGridView.count(
         controller: _scrollController,
         crossAxisCount: 2,
         mainAxisSpacing: 0,
         crossAxisSpacing: 6,
-        padding: const EdgeInsets.fromLTRB(6, 6, 6, 80),
-        itemCount: _docs.length + (_yukleniyor || _hepsiyuklendi ? 1 : 0),
+        padding: const EdgeInsets.fromLTRB(6, 0, 6, 80),
+        itemCount: filtrelenmis.length + (_yukleniyor || _hepsiyuklendi ? 1 : 0),
         itemBuilder: (context, index) {
-          if (index == _docs.length) {
+          if (index == filtrelenmis.length) {
             if (_yukleniyor) {
               return const Padding(
                 padding: EdgeInsets.symmetric(vertical: 16),
@@ -487,7 +564,7 @@ class _MasonryBoardState extends State<_MasonryBoard> {
                           fontSize: 12, color: GColors.textHint))),
             );
           }
-          final doc = _docs[index];
+          final doc = filtrelenmis[index];
           final offset = (index == 1) ? 32.0 : 0.0;
           return Padding(
             padding: EdgeInsets.only(top: offset),
@@ -498,6 +575,9 @@ class _MasonryBoardState extends State<_MasonryBoard> {
             ),
           );
         },
+      ),
+          ),
+        ],
       ),
     );
   }
@@ -528,7 +608,18 @@ class _IlanKarti extends StatelessWidget {
     final tarih = data['tarih'] as Timestamp?;
  
     return GestureDetector(
-      onTap: () => _detayGoster(context),
+      onTap: () => showModalBottomSheet(
+        context: context,
+        backgroundColor: GColors.white,
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        builder: (context) => _IlanDetaySheet(
+          data: data,
+          docId: docId,
+          tip: tip,
+        ),
+      ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(14),
         child: resimVar
@@ -540,7 +631,8 @@ class _IlanKarti extends StatelessWidget {
                 ucret: ucret,
                 tip: tip,
                 isim: isim,
-                docId: docId)
+                docId: docId,
+              )
             : _PlaceholderKart(
                 isim: isim,
                 nereden: nereden,
@@ -549,14 +641,53 @@ class _IlanKarti extends StatelessWidget {
                 tip: tip,
                 urun: urun,
                 docId: docId,
-                tarih: tarih),
+                tarih: tarih,
+              ),
       ),
     );
   }
+}
  
-  Future<void> _detayGoster(BuildContext context) async {
+// ── İlan Detay Sheet ──────────────────────────────────────
+ 
+class _IlanDetaySheet extends StatefulWidget {
+  final Map<String, dynamic> data;
+  final String docId;
+  final String tip;
+ 
+  const _IlanDetaySheet({
+    required this.data,
+    required this.docId,
+    required this.tip,
+  });
+ 
+  @override
+  State<_IlanDetaySheet> createState() => _IlanDetaySheetState();
+}
+ 
+class _IlanDetaySheetState extends State<_IlanDetaySheet> {
+  final PageController _pageController = PageController();
+  int _aktifSayfa = 0;
+ 
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+ 
+  @override
+  Widget build(BuildContext context) {
+    final data = widget.data;
+    final docId = widget.docId;
+    final tip = widget.tip;
+ 
     final resimUrl = data['resimUrl'] as String?;
-    final resimVar = resimUrl != null && resimUrl.isNotEmpty;
+    final resimUrller = List<String>.from(data['resimUrller'] ?? []);
+    if (resimUrller.isEmpty && resimUrl != null && resimUrl.isNotEmpty) {
+      resimUrller.add(resimUrl);
+    }
+    final resimVar = resimUrller.isNotEmpty;
+ 
     final isim = data['kullaniciAd'] ?? 'Kullanıcı';
     final kullaniciId = data['kullaniciId'] ?? '';
     final urun = data['urun'] ?? '';
@@ -567,301 +698,329 @@ class _IlanKarti extends StatelessWidget {
     final currentUid = FirebaseAuth.instance.currentUser?.uid;
     final benimIlanim = currentUid != null && currentUid == kullaniciId;
  
-    if (!context.mounted) return;
- 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: GColors.white,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Center(
-              child: Container(
-                margin: const EdgeInsets.only(top: 12, bottom: 8),
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                    color: GColors.divider,
-                    borderRadius: BorderRadius.circular(2)),
-              ),
+    return Padding(
+      padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                  color: GColors.divider,
+                  borderRadius: BorderRadius.circular(2)),
             ),
-            Flexible(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (resimVar)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: CachedNetworkImage(
-                          imageUrl: resimUrl,
-                          width: double.infinity,
-                          height: 200,
-                          fit: BoxFit.cover,
-                          memCacheWidth: 800,
-                          fadeInDuration: Duration.zero,
-                          fadeOutDuration: Duration.zero,
-                          placeholder: (_, __) =>
-                              Container(height: 200, color: GColors.surface),
-                          errorWidget: (_, __, ___) =>
-                              Container(height: 200, color: GColors.surface),
+          ),
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Resim galerisi ──────────────────────
+                  if (resimVar) ...[
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: SizedBox(
+                        height: 220,
+                        child: PageView.builder(
+                          controller: _pageController,
+                          itemCount: resimUrller.length,
+                          onPageChanged: (i) =>
+                              setState(() => _aktifSayfa = i),
+                          itemBuilder: (context, i) => CachedNetworkImage(
+                            imageUrl: resimUrller[i],
+                            width: double.infinity,
+                            height: 220,
+                            fit: BoxFit.cover,
+                            memCacheWidth: 800,
+                            fadeInDuration: Duration.zero,
+                            fadeOutDuration: Duration.zero,
+                            placeholder: (_, __) => Container(
+                                height: 220, color: GColors.surface),
+                            errorWidget: (_, __, ___) =>
+                                Container(height: 220, color: GColors.surface),
+                          ),
                         ),
                       ),
-                    if (resimVar) const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                          color: GColors.chipBg,
-                          borderRadius: BorderRadius.circular(6)),
-                      child: Text(
-                        tip == 'tasiyici' ? '✈️  TAŞIYICI' : '🛍️  İSTEK',
-                        style: GoogleFonts.dmSans(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: GColors.textSecondary,
-                            letterSpacing: 2),
-                      ),
                     ),
+                    if (resimUrller.length > 1) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(
+                          resimUrller.length,
+                          (i) => AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            margin:
+                                const EdgeInsets.symmetric(horizontal: 3),
+                            width: _aktifSayfa == i ? 18 : 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: _aktifSayfa == i
+                                  ? GColors.red
+                                  : GColors.divider,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 12),
-                    if (urun.isNotEmpty)
-                      Text(urun,
-                          style: GoogleFonts.dmSans(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800,
-                              color: GColors.textPrimary)),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(nereden.toUpperCase(),
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: GColors.textSecondary,
-                                  letterSpacing: 1)),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Icon(Icons.arrow_forward,
-                              color: GColors.red, size: 14),
-                        ),
-                        Flexible(
-                          child: Text(nereye.toUpperCase(),
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: GColors.red,
-                                  letterSpacing: 1)),
-                        ),
-                      ],
+                  ],
+                  // ── İlan bilgileri ──────────────────────
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                        color: GColors.chipBg,
+                        borderRadius: BorderRadius.circular(6)),
+                    child: Text(
+                      tip == 'tasiyici' ? '✈️  TAŞIYICI' : '🛍️  İSTEK',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: GColors.textSecondary,
+                          letterSpacing: 2),
                     ),
-                    if (ucret.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      Text('₺$ucret',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 26,
-                              fontWeight: FontWeight.w800,
-                              color: GColors.red)),
+                  ),
+                  const SizedBox(height: 12),
+                  if (urun.isNotEmpty)
+                    Text(urun,
+                        style: GoogleFonts.dmSans(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: GColors.textPrimary)),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(nereden.toUpperCase(),
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.dmSans(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: GColors.textSecondary,
+                                letterSpacing: 1)),
+                      ),
+                      Padding(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 8),
+                        child: Icon(Icons.arrow_forward,
+                            color: GColors.red, size: 14),
+                      ),
+                      Flexible(
+                        child: Text(nereye.toUpperCase(),
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.dmSans(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: GColors.red,
+                                letterSpacing: 1)),
+                      ),
                     ],
-                    Builder(builder: (context) {
-                      final tarih = data['tarih'];
-                      if (tarih == null) return const SizedBox.shrink();
-                      final dt = (tarih as Timestamp).toDate();
-                      final simdi = DateTime.now();
-                      final fark = dt
-                          .difference(DateTime(
-                              simdi.year, simdi.month, simdi.day))
-                          .inDays;
-                      final String tarihStr;
-                      if (fark < 0) {
-                        tarihStr = 'Geçti';
-                      } else if (fark == 0) {
-                        tarihStr = 'Bugün geliyor';
-                      } else if (fark == 1) {
-                        tarihStr = 'Yarın geliyor';
-                      } else {
-                        tarihStr = '$fark gün sonra geliyor';
-                      }
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Row(
-                          children: [
-                            Icon(Icons.calendar_today_outlined,
-                                size: 14, color: GColors.textSecondary),
-                            const SizedBox(width: 6),
-                            Text(tarihStr,
-                                style: GoogleFonts.dmSans(
-                                    fontSize: 13,
-                                    color: GColors.textSecondary)),
-                          ],
-                        ),
-                      );
-                    }),
-                    if (notlar.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      Text(notlar,
-                          style: GoogleFonts.dmSans(
-                              fontSize: 14,
-                              color: GColors.textSecondary,
-                              height: 1.5)),
-                    ],
-                    if (!benimIlanim) ...[
-                      const SizedBox(height: 14),
-                      StreamBuilder<QuerySnapshot>(
-                        stream: FirebaseAuth.instance.currentUser == null
-                            ? const Stream.empty()
-                            : FirebaseFirestore.instance
-                                .collection('favoriler')
-                                .where('kullaniciId',
-                                    isEqualTo: FirebaseAuth
-                                        .instance.currentUser?.uid ?? '')
-                                .where('ilanId', isEqualTo: docId)
-                                .snapshots(),
-                        builder: (context, snap) {
-                          final favori =
-                              (snap.data?.docs ?? []).isNotEmpty;
-                          return GestureDetector(
-                            onTap: () async {
-                              final user =
-                                  FirebaseAuth.instance.currentUser;
-                              if (user == null) {
-                                loginGerekli(context);
-                                return;
-                              }
-                              if (favori) {
-                                final docs = snap.data?.docs ?? [];
-                                if (docs.isNotEmpty) {
-                                  await FirebaseFirestore.instance
-                                      .collection('favoriler')
-                                      .doc(docs.first.id)
-                                      .delete();
-                                }
-                              } else {
+                  ),
+                  if (ucret.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Text('₺$ucret',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w800,
+                            color: GColors.red)),
+                  ],
+                  Builder(builder: (context) {
+                    final tarih = data['tarih'];
+                    if (tarih == null) return const SizedBox.shrink();
+                    final dt = (tarih as Timestamp).toDate();
+                    final simdi = DateTime.now();
+                    final fark = dt
+                        .difference(DateTime(
+                            simdi.year, simdi.month, simdi.day))
+                        .inDays;
+                    final String tarihStr;
+                    if (fark < 0) {
+                      tarihStr = 'Geçti';
+                    } else if (fark == 0) {
+                      tarihStr = 'Bugün geliyor';
+                    } else if (fark == 1) {
+                      tarihStr = 'Yarın geliyor';
+                    } else {
+                      tarihStr = '$fark gün sonra geliyor';
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Row(
+                        children: [
+                          Icon(Icons.calendar_today_outlined,
+                              size: 14, color: GColors.textSecondary),
+                          const SizedBox(width: 6),
+                          Text(tarihStr,
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 13,
+                                  color: GColors.textSecondary)),
+                        ],
+                      ),
+                    );
+                  }),
+                  if (notlar.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Text(notlar,
+                        style: GoogleFonts.dmSans(
+                            fontSize: 14,
+                            color: GColors.textSecondary,
+                            height: 1.5)),
+                  ],
+                  if (!benimIlanim) ...[
+                    const SizedBox(height: 14),
+                    StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseAuth.instance.currentUser == null
+                          ? const Stream.empty()
+                          : FirebaseFirestore.instance
+                              .collection('favoriler')
+                              .where('kullaniciId',
+                                  isEqualTo: FirebaseAuth
+                                          .instance.currentUser?.uid ??
+                                      '')
+                              .where('ilanId', isEqualTo: docId)
+                              .snapshots(),
+                      builder: (context, snap) {
+                        final favori =
+                            (snap.data?.docs ?? []).isNotEmpty;
+                        return GestureDetector(
+                          onTap: () async {
+                            final user =
+                                FirebaseAuth.instance.currentUser;
+                            if (user == null) {
+                              loginGerekli(context);
+                              return;
+                            }
+                            if (favori) {
+                              final docs = snap.data?.docs ?? [];
+                              if (docs.isNotEmpty) {
                                 await FirebaseFirestore.instance
                                     .collection('favoriler')
-                                    .add({
-                                  'kullaniciId': user.uid,
-                                  'ilanId': docId,
-                                  'tip': tip,
-                                  'kullaniciAd': data['kullaniciAd'],
-                                  'nereden': nereden,
-                                  'nereye': nereye,
-                                  'urun': urun,
-                                  'ucret': ucret,
-                                  if (resimUrl != null &&
-                                      resimUrl.isNotEmpty)
-                                    'resimUrl': resimUrl,
-                                  'eklemeTarihi':
-                                      FieldValue.serverTimestamp(),
-                                });
+                                    .doc(docs.first.id)
+                                    .delete();
                               }
-                            },
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  favori
-                                      ? Icons.bookmark
-                                      : Icons.bookmark_outline,
-                                  color: favori
-                                      ? GColors.yellow
-                                      : GColors.textSecondary,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  favori ? 'Favorilerde' : 'Favoriye Ekle',
-                                  style: GoogleFonts.dmSans(
-                                      fontSize: 13,
-                                      color: favori
-                                          ? GColors.yellow
-                                          : GColors.textSecondary),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                    const SizedBox(height: 8),
-                    if (!benimIlanim)
-                      TextButton.icon(
-                        style:
-                            TextButton.styleFrom(padding: EdgeInsets.zero),
-                        onPressed: () {
-                          Navigator.pop(context);
-                          sikayetGonder(context,
-                              hedefId: kullaniciId,
-                              hedefAd: isim,
-                              ilanId: docId);
-                        },
-                        icon: Icon(Icons.flag_outlined,
-                            color: GColors.textHint, size: 14),
-                        label: Text('Şikayet Et',
-                            style: GoogleFonts.dmSans(
-                                color: GColors.textHint, fontSize: 12)),
-                      ),
-                    const SizedBox(height: 8),
+                            } else {
+                              await FirebaseFirestore.instance
+                                  .collection('favoriler')
+                                  .add({
+                                'kullaniciId': user.uid,
+                                'ilanId': docId,
+                                'tip': tip,
+                                'kullaniciAd': data['kullaniciAd'],
+                                'nereden': nereden,
+                                'nereye': nereye,
+                                'urun': urun,
+                                'ucret': ucret,
+                                if (resimUrl != null &&
+                                    resimUrl.isNotEmpty)
+                                  'resimUrl': resimUrl,
+                                'eklemeTarihi':
+                                    FieldValue.serverTimestamp(),
+                              });
+                            }
+                          },
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                favori
+                                    ? Icons.bookmark
+                                    : Icons.bookmark_outline,
+                                color: favori
+                                    ? GColors.yellow
+                                    : GColors.textSecondary,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                favori
+                                    ? 'Favorilerde'
+                                    : 'Favoriye Ekle',
+                                style: GoogleFonts.dmSans(
+                                    fontSize: 13,
+                                    color: favori
+                                        ? GColors.yellow
+                                        : GColors.textSecondary),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ],
-                ),
+                  const SizedBox(height: 8),
+                  if (!benimIlanim)
+                    TextButton.icon(
+                      style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        sikayetGonder(context,
+                            hedefId: kullaniciId,
+                            hedefAd: isim,
+                            ilanId: docId);
+                      },
+                      icon: Icon(Icons.flag_outlined,
+                          color: GColors.textHint, size: 14),
+                      label: Text('Şikayet Et',
+                          style: GoogleFonts.dmSans(
+                              color: GColors.textHint, fontSize: 12)),
+                    ),
+                  const SizedBox(height: 8),
+                ],
               ),
             ),
-            if (!benimIlanim)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                child: GestureDetector(
-                  onTap: () async {
-                    final user = FirebaseAuth.instance.currentUser;
-                    if (user == null) {
-                      Navigator.pop(context);
-                      loginGerekli(context);
-                      return;
-                    }
-                    await profilKartiGoster(
-                      context,
-                      kullaniciId: kullaniciId,
-                      isim: isim,
-                      docId: docId,
-                      ilanTip: tip,
-                      urun: urun,
-                      nereden: nereden,
-                      nereye: nereye,
-                    );
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFF6B35),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: Text(
-                        tip == 'istek'
-                            ? '✈️  Ben Getiririm'
-                            : '💬  İletişime Geç',
-                        style: GoogleFonts.dmSans(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                        ),
+          ),
+          if (!benimIlanim)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+              child: GestureDetector(
+                onTap: () async {
+                  final user = FirebaseAuth.instance.currentUser;
+                  if (user == null) {
+                    Navigator.pop(context);
+                    loginGerekli(context);
+                    return;
+                  }
+                  await profilKartiGoster(
+                    context,
+                    kullaniciId: kullaniciId,
+                    isim: isim,
+                    docId: docId,
+                    ilanTip: tip,
+                    urun: urun,
+                    nereden: nereden,
+                    nereye: nereye,
+                  );
+                },
+                child: Container(
+                  width: double.infinity,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF6B35),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: Text(
+                      tip == 'istek'
+                          ? '✈️  Ben Getiririm'
+                          : '💬  İletişime Geç',
+                      style: GoogleFonts.dmSans(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
@@ -886,7 +1045,6 @@ class _ResimliKart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const resimYukseklik = 160.0;
- 
     return Container(
       decoration: BoxDecoration(
         color: GColors.white,
@@ -911,7 +1069,8 @@ class _ResimliKart extends StatelessWidget {
                     memCacheWidth: 400,
                     fadeInDuration: Duration.zero,
                     fadeOutDuration: Duration.zero,
-                    placeholder: (_, __) => Container(color: GColors.surface),
+                    placeholder: (_, __) =>
+                        Container(color: GColors.surface),
                     errorWidget: (_, __, ___) =>
                         Container(color: GColors.surface),
                   ),
@@ -970,8 +1129,8 @@ class _ResimliKart extends StatelessWidget {
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Icon(Icons.arrow_forward,
-                          size: 9, color: GColors.red),
+                      child:
+                          Icon(Icons.arrow_forward, size: 9, color: GColors.red),
                     ),
                     Flexible(
                       child: Text(nereye.toUpperCase(),
@@ -994,7 +1153,8 @@ class _ResimliKart extends StatelessWidget {
                       child: Text(isim,
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.dmSans(
-                              fontSize: 10, color: GColors.textSecondary)),
+                              fontSize: 10,
+                              color: GColors.textSecondary)),
                     ),
                   ],
                 ),
@@ -1051,9 +1211,8 @@ class _PlaceholderKart extends StatelessWidget {
   Widget build(BuildContext context) {
     final tarihYazi = _tarihYazi();
  
-    // ── Taşıyıcı kartı — Seçenek B stili ──────────────────
+    // ── Taşıyıcı kartı — Seçenek B stili ─────────────────
     if (tip == 'tasiyici') {
-      final gun = _kalanGun();
       final tarihColor = tarihYazi == 'Geçti'
           ? GColors.textHint
           : const Color(0xFF3B6D11);
@@ -1071,7 +1230,6 @@ class _PlaceholderKart extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Satır 1: şehirler + ücret
             Row(
               children: [
                 Flexible(
@@ -1106,7 +1264,6 @@ class _PlaceholderKart extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            // Satır 2: avatar + isim + tarih
             Row(
               children: [
                 avatarWidget(isim: isim, radius: 9, fontSize: 7),
@@ -1140,7 +1297,7 @@ class _PlaceholderKart extends StatelessWidget {
       );
     }
  
-    // ── İstek kartı — değişmedi ────────────────────────────
+    // ── İstek kartı ───────────────────────────────────────
     final yakinGeliyor = _yakinGeliyor();
     const pastelGradients = [
       [Color(0xFFE8EAF6), Color(0xFFC5CAE9)],
@@ -1162,7 +1319,8 @@ class _PlaceholderKart extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: yakinGeliyor ? const Color(0xFF81C784) : GColors.divider,
+          color:
+              yakinGeliyor ? const Color(0xFF81C784) : GColors.divider,
           width: yakinGeliyor ? 1.5 : 1.0,
         ),
       ),
@@ -1177,13 +1335,13 @@ class _PlaceholderKart extends StatelessWidget {
               const Text('🛍️', style: TextStyle(fontSize: 16)),
               if (ucret.isNotEmpty)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: GColors.redLight,
                     borderRadius: BorderRadius.circular(5),
-                    border:
-                        Border.all(color: GColors.red.withValues(alpha: 0.3)),
+                    border: Border.all(
+                        color: GColors.red.withValues(alpha: 0.3)),
                   ),
                   child: Text('₺$ucret',
                       style: GoogleFonts.dmSans(
@@ -1293,6 +1451,146 @@ class _SiralaSecenegi extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+ 
+// ── Filtre Bar ────────────────────────────────────────────
+ 
+class _FiltreBar extends StatelessWidget {
+  final TextEditingController filtreController;
+  final String filtreNereye;
+  final String? filtreKategori;
+  final String tip;
+  final ValueChanged<String> onNereyeChanged;
+  final ValueChanged<String?>? onKategoriChanged;
+  final VoidCallback onTemizle;
+  final Map<String, String> kategoriler;
+ 
+  const _FiltreBar({
+    required this.filtreController,
+    required this.filtreNereye,
+    required this.filtreKategori,
+    required this.tip,
+    required this.onNereyeChanged,
+    required this.onKategoriChanged,
+    required this.onTemizle,
+    required this.kategoriler,
+  });
+ 
+  bool get _aktif =>
+      filtreNereye.isNotEmpty || filtreKategori != null;
+ 
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: GColors.white,
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Şehir arama + temizle
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 38,
+                  child: TextField(
+                    controller: filtreController,
+                    onChanged: onNereyeChanged,
+                    style: GoogleFonts.dmSans(
+                        fontSize: 13, color: GColors.textPrimary),
+                    decoration: InputDecoration(
+                      hintText: 'Teslim şehrini ara... (ör: İstanbul)',
+                      hintStyle: GoogleFonts.dmSans(
+                          fontSize: 12, color: GColors.textHint),
+                      prefixIcon: const Icon(Icons.search,
+                          size: 18, color: GColors.textSecondary),
+                      suffixIcon: filtreNereye.isNotEmpty
+                          ? GestureDetector(
+                              onTap: () {
+                                filtreController.clear();
+                                onNereyeChanged('');
+                              },
+                              child: const Icon(Icons.close,
+                                  size: 16, color: GColors.textSecondary),
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: GColors.surface,
+                      contentPadding:
+                          const EdgeInsets.symmetric(vertical: 0),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none),
+                    ),
+                  ),
+                ),
+              ),
+              if (_aktif) ...[
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: onTemizle,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: GColors.redLight,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text('Temizle',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 12,
+                            color: GColors.red,
+                            fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          // Kategori chip'leri (sadece istek ilanları için)
+          if (tip == 'istek' && onKategoriChanged != null) ...[
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 32,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: kategoriler.entries.map((e) {
+                  final secili = filtreKategori == e.key;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: GestureDetector(
+                      onTap: () => onKategoriChanged!(secili ? null : e.key),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: secili ? GColors.textPrimary : GColors.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                              color: secili
+                                  ? GColors.textPrimary
+                                  : GColors.divider),
+                        ),
+                        child: Text(e.value,
+                            style: GoogleFonts.dmSans(
+                                fontSize: 11,
+                                color: secili
+                                    ? Colors.white
+                                    : GColors.textSecondary,
+                                fontWeight: secili
+                                    ? FontWeight.w600
+                                    : FontWeight.w400)),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

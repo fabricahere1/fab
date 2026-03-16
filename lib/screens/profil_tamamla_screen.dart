@@ -1,15 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'g_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'home_screen.dart';
  
-const _primary = Color(0xFF3C3C3C);
+const _primary = GColors.textPrimary;
 // Seçili kart rengi: koyu gri (siyah değil)
 const _seciliRenk = Color(0xFF5C5C5C);
 const _surface = Color(0xFFF5F5F5);
 const _divider = Color(0xFFE0E0E0);
-const _textPrimary = Color(0xFF212121);
+const _textPrimary = GColors.textPrimary;
 const _textSecondary = Color(0xFF757575);
 const _red = Color(0xFFE53935);
  
@@ -186,7 +187,7 @@ class _ProfilTamamlaScreenState extends State<ProfilTamamlaScreen> {
         automaticallyImplyLeading: !widget.ilkGiris,
         title: Text(
           widget.ilkGiris ? 'Profilini Tamamla' : 'Profili Düzenle',
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.dmSans(
             fontSize: 17,
             fontWeight: FontWeight.w600,
             color: _textPrimary,
@@ -220,7 +221,7 @@ class _ProfilTamamlaScreenState extends State<ProfilTamamlaScreen> {
                       _kullaniciAdi.isNotEmpty
                           ? 'Hoş geldin, $_kullaniciAdi!'
                           : 'Hoş geldin!',
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.dmSans(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
                         color: _textPrimary,
@@ -229,7 +230,7 @@ class _ProfilTamamlaScreenState extends State<ProfilTamamlaScreen> {
                     const SizedBox(height: 6),
                     Text(
                       'Sana özel deneyim için profilini tamamla.',
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.dmSans(
                           fontSize: 14, color: _textSecondary),
                       textAlign: TextAlign.center,
                     ),
@@ -250,7 +251,7 @@ class _ProfilTamamlaScreenState extends State<ProfilTamamlaScreen> {
                   const SizedBox(height: 6),
                   Text(
                     'Platformu nasıl kullanacaksın?',
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.dmSans(
                         fontSize: 13, color: _textSecondary),
                   ),
                   const SizedBox(height: 16),
@@ -324,7 +325,7 @@ class _ProfilTamamlaScreenState extends State<ProfilTamamlaScreen> {
                     const SizedBox(height: 4),
                     Text(
                       'Birden fazla şehir ekleyebilirsin',
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.dmSans(
                           fontSize: 12, color: _textSecondary),
                     ),
                     const SizedBox(height: 8),
@@ -396,7 +397,7 @@ class _ProfilTamamlaScreenState extends State<ProfilTamamlaScreen> {
                     const SizedBox(height: 6),
                     Text(
                       'İstek verirken kullanılacak (opsiyonel)',
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.dmSans(
                           fontSize: 13, color: _textSecondary),
                     ),
                     const SizedBox(height: 12),
@@ -426,7 +427,7 @@ class _ProfilTamamlaScreenState extends State<ProfilTamamlaScreen> {
                     const SizedBox(height: 6),
                     Text(
                       'Kendini kısaca tanıt (opsiyonel)',
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.dmSans(
                           fontSize: 13, color: _textSecondary),
                     ),
                     const SizedBox(height: 12),
@@ -434,11 +435,11 @@ class _ProfilTamamlaScreenState extends State<ProfilTamamlaScreen> {
                       controller: _hakkindaController,
                       maxLines: 3,
                       maxLength: 200,
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.dmSans(
                           fontSize: 14, color: _textPrimary),
                       decoration: InputDecoration(
                         hintText: 'Örn: Almanya\'da yaşıyorum, ayda bir İstanbul\'a geliyorum...',
-                        hintStyle: GoogleFonts.roboto(
+                        hintStyle: GoogleFonts.dmSans(
                             color: const Color(0xFFBDBDBD), fontSize: 13),
                         prefixIcon: const Icon(Icons.info_outline,
                             color: _textSecondary, size: 18),
@@ -483,7 +484,7 @@ class _ProfilTamamlaScreenState extends State<ProfilTamamlaScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(_hata,
-                            style: GoogleFonts.roboto(
+                            style: GoogleFonts.dmSans(
                                 color: _red, fontSize: 13)),
                       ),
                     ],
@@ -515,7 +516,7 @@ class _ProfilTamamlaScreenState extends State<ProfilTamamlaScreen> {
                         )
                       : Text(
                           widget.ilkGiris ? 'Devam Et' : 'Kaydet',
-                          style: GoogleFonts.roboto(
+                          style: GoogleFonts.dmSans(
                             color: Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -532,7 +533,7 @@ class _ProfilTamamlaScreenState extends State<ProfilTamamlaScreen> {
  
   Widget _baslik(String text) => Text(
         text,
-        style: GoogleFonts.roboto(
+        style: GoogleFonts.dmSans(
           fontSize: 14,
           fontWeight: FontWeight.w700,
           color: _textPrimary,
@@ -542,7 +543,7 @@ class _ProfilTamamlaScreenState extends State<ProfilTamamlaScreen> {
  
   Widget _etiket(String text) => Text(
         text,
-        style: GoogleFonts.roboto(
+        style: GoogleFonts.dmSans(
           fontSize: 13,
           fontWeight: FontWeight.w500,
           color: _textSecondary,
@@ -598,7 +599,7 @@ class _TipKarti extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               baslik,
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.dmSans(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 color: secili ? Colors.white : _textPrimary,
@@ -607,7 +608,7 @@ class _TipKarti extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               aciklama,
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.dmSans(
                 fontSize: 11,
                 color: secili
                     ? Colors.white.withValues(alpha: 0.75)
@@ -690,7 +691,7 @@ class _TipKartiGenis extends StatelessWidget {
                 children: [
                   Text(
                     baslik,
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.dmSans(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: secili ? Colors.white : _textPrimary,
@@ -699,7 +700,7 @@ class _TipKartiGenis extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     aciklama,
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.dmSans(
                       fontSize: 12,
                       color: secili
                           ? Colors.white.withValues(alpha: 0.75)
@@ -808,11 +809,11 @@ class _AutocompleteAlaniState extends State<_AutocompleteAlani> {
             setState(() => _acik = false);
             FocusScope.of(context).unfocus();
           },
-          style: GoogleFonts.roboto(fontSize: 14, color: _textPrimary),
+          style: GoogleFonts.dmSans(fontSize: 14, color: _textPrimary),
           decoration: InputDecoration(
             hintText: widget.hint,
             hintStyle:
-                GoogleFonts.roboto(color: const Color(0xFFBDBDBD), fontSize: 14),
+                GoogleFonts.dmSans(color: const Color(0xFFBDBDBD), fontSize: 14),
             prefixIcon:
                 Icon(widget.icon, color: _textSecondary, size: 18),
             suffixIcon: _ctrl.text.isNotEmpty
@@ -874,7 +875,7 @@ class _AutocompleteAlaniState extends State<_AutocompleteAlani> {
                       children: [
                         Expanded(
                           child: Text(s,
-                              style: GoogleFonts.roboto(
+                              style: GoogleFonts.dmSans(
                                   fontSize: 14, color: _textPrimary)),
                         ),
                       ],
@@ -967,7 +968,7 @@ class _CokluSehirAlaniState extends State<_CokluSehirAlani> {
                   children: [
                     Text(
                       sehir,
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.dmSans(
                           fontSize: 13,
                           color: Colors.white,
                           fontWeight: FontWeight.w500),
@@ -992,11 +993,11 @@ class _CokluSehirAlaniState extends State<_CokluSehirAlani> {
           // Enter'a basınca elle ekle
           onSubmitted: (_) => _elleEkle(),
           textInputAction: TextInputAction.done,
-          style: GoogleFonts.roboto(fontSize: 14, color: _textPrimary),
+          style: GoogleFonts.dmSans(fontSize: 14, color: _textPrimary),
           decoration: InputDecoration(
             hintText: widget.hint,
             hintStyle:
-                GoogleFonts.roboto(color: const Color(0xFFBDBDBD), fontSize: 14),
+                GoogleFonts.dmSans(color: const Color(0xFFBDBDBD), fontSize: 14),
             prefixIcon: const Icon(Icons.add_location_outlined,
                 color: _textSecondary, size: 18),
             // Sağda "Ekle" butonu
@@ -1058,7 +1059,7 @@ class _CokluSehirAlaniState extends State<_CokluSehirAlani> {
                         const Icon(Icons.add, size: 16, color: _textSecondary),
                         const SizedBox(width: 10),
                         Text(s,
-                            style: GoogleFonts.roboto(
+                            style: GoogleFonts.dmSans(
                                 fontSize: 14, color: _textPrimary)),
                       ],
                     ),

@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'g_colors.dart';
 import 'sohbet_screen.dart';
+import 'kullanici_profil_screen.dart';
  
 // ── Profil Cache (TTL: 5 dakika) ─────────────────────────
  
@@ -82,7 +83,20 @@ Future<void> profilKartiGoster(
           ),
  
           // Avatar + isim + tip badge
-          Row(
+          GestureDetector(
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => KullaniciProfilScreen(
+                    kullaniciId: kullaniciId,
+                    isim: isim,
+                  ),
+                ),
+              );
+            },
+            child: Row(
             children: [
               avatarWidget(
                   isim: isim,
@@ -118,10 +132,16 @@ Future<void> profilKartiGoster(
                     ],
                     if (kullaniciTipi.isNotEmpty)
                       KullaniciTipiBadge(tip: kullaniciTipi),
+                    const SizedBox(height: 4),
+                    Text('Tam profili gör →',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 11, color: GColors.red)),
                   ],
                 ),
               ),
+              const Icon(Icons.chevron_right, color: GColors.red, size: 18),
             ],
+          ),
           ),
  
           const SizedBox(height: 16),
@@ -390,4 +410,3 @@ class KullaniciTipiBadge extends StatelessWidget {
     );
   }
 }
- 

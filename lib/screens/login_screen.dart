@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'g_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'register_screen.dart';
@@ -73,18 +74,12 @@ class _LoginScreenState extends State<LoginScreen> {
   }
  
   Future<void> _profilKontrolEtVeYonlendir(String uid) async {
-    debugPrint('=== PROFİL KONTROL ===');
-    debugPrint('uid: $uid');
     try {
       final doc = await FirebaseFirestore.instance
           .collection('kullanicilar')
           .doc(uid)
           .get();
-      debugPrint('doc exists: ${doc.exists}');
-      debugPrint('doc data: ${doc.data()}');
       final profilTamamlandi = doc.data()?['profilTamamlandi'] == true;
-      debugPrint('profilTamamlandi: $profilTamamlandi');
-      debugPrint('=== PROFİL KONTROL END ===');
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
@@ -95,7 +90,6 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
     } catch (e) {
-      debugPrint('PROFİL KONTROL HATA: $e');
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
@@ -196,23 +190,23 @@ class _LoginScreenState extends State<LoginScreen> {
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
         title: Text('Şifremi Unuttum',
-            style: GoogleFonts.roboto(fontWeight: FontWeight.w500, fontSize: 16)),
+            style: GoogleFonts.dmSans(fontWeight: FontWeight.w500, fontSize: 16)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'E-posta adresinize şifre sıfırlama bağlantısı göndereceğiz.',
-              style: GoogleFonts.roboto(color: const Color(0xFF757575), fontSize: 13),
+              style: GoogleFonts.dmSans(color: const Color(0xFF757575), fontSize: 13),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: resetEmailController,
               keyboardType: TextInputType.emailAddress,
-              style: GoogleFonts.roboto(fontSize: 14),
+              style: GoogleFonts.dmSans(fontSize: 14),
               decoration: InputDecoration(
                 hintText: 'ornek@email.com',
-                hintStyle: GoogleFonts.roboto(color: const Color(0xFFBDBDBD)),
+                hintStyle: GoogleFonts.dmSans(color: const Color(0xFFBDBDBD)),
                 prefixIcon: const Icon(Icons.email_outlined,
                     color: Color(0xFF9E9E9E), size: 20),
                 filled: true,
@@ -227,7 +221,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(4),
-                  borderSide: const BorderSide(color: Color(0xFF3C3C3C), width: 1.5),
+                  borderSide: const BorderSide(color: GColors.textPrimary, width: 1.5),
                 ),
               ),
             ),
@@ -237,7 +231,7 @@ class _LoginScreenState extends State<LoginScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text('İptal',
-                style: GoogleFonts.roboto(color: const Color(0xFF757575))),
+                style: GoogleFonts.dmSans(color: const Color(0xFF757575))),
           ),
           TextButton(
             onPressed: () async {
@@ -251,8 +245,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Şifre sıfırlama e-postası gönderildi.',
-                          style: GoogleFonts.roboto()),
-                      backgroundColor: const Color(0xFF3C3C3C),
+                          style: GoogleFonts.dmSans()),
+                      backgroundColor: GColors.textPrimary,
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(4)),
@@ -267,8 +261,8 @@ class _LoginScreenState extends State<LoginScreen> {
               }
             },
             child: Text('Gönder',
-                style: GoogleFonts.roboto(
-                    color: const Color(0xFF3C3C3C), fontWeight: FontWeight.w600)),
+                style: GoogleFonts.dmSans(
+                    color: GColors.textPrimary, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -293,7 +287,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Center(
                 child: Text(
                   'İSTE',
-                  style: GoogleFonts.roboto(
+                  style: GoogleFonts.dmSans(
                     fontSize: 64,
                     fontWeight: FontWeight.w900,
                     fontStyle: FontStyle.italic,
@@ -307,13 +301,13 @@ class _LoginScreenState extends State<LoginScreen> {
               Center(
                 child: Text(
                   'Hesabına giriş yap',
-                  style: GoogleFonts.roboto(
+                  style: GoogleFonts.dmSans(
                       fontSize: 14, color: const Color(0xFF9E9E9E)),
                 ),
               ),
               SizedBox(height: h * 0.05),
               Text('E-posta',
-                  style: GoogleFonts.roboto(
+                  style: GoogleFonts.dmSans(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                       color: const Color(0xFF424242))),
@@ -330,7 +324,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               SizedBox(height: h * 0.022),
               Text('Şifre',
-                  style: GoogleFonts.roboto(
+                  style: GoogleFonts.dmSans(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                       color: const Color(0xFF424242))),
@@ -365,7 +359,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                   child: Text('Şifremi unuttum',
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.dmSans(
                           color: const Color(0xFF757575), fontSize: 12)),
                 ),
               ),
@@ -379,7 +373,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(_errorMessage,
-                            style: GoogleFonts.roboto(
+                            style: GoogleFonts.dmSans(
                                 color: const Color(0xFFE53935), fontSize: 12)),
                       ),
                     ],
@@ -627,7 +621,7 @@ class _S1OutlinedButtonState extends State<_S1OutlinedButton> {
               child: Text(
                 widget.label,
                 style: GoogleFonts.dmSans(
-                  color: const Color(0xFF212121),
+                  color: GColors.textPrimary,
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
                 ),
@@ -692,7 +686,7 @@ class _LoginInput extends StatelessWidget {
       keyboardType: keyboardType,
       textInputAction: textInputAction,
       onSubmitted: onSubmitted,
-      style: GoogleFonts.dmSans(fontSize: 14, color: const Color(0xFF212121)),
+      style: GoogleFonts.dmSans(fontSize: 14, color: GColors.textPrimary),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle:
@@ -711,7 +705,7 @@ class _LoginInput extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(4),
-          borderSide: const BorderSide(color: Color(0xFF3C3C3C), width: 1.5),
+          borderSide: const BorderSide(color: GColors.textPrimary, width: 1.5),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 14),

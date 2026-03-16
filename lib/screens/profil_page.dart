@@ -8,45 +8,57 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'degerlendirme_screen.dart';
-import 'ilanlar_page.dart';
 import 'login_screen.dart';
 import '../auth_gate.dart';
 import 'sohbet_screen.dart';
-
+ 
+// ── Kategori Sabitleri ────────────────────────────────────
+const Map<String, String> kKategoriler = {
+  'giyim': '👗 Giyim & Aksesuar',
+  'elektronik': '📱 Elektronik',
+  'guzellik': '💄 Güzellik & Sağlık',
+  'ev': '🏠 Ev & Yaşam',
+  'spor': '⚽ Spor & Outdoor',
+  'kultur': '📚 Kültür & Eğlence',
+  'gida': '🍫 Gıda & İçecek',
+  'diger': '📦 Diğer',
+};
+ 
+String kategoriAdi(String? key) {
+  if (key == null || key.isEmpty) return '';
+  return kKategoriler[key] ?? '📦 Diğer';
+}
+ 
 class ProfilPage extends StatefulWidget {
   const ProfilPage({super.key});
-
+ 
   @override
   State<ProfilPage> createState() => _ProfilPageState();
 }
-
+ 
 class _ProfilPageState extends State<ProfilPage> {
   bool _yukleniyor = false;
-
+ 
   Future<void> _fotoDegistir() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-
     final picker = ImagePicker();
-    final picked = await picker.pickImage(
-        source: ImageSource.gallery, imageQuality: 70);
+    final picked =
+        await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
     if (picked == null) return;
-
     final file = File(picked.path);
     final boyut = await file.length();
-    const maxBoyut = 2 * 1024 * 1024; // 2 MB
-    if (boyut > maxBoyut) {
+    if (boyut > 2 * 1024 * 1024) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Fotoğraf 2 MB\'dan büyük olamaz.',
-              style: GoogleFonts.roboto()),
+              style: GoogleFonts.dmSans()),
           backgroundColor: GColors.red,
           behavior: SnackBarBehavior.floating,
         ));
       }
       return;
     }
-
     setState(() => _yukleniyor = true);
     try {
       final ref = FirebaseStorage.instance
@@ -61,8 +73,8 @@ class _ProfilPageState extends State<ProfilPage> {
           .update({'fotoUrl': url});
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Fotoğraf güncellendi!',
-              style: GoogleFonts.roboto()),
+          content:
+              Text('Fotoğraf güncellendi!', style: GoogleFonts.dmSans()),
           backgroundColor: const Color(0xFF2E7D32),
           behavior: SnackBarBehavior.floating,
         ));
@@ -70,7 +82,7 @@ class _ProfilPageState extends State<ProfilPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Hata: $e', style: GoogleFonts.roboto()),
+          content: Text('Hata: $e', style: GoogleFonts.dmSans()),
           backgroundColor: GColors.red,
           behavior: SnackBarBehavior.floating,
         ));
@@ -79,29 +91,29 @@ class _ProfilPageState extends State<ProfilPage> {
       if (mounted) setState(() => _yukleniyor = false);
     }
   }
-
+ 
   Future<void> _cikisYap() async {
     final onay = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12)),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text('Çıkış Yap',
-            style: GoogleFonts.roboto(
+            style: GoogleFonts.dmSans(
                 fontSize: 16, fontWeight: FontWeight.w600)),
         content: Text('Hesabınızdan çıkmak istiyor musunuz?',
-            style: GoogleFonts.roboto(
+            style: GoogleFonts.dmSans(
                 fontSize: 14, color: GColors.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: Text('İptal',
-                style: GoogleFonts.roboto(color: GColors.textSecondary)),
+                style: GoogleFonts.dmSans(color: GColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text('Çıkış Yap',
-                style: GoogleFonts.roboto(
+                style: GoogleFonts.dmSans(
                     color: GColors.red, fontWeight: FontWeight.w700)),
           ),
         ],
@@ -118,7 +130,7 @@ class _ProfilPageState extends State<ProfilPage> {
       }
     }
   }
-
+ 
   void _ilanDuzenle(
       BuildContext context, String docId, Map<String, dynamic> data) {
     final urunCtrl =
@@ -132,7 +144,18 @@ class _ProfilPageState extends State<ProfilPage> {
     final notlarCtrl =
         TextEditingController(text: data['notlar']?.toString() ?? '');
     bool aktif = data['aktif'] != false;
-
+    final bool isIstek = data['tip'] == 'istek';
+    String secilenKategori = data['kategori']?.toString() ?? 'diger';
+ 
+    final mevcutUrller = List<String>.from(data['resimUrller'] ?? []);
+    if (mevcutUrller.isEmpty &&
+        data['resimUrl'] != null &&
+        (data['resimUrl'] as String).isNotEmpty) {
+      mevcutUrller.add(data['resimUrl'] as String);
+    }
+    final List<String> kalanUrller = List.from(mevcutUrller);
+    final List<File> yeniResimler = [];
+ 
     showModalBottomSheet(
       context: context,
       backgroundColor: GColors.white,
@@ -140,103 +163,388 @@ class _ProfilPageState extends State<ProfilPage> {
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Padding(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 32,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                        color: GColors.divider,
-                        borderRadius: BorderRadius.circular(2)),
+        builder: (context, setModalState) {
+          final toplamResim = kalanUrller.length + yeniResimler.length;
+ 
+          Future<void> resimEkle() async {
+            if (toplamResim >= 4) return;
+            final picker = ImagePicker();
+            final picked = await picker.pickImage(
+                source: ImageSource.gallery, imageQuality: 80);
+            if (picked != null) {
+              setModalState(() => yeniResimler.add(File(picked.path)));
+            }
+          }
+ 
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 20,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                          color: GColors.divider,
+                          borderRadius: BorderRadius.circular(2)),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                Text('İlanı Düzenle',
-                    style: GoogleFonts.roboto(
-                        fontSize: 17, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 20),
-                if (data['tip'] == 'istek') ...[
-                  DuzenleAlani(label: 'Ürün', controller: urunCtrl),
+                  const SizedBox(height: 20),
+                  Text('İlanı Düzenle',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 17, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 20),
+                  if (isIstek) ...[
+                    DuzenleAlani(label: 'Ürün', controller: urunCtrl),
+                    const SizedBox(height: 12),
+                  ],
+                  DuzenleAlani(label: 'Nereden', controller: neredenCtrl),
                   const SizedBox(height: 12),
-                ],
-                DuzenleAlani(label: 'Nereden', controller: neredenCtrl),
-                const SizedBox(height: 12),
-                DuzenleAlani(label: 'Nereye', controller: nereyeCtrl),
-                const SizedBox(height: 12),
-                DuzenleAlani(
-                    label: 'Ücret (₺)',
-                    controller: ucretCtrl,
-                    klavye: TextInputType.number),
-                const SizedBox(height: 12),
-                DuzenleAlani(
-                    label: 'Notlar', controller: notlarCtrl, maxLines: 3),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Text('İlan aktif',
-                        style: GoogleFonts.roboto(
-                            fontSize: 14, color: GColors.textPrimary)),
-                    const Spacer(),
-                    Switch(
-                      value: aktif,
-                      onChanged: (v) => setModalState(() => aktif = v),
-                      activeColor: GColors.blue,
+                  DuzenleAlani(label: 'Nereye', controller: nereyeCtrl),
+                  const SizedBox(height: 12),
+                  DuzenleAlani(
+                      label: 'Ücret (₺)',
+                      controller: ucretCtrl,
+                      klavye: TextInputType.number),
+                  const SizedBox(height: 12),
+                  DuzenleAlani(
+                      label: 'Notlar',
+                      controller: notlarCtrl,
+                      maxLines: 3),
+                  if (isIstek) ...[
+                    const SizedBox(height: 16),
+                    Text('Kategori',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: GColors.textSecondary)),
+                    const SizedBox(height: 8),
+                    StatefulBuilder(
+                      builder: (context, setCatState) => Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: kKategoriler.entries.map((e) {
+                          final secili = secilenKategori == e.key;
+                          return GestureDetector(
+                            onTap: () {
+                              setModalState(() => secilenKategori = e.key);
+                              setCatState(() {});
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: secili
+                                    ? GColors.textPrimary
+                                    : GColors.surface,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                    color: secili
+                                        ? GColors.textPrimary
+                                        : GColors.divider),
+                              ),
+                              child: Text(e.value,
+                                  style: GoogleFonts.dmSans(
+                                      fontSize: 12,
+                                      color: secili
+                                          ? Colors.white
+                                          : GColors.textSecondary,
+                                      fontWeight: secili
+                                          ? FontWeight.w600
+                                          : FontWeight.w400)),
+                            ),
+                          );
+                        }).toList(),
+                      ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      await FirebaseFirestore.instance
-                          .collection('ilanlar')
-                          .doc(docId)
-                          .update({
-                        if (data['tip'] == 'istek')
-                          'urun': urunCtrl.text.trim(),
-                        'nereden': neredenCtrl.text.trim(),
-                        'nereye': nereyeCtrl.text.trim(),
-                        'ucret': ucretCtrl.text.trim(),
-                        'notlar': notlarCtrl.text.trim(),
-                        'aktif': aktif,
-                      });
-                      if (context.mounted) Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: GColors.blue,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      elevation: 0,
+                  if (isIstek) ...[
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Text('Resimler',
+                            style: GoogleFonts.dmSans(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: GColors.textSecondary)),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: toplamResim == 4
+                                ? const Color(0xFFFFEBEE)
+                                : const Color(0xFFE8F5E9),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text('$toplamResim/4',
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: toplamResim == 4
+                                      ? GColors.red
+                                      : const Color(0xFF2E7D32))),
+                        ),
+                      ],
                     ),
-                    child: Text('Kaydet',
-                        style: GoogleFonts.roboto(
-                            color: GColors.white,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 15)),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 90,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: [
+                          ...kalanUrller.asMap().entries.map((e) {
+                            final i = e.key;
+                            final url = e.value;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: CachedNetworkImage(
+                                      imageUrl: url,
+                                      width: 90,
+                                      height: 90,
+                                      fit: BoxFit.cover,
+                                      fadeInDuration: Duration.zero,
+                                      placeholder: (_, __) => Container(
+                                          width: 90,
+                                          height: 90,
+                                          color: GColors.surface),
+                                      errorWidget: (_, __, ___) => Container(
+                                          width: 90,
+                                          height: 90,
+                                          color: GColors.surface),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 4,
+                                    right: 4,
+                                    child: GestureDetector(
+                                      onTap: () => setModalState(
+                                          () => kalanUrller.removeAt(i)),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(3),
+                                        decoration: const BoxDecoration(
+                                            color: Colors.black54,
+                                            shape: BoxShape.circle),
+                                        child: const Icon(Icons.close,
+                                            color: Colors.white, size: 14),
+                                      ),
+                                    ),
+                                  ),
+                                  if (i == 0)
+                                    Positioned(
+                                      bottom: 4,
+                                      left: 4,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 5, vertical: 2),
+                                        decoration: BoxDecoration(
+                                            color: Colors.black54,
+                                            borderRadius:
+                                                BorderRadius.circular(4)),
+                                        child: Text('Ana',
+                                            style: GoogleFonts.dmSans(
+                                                fontSize: 9,
+                                                color: Colors.white)),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            );
+                          }),
+                          ...yeniResimler.asMap().entries.map((e) {
+                            final i = e.key;
+                            final file = e.value;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.file(file,
+                                        width: 90,
+                                        height: 90,
+                                        fit: BoxFit.cover),
+                                  ),
+                                  Positioned(
+                                    top: 4,
+                                    right: 4,
+                                    child: GestureDetector(
+                                      onTap: () => setModalState(
+                                          () => yeniResimler.removeAt(i)),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(3),
+                                        decoration: const BoxDecoration(
+                                            color: Colors.black54,
+                                            shape: BoxShape.circle),
+                                        child: const Icon(Icons.close,
+                                            color: Colors.white, size: 14),
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    bottom: 4,
+                                    left: 4,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 5, vertical: 2),
+                                      decoration: BoxDecoration(
+                                          color: Colors.orange
+                                              .withValues(alpha: 0.8),
+                                          borderRadius:
+                                              BorderRadius.circular(4)),
+                                      child: Text('Yeni',
+                                          style: GoogleFonts.dmSans(
+                                              fontSize: 9,
+                                              color: Colors.white)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                          if (toplamResim < 4)
+                            GestureDetector(
+                              onTap: resimEkle,
+                              child: Container(
+                                width: 90,
+                                height: 90,
+                                decoration: BoxDecoration(
+                                  color: GColors.surface,
+                                  border: Border.all(color: GColors.divider),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.add_photo_alternate_outlined,
+                                        size: 24,
+                                        color: GColors.textSecondary),
+                                    const SizedBox(height: 4),
+                                    Text('Ekle',
+                                        style: GoogleFonts.dmSans(
+                                            fontSize: 10,
+                                            color: GColors.textSecondary)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Text('İlan aktif',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 14, color: GColors.textPrimary)),
+                      const Spacer(),
+                      Switch(
+                        value: aktif,
+                        onChanged: (v) => setModalState(() => aktif = v),
+                        activeColor: GColors.blue,
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        try {
+                          final user = FirebaseAuth.instance.currentUser;
+                          final List<String> tumUrller =
+                              List.from(kalanUrller);
+                          if (user != null && yeniResimler.isNotEmpty) {
+                            for (int i = 0; i < yeniResimler.length; i++) {
+                              final ref = FirebaseStorage.instance
+                                  .ref()
+                                  .child('ilan_resimleri')
+                                  .child(
+                                      '${user.uid}_${DateTime.now().millisecondsSinceEpoch}_$i.jpg');
+                              await ref.putFile(yeniResimler[i]);
+                              final url = await ref.getDownloadURL();
+                              tumUrller.add(url);
+                            }
+                          }
+                          final updateData = <String, dynamic>{
+                            if (isIstek) 'urun': urunCtrl.text.trim(),
+                            'nereden': neredenCtrl.text.trim(),
+                            'nereye': nereyeCtrl.text.trim(),
+                            'ucret': ucretCtrl.text.trim(),
+                            'notlar': notlarCtrl.text.trim(),
+                            'aktif': aktif,
+                            if (isIstek) 'kategori': secilenKategori,
+                          };
+                          if (isIstek) {
+                            updateData['resimUrl'] =
+                                tumUrller.isNotEmpty ? tumUrller.first : '';
+                            updateData['resimUrller'] = tumUrller;
+                          }
+                          await FirebaseFirestore.instance
+                              .collection('ilanlar')
+                              .doc(docId)
+                              .update(updateData);
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('İlan güncellendi! ✓',
+                                    style: GoogleFonts.dmSans()),
+                                backgroundColor: const Color(0xFF2E7D32),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Kayıt hatası: $e',
+                                    style: GoogleFonts.dmSans()),
+                                backgroundColor: GColors.red,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: GColors.blue,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                        elevation: 0,
+                      ),
+                      child: Text('Kaydet',
+                          style: GoogleFonts.dmSans(
+                              color: GColors.white,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 15)),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
-
-  // YENİ: Kendi ilanı için detay bottom sheet
+ 
   Future<void> _ilanDetayGoster(
       BuildContext context, String docId, Map<String, dynamic> d) async {
     final tip = d['tip'] ?? 'istek';
@@ -248,7 +556,7 @@ class _ProfilPageState extends State<ProfilPage> {
     final aktif = d['aktif'] != false;
     final resimUrl = d['resimUrl'] as String?;
     final resimVar = resimUrl != null && resimUrl.isNotEmpty;
-
+ 
     showModalBottomSheet(
       context: context,
       backgroundColor: GColors.white,
@@ -277,20 +585,23 @@ class _ProfilPageState extends State<ProfilPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Resim
                     if (resimVar) ...[
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          resimUrl,
+                        child: CachedNetworkImage(
+                          imageUrl: resimUrl,
                           width: double.infinity,
                           height: 200,
                           fit: BoxFit.cover,
+                          fadeInDuration: Duration.zero,
+                          placeholder: (_, __) => Container(
+                              height: 200, color: GColors.surface),
+                          errorWidget: (_, __, ___) => Container(
+                              height: 200, color: GColors.surface),
                         ),
                       ),
                       const SizedBox(height: 16),
                     ],
-                    // Tip badge + aktiflik
                     Row(
                       children: [
                         Container(
@@ -301,7 +612,9 @@ class _ProfilPageState extends State<ProfilPage> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            tip == 'tasiyici' ? '✈️  TAŞIYICI' : '🛍️  İSTEK',
+                            tip == 'tasiyici'
+                                ? '✈️  TAŞIYICI'
+                                : '🛍️  İSTEK',
                             style: GoogleFonts.dmSans(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
@@ -332,7 +645,6 @@ class _ProfilPageState extends State<ProfilPage> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    // Ürün adı
                     if (urun.isNotEmpty) ...[
                       Text(urun,
                           style: GoogleFonts.dmSans(
@@ -341,7 +653,6 @@ class _ProfilPageState extends State<ProfilPage> {
                               color: GColors.textPrimary)),
                       const SizedBox(height: 10),
                     ],
-                    // Rota
                     Row(
                       children: [
                         Flexible(
@@ -370,7 +681,6 @@ class _ProfilPageState extends State<ProfilPage> {
                         ),
                       ],
                     ),
-                    // Ücret
                     if (ucret.isNotEmpty) ...[
                       const SizedBox(height: 10),
                       Text('₺$ucret',
@@ -379,7 +689,6 @@ class _ProfilPageState extends State<ProfilPage> {
                               fontWeight: FontWeight.w800,
                               color: GColors.red)),
                     ],
-                    // Tarih
                     Builder(builder: (context) {
                       final tarih = d['tarih'];
                       if (tarih == null) return const SizedBox.shrink();
@@ -414,7 +723,6 @@ class _ProfilPageState extends State<ProfilPage> {
                         ),
                       );
                     }),
-                    // Notlar
                     if (notlar.isNotEmpty) ...[
                       const SizedBox(height: 10),
                       Text(notlar,
@@ -424,7 +732,6 @@ class _ProfilPageState extends State<ProfilPage> {
                               height: 1.5)),
                     ],
                     const SizedBox(height: 20),
-                    // Düzenle butonu
                     SizedBox(
                       width: double.infinity,
                       height: 48,
@@ -455,11 +762,11 @@ class _ProfilPageState extends State<ProfilPage> {
       ),
     );
   }
-
+ 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-
+ 
     if (user == null) {
       return Scaffold(
         backgroundColor: GColors.surface,
@@ -467,7 +774,7 @@ class _ProfilPageState extends State<ProfilPage> {
           backgroundColor: GColors.white,
           elevation: 0,
           title: Text('Profil',
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.dmSans(
                   color: GColors.textPrimary,
                   fontWeight: FontWeight.w500,
                   fontSize: 18)),
@@ -479,7 +786,7 @@ class _ProfilPageState extends State<ProfilPage> {
         ),
       );
     }
-
+ 
     return Scaffold(
       backgroundColor: GColors.surface,
       appBar: AppBar(
@@ -488,7 +795,7 @@ class _ProfilPageState extends State<ProfilPage> {
         scrolledUnderElevation: 1,
         shadowColor: GColors.divider,
         title: Text('Profil',
-            style: GoogleFonts.roboto(
+            style: GoogleFonts.dmSans(
                 color: GColors.textPrimary,
                 fontWeight: FontWeight.w500,
                 fontSize: 18)),
@@ -515,13 +822,11 @@ class _ProfilPageState extends State<ProfilPage> {
           final sehir = data['sehir'] ?? '';
           final telefon = data['telefon'] ?? '';
           final telefonGizli = data['telefonGizli'] == true;
-          final telefonGosterilsin =
-              telefon.isNotEmpty && !telefonGizli;
+          final telefonGosterilsin = telefon.isNotEmpty && !telefonGizli;
           final fotoUrl = data['fotoUrl'] ?? user.photoURL;
-
           final puanSayisi =
               ((data['degerlendirmeSayisi']) as num?)?.toInt() ?? 0;
-
+ 
           return SingleChildScrollView(
             child: Column(
               children: [
@@ -570,30 +875,29 @@ class _ProfilPageState extends State<ProfilPage> {
                       ),
                       const SizedBox(height: 14),
                       Text(adSoyad,
-                          style: GoogleFonts.roboto(
+                          style: GoogleFonts.dmSans(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
                               color: GColors.textPrimary)),
                       const SizedBox(height: 4),
                       Text(email,
-                          style: GoogleFonts.roboto(
-                              fontSize: 13,
-                              color: GColors.textSecondary)),
+                          style: GoogleFonts.dmSans(
+                              fontSize: 13, color: GColors.textSecondary)),
                       if (puanSayisi > 0) ...[
                         const SizedBox(height: 12),
                         DegerlendirmeWidget(kullaniciId: user.uid),
                       ],
-                      // Hakkımda
                       if ((data['notlar'] ?? '').toString().isNotEmpty) ...[
                         const SizedBox(height: 10),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 8),
                           child: Text(
                             data['notlar'].toString(),
                             textAlign: TextAlign.center,
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.roboto(
+                            style: GoogleFonts.dmSans(
                                 fontSize: 13,
                                 color: GColors.textSecondary,
                                 height: 1.4),
@@ -610,7 +914,7 @@ class _ProfilPageState extends State<ProfilPage> {
                                   size: 14, color: GColors.textSecondary),
                               const SizedBox(width: 4),
                               Text(sehir,
-                                  style: GoogleFonts.roboto(
+                                  style: GoogleFonts.dmSans(
                                       fontSize: 13,
                                       color: GColors.textSecondary)),
                             ],
@@ -621,7 +925,7 @@ class _ProfilPageState extends State<ProfilPage> {
                                   size: 14, color: GColors.textSecondary),
                               const SizedBox(width: 4),
                               Text(telefon,
-                                  style: GoogleFonts.roboto(
+                                  style: GoogleFonts.dmSans(
                                       fontSize: 13,
                                       color: GColors.textSecondary)),
                             ],
@@ -629,211 +933,16 @@ class _ProfilPageState extends State<ProfilPage> {
                         ),
                       ],
                       const SizedBox(height: 16),
-                      _ProfilDuzenleButonu(
-                          userId: user.uid, data: data),
+                      _ProfilDuzenleButonu(userId: user.uid, data: data),
                     ],
                   ),
                 ),
                 const SizedBox(height: 8),
-                Container(
-                  color: GColors.white,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                        child: Text('İlanlarım',
-                            style: GoogleFonts.roboto(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 15,
-                                color: GColors.textPrimary)),
-                      ),
-                      StreamBuilder<QuerySnapshot>(
-                        stream: FirebaseFirestore.instance
-                            .collection('ilanlar')
-                            .where('kullaniciId', isEqualTo: user.uid)
-                            .orderBy('olusturmaTarihi', descending: true)
-                            .snapshots(),
-                        builder: (context, snapshot) {
-                          final docs = snapshot.data?.docs ?? [];
-                          if (docs.isEmpty) {
-                            return Padding(
-                              padding: const EdgeInsets.all(24),
-                              child: Center(
-                                child: Text('Henüz ilan vermediniz.',
-                                    style: GoogleFonts.roboto(
-                                        color: GColors.textSecondary,
-                                        fontSize: 14)),
-                              ),
-                            );
-                          }
-                          return Column(
-                            children: docs.map((doc) {
-                              final d =
-                                  doc.data() as Map<String, dynamic>;
-                              final aktif = d['aktif'] != false;
-                              final tip = d['tip'] ?? 'istek';
-
-                              return ListTile(
-                                contentPadding:
-                                    const EdgeInsets.symmetric(
-                                        horizontal: 16, vertical: 4),
-                                // YENİ: tıklayınca detay açılır
-                                onTap: () => _ilanDetayGoster(
-                                    context, doc.id, d),
-                                leading: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: (d['resimUrl'] != null && (d['resimUrl'] as String).isNotEmpty)
-                                      ? CachedNetworkImage(
-                                          imageUrl: d['resimUrl'] as String,
-                                          width: 48,
-                                          height: 48,
-                                          fit: BoxFit.cover,
-                                          placeholder: (_, __) => Container(
-                                              width: 48, height: 48,
-                                              color: GColors.surface,
-                                              child: const Center(child: CircularProgressIndicator(strokeWidth: 1.5, color: GColors.divider))),
-                                          errorWidget: (_, __, ___) => _ilanLeadingEmoji(tip, aktif),
-                                        )
-                                      : _ilanLeadingEmoji(tip, aktif),
-                                ),
-                                title: Text(
-                                  tip == 'tasiyici'
-                                      ? '${d['nereden']} → ${d['nereye']}'
-                                      : d['urun'] ?? '',
-                                  style: GoogleFonts.roboto(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: aktif
-                                          ? GColors.textPrimary
-                                          : GColors.textSecondary),
-                                ),
-                                subtitle: Text(
-                                  aktif ? 'Aktif' : 'Pasif',
-                                  style: GoogleFonts.roboto(
-                                      fontSize: 12,
-                                      color: aktif
-                                          ? const Color(0xFF2E7D32)
-                                          : GColors.textHint),
-                                ),
-                                trailing: PopupMenuButton<String>(
-                                  icon: const Icon(Icons.more_vert,
-                                      color: GColors.textSecondary,
-                                      size: 20),
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10)),
-                                  onSelected: (value) async {
-                                    if (value == 'duzenle') {
-                                      _ilanDuzenle(context, doc.id, d);
-                                    } else if (value == 'pasif') {
-                                      await FirebaseFirestore.instance
-                                          .collection('ilanlar')
-                                          .doc(doc.id)
-                                          .update({'aktif': !aktif});
-                                    } else if (value == 'sil') {
-                                      final onay = await showDialog<bool>(
-                                        context: context,
-                                        builder: (ctx) => AlertDialog(
-                                          shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(12)),
-                                          title: Text('İlanı Sil',
-                                              style: GoogleFonts.roboto(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w600)),
-                                          content: Text(
-                                              'Bu ilanı silmek istediğinize emin misiniz?',
-                                              style: GoogleFonts.roboto(
-                                                  fontSize: 14,
-                                                  color: GColors.textSecondary)),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(ctx, false),
-                                              child: Text('İptal',
-                                                  style: GoogleFonts.roboto(
-                                                      color: GColors.textSecondary)),
-                                            ),
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(ctx, true),
-                                              child: Text('Sil',
-                                                  style: GoogleFonts.roboto(
-                                                      color: GColors.red,
-                                                      fontWeight: FontWeight.w700)),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                      if (onay == true) {
-                                        await FirebaseFirestore.instance
-                                            .collection('ilanlar')
-                                            .doc(doc.id)
-                                            .delete();
-                                      }
-                                    }
-                                  },
-                                  itemBuilder: (context) => [
-                                    PopupMenuItem(
-                                      value: 'duzenle',
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.edit_outlined,
-                                              size: 18,
-                                              color: GColors.textPrimary),
-                                          const SizedBox(width: 10),
-                                          Text('Düzenle',
-                                              style: GoogleFonts.roboto(
-                                                  fontSize: 14)),
-                                        ],
-                                      ),
-                                    ),
-                                    PopupMenuItem(
-                                      value: 'pasif',
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            aktif
-                                                ? Icons.pause_circle_outline
-                                                : Icons.play_circle_outline,
-                                            size: 18,
-                                            color: GColors.textPrimary,
-                                          ),
-                                          const SizedBox(width: 10),
-                                          Text(
-                                            aktif ? 'Pasife Al' : 'Aktife Al',
-                                            style: GoogleFonts.roboto(
-                                                fontSize: 14),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    PopupMenuItem(
-                                      value: 'sil',
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.delete_outline,
-                                              size: 18, color: GColors.red),
-                                          const SizedBox(width: 10),
-                                          Text('Sil',
-                                              style: GoogleFonts.roboto(
-                                                  fontSize: 14,
-                                                  color: GColors.red)),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
+                _IlanlarimWidget(
+                  userId: user.uid,
+                  onDetay: _ilanDetayGoster,
+                  onDuzenle: _ilanDuzenle,
                 ),
-                const SizedBox(height: 8),
-                _BekleyenDegerlendirmeler(userId: user.uid),
                 const SizedBox(height: 8),
                 if (puanSayisi > 0)
                   _DegerlendirmelerListesi(userId: user.uid),
@@ -846,50 +955,447 @@ class _ProfilPageState extends State<ProfilPage> {
     );
   }
 }
-
+ 
+// ── İlanlarım Widget ──────────────────────────────────────
+ 
+class _IlanlarimWidget extends StatefulWidget {
+  final String userId;
+  final Function(BuildContext, String, Map<String, dynamic>) onDetay;
+  final Function(BuildContext, String, Map<String, dynamic>) onDuzenle;
+ 
+  const _IlanlarimWidget({
+    required this.userId,
+    required this.onDetay,
+    required this.onDuzenle,
+  });
+ 
+  @override
+  State<_IlanlarimWidget> createState() => _IlanlarimWidgetState();
+}
+ 
+class _IlanlarimWidgetState extends State<_IlanlarimWidget> {
+  void _yenile() => setState(() {});
+ 
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: GColors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(
+              children: [
+                Text('İlanlarım',
+                    style: GoogleFonts.dmSans(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        color: GColors.textPrimary)),
+                const Spacer(),
+                GestureDetector(
+                  onTap: _yenile,
+                  child: const Icon(Icons.refresh,
+                      size: 18, color: GColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('ilanlar')
+                .where('kullaniciId', isEqualTo: widget.userId)
+                .orderBy('olusturmaTarihi', descending: true)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Center(
+                      child: CircularProgressIndicator(
+                          color: GColors.red, strokeWidth: 2)),
+                );
+              }
+              final docs = snapshot.data?.docs ?? [];
+              if (docs.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Center(
+                    child: Text('Henüz ilan vermediniz.',
+                        style: GoogleFonts.dmSans(
+                            color: GColors.textSecondary, fontSize: 14)),
+                  ),
+                );
+              }
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: 0.75,
+                  ),
+                  itemCount: docs.length,
+                  itemBuilder: (context, index) {
+                    final doc = docs[index];
+                    final d = doc.data() as Map<String, dynamic>;
+                    final aktif = d['aktif'] != false;
+                    final tip = d['tip'] ?? 'istek';
+                    final resimUrl = d['resimUrl'] as String?;
+                    final resimVar =
+                        resimUrl != null && resimUrl.isNotEmpty;
+                    final baslik = tip == 'tasiyici'
+                        ? '${d['nereden']} → ${d['nereye']}'
+                        : (d['urun'] ?? '');
+ 
+                    return GestureDetector(
+                      onTap: () =>
+                          widget.onDetay(context, doc.id, d),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: GColors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: GColors.divider),
+                          boxShadow: [
+                            BoxShadow(
+                              color:
+                                  Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Resim bölümü
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(12)),
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    resimVar
+                                        ? CachedNetworkImage(
+                                            imageUrl: resimUrl,
+                                            fit: BoxFit.cover,
+                                            fadeInDuration: Duration.zero,
+                                            placeholder: (_, __) =>
+                                                Container(
+                                                    color: GColors.surface),
+                                            errorWidget: (_, __, ___) =>
+                                                Container(
+                                                    color: GColors.surface,
+                                                    child: Center(
+                                                        child: Text(
+                                                      tip == 'tasiyici'
+                                                          ? '✈️'
+                                                          : '🛍️',
+                                                      style: const TextStyle(
+                                                          fontSize: 32),
+                                                    ))),
+                                          )
+                                        : Container(
+                                            color: GColors.surface,
+                                            child: Center(
+                                                child: Text(
+                                              tip == 'tasiyici'
+                                                  ? '✈️'
+                                                  : '🛍️',
+                                              style: const TextStyle(
+                                                  fontSize: 32),
+                                            )),
+                                          ),
+                                    // Aktif/Pasif badge
+                                    Positioned(
+                                      top: 8,
+                                      left: 8,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 7, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: aktif
+                                              ? const Color(0xFF2E7D32)
+                                              : GColors.textHint,
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          aktif ? 'Aktif' : 'Pasif',
+                                          style: GoogleFonts.dmSans(
+                                              fontSize: 10,
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w600),
+                                        ),
+                                      ),
+                                    ),
+                                    // 3 nokta menü
+                                    Positioned(
+                                      top: 4,
+                                      right: 4,
+                                      child: PopupMenuButton<String>(
+                                        icon: const Icon(
+                                            Icons.more_vert,
+                                            color: Colors.white,
+                                            size: 20),
+                                        color: GColors.white,
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(10)),
+                                        onSelected: (value) async {
+                                          if (value == 'duzenle') {
+                                            widget.onDuzenle(
+                                                context, doc.id, d);
+                                            await Future.delayed(
+                                                const Duration(
+                                                    milliseconds: 500));
+                                            _yenile();
+                                          } else if (value == 'pasif') {
+                                            await FirebaseFirestore.instance
+                                                .collection('ilanlar')
+                                                .doc(doc.id)
+                                                .update(
+                                                    {'aktif': !aktif});
+                                            _yenile();
+                                          } else if (value == 'sil') {
+                                            final onay =
+                                                await showDialog<bool>(
+                                              context: context,
+                                              builder: (ctx) => AlertDialog(
+                                                shape:
+                                                    RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(
+                                                                    12)),
+                                                title: Text('İlanı Sil',
+                                                    style:
+                                                        GoogleFonts.dmSans(
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w600)),
+                                                content: Text(
+                                                    'Bu ilanı silmek istediğinize emin misiniz?',
+                                                    style:
+                                                        GoogleFonts.dmSans(
+                                                            fontSize: 14,
+                                                            color: GColors
+                                                                .textSecondary)),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.pop(
+                                                            ctx, false),
+                                                    child: Text('İptal',
+                                                        style: GoogleFonts
+                                                            .dmSans(
+                                                                color: GColors
+                                                                    .textSecondary)),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.pop(
+                                                            ctx, true),
+                                                    child: Text('Sil',
+                                                        style: GoogleFonts
+                                                            .dmSans(
+                                                                color: GColors
+                                                                    .red,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w700)),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                            if (onay == true) {
+                                              await FirebaseFirestore
+                                                  .instance
+                                                  .collection('ilanlar')
+                                                  .doc(doc.id)
+                                                  .delete();
+                                              _yenile();
+                                            }
+                                          }
+                                        },
+                                        itemBuilder: (context) => [
+                                          PopupMenuItem(
+                                            value: 'duzenle',
+                                            child: Row(children: [
+                                              const Icon(
+                                                  Icons.edit_outlined,
+                                                  size: 18,
+                                                  color:
+                                                      GColors.textPrimary),
+                                              const SizedBox(width: 10),
+                                              Text('Düzenle',
+                                                  style:
+                                                      GoogleFonts.dmSans(
+                                                          fontSize: 14)),
+                                            ]),
+                                          ),
+                                          PopupMenuItem(
+                                            value: 'pasif',
+                                            child: Row(children: [
+                                              Icon(
+                                                aktif
+                                                    ? Icons
+                                                        .pause_circle_outline
+                                                    : Icons
+                                                        .play_circle_outline,
+                                                size: 18,
+                                                color: GColors.textPrimary,
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                  aktif
+                                                      ? 'Pasife Al'
+                                                      : 'Aktife Al',
+                                                  style:
+                                                      GoogleFonts.dmSans(
+                                                          fontSize: 14)),
+                                            ]),
+                                          ),
+                                          PopupMenuItem(
+                                            value: 'sil',
+                                            child: Row(children: [
+                                              const Icon(
+                                                  Icons.delete_outline,
+                                                  size: 18,
+                                                  color: GColors.red),
+                                              const SizedBox(width: 10),
+                                              Text('Sil',
+                                                  style:
+                                                      GoogleFonts.dmSans(
+                                                          fontSize: 14,
+                                                          color:
+                                                              GColors.red)),
+                                            ]),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            // Alt bilgi
+                            Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    baslik,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.dmSans(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: aktif
+                                            ? GColors.textPrimary
+                                            : GColors.textSecondary,
+                                        height: 1.3),
+                                  ),
+                                  if (tip == 'istek' &&
+                                      (d['nereye'] ?? '').isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                            Icons.location_on_outlined,
+                                            size: 11,
+                                            color: GColors.red),
+                                        const SizedBox(width: 2),
+                                        Expanded(
+                                          child: Text(
+                                            d['nereye']
+                                                .toString()
+                                                .toUpperCase(),
+                                            overflow: TextOverflow.ellipsis,
+                                            style: GoogleFonts.dmSans(
+                                                fontSize: 10,
+                                                color: GColors.red,
+                                                fontWeight: FontWeight.w600,
+                                                letterSpacing: 0.5),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                  if ((d['ucret'] ?? '').isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '₺${d["ucret"]}',
+                                      style: GoogleFonts.dmSans(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                          color: GColors.red),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+}
+ 
 // ── Profil Düzenle Butonu ─────────────────────────────────
-
+ 
 class _ProfilDuzenleButonu extends StatelessWidget {
   final String userId;
   final Map<String, dynamic> data;
-  const _ProfilDuzenleButonu(
-      {required this.userId, required this.data});
-
+  const _ProfilDuzenleButonu({required this.userId, required this.data});
+ 
   @override
   Widget build(BuildContext context) {
     return OutlinedButton.icon(
       onPressed: () => _profilDuzenleGoster(context),
       icon: const Icon(Icons.edit_outlined, size: 16),
-      label: Text('Profili Düzenle',
-          style: GoogleFonts.roboto(fontSize: 13)),
+      label: Text('Profili Düzenle', style: GoogleFonts.dmSans(fontSize: 13)),
       style: OutlinedButton.styleFrom(
         foregroundColor: GColors.primary,
         side: const BorderSide(color: GColors.divider),
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8)),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       ),
     );
   }
-
+ 
   void _profilDuzenleGoster(BuildContext context) {
-    final adCtrl = TextEditingController(
-        text: data['adSoyad']?.toString() ?? '');
+    final adCtrl =
+        TextEditingController(text: data['adSoyad']?.toString() ?? '');
     final sehirCtrl =
         TextEditingController(text: data['sehir']?.toString() ?? '');
     final telefonCtrl =
         TextEditingController(text: data['telefon']?.toString() ?? '');
     final notlarCtrl =
         TextEditingController(text: data['notlar']?.toString() ?? '');
-
+ 
     showModalBottomSheet(
       context: context,
       backgroundColor: GColors.white,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(16))),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (context) => Padding(
         padding: EdgeInsets.only(
           left: 20,
@@ -913,7 +1419,7 @@ class _ProfilDuzenleButonu extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Text('Profili Düzenle',
-                  style: GoogleFonts.roboto(
+                  style: GoogleFonts.dmSans(
                       fontSize: 17, fontWeight: FontWeight.w600)),
               const SizedBox(height: 20),
               DuzenleAlani(label: 'Ad Soyad', controller: adCtrl),
@@ -958,7 +1464,7 @@ class _ProfilDuzenleButonu extends StatelessWidget {
                     elevation: 0,
                   ),
                   child: Text('Kaydet',
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.dmSans(
                           color: GColors.white,
                           fontWeight: FontWeight.w500,
                           fontSize: 15)),
@@ -971,144 +1477,13 @@ class _ProfilDuzenleButonu extends StatelessWidget {
     );
   }
 }
-
+ 
 // ── Değerlendirmeler Listesi ──────────────────────────────
-
-// ── Bekleyen Değerlendirmeler ─────────────────────────────
-
-class _BekleyenDegerlendirmeler extends StatelessWidget {
-  final String userId;
-  const _BekleyenDegerlendirmeler({required this.userId});
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('sohbetler')
-          .where('kullanicilar', arrayContains: userId)
-          .where('siparisAsamasi', isEqualTo: 3)
-          .where('degerlendirmeYapildi', isEqualTo: false)
-          .snapshots(),
-      builder: (context, snapshot) {
-        final docs = snapshot.data?.docs ?? [];
-        if (docs.isEmpty) return const SizedBox.shrink();
-
-        return Container(
-          color: GColors.white,
-          margin: const EdgeInsets.only(bottom: 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Row(
-                  children: [
-                    const Icon(Icons.star_rounded,
-                        color: Color(0xFFFFB300), size: 18),
-                    const SizedBox(width: 6),
-                    Text('Bekleyen Değerlendirmeler',
-                        style: GoogleFonts.roboto(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                            color: GColors.textPrimary)),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 7, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFB300),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text('${docs.length}',
-                          style: GoogleFonts.roboto(
-                              fontSize: 11,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700)),
-                    ),
-                  ],
-                ),
-              ),
-              ...docs.map((doc) {
-                final data = doc.data() as Map<String, dynamic>;
-                final kullanicilar =
-                    List<String>.from(data['kullanicilar'] ?? []);
-                final karsiId =
-                    kullanicilar.firstWhere((id) => id != userId,
-                        orElse: () => '');
-                final adlar = data['kullaniciAdlari'] as Map? ?? {};
-                final karsiAd = adlar[karsiId]?.toString() ?? 'Kullanıcı';
-                final ilanBaslik =
-                    data['ilanBaslik']?.toString() ?? '';
-
-                return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 4),
-                  leading: avatarWidget(isim: karsiAd, radius: 20),
-                  title: Text(karsiAd,
-                      style: GoogleFonts.roboto(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: GColors.textPrimary)),
-                  subtitle: ilanBaslik.isNotEmpty
-                      ? Text(ilanBaslik,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.roboto(
-                              fontSize: 12,
-                              color: GColors.textSecondary))
-                      : null,
-                  trailing: GestureDetector(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => DegerlendirmeScreen(
-                          hedefKullaniciId: karsiId,
-                          hedefKullaniciAd: karsiAd,
-                          sohbetId: doc.id,
-                          ilanBaslik: ilanBaslik,
-                        ),
-                      ),
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 7),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFB300),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text('Değerlendir',
-                          style: GoogleFonts.roboto(
-                              fontSize: 12,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600)),
-                    ),
-                  ),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => SohbetScreen(
-                        karsiKullaniciId: karsiId,
-                        karsiKullaniciAd: karsiAd,
-                        ilanId: data['ilanId']?.toString() ?? '',
-                        ilanBaslik: ilanBaslik,
-                      ),
-                    ),
-                  ),
-                );
-              }),
-              const SizedBox(height: 8),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
+ 
 class _DegerlendirmelerListesi extends StatelessWidget {
   final String userId;
   const _DegerlendirmelerListesi({required this.userId});
-
+ 
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -1119,7 +1494,7 @@ class _DegerlendirmelerListesi extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Text('Değerlendirmeler',
-                style: GoogleFonts.roboto(
+                style: GoogleFonts.dmSans(
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
                     color: GColors.textPrimary)),
@@ -1147,16 +1522,13 @@ class _DegerlendirmelerListesi extends StatelessWidget {
                     title: Row(
                       children: [
                         Text(ad,
-                            style: GoogleFonts.roboto(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500)),
+                            style: GoogleFonts.dmSans(
+                                fontSize: 13, fontWeight: FontWeight.w500)),
                         const Spacer(),
                         ...List.generate(
                             5,
                             (i) => Icon(
-                                  i < puan
-                                      ? Icons.star
-                                      : Icons.star_border,
+                                  i < puan ? Icons.star : Icons.star_border,
                                   size: 13,
                                   color: const Color(0xFFFFB300),
                                 )),
@@ -1164,9 +1536,8 @@ class _DegerlendirmelerListesi extends StatelessWidget {
                     ),
                     subtitle: yorum.isNotEmpty
                         ? Text(yorum,
-                            style: GoogleFonts.roboto(
-                                fontSize: 12,
-                                color: GColors.textSecondary))
+                            style: GoogleFonts.dmSans(
+                                fontSize: 12, color: GColors.textSecondary))
                         : null,
                   );
                 }).toList(),
@@ -1178,34 +1549,4 @@ class _DegerlendirmelerListesi extends StatelessWidget {
       ),
     );
   }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Widget _ilanLeadingEmoji(String tip, bool aktif) {
-  return Container(
-    width: 48, height: 48,
-    decoration: BoxDecoration(
-      color: aktif ? GColors.chipBg : GColors.divider,
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: Center(
-      child: Text(
-        tip == 'tasiyici' ? '✈️' : '🛍️',
-        style: const TextStyle(fontSize: 20),
-      ),
-    ),
-  );
 }
