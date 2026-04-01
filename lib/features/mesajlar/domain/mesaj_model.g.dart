@@ -1,0 +1,78 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'mesaj_model.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+_MesajModel _$MesajModelFromJson(Map<String, dynamic> json) => _MesajModel(
+  id: json['id'] as String,
+  metin: json['metin'] as String,
+  gondereId: json['gondereId'] as String,
+  gondereAd: json['gondereAd'] as String? ?? '',
+  tip: $enumDecodeNullable(_$MesajTipEnumMap, json['tip']) ?? MesajTip.mesaj,
+  zaman: const TimestampConverter().fromJson(json['zaman']),
+  okundu: json['okundu'] as bool? ?? false,
+);
+
+Map<String, dynamic> _$MesajModelToJson(_MesajModel instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'metin': instance.metin,
+      'gondereId': instance.gondereId,
+      'gondereAd': instance.gondereAd,
+      'tip': _$MesajTipEnumMap[instance.tip]!,
+      'zaman': const TimestampConverter().toJson(instance.zaman),
+      'okundu': instance.okundu,
+    };
+
+const _$MesajTipEnumMap = {MesajTip.mesaj: 'mesaj', MesajTip.sistem: 'sistem'};
+
+_SohbetModel _$SohbetModelFromJson(Map<String, dynamic> json) => _SohbetModel(
+  id: json['id'] as String,
+  kullanicilar: (json['kullanicilar'] as List<dynamic>)
+      .map((e) => e as String)
+      .toList(),
+  kullaniciAdlari:
+      (json['kullaniciAdlari'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(k, e as String),
+      ) ??
+      const {},
+  ilanId: json['ilanId'] as String,
+  ilanBaslik: json['ilanBaslik'] as String? ?? '',
+  ilanResimUrl: json['ilanResimUrl'] as String? ?? '',
+  sonMesaj: json['sonMesaj'] as String?,
+  sonMesajZamani: const TimestampConverter().fromJson(json['sonMesajZamani']),
+  sonGondereId: json['sonGondereId'] as String? ?? '',
+  okunmamis:
+      (json['okunmamis'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(k, (e as num).toInt()),
+      ) ??
+      const {},
+  gizli: json['gizli'] as Map<String, dynamic>? ?? const {},
+  sabitlenmis:
+      (json['sabitlenmis'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(k, e as bool),
+      ) ??
+      const {},
+  degerlendirmeYapildi: json['degerlendirmeYapildi'] as bool? ?? false,
+);
+
+Map<String, dynamic> _$SohbetModelToJson(
+  _SohbetModel instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'kullanicilar': instance.kullanicilar,
+  'kullaniciAdlari': instance.kullaniciAdlari,
+  'ilanId': instance.ilanId,
+  'ilanBaslik': instance.ilanBaslik,
+  'ilanResimUrl': instance.ilanResimUrl,
+  'sonMesaj': instance.sonMesaj,
+  'sonMesajZamani': const TimestampConverter().toJson(instance.sonMesajZamani),
+  'sonGondereId': instance.sonGondereId,
+  'okunmamis': instance.okunmamis,
+  'gizli': instance.gizli,
+  'sabitlenmis': instance.sabitlenmis,
+  'degerlendirmeYapildi': instance.degerlendirmeYapildi,
+};
