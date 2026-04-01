@@ -504,18 +504,27 @@ class _AutocompleteAlanState extends State<_AutocompleteAlan> {
   bool _acik = false;
  
   void _filtrele(String q) {
-    if (q.isEmpty) {
-      setState(() => _acik = false);
-      return;
-    }
-    setState(() {
-      _acik = true;
-      _filtreli = widget.secenekler
-          .where((s) => s.toLowerCase().contains(q.toLowerCase()))
-          .take(8)
-          .toList();
-    });
+  if (q.isEmpty) {
+    setState(() => _acik = false);
+    return;
   }
+  final ql = q.toLowerCase();
+  final baslayan = widget.secenekler
+      .where((s) => s.toLowerCase().startsWith(ql))
+      .toList();
+  final icerenler = widget.secenekler
+      .where((s) => !s.toLowerCase().startsWith(ql) && s.toLowerCase().contains(ql))
+      .toList();
+  setState(() {
+    _acik = true;
+    final tumSonuclar = [...baslayan, ...icerenler];
+    if (tumSonuclar.length == 1) {
+      _filtreli = tumSonuclar;
+    } else {
+      _filtreli = tumSonuclar.take(8).toList();
+    }
+  });
+}
  
   @override
   Widget build(BuildContext context) {
