@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shimmer/shimmer.dart';
 import '../domain/ilan_model.dart';
 import '../data/ilan_repository.dart';
 import '../providers/ilan_provider.dart';
@@ -14,12 +15,7 @@ import '../../../shared/constants/app_constants.dart';
  
 // ── Sıralama Tipi ─────────────────────────────────────────
  
-enum SiralamaTipi {
-  enYeni,
-  enEski,
-  ucretArtan,
-  ucretAzalan,
-}
+enum SiralamaTipi { enYeni, enEski, ucretArtan, ucretAzalan }
  
 extension SiralamaTipiX on SiralamaTipi {
   String get label {
@@ -69,25 +65,21 @@ class _IsteklerScreenState extends ConsumerState<IsteklerScreen> {
       case SiralamaTipi.enYeni:
         kopya.sort((a, b) => (b.olusturmaTarihi ?? DateTime(0))
             .compareTo(a.olusturmaTarihi ?? DateTime(0)));
-        break;
       case SiralamaTipi.enEski:
         kopya.sort((a, b) => (a.olusturmaTarihi ?? DateTime(0))
             .compareTo(b.olusturmaTarihi ?? DateTime(0)));
-        break;
       case SiralamaTipi.ucretArtan:
         kopya.sort((a, b) {
-          final aUcret = double.tryParse(a.ucret) ?? 0;
-          final bUcret = double.tryParse(b.ucret) ?? 0;
-          return aUcret.compareTo(bUcret);
+          final aU = double.tryParse(a.ucret) ?? 0;
+          final bU = double.tryParse(b.ucret) ?? 0;
+          return aU.compareTo(bU);
         });
-        break;
       case SiralamaTipi.ucretAzalan:
         kopya.sort((a, b) {
-          final aUcret = double.tryParse(a.ucret) ?? 0;
-          final bUcret = double.tryParse(b.ucret) ?? 0;
-          return bUcret.compareTo(aUcret);
+          final aU = double.tryParse(a.ucret) ?? 0;
+          final bU = double.tryParse(b.ucret) ?? 0;
+          return bU.compareTo(aU);
         });
-        break;
     }
     return kopya;
   }
@@ -115,7 +107,8 @@ class _IsteklerScreenState extends ConsumerState<IsteklerScreen> {
         actions: [
           TextButton.icon(
             onPressed: () => _siralamaSheet(),
-            icon: const Icon(Icons.sort, color: AppColors.textPrimary, size: 18),
+            icon: const Icon(Icons.sort,
+                color: AppColors.textPrimary, size: 18),
             label: Text(
               _siralama.label.split(':').first,
               style: GoogleFonts.dmSans(
@@ -134,9 +127,7 @@ class _IsteklerScreenState extends ConsumerState<IsteklerScreen> {
         ),
       ),
       body: state.yukleniyor && ilanlar.isEmpty
-          ? const Center(
-              child: CircularProgressIndicator(
-                  color: AppColors.red, strokeWidth: 2))
+          ? _ShimmerGrid()
           : ilanlar.isEmpty
               ? _BosEkran(
                   onYenile: () =>
@@ -178,7 +169,8 @@ class _IsteklerScreenState extends ConsumerState<IsteklerScreen> {
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+          borderRadius:
+              BorderRadius.vertical(top: Radius.circular(16))),
       builder: (ctx) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -239,6 +231,60 @@ class _IsteklerScreenState extends ConsumerState<IsteklerScreen> {
   }
 }
  
+// ── Shimmer Grid ──────────────────────────────────────────
+ 
+class _ShimmerGrid extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[200]!,
+      highlightColor: Colors.grey[50]!,
+      child: MasonryGridView.count(
+        crossAxisCount: 2,
+        mainAxisSpacing: 6,
+        crossAxisSpacing: 6,
+        padding: const EdgeInsets.all(6),
+        itemCount: 6,
+        itemBuilder: (context, index) {
+          final heights = [160.0, 200.0, 140.0, 180.0, 220.0, 150.0];
+          final h = heights[index % heights.length];
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  height: h,
+                  color: Colors.white,
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                          height: 12, width: double.infinity,
+                          color: Colors.white),
+                      const SizedBox(height: 6),
+                      Container(
+                          height: 10, width: 80, color: Colors.white),
+                      const SizedBox(height: 6),
+                      Container(
+                          height: 12, width: 60, color: Colors.white),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+ 
 // ── Kategori Bar ──────────────────────────────────────────
  
 class _KategoriBar extends StatelessWidget {
@@ -257,7 +303,8 @@ class _KategoriBar extends StatelessWidget {
       height: 44,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         children: [
           _KategoriChip(
             label: 'Tümü',
@@ -306,8 +353,11 @@ class _KategoriChip extends StatelessWidget {
           label,
           style: GoogleFonts.dmSans(
             fontSize: 13,
-            color: secili ? AppColors.red : AppColors.textSecondary,
-            fontWeight: secili ? FontWeight.w600 : FontWeight.w400,
+            color: secili
+                ? AppColors.red
+                : AppColors.textSecondary,
+            fontWeight:
+                secili ? FontWeight.w600 : FontWeight.w400,
           ),
         ),
       ),
@@ -315,7 +365,7 @@ class _KategoriChip extends StatelessWidget {
   }
 }
  
-// ── İlan Kartı ────────────────────────────────────────────
+// ── İlan Kartı (Hero destekli) ────────────────────────────
  
 class _IlanKarti extends ConsumerWidget {
   final IlanModel ilan;
@@ -369,17 +419,29 @@ class _IlanKarti extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            resimler.isNotEmpty
-                ? CachedNetworkImage(
-                    imageUrl: resimler.first,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    fadeInDuration: Duration.zero,
-                    placeholder: (_, __) => Container(
-                      height: _resimYuksekligi(),
-                      color: AppColors.surface,
-                    ),
-                    errorWidget: (_, __, ___) => Container(
+            // Hero resim
+            Hero(
+              tag: 'ilan_resim_${ilan.id}',
+              child: resimler.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: resimler.first,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      fadeInDuration: Duration.zero,
+                      placeholder: (_, __) => Container(
+                        height: _resimYuksekligi(),
+                        color: AppColors.surface,
+                      ),
+                      errorWidget: (_, __, ___) => Container(
+                        height: _resimYuksekligi(),
+                        color: AppColors.surface,
+                        child: const Center(
+                          child: Icon(Icons.image_outlined,
+                              color: AppColors.textHint, size: 32),
+                        ),
+                      ),
+                    )
+                  : Container(
                       height: _resimYuksekligi(),
                       color: AppColors.surface,
                       child: const Center(
@@ -387,15 +449,7 @@ class _IlanKarti extends ConsumerWidget {
                             color: AppColors.textHint, size: 32),
                       ),
                     ),
-                  )
-                : Container(
-                    height: _resimYuksekligi(),
-                    color: AppColors.surface,
-                    child: const Center(
-                      child: Icon(Icons.image_outlined,
-                          color: AppColors.textHint, size: 32),
-                    ),
-                  ),
+            ),
  
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 7, 8, 8),
@@ -539,7 +593,8 @@ class _BosEkran extends StatelessWidget {
           OutlinedButton(
             onPressed: onYenile,
             child: Text('Yenile',
-                style: GoogleFonts.dmSans(color: AppColors.primary)),
+                style:
+                    GoogleFonts.dmSans(color: AppColors.primary)),
           ),
         ],
       ),

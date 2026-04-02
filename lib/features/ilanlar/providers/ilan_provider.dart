@@ -308,3 +308,7 @@ Stream<bool> ilanFavorideMi(Ref ref, String ilanId) {
     ilanId: ilanId,
   );
 }
+@riverpod
+Stream<List<IlanModel>> kullaniciIlanlarStream(Ref ref, String kullaniciId) {
+  return ref.watch(ilanRepositoryProvider).kullaniciIlanlarStream(kullaniciId);
+}

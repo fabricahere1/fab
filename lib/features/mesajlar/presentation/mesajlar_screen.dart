@@ -232,6 +232,7 @@ class _SohbetKarti extends ConsumerWidget {
             ilanBaslik: ilanBaslik,
             ilanResimUrl:
                 ilanResimUrl.isNotEmpty ? ilanResimUrl : null,
+            sohbetId: sohbetId,
           ),
         ),
       ),
@@ -283,7 +284,7 @@ class _SohbetKarti extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          karsiAd,
+                          ilanBaslik.isNotEmpty ? ilanBaslik : karsiAd,
                           style: GoogleFonts.dmSans(
                             fontSize: 15,
                             fontWeight: okunmamisSayi > 0
@@ -309,7 +310,7 @@ class _SohbetKarti extends ConsumerWidget {
                   const SizedBox(height: 2),
                   if (ilanBaslik.isNotEmpty)
                     Text(
-                      ilanBaslik,
+                      karsiAd,
                       style: GoogleFonts.dmSans(
                           fontSize: 11,
                           color: AppColors.textSecondary),

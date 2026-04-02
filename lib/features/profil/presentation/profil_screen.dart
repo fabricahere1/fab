@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'ayarlar_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../presentation/ilanlarim_screen.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../favoriler/presentation/favoriler_screen.dart';
+import 'ilanlarim_screen.dart';
+import 'ayarlar_screen.dart';
+import 'profil_duzenle_screen.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/widgets/avatar_widget.dart';
  
@@ -65,18 +66,10 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
             style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
         backgroundColor: Colors.white,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined,
-                color: AppColors.textPrimary),
-            onPressed: () {
-              // TODO: Ayarlar sayfası
-            },
-          ),
-        ],
       ),
       body: ListView(
         children: [
+          // ── Profil Kartı ───────────────────────────────
           Container(
             color: Colors.white,
             padding: const EdgeInsets.all(20),
@@ -137,9 +130,11 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                 IconButton(
                   icon: const Icon(Icons.edit_outlined,
                       color: AppColors.textSecondary, size: 20),
-                  onPressed: () {
-                    // TODO: Profil düzenle
-                  },
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const ProfilDuzenleScreen()),
+                  ),
                 ),
               ],
             ),
@@ -151,15 +146,15 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
             color: Colors.white,
             child: Column(
               children: [
-               _MenuOgesi(
-  icon: Icons.list_alt_outlined,
-  label: 'İlanlarım',
-  onTap: () => Navigator.push(
-    context,
-    MaterialPageRoute(
-        builder: (_) => const IlanlarimScreen()),
-  ),
-),
+                _MenuOgesi(
+                  icon: Icons.list_alt_outlined,
+                  label: 'İlanlarım',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const IlanlarimScreen()),
+                  ),
+                ),
                 const Divider(height: 1, indent: 56),
                 _MenuOgesi(
                   icon: Icons.favorite_border_outlined,
@@ -195,13 +190,14 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                 ),
                 const Divider(height: 1, indent: 56),
                 _MenuOgesi(
-  icon: Icons.settings_outlined,
-  label: 'Ayarlar',
-  onTap: () => Navigator.push(
-    context,
-    MaterialPageRoute(builder: (_) => const AyarlarScreen()),
-  ),
-),
+                  icon: Icons.settings_outlined,
+                  label: 'Ayarlar',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const AyarlarScreen()),
+                  ),
+                ),
                 const Divider(height: 1, indent: 56),
                 _MenuOgesi(
                   icon: Icons.mail_outline,
@@ -278,11 +274,13 @@ class _MenuOgesi extends StatelessWidget {
             Icon(icon, color: iconColor, size: 22),
             const SizedBox(width: 16),
             Expanded(
-              child: Text(label,
-                  style: GoogleFonts.dmSans(
-                      fontSize: 15,
-                      color: labelColor,
-                      fontWeight: FontWeight.w500)),
+              child: Text(
+                label,
+                style: GoogleFonts.dmSans(
+                    fontSize: 15,
+                    color: labelColor,
+                    fontWeight: FontWeight.w500),
+              ),
             ),
             if (showArrow)
               const Icon(Icons.chevron_right,

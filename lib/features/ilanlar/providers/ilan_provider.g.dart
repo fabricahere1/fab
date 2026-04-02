@@ -274,3 +274,80 @@ final class IlanFavorideMiFamily extends $Family
   @override
   String toString() => r'ilanFavorideMiProvider';
 }
+
+@ProviderFor(kullaniciIlanlarStream)
+final kullaniciIlanlarStreamProvider = KullaniciIlanlarStreamFamily._();
+
+final class KullaniciIlanlarStreamProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<IlanModel>>,
+          List<IlanModel>,
+          Stream<List<IlanModel>>
+        >
+    with $FutureModifier<List<IlanModel>>, $StreamProvider<List<IlanModel>> {
+  KullaniciIlanlarStreamProvider._({
+    required KullaniciIlanlarStreamFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'kullaniciIlanlarStreamProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$kullaniciIlanlarStreamHash();
+
+  @override
+  String toString() {
+    return r'kullaniciIlanlarStreamProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<IlanModel>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<IlanModel>> create(Ref ref) {
+    final argument = this.argument as String;
+    return kullaniciIlanlarStream(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is KullaniciIlanlarStreamProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$kullaniciIlanlarStreamHash() =>
+    r'a77ed489851dce352f3d8a361c56e258163b1e90';
+
+final class KullaniciIlanlarStreamFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<IlanModel>>, String> {
+  KullaniciIlanlarStreamFamily._()
+    : super(
+        retry: null,
+        name: r'kullaniciIlanlarStreamProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  KullaniciIlanlarStreamProvider call(String kullaniciId) =>
+      KullaniciIlanlarStreamProvider._(argument: kullaniciId, from: this);
+
+  @override
+  String toString() => r'kullaniciIlanlarStreamProvider';
+}

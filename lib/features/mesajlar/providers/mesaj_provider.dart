@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -77,7 +78,11 @@ class SohbetEkraniState {
 class SohbetNotifier extends _$SohbetNotifier {
   late String _sohbetId;
   late String _benimId;
-  bool _okunduIsaretlendi = false;
+  StreamSubscription? _mesajSub;
+ 
+  // Debounce için — çok sık Firestore yazma önlenir
+  Timer? _okunduTimer;
+  String? _sonOkunduMesajId;
  
   @override
   SohbetEkraniState build({
@@ -92,7 +97,13 @@ class SohbetNotifier extends _$SohbetNotifier {
     _sohbetId = '${ids[0]}_${ids[1]}_$ilanId';
  
     _mesajlariDinle();
-    Future.microtask(() => _okunduIsaretle());
+ 
+    ref.onDispose(() {
+      _mesajSub?.cancel();
+      _mesajSub = null;
+      _okunduTimer?.cancel();
+      _okunduTimer = null;
+    });
  
     return const SohbetEkraniState();
   }
@@ -100,8 +111,10 @@ class SohbetNotifier extends _$SohbetNotifier {
   MesajRepository get _repo => ref.read(mesajRepositoryProvider);
  
   void _mesajlariDinle() {
+    _mesajSub?.cancel();
+ 
     final stream = _repo.mesajlarStream(sohbetId: _sohbetId);
-    stream.listen((snap) {
+    _mesajSub = stream.listen((snap) {
       final yeniMap =
           Map<String, Map<String, dynamic>>.from(state.mesajMap);
       for (final doc in snap.docs) {
@@ -117,8 +130,7 @@ class SohbetNotifier extends _$SohbetNotifier {
           mesajMap: yeniMap,
           siraliMesajlar: _sirala(yeniMap),
           yukleniyor: false,
-          dahaFazlaVar:
-              snap.docs.length >= Pagination.mesajSayfaBoyutu,
+          dahaFazlaVar: snap.docs.length >= Pagination.mesajSayfaBoyutu,
           enEskiDoc: snap.docs.last,
         );
       } else {
@@ -130,20 +142,41 @@ class SohbetNotifier extends _$SohbetNotifier {
         );
       }
  
-      if (!_okunduIsaretlendi && yeniMap.isNotEmpty) {
-        _okunduIsaretle();
+      // Yeni mesaj var mı kontrol et, varsa okundu işaretle
+      // Debounce ile gereksiz Firestore yazımını önle
+      if (snap.docs.isNotEmpty) {
+        final sonMesajId = snap.docs.first.id;
+        if (_sonOkunduMesajId != sonMesajId) {
+          _sonOkunduMesajId = sonMesajId;
+          _okunduDebounce();
+        }
       }
     });
+  }
+ 
+  // 500ms debounce — ekranda hızlı mesaj gelirse tek seferde işaretle
+  void _okunduDebounce() {
+    _okunduTimer?.cancel();
+    _okunduTimer = Timer(const Duration(milliseconds: 500), () {
+      _okunduIsaretle();
+    });
+  }
+ 
+  Future<void> _okunduIsaretle() async {
+    try {
+      await _repo.okunduIsaretle(
+        sohbetId: _sohbetId,
+        kullaniciId: _benimId,
+      );
+    } catch (_) {}
   }
  
   List<Map<String, dynamic>> _sirala(
       Map<String, Map<String, dynamic>> map) {
     final liste = map.values.toList();
     liste.sort((a, b) {
-      final zamanA =
-          (a['zaman'] as Timestamp).millisecondsSinceEpoch;
-      final zamanB =
-          (b['zaman'] as Timestamp).millisecondsSinceEpoch;
+      final zamanA = (a['zaman'] as Timestamp).millisecondsSinceEpoch;
+      final zamanB = (b['zaman'] as Timestamp).millisecondsSinceEpoch;
       return zamanB.compareTo(zamanA);
     });
     return liste;
@@ -169,10 +202,8 @@ class SohbetNotifier extends _$SohbetNotifier {
     state = state.copyWith(
       mesajMap: yeniMap,
       siraliMesajlar: _sirala(yeniMap),
-      dahaFazlaVar:
-          snap.docs.length >= Pagination.mesajSayfaBoyutu,
-      enEskiDoc:
-          snap.docs.isNotEmpty ? snap.docs.last : state.enEskiDoc,
+      dahaFazlaVar: snap.docs.length >= Pagination.mesajSayfaBoyutu,
+      enEskiDoc: snap.docs.isNotEmpty ? snap.docs.last : state.enEskiDoc,
     );
   }
  
@@ -219,15 +250,6 @@ class SohbetNotifier extends _$SohbetNotifier {
     state = state.copyWith(
       mesajMap: yeniMap,
       siraliMesajlar: _sirala(yeniMap),
-    );
-  }
- 
-  Future<void> _okunduIsaretle() async {
-    if (_okunduIsaretlendi) return;
-    _okunduIsaretlendi = true;
-    await _repo.okunduIsaretle(
-      sohbetId: _sohbetId,
-      kullaniciId: _benimId,
     );
   }
  

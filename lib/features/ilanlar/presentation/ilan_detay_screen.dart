@@ -8,6 +8,7 @@ import '../providers/ilan_provider.dart';
 import '../presentation/ilan_form_screen.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
+import '../../profil/presentation/kullanici_profil_screen.dart';
 import '../../mesajlar/presentation/sohbet_screen.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart';
@@ -26,9 +27,27 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
   final _pageController = PageController();
  
   @override
+  void initState() {
+    super.initState();
+    _otuzGunKontrol();
+  }
+ 
+  @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+ 
+  // 30 gün geçmişse ilanı pasife al
+  Future<void> _otuzGunKontrol() async {
+    final tarih = widget.ilan.olusturmaTarihi;
+    if (tarih == null) return;
+    final fark = DateTime.now().difference(tarih).inDays;
+    if (fark >= 30 && widget.ilan.aktif) {
+      await ref
+          .read(ilanRepositoryProvider)
+          .ilanPasifYap(widget.ilan.id);
+    }
   }
  
   bool get _benimIlanim {
@@ -63,7 +82,8 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+          borderRadius:
+              BorderRadius.vertical(top: Radius.circular(16))),
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -77,7 +97,6 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                   borderRadius: BorderRadius.circular(2)),
             ),
  
-            // ── Düzenle (sadece kendi ilanı) ──────────
             if (_benimIlanim)
               _MenuItem(
                 icon: Icons.edit_outlined,
@@ -94,14 +113,12 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                       ),
                     ),
                   ).then((_) {
-                    // Düzenleme sonrası listeyi yenile
                     ref.read(istekIlanlarProvider.notifier).yenile();
                     ref.read(tasiyiciIlanlarProvider.notifier).yenile();
                   });
                 },
               ),
  
-            // ── Sil (sadece kendi ilanı) ──────────────
             if (_benimIlanim)
               _MenuItem(
                 icon: Icons.delete_outline,
@@ -150,7 +167,6 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                 },
               ),
  
-            // ── Şikayet (başkasının ilanı) ────────────
             if (uid != null && !_benimIlanim)
               _MenuItem(
                 icon: Icons.flag_outlined,
@@ -163,7 +179,6 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                 },
               ),
  
-            // ── Engelle (başkasının ilanı) ────────────
             if (uid != null && !_benimIlanim)
               _MenuItem(
                 icon: Icons.block_outlined,
@@ -223,11 +238,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
   Future<void> _sikayetDialog(String uid) async {
     String? seciliSebep;
     final sebepler = [
-      'Sahte ilan',
-      'Yanıltıcı bilgi',
-      'Uygunsuz içerik',
-      'Spam',
-      'Diğer',
+      'Sahte ilan', 'Yanıltıcı bilgi', 'Uygunsuz içerik', 'Spam', 'Diğer',
     ];
  
     await showDialog(
@@ -358,7 +369,8 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                     } else {
                       await ref
                           .read(ilanRepositoryProvider)
-                          .favoriyeEkle(kullaniciId: uid, ilan: ilan);
+                          .favoriyeEkle(
+                              kullaniciId: uid, ilan: ilan);
                     }
                   },
                 ),
@@ -379,24 +391,45 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                 ? FlexibleSpaceBar(
                     background: Stack(
                       children: [
+                        // Hero animasyonlu resim
                         PageView.builder(
                           controller: _pageController,
                           itemCount: resimler.length,
                           onPageChanged: (i) =>
                               setState(() => _aktifResim = i),
-                          itemBuilder: (_, i) => CachedNetworkImage(
-                            imageUrl: resimler[i],
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            fadeInDuration: Duration.zero,
-                            placeholder: (_, __) =>
-                                Container(color: AppColors.surface),
-                            errorWidget: (_, __, ___) => Container(
-                                color: AppColors.surface,
-                                child: const Icon(Icons.image_outlined,
-                                    color: AppColors.textHint,
-                                    size: 48)),
-                          ),
+                          itemBuilder: (_, i) => i == 0
+                              ? Hero(
+                                  tag: 'ilan_resim_${ilan.id}',
+                                  child: CachedNetworkImage(
+                                    imageUrl: resimler[i],
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    fadeInDuration: Duration.zero,
+                                    placeholder: (_, __) => Container(
+                                        color: AppColors.surface),
+                                    errorWidget: (_, __, ___) =>
+                                        Container(
+                                            color: AppColors.surface,
+                                            child: const Icon(
+                                                Icons.image_outlined,
+                                                color: AppColors.textHint,
+                                                size: 48)),
+                                  ),
+                                )
+                              : CachedNetworkImage(
+                                  imageUrl: resimler[i],
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  fadeInDuration: Duration.zero,
+                                  placeholder: (_, __) =>
+                                      Container(color: AppColors.surface),
+                                  errorWidget: (_, __, ___) => Container(
+                                      color: AppColors.surface,
+                                      child: const Icon(
+                                          Icons.image_outlined,
+                                          color: AppColors.textHint,
+                                          size: 48)),
+                                ),
                         ),
                         if (resimler.length > 1)
                           Positioned(
@@ -404,7 +437,8 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                             left: 0,
                             right: 0,
                             child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisAlignment:
+                                  MainAxisAlignment.center,
                               children: List.generate(
                                 resimler.length,
                                 (i) => AnimatedContainer(
@@ -518,6 +552,16 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                     ),
                   ],
  
+                  // İlan tarihi
+                  if (ilan.olusturmaTarihi != null) ...[
+                    const SizedBox(height: 12),
+                    _BilgiSatiri(
+                      icon: Icons.access_time_outlined,
+                      etiket: 'İlan Tarihi',
+                      deger: _tamTarih(ilan.olusturmaTarihi!),
+                    ),
+                  ],
+ 
                   if (ilan.notlar.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     const Divider(color: AppColors.divider),
@@ -542,9 +586,15 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                   const SizedBox(height: 16),
  
                   GestureDetector(
-                    onTap: () {
-                      // TODO: Kullanıcı profil kartı
-                    },
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => KullaniciProfilScreen(
+                          kullaniciId: ilan.kullaniciId,
+                          kullaniciAd: ilan.kullaniciAd,
+                        ),
+                      ),
+                    ),
                     child: Row(
                       children: [
                         AvatarWidget(
@@ -560,15 +610,10 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                                       fontSize: 15,
                                       fontWeight: FontWeight.w600,
                                       color: AppColors.textPrimary)),
-                              if (ilan.olusturmaTarihi != null)
-                                Text(
-                                  _tarihFormat(
-                                      ilan.olusturmaTarihi!),
+                              Text('Profili görüntüle',
                                   style: GoogleFonts.dmSans(
                                       fontSize: 12,
-                                      color:
-                                          AppColors.textSecondary),
-                                ),
+                                      color: AppColors.textSecondary)),
                             ],
                           ),
                         ),
@@ -594,8 +639,8 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                   MediaQuery.of(context).padding.bottom + 12),
               decoration: const BoxDecoration(
                 color: Colors.white,
-                border:
-                    Border(top: BorderSide(color: AppColors.divider)),
+                border: Border(
+                    top: BorderSide(color: AppColors.divider)),
               ),
               child: SizedBox(
                 height: 50,
@@ -615,12 +660,12 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
     );
   }
  
-  String _tarihFormat(DateTime tarih) {
-    final fark = DateTime.now().difference(tarih);
-    if (fark.inDays > 0) return '${fark.inDays} gün önce';
-    if (fark.inHours > 0) return '${fark.inHours} saat önce';
-    if (fark.inMinutes > 0) return '${fark.inMinutes} dakika önce';
-    return 'Az önce';
+  String _tamTarih(DateTime tarih) {
+    final ay = [
+      '', 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+      'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
+    ];
+    return '${tarih.day} ${ay[tarih.month]} ${tarih.year}';
   }
 }
  

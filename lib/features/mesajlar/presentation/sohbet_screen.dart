@@ -223,7 +223,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.karsiKullaniciAd,
+                    widget.ilanBaslik,
                     style: GoogleFonts.dmSans(
                         color: Colors.black87,
                         fontWeight: FontWeight.w700,
@@ -232,7 +232,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
-                    widget.ilanBaslik,
+                    widget.karsiKullaniciAd,
                     style: GoogleFonts.dmSans(
                         color: AppColors.textSecondary, fontSize: 11),
                     maxLines: 1,
