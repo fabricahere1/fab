@@ -8,6 +8,8 @@ import '../../ilanlar/presentation/gelenler_screen.dart';
 import '../../mesajlar/presentation/mesajlar_screen.dart';
 import '../../mesajlar/providers/mesaj_provider.dart';
 import '../../profil/presentation/profil_screen.dart';
+import '../../bildirimler/presentation/bildirimler_screen.dart';
+import '../../bildirimler/providers/bildirim_provider.dart';
 import '../../../shared/constants/app_colors.dart';
  
 class HomeScreen extends ConsumerStatefulWidget {
@@ -25,6 +27,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     IsteklerScreen(),
     GelenlerScreen(),
     MesajlarScreen(),
+    BildirimlerScreen(),
     ProfilScreen(),
   ];
  
@@ -32,6 +35,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final uid = ref.watch(currentUserProvider)?.uid;
     final toplamOkunmamis = ref.watch(okunmamisSayiProvider);
+    final okunmamisBildirim = ref.watch(okunmamisBildirimSayiProvider).value ?? 0;
  
     return PopScope(
       canPop: false,
@@ -45,8 +49,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
  
         final simdi = DateTime.now();
         if (_sonGeriTusu == null ||
-            simdi.difference(_sonGeriTusu!) >
-                const Duration(seconds: 2)) {
+            simdi.difference(_sonGeriTusu!) > const Duration(seconds: 2)) {
           _sonGeriTusu = simdi;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -80,18 +83,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             const NavigationDestination(
               icon: Icon(Icons.flight_land_outlined),
-              selectedIcon:
-                  Icon(Icons.flight_land, color: AppColors.red),
+              selectedIcon: Icon(Icons.flight_land, color: AppColors.red),
               label: 'Gelenler',
             ),
+            // Mesajlar — okunmamış badge
             NavigationDestination(
               icon: uid == null || toplamOkunmamis == 0
                   ? const Icon(Icons.chat_bubble_outline)
                   : Badge(
                       label: Text(
-                        toplamOkunmamis > 99
-                            ? '99+'
-                            : '$toplamOkunmamis',
+                        toplamOkunmamis > 99 ? '99+' : '$toplamOkunmamis',
                         style: GoogleFonts.dmSans(
                             fontSize: 10,
                             color: Colors.white,
@@ -104,9 +105,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ? const Icon(Icons.chat_bubble, color: AppColors.red)
                   : Badge(
                       label: Text(
-                        toplamOkunmamis > 99
-                            ? '99+'
-                            : '$toplamOkunmamis',
+                        toplamOkunmamis > 99 ? '99+' : '$toplamOkunmamis',
                         style: GoogleFonts.dmSans(
                             fontSize: 10,
                             color: Colors.white,
@@ -117,6 +116,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           color: AppColors.red),
                     ),
               label: 'Mesajlar',
+            ),
+            // Bildirimler — okunmamış badge
+            NavigationDestination(
+              icon: okunmamisBildirim == 0
+                  ? const Icon(Icons.notifications_outlined)
+                  : Badge(
+                      label: Text(
+                        okunmamisBildirim > 99 ? '99+' : '$okunmamisBildirim',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 10,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600),
+                      ),
+                      backgroundColor: AppColors.red,
+                      child: const Icon(Icons.notifications_outlined),
+                    ),
+              selectedIcon: okunmamisBildirim == 0
+                  ? const Icon(Icons.notifications, color: AppColors.red)
+                  : Badge(
+                      label: Text(
+                        okunmamisBildirim > 99 ? '99+' : '$okunmamisBildirim',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 10,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600),
+                      ),
+                      backgroundColor: AppColors.red,
+                      child: const Icon(Icons.notifications,
+                          color: AppColors.red),
+                    ),
+              label: 'Bildirimler',
             ),
             const NavigationDestination(
               icon: Icon(Icons.person_outline),

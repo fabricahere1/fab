@@ -11,7 +11,7 @@ import '../../profil/providers/profil_provider.dart';
 import '../../profil/presentation/kullanici_profil_screen.dart';
 import '../../mesajlar/presentation/sohbet_screen.dart';
 import '../../../shared/constants/app_colors.dart';
-import '../../../shared/constants/app_constants.dart';
+import '../../../shared/constants/app_constants.dart' as appConstants;
 import '../../../shared/widgets/avatar_widget.dart';
  
 class IlanDetayScreen extends ConsumerStatefulWidget {
@@ -38,196 +38,85 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
     super.dispose();
   }
  
-  // 30 gün geçmişse ilanı pasife al
   Future<void> _otuzGunKontrol() async {
     final tarih = widget.ilan.olusturmaTarihi;
     if (tarih == null) return;
     final fark = DateTime.now().difference(tarih).inDays;
     if (fark >= 30 && widget.ilan.aktif) {
-      await ref
-          .read(ilanRepositoryProvider)
-          .ilanPasifYap(widget.ilan.id);
+      await ref.read(ilanRepositoryProvider).ilanPasifYap(widget.ilan.id);
     }
   }
  
-  bool get _benimIlanim {
-    final uid = ref.read(currentUserProvider)?.uid;
-    return uid != null && uid == widget.ilan.kullaniciId;
-  }
+  String get _benimUid => ref.read(currentUserProvider)?.uid ?? '';
+  bool get _benimIlanim => _benimUid.isNotEmpty && _benimUid == widget.ilan.kullaniciId;
  
   void _mesajGonder() {
-    final uid = ref.read(currentUserProvider)?.uid;
-    if (uid == null) return;
+    if (_benimUid.isEmpty) return;
     final ilan = widget.ilan;
     final resimler = ilan.tumResimler;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => SohbetScreen(
-          karsiKullaniciId: ilan.kullaniciId,
-          karsiKullaniciAd: ilan.kullaniciAd,
-          ilanId: ilan.id,
-          ilanBaslik: ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
-          ilanResimUrl: resimler.isNotEmpty ? resimler.first : null,
-        ),
+    Navigator.push(context, MaterialPageRoute(
+      builder: (_) => SohbetScreen(
+        karsiKullaniciId: ilan.kullaniciId,
+        karsiKullaniciAd: ilan.kullaniciAd,
+        ilanId: ilan.id,
+        ilanBaslik: ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
+        ilanResimUrl: resimler.isNotEmpty ? resimler.first : null,
       ),
-    );
+    ));
   }
  
   void _ucNoktaMenu() {
-    final uid = ref.read(currentUserProvider)?.uid;
     final ilan = widget.ilan;
- 
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(16))),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 36,
-              height: 4,
-              margin: const EdgeInsets.only(top: 12, bottom: 8),
-              decoration: BoxDecoration(
-                  color: AppColors.divider,
-                  borderRadius: BorderRadius.circular(2)),
-            ),
- 
-            if (_benimIlanim)
+            _BottomSheetHandle(),
+            if (_benimIlanim) ...[
               _MenuItem(
                 icon: Icons.edit_outlined,
                 iconColor: AppColors.primary,
                 label: 'İlanı Düzenle',
                 onTap: () {
                   Navigator.pop(ctx);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => IlanFormScreen(
-                        tip: ilan.tip,
-                        duzenlenecekIlan: ilan,
-                      ),
-                    ),
-                  ).then((_) {
+                  Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => IlanFormScreen(
+                      tip: ilan.tip, duzenlenecekIlan: ilan),
+                  )).then((_) {
                     ref.read(istekIlanlarProvider.notifier).yenile();
                     ref.read(tasiyiciIlanlarProvider.notifier).yenile();
                   });
                 },
               ),
- 
-            if (_benimIlanim)
               _MenuItem(
                 icon: Icons.delete_outline,
                 iconColor: AppColors.red,
                 label: 'İlanı Sil',
                 labelColor: AppColors.red,
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  final onay = await showDialog<bool>(
-                    context: context,
-                    builder: (c) => AlertDialog(
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      title: Text('İlanı Sil',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600)),
-                      content: Text(
-                          'Bu ilanı silmek istediğine emin misin?',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 14,
-                              color: AppColors.textSecondary)),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(c, false),
-                          child: Text('İptal',
-                              style: GoogleFonts.dmSans(
-                                  color: AppColors.textSecondary)),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(c, true),
-                          child: Text('Sil',
-                              style: GoogleFonts.dmSans(
-                                  color: AppColors.red,
-                                  fontWeight: FontWeight.w700)),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (onay == true && mounted) {
-                    await ref
-                        .read(ilanRepositoryProvider)
-                        .ilanSil(ilan.id);
-                    if (mounted) Navigator.pop(context);
-                  }
-                },
+                onTap: () { Navigator.pop(ctx); _ilanSilDialog(ilan.id); },
               ),
- 
-            if (uid != null && !_benimIlanim)
+            ],
+            if (_benimUid.isNotEmpty && !_benimIlanim) ...[
               _MenuItem(
                 icon: Icons.flag_outlined,
                 iconColor: AppColors.red,
                 label: 'Şikayet Et',
                 labelColor: AppColors.red,
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _sikayetDialog(uid);
-                },
+                onTap: () { Navigator.pop(ctx); _sikayetDialog(_benimUid); },
               ),
- 
-            if (uid != null && !_benimIlanim)
               _MenuItem(
                 icon: Icons.block_outlined,
                 iconColor: AppColors.red,
                 label: 'Kullanıcıyı Engelle',
                 labelColor: AppColors.red,
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  final onay = await showDialog<bool>(
-                    context: context,
-                    builder: (c) => AlertDialog(
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      title: Text('Kullanıcıyı Engelle',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600)),
-                      content: Text(
-                          '${ilan.kullaniciAd} adlı kullanıcıyı engellemek istiyor musun?',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 14,
-                              color: AppColors.textSecondary)),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(c, false),
-                          child: Text('İptal',
-                              style: GoogleFonts.dmSans(
-                                  color: AppColors.textSecondary)),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(c, true),
-                          child: Text('Engelle',
-                              style: GoogleFonts.dmSans(
-                                  color: AppColors.red,
-                                  fontWeight: FontWeight.w700)),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (onay == true && mounted) {
-                    await ref.read(engellemeProvider.notifier).engelle(
-                          benimUid: uid,
-                          hedefUid: ilan.kullaniciId,
-                        );
-                    if (mounted) Navigator.pop(context);
-                  }
-                },
+                onTap: () { Navigator.pop(ctx); _engelleDialog(ilan); },
               ),
- 
+            ],
             const SizedBox(height: 8),
           ],
         ),
@@ -235,71 +124,109 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
     );
   }
  
+  Future<void> _ilanSilDialog(String ilanId) async {
+    final onay = await _onayDialog(
+      baslik: 'İlanı Sil',
+      icerik: 'Bu ilanı silmek istediğine emin misin?',
+      onayMetin: 'Sil',
+    );
+    if (onay == true && mounted) {
+      await ref.read(ilanRepositoryProvider).ilanSil(ilanId);
+      if (mounted) Navigator.pop(context);
+    }
+  }
+ 
+  Future<void> _engelleDialog(IlanModel ilan) async {
+    final onay = await _onayDialog(
+      baslik: 'Kullanıcıyı Engelle',
+      icerik: '${ilan.kullaniciAd} adlı kullanıcıyı engellemek istiyor musun?',
+      onayMetin: 'Engelle',
+    );
+    if (onay == true && mounted) {
+      await ref.read(engellemeProvider.notifier).engelle(
+        benimUid: _benimUid, hedefUid: ilan.kullaniciId);
+      if (mounted) Navigator.pop(context);
+    }
+  }
+ 
+  Future<bool?> _onayDialog({
+    required String baslik,
+    required String icerik,
+    required String onayMetin,
+  }) {
+    return showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Text(baslik, style: GoogleFonts.dmSans(
+            fontSize: 16, fontWeight: FontWeight.w600)),
+        content: Text(icerik, style: GoogleFonts.dmSans(
+            fontSize: 14, color: AppColors.textSecondary)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: Text('İptal', style: GoogleFonts.dmSans(
+                color: AppColors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(c, true),
+            child: Text(onayMetin, style: GoogleFonts.dmSans(
+                color: AppColors.red, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+ 
   Future<void> _sikayetDialog(String uid) async {
     String? seciliSebep;
-    final sebepler = [
-      'Sahte ilan', 'Yanıltıcı bilgi', 'Uygunsuz içerik', 'Spam', 'Diğer',
-    ];
+    final sebepler = ['Sahte ilan', 'Yanıltıcı bilgi', 'Uygunsuz içerik', 'Spam', 'Diğer'];
  
     await showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
-          title: Text('Şikayet Et',
-              style: GoogleFonts.dmSans(
-                  fontSize: 16, fontWeight: FontWeight.w600)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: Text('Şikayet Et', style: GoogleFonts.dmSans(
+              fontSize: 16, fontWeight: FontWeight.w600)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
-            children: sebepler.map((s) {
-              return RadioListTile<String>(
-                value: s,
-                groupValue: seciliSebep,
-                onChanged: (v) => setS(() => seciliSebep = v),
-                title: Text(s,
-                    style: GoogleFonts.dmSans(fontSize: 14)),
-                activeColor: AppColors.red,
-                contentPadding: EdgeInsets.zero,
-              );
-            }).toList(),
+            children: sebepler.map((s) => RadioListTile<String>(
+              value: s,
+              groupValue: seciliSebep,
+              onChanged: (v) => setS(() => seciliSebep = v),
+              title: Text(s, style: GoogleFonts.dmSans(fontSize: 14)),
+              activeColor: AppColors.red,
+              contentPadding: EdgeInsets.zero,
+            )).toList(),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text('İptal',
-                  style: GoogleFonts.dmSans(
-                      color: AppColors.textSecondary)),
+              child: Text('İptal', style: GoogleFonts.dmSans(
+                  color: AppColors.textSecondary)),
             ),
             TextButton(
-              onPressed: seciliSebep == null
-                  ? null
-                  : () async {
-                      Navigator.pop(ctx);
-                      await ref
-                          .read(sikayetProvider.notifier)
-                          .sikayetGonder(
-                            sikayetEdenId: uid,
-                            hedefId: widget.ilan.kullaniciId,
-                            hedefAd: widget.ilan.kullaniciAd,
-                            sebep: seciliSebep!,
-                            ilanId: widget.ilan.id,
-                          );
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Şikayetiniz iletildi.',
-                                style: GoogleFonts.dmSans()),
-                            backgroundColor: AppColors.primary,
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      }
-                    },
-              child: Text('Gönder',
-                  style: GoogleFonts.dmSans(
-                      color: AppColors.red,
-                      fontWeight: FontWeight.w600)),
+              onPressed: seciliSebep == null ? null : () async {
+                final messenger = ScaffoldMessenger.of(context);
+                Navigator.pop(ctx);
+                final basarili = await ref.read(sikayetProvider.notifier).sikayetGonder(
+                  sikayetEdenId: uid,
+                  hedefId: widget.ilan.kullaniciId,
+                  hedefAd: widget.ilan.kullaniciAd,
+                  sebep: seciliSebep!,
+                  ilanId: widget.ilan.id,
+                );
+                if (basarili) {
+                  messenger.showSnackBar(SnackBar(
+                    content: Text('Şikayetiniz iletildi.', style: GoogleFonts.dmSans()),
+                    backgroundColor: AppColors.primary,
+                    behavior: SnackBarBehavior.floating,
+                  ));
+                }
+              },
+              child: Text('Gönder', style: GoogleFonts.dmSans(
+                  color: AppColors.red, fontWeight: FontWeight.w600)),
             ),
           ],
         ),
@@ -311,10 +238,11 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
   Widget build(BuildContext context) {
     final ilan = widget.ilan;
     final resimler = ilan.tumResimler;
-    final kategoriAdi_ = kategoriAdi(ilan.kategori);
+    final kategoriAdiStr = appConstants.kategoriAdi(ilan.kategori);
     final uid = ref.watch(currentUserProvider)?.uid;
+    final benimIlan = _benimIlanim;
  
-    final favoriAsync = uid != null && !_benimIlanim
+    final favoriAsync = uid != null && !benimIlan
         ? ref.watch(ilanFavorideMiProvider(ilan.id))
         : const AsyncData(false);
     final favorideMi = favoriAsync.value ?? false;
@@ -329,132 +257,61 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
             backgroundColor: Colors.white,
             foregroundColor: AppColors.textPrimary,
             elevation: 0,
-            leading: IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.arrow_back_ios_new,
-                    size: 16, color: AppColors.textPrimary),
-              ),
-              onPressed: () => Navigator.pop(context),
+            leading: _CircleIconButton(
+              icon: Icons.arrow_back_ios_new,
+              onTap: () => Navigator.pop(context),
             ),
             actions: [
-              if (uid != null && !_benimIlanim)
-                IconButton(
-                  icon: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      favorideMi
-                          ? Icons.favorite
-                          : Icons.favorite_border,
-                      size: 20,
-                      color: favorideMi
-                          ? AppColors.red
-                          : AppColors.textPrimary,
-                    ),
-                  ),
-                  onPressed: () async {
+              if (uid != null && !benimIlan)
+                _CircleIconButton(
+                  icon: favorideMi ? Icons.favorite : Icons.favorite_border,
+                  iconColor: favorideMi ? AppColors.red : AppColors.textPrimary,
+                  onTap: () async {
                     if (favorideMi) {
-                      await ref
-                          .read(ilanRepositoryProvider)
-                          .favoridanCikar(
-                              kullaniciId: uid, ilanId: ilan.id);
+                      await ref.read(ilanRepositoryProvider)
+                          .favoridanCikar(kullaniciId: uid, ilanId: ilan.id);
                     } else {
-                      await ref
-                          .read(ilanRepositoryProvider)
-                          .favoriyeEkle(
-                              kullaniciId: uid, ilan: ilan);
+                      await ref.read(ilanRepositoryProvider)
+                          .favoriyeEkle(kullaniciId: uid, ilan: ilan);
                     }
                   },
                 ),
-              IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.more_vert,
-                      size: 20, color: AppColors.textPrimary),
-                ),
-                onPressed: _ucNoktaMenu,
+              _CircleIconButton(
+                icon: Icons.more_vert,
+                onTap: _ucNoktaMenu,
               ),
             ],
             flexibleSpace: resimler.isNotEmpty
                 ? FlexibleSpaceBar(
                     background: Stack(
                       children: [
-                        // Hero animasyonlu resim
                         PageView.builder(
                           controller: _pageController,
                           itemCount: resimler.length,
-                          onPageChanged: (i) =>
-                              setState(() => _aktifResim = i),
+                          onPageChanged: (i) => setState(() => _aktifResim = i),
                           itemBuilder: (_, i) => i == 0
                               ? Hero(
                                   tag: 'ilan_resim_${ilan.id}',
-                                  child: CachedNetworkImage(
-                                    imageUrl: resimler[i],
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                    fadeInDuration: Duration.zero,
-                                    placeholder: (_, __) => Container(
-                                        color: AppColors.surface),
-                                    errorWidget: (_, __, ___) =>
-                                        Container(
-                                            color: AppColors.surface,
-                                            child: const Icon(
-                                                Icons.image_outlined,
-                                                color: AppColors.textHint,
-                                                size: 48)),
-                                  ),
+                                  child: _ResimWidget(url: resimler[i]),
                                 )
-                              : CachedNetworkImage(
-                                  imageUrl: resimler[i],
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  fadeInDuration: Duration.zero,
-                                  placeholder: (_, __) =>
-                                      Container(color: AppColors.surface),
-                                  errorWidget: (_, __, ___) => Container(
-                                      color: AppColors.surface,
-                                      child: const Icon(
-                                          Icons.image_outlined,
-                                          color: AppColors.textHint,
-                                          size: 48)),
-                                ),
+                              : _ResimWidget(url: resimler[i]),
                         ),
                         if (resimler.length > 1)
                           Positioned(
-                            bottom: 12,
-                            left: 0,
-                            right: 0,
+                            bottom: 12, left: 0, right: 0,
                             child: Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.center,
-                              children: List.generate(
-                                resimler.length,
-                                (i) => AnimatedContainer(
-                                  duration:
-                                      const Duration(milliseconds: 200),
-                                  margin: const EdgeInsets.symmetric(
-                                      horizontal: 3),
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: List.generate(resimler.length, (i) =>
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  margin: const EdgeInsets.symmetric(horizontal: 3),
                                   width: _aktifResim == i ? 20 : 6,
                                   height: 6,
                                   decoration: BoxDecoration(
                                     color: _aktifResim == i
                                         ? Colors.white
-                                        : Colors.white
-                                            .withValues(alpha: 0.5),
-                                    borderRadius:
-                                        BorderRadius.circular(3),
+                                        : Colors.white.withValues(alpha: 0.5),
+                                    borderRadius: BorderRadius.circular(3),
                                   ),
                                 ),
                               ),
@@ -472,35 +329,27 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (kategoriAdi_.isNotEmpty) ...[
+                  if (kategoriAdiStr.isNotEmpty) ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: AppColors.red.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: Text(kategoriAdi_,
-                          style: GoogleFonts.dmSans(
-                              fontSize: 12,
-                              color: AppColors.red,
-                              fontWeight: FontWeight.w500)),
+                      child: Text(kategoriAdiStr, style: GoogleFonts.dmSans(
+                          fontSize: 12, color: AppColors.red, fontWeight: FontWeight.w500)),
                     ),
                     const SizedBox(height: 10),
                   ],
  
-                  Text(
-                    ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
-                    style: GoogleFonts.dmSans(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary),
-                  ),
+                  Text(ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 22, fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary)),
                   const SizedBox(height: 16),
  
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     decoration: BoxDecoration(
                       color: AppColors.surface,
                       borderRadius: BorderRadius.circular(8),
@@ -508,19 +357,14 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                     child: Row(
                       children: [
                         const Icon(Icons.attach_money_outlined,
-                            size: 20,
-                            color: AppColors.textSecondary),
+                            size: 20, color: AppColors.textSecondary),
                         const SizedBox(width: 8),
                         Text(
-                          ilan.ucret.isNotEmpty
-                              ? '${ilan.ucret} ₺'
-                              : 'Ücret belirtilmemiş',
+                          ilan.ucret.isNotEmpty ? '${ilan.ucret} ₺' : 'Ücret belirtilmemiş',
                           style: GoogleFonts.dmSans(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 18, fontWeight: FontWeight.w700,
                             color: ilan.ucret.isNotEmpty
-                                ? AppColors.red
-                                : AppColors.textSecondary,
+                                ? AppColors.red : AppColors.textSecondary,
                           ),
                         ),
                       ],
@@ -530,29 +374,21 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                   const Divider(color: AppColors.divider),
                   const SizedBox(height: 16),
  
-                  _BilgiSatiri(
-                    icon: Icons.flight_takeoff_outlined,
-                    etiket: 'Nereden',
-                    deger: ilan.nereden,
-                  ),
+                  _BilgiSatiri(icon: Icons.flight_takeoff_outlined,
+                      etiket: 'Nereden', deger: ilan.nereden),
                   const SizedBox(height: 12),
-                  _BilgiSatiri(
-                    icon: Icons.flight_land_outlined,
-                    etiket: 'Nereye',
-                    deger: ilan.nereye,
-                  ),
+                  _BilgiSatiri(icon: Icons.flight_land_outlined,
+                      etiket: 'Nereye', deger: ilan.nereye),
  
                   if (ilan.tarih != null) ...[
                     const SizedBox(height: 12),
                     _BilgiSatiri(
                       icon: Icons.calendar_today_outlined,
                       etiket: 'Seyahat Tarihi',
-                      deger:
-                          '${ilan.tarih!.day}.${ilan.tarih!.month}.${ilan.tarih!.year}',
+                      deger: '${ilan.tarih!.day}.${ilan.tarih!.month}.${ilan.tarih!.year}',
                     ),
                   ],
  
-                  // İlan tarihi
                   if (ilan.olusturmaTarihi != null) ...[
                     const SizedBox(height: 12),
                     _BilgiSatiri(
@@ -566,19 +402,12 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                     const SizedBox(height: 16),
                     const Divider(color: AppColors.divider),
                     const SizedBox(height: 16),
-                    Text('Notlar',
-                        style: GoogleFonts.dmSans(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary)),
+                    Text('Notlar', style: GoogleFonts.dmSans(
+                        fontSize: 14, fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary)),
                     const SizedBox(height: 8),
-                    Text(
-                      ilan.notlar,
-                      style: GoogleFonts.dmSans(
-                          fontSize: 14,
-                          color: AppColors.textSecondary,
-                          height: 1.5),
-                    ),
+                    Text(ilan.notlar, style: GoogleFonts.dmSans(
+                        fontSize: 14, color: AppColors.textSecondary, height: 1.5)),
                   ],
  
                   const SizedBox(height: 16),
@@ -586,39 +415,29 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                   const SizedBox(height: 16),
  
                   GestureDetector(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => KullaniciProfilScreen(
-                          kullaniciId: ilan.kullaniciId,
-                          kullaniciAd: ilan.kullaniciAd,
-                        ),
+                    onTap: () => Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => KullaniciProfilScreen(
+                        kullaniciId: ilan.kullaniciId,
+                        kullaniciAd: ilan.kullaniciAd,
                       ),
-                    ),
+                    )),
                     child: Row(
                       children: [
-                        AvatarWidget(
-                            isim: ilan.kullaniciAd, radius: 22),
+                        AvatarWidget(isim: ilan.kullaniciAd, radius: 22),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(ilan.kullaniciAd,
-                                  style: GoogleFonts.dmSans(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.textPrimary)),
-                              Text('Profili görüntüle',
-                                  style: GoogleFonts.dmSans(
-                                      fontSize: 12,
-                                      color: AppColors.textSecondary)),
+                              Text(ilan.kullaniciAd, style: GoogleFonts.dmSans(
+                                  fontSize: 15, fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary)),
+                              Text('Profili görüntüle', style: GoogleFonts.dmSans(
+                                  fontSize: 12, color: AppColors.textSecondary)),
                             ],
                           ),
                         ),
-                        const Icon(Icons.chevron_right,
-                            color: AppColors.textSecondary),
+                        const Icon(Icons.chevron_right, color: AppColors.textSecondary),
                       ],
                     ),
                   ),
@@ -630,17 +449,13 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
         ],
       ),
  
-      bottomNavigationBar: uid != null && !_benimIlanim
+      bottomNavigationBar: uid != null && !benimIlan
           ? Container(
               padding: EdgeInsets.fromLTRB(
-                  20,
-                  12,
-                  20,
-                  MediaQuery.of(context).padding.bottom + 12),
+                  20, 12, 20, MediaQuery.of(context).padding.bottom + 12),
               decoration: const BoxDecoration(
                 color: Colors.white,
-                border: Border(
-                    top: BorderSide(color: AppColors.divider)),
+                border: Border(top: BorderSide(color: AppColors.divider)),
               ),
               child: SizedBox(
                 height: 50,
@@ -648,11 +463,9 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                   onPressed: _mesajGonder,
                   icon: const Icon(Icons.chat_bubble_outline,
                       color: Colors.white, size: 18),
-                  label: Text('Mesaj Gönder',
-                      style: GoogleFonts.dmSans(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white)),
+                  label: Text('Mesaj Gönder', style: GoogleFonts.dmSans(
+                      fontSize: 15, fontWeight: FontWeight.w600,
+                      color: Colors.white)),
                 ),
               ),
             )
@@ -661,11 +474,71 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
   }
  
   String _tamTarih(DateTime tarih) {
-    final ay = [
-      '', 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
-      'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
-    ];
+    const ay = ['', 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+        'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
     return '${tarih.day} ${ay[tarih.month]} ${tarih.year}';
+  }
+}
+ 
+// ── Yardımcı Widget'lar ────────────────────────────────────
+ 
+class _BottomSheetHandle extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 36, height: 4,
+      margin: const EdgeInsets.only(top: 12, bottom: 8),
+      decoration: BoxDecoration(
+        color: AppColors.divider, borderRadius: BorderRadius.circular(2)),
+    );
+  }
+}
+ 
+class _CircleIconButton extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final VoidCallback onTap;
+ 
+  const _CircleIconButton({
+    required this.icon,
+    required this.onTap,
+    this.iconColor = AppColors.textPrimary,
+  });
+ 
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.9),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, size: 20, color: iconColor),
+      ),
+      onPressed: onTap,
+    );
+  }
+}
+ 
+class _ResimWidget extends StatelessWidget {
+  final String url;
+  const _ResimWidget({required this.url});
+ 
+  @override
+  Widget build(BuildContext context) {
+    return CachedNetworkImage(
+      imageUrl: url,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      fadeInDuration: Duration.zero,
+      placeholder: (_, __) => Container(color: AppColors.surface),
+      errorWidget: (_, __, ___) => Container(
+        color: AppColors.surface,
+        child: const Icon(Icons.image_outlined,
+            color: AppColors.textHint, size: 48),
+      ),
+    );
   }
 }
  
@@ -688,11 +561,8 @@ class _MenuItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: Icon(icon, color: iconColor),
-      title: Text(label,
-          style: GoogleFonts.dmSans(
-              fontSize: 14,
-              color: labelColor,
-              fontWeight: FontWeight.w500)),
+      title: Text(label, style: GoogleFonts.dmSans(
+          fontSize: 14, color: labelColor, fontWeight: FontWeight.w500)),
       onTap: onTap,
     );
   }
@@ -720,16 +590,12 @@ class _BilgiSatiri extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(etiket,
-                  style: GoogleFonts.dmSans(
-                      fontSize: 12,
-                      color: AppColors.textSecondary)),
+              Text(etiket, style: GoogleFonts.dmSans(
+                  fontSize: 12, color: AppColors.textSecondary)),
               const SizedBox(height: 2),
-              Text(deger,
-                  style: GoogleFonts.dmSans(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary)),
+              Text(deger, style: GoogleFonts.dmSans(
+                  fontSize: 15, fontWeight: FontWeight.w500,
+                  color: AppColors.textPrimary)),
             ],
           ),
         ),

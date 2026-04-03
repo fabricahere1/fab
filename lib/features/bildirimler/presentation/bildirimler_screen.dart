@@ -1,0 +1,202 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../domain/bildirim_model.dart';
+import '../providers/bildirim_provider.dart';
+import '../../../shared/constants/app_colors.dart';
+ 
+class BildirimlerScreen extends ConsumerWidget {
+  const BildirimlerScreen({super.key});
+ 
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bildirimlerAsync = ref.watch(bildirimlerProvider);
+ 
+    return Scaffold(
+      backgroundColor: AppColors.surface,
+      appBar: AppBar(
+        title: Text('Bildirimler',
+            style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        actions: [
+          TextButton(
+            onPressed: () =>
+                ref.read(bildirimProvider.notifier).tumunuOkunduIsaretle(),
+            child: Text('Tümünü Oku',
+                style: GoogleFonts.dmSans(
+                    color: AppColors.red,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500)),
+          ),
+        ],
+      ),
+      body: bildirimlerAsync.when(
+        loading: () => const Center(
+            child: CircularProgressIndicator(
+                color: AppColors.red, strokeWidth: 2)),
+        error: (_, __) => Center(
+          child: Text('Bildirimler yüklenemedi.',
+              style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
+        ),
+        data: (bildirimler) {
+          if (bildirimler.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.notifications_none_outlined,
+                      size: 64, color: AppColors.divider),
+                  const SizedBox(height: 16),
+                  Text('Henüz bildirim yok',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 15, color: AppColors.textSecondary)),
+                ],
+              ),
+            );
+          }
+ 
+          return ListView.separated(
+            itemCount: bildirimler.length,
+            separatorBuilder: (_, __) =>
+                const Divider(height: 1, indent: 72),
+            itemBuilder: (context, index) {
+              final bildirim = bildirimler[index];
+              return _BildirimSatiri(bildirim: bildirim);
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+ 
+class _BildirimSatiri extends ConsumerWidget {
+  final BildirimModel bildirim;
+  const _BildirimSatiri({required this.bildirim});
+ 
+  IconData get _ikon {
+    switch (bildirim.tip) {
+      case BildirimTip.mesaj:
+        return Icons.chat_bubble_outline;
+      case BildirimTip.ilan:
+        return Icons.list_alt_outlined;
+      case BildirimTip.sistem:
+        return Icons.notifications_outlined;
+    }
+  }
+ 
+  Color get _ikonRenk {
+    switch (bildirim.tip) {
+      case BildirimTip.mesaj:
+        return AppColors.primary;
+      case BildirimTip.ilan:
+        return AppColors.red;
+      case BildirimTip.sistem:
+        return Colors.amber;
+    }
+  }
+ 
+  String _zamanYazi(DateTime? tarih) {
+    if (tarih == null) return '';
+    final fark = DateTime.now().difference(tarih);
+    if (fark.inMinutes < 1) return 'Az önce';
+    if (fark.inMinutes < 60) return '${fark.inMinutes} dk önce';
+    if (fark.inHours < 24) return '${fark.inHours} saat önce';
+    if (fark.inDays < 7) return '${fark.inDays} gün önce';
+    return '${tarih.day}.${tarih.month}.${tarih.year}';
+  }
+ 
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Dismissible(
+      key: Key(bildirim.id),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) =>
+          ref.read(bildirimProvider.notifier).bildirimSil(bildirim.id),
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        color: AppColors.red,
+        child: const Icon(Icons.delete_outline, color: Colors.white),
+      ),
+      child: InkWell(
+        onTap: () {
+          if (!bildirim.okundu) {
+            ref.read(bildirimProvider.notifier)
+                .okunduIsaretle(bildirim.id);
+          }
+          // TODO: hedefId'ye göre navigate et
+        },
+        child: Container(
+          color: bildirim.okundu ? Colors.white : AppColors.red.withValues(alpha: 0.04),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: _ikonRenk.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(_ikon, color: _ikonRenk, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            bildirim.baslik,
+                            style: GoogleFonts.dmSans(
+                              fontSize: 14,
+                              fontWeight: bildirim.okundu
+                                  ? FontWeight.w500
+                                  : FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          _zamanYazi(bildirim.tarih),
+                          style: GoogleFonts.dmSans(
+                              fontSize: 11,
+                              color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      bildirim.icerik,
+                      style: GoogleFonts.dmSans(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                          height: 1.4),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              if (!bildirim.okundu)
+                Container(
+                  width: 8,
+                  height: 8,
+                  margin: const EdgeInsets.only(left: 8, top: 4),
+                  decoration: const BoxDecoration(
+                    color: AppColors.red,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

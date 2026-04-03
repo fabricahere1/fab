@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../profil/providers/profil_provider.dart';
 import '../../ilanlar/data/ilan_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -13,12 +14,6 @@ import '../../../shared/constants/app_constants.dart';
  
 // ── Provider ──────────────────────────────────────────────
  
-final ilanlarimProvider =
-    StreamProvider.autoDispose<List<IlanModel>>((ref) {
-  final uid = ref.watch(currentUserProvider)?.uid;
-  if (uid == null) return const Stream.empty();
-  return ref.watch(ilanRepositoryProvider).kullaniciIlanlarStream(uid);
-});
  
 // ── Screen ────────────────────────────────────────────────
  

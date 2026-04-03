@@ -156,7 +156,7 @@ final class ProfilDuzenleProvider
   }
 }
 
-String _$profilDuzenleHash() => r'43e2d9332de311d8365bf049f75c248598754da7';
+String _$profilDuzenleHash() => r'917bdf57e283842dbd0e5c6ed982788f380ad7e9';
 
 abstract class _$ProfilDuzenle extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();
@@ -208,7 +208,7 @@ final class EngellemeProvider
   }
 }
 
-String _$engellemeHash() => r'84d618f5d14484f2613e332b5a4c5012e54a847e';
+String _$engellemeHash() => r'e471bc895a03b072d0b1fa3ec0fa56648f1c9141';
 
 abstract class _$Engelleme extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();
@@ -299,7 +299,7 @@ final class SikayetProvider
   }
 }
 
-String _$sikayetHash() => r'7ea324fd0fae11a9f658f07a25001b420cee09f6';
+String _$sikayetHash() => r'3785b707a0666b7295f2b8ae01f9e9f7342b6e9b';
 
 abstract class _$Sikayet extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();
@@ -318,3 +318,42 @@ abstract class _$Sikayet extends $Notifier<AsyncValue<void>> {
     element.handleCreate(ref, build);
   }
 }
+
+@ProviderFor(ilanlarim)
+final ilanlarimProvider = IlanlarimProvider._();
+
+final class IlanlarimProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<IlanModel>>,
+          List<IlanModel>,
+          Stream<List<IlanModel>>
+        >
+    with $FutureModifier<List<IlanModel>>, $StreamProvider<List<IlanModel>> {
+  IlanlarimProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'ilanlarimProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$ilanlarimHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<IlanModel>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<IlanModel>> create(Ref ref) {
+    return ilanlarim(ref);
+  }
+}
+
+String _$ilanlarimHash() => r'6ee031a8383bd670f4bb96d480d93ce75801ed96';

@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/mesaj_repository.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/data/kullanici_repository.dart';
+import '../../bildirimler/data/bildirim_repository.dart';
 import '../../../shared/constants/app_constants.dart';
  
 part 'mesaj_provider.g.dart';
@@ -230,8 +231,19 @@ class SohbetNotifier extends _$SohbetNotifier {
         ilanResimUrl: ilanResimUrl,
         metin: metin.trim(),
       );
+      // Karşı tarafa bildirim gönder
+try {
+  print('BİLDİRİM GÖNDERİLİYOR: $karsiKullaniciId');
+  await ref.read(bildirimRepositoryProvider).mesajBildirimiGonder(
+          aliciId: karsiKullaniciId,
+          gondereId: _benimId,
+          gondereAd: benimAd,
+          ilanBaslik: ilanBaslik,
+          sohbetId: _sohbetId,
+        );
+      } catch (_) {}
     } finally {
-      state = state.copyWith(gonderiyor: false);
+      if (ref.mounted) state = state.copyWith(gonderiyor: false);
     }
   }
  

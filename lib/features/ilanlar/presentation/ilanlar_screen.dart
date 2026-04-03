@@ -393,16 +393,19 @@ class _IlanKarti extends ConsumerWidget {
         context,
         PageRouteBuilder(
           pageBuilder: (_, __, ___) => IlanDetayScreen(ilan: ilan),
-          transitionsBuilder: (_, anim, __, child) => SlideTransition(
-            position: Tween(
-              begin: const Offset(1, 0),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: anim,
-              curve: Curves.easeOutCubic,
-            )),
-            child: child,
-          ),
+          transitionsBuilder: (_, anim, __, child) {
+            return SlideTransition(
+              position: Tween(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: anim,
+                curve: Curves.easeOutCubic,
+              )),
+              child: child,
+            );
+          },
+          transitionDuration: const Duration(milliseconds: 300),
         ),
       ),
       child: Container(
