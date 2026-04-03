@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../domain/bildirim_model.dart';
 import '../providers/bildirim_provider.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../../mesajlar/presentation/sohbet_screen.dart';
 import '../../../shared/constants/app_colors.dart';
  
 class BildirimlerScreen extends ConsumerWidget {
@@ -75,6 +77,33 @@ class _BildirimSatiri extends ConsumerWidget {
   final BildirimModel bildirim;
   const _BildirimSatiri({required this.bildirim});
  
+  void _navigate(BuildContext context, WidgetRef ref) {
+    if (bildirim.tip == BildirimTip.mesaj && bildirim.hedefId.isNotEmpty) {
+      final parts = bildirim.hedefId.split('_');
+      if (parts.length < 3) return;
+ 
+      final benimUid = ref.read(currentUserProvider)?.uid ?? '';
+      final ilanId = parts.last;
+      final karsiUid = parts
+          .sublist(0, parts.length - 1)
+          .firstWhere((p) => p != benimUid, orElse: () => '');
+ 
+      if (karsiUid.isEmpty) return;
+ 
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SohbetScreen(
+            karsiKullaniciId: karsiUid,
+            karsiKullaniciAd: bildirim.gondereAd,
+            ilanId: ilanId,
+            ilanBaslik: bildirim.icerik,
+          ),
+        ),
+      );
+    }
+  }
+ 
   IconData get _ikon {
     switch (bildirim.tip) {
       case BildirimTip.mesaj:
@@ -126,7 +155,7 @@ class _BildirimSatiri extends ConsumerWidget {
             ref.read(bildirimProvider.notifier)
                 .okunduIsaretle(bildirim.id);
           }
-          // TODO: hedefId'ye göre navigate et
+          _navigate(context, ref);
         },
         child: Container(
           color: bildirim.okundu ? Colors.white : AppColors.red.withValues(alpha: 0.04),
