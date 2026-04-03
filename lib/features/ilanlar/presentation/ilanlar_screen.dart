@@ -203,13 +203,7 @@ class _IsteklerScreenState extends ConsumerState<IsteklerScreen>
                     padding: const EdgeInsets.all(6),
                     itemCount: ilanlar.length,
                     itemBuilder: (context, index) {
-<<<<<<< HEAD
-                      return _IlanKarti(ilanId: ilanlar[index].id);
-=======
-                      return RepaintBoundary(
-                        child: _IlanKarti(ilan: ilanlar[index]),
-                      );
->>>>>>> f8999af567936a9b7a4a94e90d80fc9a01e6d6cb
+return _IlanKarti(ilanId: ilanlar[index].id);
                     },
                   ),
                 ),
@@ -421,13 +415,8 @@ class _KategoriChip extends StatelessWidget {
 // ── İlan Kartı ────────────────────────────────────────────
  
 class _IlanKarti extends ConsumerWidget {
-<<<<<<< HEAD
   final String ilanId;
   const _IlanKarti({required this.ilanId});
-=======
-  final IlanModel ilan;
-  const _IlanKarti({required this.ilan, super.key});
->>>>>>> f8999af567936a9b7a4a94e90d80fc9a01e6d6cb
  
   double _resimYuksekligi() {
     final heights = [160.0, 200.0, 140.0, 180.0, 220.0, 150.0];
