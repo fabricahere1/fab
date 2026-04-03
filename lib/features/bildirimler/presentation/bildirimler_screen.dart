@@ -7,11 +7,22 @@ import '../../auth/providers/auth_provider.dart';
 import '../../mesajlar/presentation/sohbet_screen.dart';
 import '../../../shared/constants/app_colors.dart';
  
-class BildirimlerScreen extends ConsumerWidget {
+class BildirimlerScreen extends ConsumerStatefulWidget {
   const BildirimlerScreen({super.key});
  
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BildirimlerScreen> createState() => _BildirimlerScreenState();
+}
+ 
+class _BildirimlerScreenState extends ConsumerState<BildirimlerScreen>
+    with AutomaticKeepAliveClientMixin {
+ 
+  @override
+  bool get wantKeepAlive => true;
+ 
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
     final bildirimlerAsync = ref.watch(bildirimlerProvider);
  
     return Scaffold(
@@ -64,7 +75,9 @@ class BildirimlerScreen extends ConsumerWidget {
                 const Divider(height: 1, indent: 72),
             itemBuilder: (context, index) {
               final bildirim = bildirimler[index];
-              return _BildirimSatiri(bildirim: bildirim);
+              return RepaintBoundary(
+                child: _BildirimSatiri(bildirim: bildirim),
+              );
             },
           );
         },
@@ -152,13 +165,14 @@ class _BildirimSatiri extends ConsumerWidget {
       child: InkWell(
         onTap: () {
           if (!bildirim.okundu) {
-            ref.read(bildirimProvider.notifier)
-                .okunduIsaretle(bildirim.id);
+            ref.read(bildirimProvider.notifier).okunduIsaretle(bildirim.id);
           }
           _navigate(context, ref);
         },
         child: Container(
-          color: bildirim.okundu ? Colors.white : AppColors.red.withValues(alpha: 0.04),
+          color: bildirim.okundu
+              ? Colors.white
+              : AppColors.red.withValues(alpha: 0.04),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -13,8 +13,6 @@ import '../../auth/providers/auth_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart';
  
-// ── Sıralama Tipi ─────────────────────────────────────────
- 
 enum SiralamaTipi { enYeni, enEski, ucretArtan, ucretAzalan }
  
 extension SiralamaTipiX on SiralamaTipi {
@@ -35,10 +33,15 @@ class IsteklerScreen extends ConsumerStatefulWidget {
   ConsumerState<IsteklerScreen> createState() => _IsteklerScreenState();
 }
  
-class _IsteklerScreenState extends ConsumerState<IsteklerScreen> {
+// AutomaticKeepAliveClientMixin — sekme değişince state korunur
+class _IsteklerScreenState extends ConsumerState<IsteklerScreen>
+    with AutomaticKeepAliveClientMixin {
   final _scrollController = ScrollController();
   SiralamaTipi _siralama = SiralamaTipi.enYeni;
   String? _seciliKategori;
+ 
+  @override
+  bool get wantKeepAlive => true;
  
   @override
   void initState() {
@@ -91,6 +94,7 @@ class _IsteklerScreenState extends ConsumerState<IsteklerScreen> {
  
   @override
   Widget build(BuildContext context) {
+    super.build(context); // AutomaticKeepAlive için zorunlu
     final state = ref.watch(istekIlanlarProvider);
     final ilanlar = _sirala(_filtrele(state.filtrelenmis));
  
@@ -106,7 +110,7 @@ class _IsteklerScreenState extends ConsumerState<IsteklerScreen> {
         shadowColor: AppColors.divider,
         actions: [
           TextButton.icon(
-            onPressed: () => _siralamaSheet(),
+            onPressed: _siralamaSheet,
             icon: const Icon(Icons.sort,
                 color: AppColors.textPrimary, size: 18),
             label: Text(
@@ -127,7 +131,7 @@ class _IsteklerScreenState extends ConsumerState<IsteklerScreen> {
         ),
       ),
       body: state.yukleniyor && ilanlar.isEmpty
-          ? _ShimmerGrid()
+          ? const _ShimmerGrid()
           : ilanlar.isEmpty
               ? _BosEkran(
                   onYenile: () =>
@@ -144,7 +148,9 @@ class _IsteklerScreenState extends ConsumerState<IsteklerScreen> {
                     padding: const EdgeInsets.all(6),
                     itemCount: ilanlar.length,
                     itemBuilder: (context, index) {
-                      return _IlanKarti(ilan: ilanlar[index]);
+                      return RepaintBoundary(
+                        child: _IlanKarti(ilan: ilanlar[index]),
+                      );
                     },
                   ),
                 ),
@@ -169,8 +175,7 @@ class _IsteklerScreenState extends ConsumerState<IsteklerScreen> {
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(16))),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (ctx) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -234,6 +239,8 @@ class _IsteklerScreenState extends ConsumerState<IsteklerScreen> {
 // ── Shimmer Grid ──────────────────────────────────────────
  
 class _ShimmerGrid extends StatelessWidget {
+  const _ShimmerGrid();
+ 
   @override
   Widget build(BuildContext context) {
     return Shimmer.fromColors(
@@ -249,30 +256,21 @@ class _ShimmerGrid extends StatelessWidget {
           final heights = [160.0, 200.0, 140.0, 180.0, 220.0, 150.0];
           final h = heights[index % heights.length];
           return Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-            ),
+            color: Colors.white,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  height: h,
-                  color: Colors.white,
-                ),
+                Container(height: h, color: Colors.white),
                 Padding(
                   padding: const EdgeInsets.all(8),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                          height: 12, width: double.infinity,
-                          color: Colors.white),
+                      Container(height: 12, width: double.infinity, color: Colors.white),
                       const SizedBox(height: 6),
-                      Container(
-                          height: 10, width: 80, color: Colors.white),
+                      Container(height: 10, width: 80, color: Colors.white),
                       const SizedBox(height: 6),
-                      Container(
-                          height: 12, width: 60, color: Colors.white),
+                      Container(height: 12, width: 60, color: Colors.white),
                     ],
                   ),
                 ),
@@ -303,8 +301,7 @@ class _KategoriBar extends StatelessWidget {
       height: 44,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         children: [
           _KategoriChip(
             label: 'Tümü',
@@ -314,8 +311,8 @@ class _KategoriBar extends StatelessWidget {
           ...kKategoriler.entries.map((e) => _KategoriChip(
                 label: e.value,
                 secili: seciliKategori == e.key,
-                onTap: () => onSecildi(
-                    seciliKategori == e.key ? null : e.key),
+                onTap: () =>
+                    onSecildi(seciliKategori == e.key ? null : e.key),
               )),
         ],
       ),
@@ -353,11 +350,8 @@ class _KategoriChip extends StatelessWidget {
           label,
           style: GoogleFonts.dmSans(
             fontSize: 13,
-            color: secili
-                ? AppColors.red
-                : AppColors.textSecondary,
-            fontWeight:
-                secili ? FontWeight.w600 : FontWeight.w400,
+            color: secili ? AppColors.red : AppColors.textSecondary,
+            fontWeight: secili ? FontWeight.w600 : FontWeight.w400,
           ),
         ),
       ),
@@ -365,11 +359,11 @@ class _KategoriChip extends StatelessWidget {
   }
 }
  
-// ── İlan Kartı (Hero destekli) ────────────────────────────
+// ── İlan Kartı ────────────────────────────────────────────
  
 class _IlanKarti extends ConsumerWidget {
   final IlanModel ilan;
-  const _IlanKarti({required this.ilan});
+  const _IlanKarti({required this.ilan, super.key});
  
   double _resimYuksekligi() {
     final heights = [160.0, 200.0, 140.0, 180.0, 220.0, 150.0];
@@ -379,7 +373,7 @@ class _IlanKarti extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final resimler = ilan.tumResimler;
-    final kategoriAdi_ = kategoriAdi(ilan.kategori);
+    final kategoriAdiStr = kategoriAdi(ilan.kategori);
     final uid = ref.watch(currentUserProvider)?.uid;
     final gosterFavori = uid != null && uid != ilan.kullaniciId;
  
@@ -393,18 +387,16 @@ class _IlanKarti extends ConsumerWidget {
         context,
         PageRouteBuilder(
           pageBuilder: (_, __, ___) => IlanDetayScreen(ilan: ilan),
-          transitionsBuilder: (_, anim, __, child) {
-            return SlideTransition(
-              position: Tween(
-                begin: const Offset(1, 0),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: anim,
-                curve: Curves.easeOutCubic,
-              )),
-              child: child,
-            );
-          },
+          transitionsBuilder: (_, anim, __, child) => SlideTransition(
+            position: Tween(
+              begin: const Offset(1, 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: anim,
+              curve: Curves.easeOutCubic,
+            )),
+            child: child,
+          ),
           transitionDuration: const Duration(milliseconds: 300),
         ),
       ),
@@ -422,7 +414,6 @@ class _IlanKarti extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Hero resim
             Hero(
               tag: 'ilan_resim_${ilan.id}',
               child: resimler.isNotEmpty
@@ -453,7 +444,6 @@ class _IlanKarti extends ConsumerWidget {
                       ),
                     ),
             ),
- 
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 7, 8, 8),
               child: Column(
@@ -546,13 +536,13 @@ class _IlanKarti extends ConsumerWidget {
                           ),
                         ),
                       ),
-                      if (kategoriAdi_.isNotEmpty)
+                      if (kategoriAdiStr.isNotEmpty)
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 5, vertical: 2),
                           color: AppColors.chipBg,
                           child: Text(
-                            kategoriAdi_,
+                            kategoriAdiStr,
                             style: GoogleFonts.dmSans(
                                 fontSize: 9,
                                 color: AppColors.textSecondary),
@@ -596,8 +586,7 @@ class _BosEkran extends StatelessWidget {
           OutlinedButton(
             onPressed: onYenile,
             child: Text('Yenile',
-                style:
-                    GoogleFonts.dmSans(color: AppColors.primary)),
+                style: GoogleFonts.dmSans(color: AppColors.primary)),
           ),
         ],
       ),

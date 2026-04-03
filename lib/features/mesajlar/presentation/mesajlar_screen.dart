@@ -11,11 +11,22 @@ import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/widgets/avatar_widget.dart';
  
-class MesajlarScreen extends ConsumerWidget {
+class MesajlarScreen extends ConsumerStatefulWidget {
   const MesajlarScreen({super.key});
  
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MesajlarScreen> createState() => _MesajlarScreenState();
+}
+ 
+class _MesajlarScreenState extends ConsumerState<MesajlarScreen>
+    with AutomaticKeepAliveClientMixin {
+ 
+  @override
+  bool get wantKeepAlive => true;
+ 
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
     final uid = ref.watch(currentUserProvider)?.uid;
     final sohbetlerAsync = ref.watch(sohbetlerProvider);
     final engellenenlerAsync = ref.watch(engellenenlerProvider);
@@ -62,37 +73,27 @@ class MesajlarScreen extends ConsumerWidget {
                 color: AppColors.red, strokeWidth: 2)),
         error: (_, __) => Center(
           child: Text('Bir hata oluştu.',
-              style: GoogleFonts.dmSans(
-                  color: AppColors.textSecondary)),
+              style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
         ),
         data: (sohbetler) {
-          // Engellenenler listesi
-          final engellenenUidler =
-              (engellenenlerAsync.value ?? []).toSet();
+          final engellenenUidler = (engellenenlerAsync.value ?? []).toSet();
  
-          // Filtrele: gizli + engellenenler
           final gorunenler = sohbetler.where((s) {
             final kullanicilar =
                 List<String>.from(s['kullanicilar'] ?? []);
             final karsiUid = kullanicilar
                 .firstWhere((id) => id != uid, orElse: () => '');
  
-            // Engelleneni gizle
             if (engellenenUidler.contains(karsiUid)) return false;
  
-            // Gizlenmiş sohbeti filtrele
-            final gizli =
-                (s['gizli'] as Map<String, dynamic>?) ?? {};
+            final gizli = (s['gizli'] as Map<String, dynamic>?) ?? {};
             final gizliDeger = gizli[uid];
             if (gizliDeger == null) return true;
             if (gizliDeger is bool && gizliDeger == true) return false;
             if (gizliDeger is Timestamp) {
-              final sonMesajZamani =
-                  s['sonMesajZamani'] as Timestamp?;
+              final sonMesajZamani = s['sonMesajZamani'] as Timestamp?;
               if (sonMesajZamani == null) return false;
-              return sonMesajZamani
-                  .toDate()
-                  .isAfter(gizliDeger.toDate());
+              return sonMesajZamani.toDate().isAfter(gizliDeger.toDate());
             }
             return true;
           }).toList();
@@ -107,14 +108,11 @@ class MesajlarScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   Text('Henüz mesajın yok',
                       style: GoogleFonts.dmSans(
-                          fontSize: 15,
-                          color: AppColors.textSecondary)),
+                          fontSize: 15, color: AppColors.textSecondary)),
                   const SizedBox(height: 8),
-                  Text(
-                      'İlanlara tıklayarak mesaj gönderebilirsin',
+                  Text('İlanlara tıklayarak mesaj gönderebilirsin',
                       style: GoogleFonts.dmSans(
-                          fontSize: 13,
-                          color: AppColors.textHint)),
+                          fontSize: 13, color: AppColors.textHint)),
                 ],
               ),
             );
@@ -126,9 +124,11 @@ class MesajlarScreen extends ConsumerWidget {
                 const Divider(height: 1, indent: 72),
             itemBuilder: (context, index) {
               final sohbet = gorunenler[index];
-              return _SohbetKarti(
-                sohbet: sohbet,
-                benimUid: uid,
+              return RepaintBoundary(
+                child: _SohbetKarti(
+                  sohbet: sohbet,
+                  benimUid: uid,
+                ),
               );
             },
           );
@@ -166,15 +166,13 @@ class _SohbetKarti extends ConsumerWidget {
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text('İptal',
-                style: GoogleFonts.dmSans(
-                    color: AppColors.textSecondary)),
+                style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text('Sil',
                 style: GoogleFonts.dmSans(
-                    color: AppColors.red,
-                    fontWeight: FontWeight.w700)),
+                    color: AppColors.red, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -190,8 +188,7 @@ class _SohbetKarti extends ConsumerWidget {
  
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final kullanicilar =
-        List<String>.from(sohbet['kullanicilar'] ?? []);
+    final kullanicilar = List<String>.from(sohbet['kullanicilar'] ?? []);
     final karsiUid = kullanicilar
         .firstWhere((id) => id != benimUid, orElse: () => '');
  
@@ -206,10 +203,8 @@ class _SohbetKarti extends ConsumerWidget {
     final ilanResimUrl = sohbet['ilanResimUrl'] as String? ?? '';
     final sohbetId = sohbet['id'] as String? ?? '';
  
-    final okunmamis =
-        (sohbet['okunmamis'] as Map<String, dynamic>?) ?? {};
-    final okunmamisSayi =
-        ((okunmamis[benimUid] as num?)?.toInt() ?? 0);
+    final okunmamis = (sohbet['okunmamis'] as Map<String, dynamic>?) ?? {};
+    final okunmamisSayi = ((okunmamis[benimUid] as num?)?.toInt() ?? 0);
  
     final zamanYazi = sonMesajZamani != null
         ? _zamanFormat(sonMesajZamani.toDate())
@@ -217,8 +212,7 @@ class _SohbetKarti extends ConsumerWidget {
  
     final sabitlenmis =
         (sohbet['sabitlenmis'] as Map<String, dynamic>?)?[benimUid]
-                as bool? ??
-            false;
+            as bool? ?? false;
  
     return GestureDetector(
       onLongPress: () => _silDialog(context, ref, sohbetId),
@@ -230,16 +224,14 @@ class _SohbetKarti extends ConsumerWidget {
             karsiKullaniciAd: karsiAd,
             ilanId: ilanId,
             ilanBaslik: ilanBaslik,
-            ilanResimUrl:
-                ilanResimUrl.isNotEmpty ? ilanResimUrl : null,
+            ilanResimUrl: ilanResimUrl.isNotEmpty ? ilanResimUrl : null,
             sohbetId: sohbetId,
           ),
         ),
       ),
       child: Container(
         color: sabitlenmis ? AppColors.surface : Colors.white,
-        padding: const EdgeInsets.symmetric(
-            horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
             Stack(
@@ -275,7 +267,6 @@ class _SohbetKarti extends ConsumerWidget {
               ],
             ),
             const SizedBox(width: 12),
- 
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -312,8 +303,7 @@ class _SohbetKarti extends ConsumerWidget {
                     Text(
                       karsiAd,
                       style: GoogleFonts.dmSans(
-                          fontSize: 11,
-                          color: AppColors.textSecondary),
+                          fontSize: 11, color: AppColors.textSecondary),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -371,9 +361,7 @@ class _SohbetKarti extends ConsumerWidget {
     } else if (fark.inDays == 1) {
       return 'Dün';
     } else if (fark.inDays < 7) {
-      const gunler = [
-        'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'
-      ];
+      const gunler = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
       return gunler[zaman.weekday - 1];
     } else {
       return '${zaman.day}.${zaman.month}.${zaman.year}';
