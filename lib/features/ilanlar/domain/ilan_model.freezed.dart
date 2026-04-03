@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$IlanModel {
 
- String get id; String get tip; String get nereden; String get nereye; String get ucret; String get urun; String get notlar; String get kategori; String get kullaniciId; String get kullaniciAd; bool get aktif;@TimestampConverter() DateTime? get tarih;@TimestampConverter() DateTime? get olusturmaTarihi; String get resimUrl; List<String> get resimUrller; String get urunLinki;
+ String get id; String get tip; String get nereden; String get nereye; String get ucret; String get urun; String get notlar; String get kategori; String get kullaniciId; String get kullaniciAd; bool get aktif;@TimestampConverter() DateTime? get tarih;@TimestampConverter() DateTime? get olusturmaTarihi; String get resimUrl; List<String> get resimUrller; String get urunLinki; int get favoriSayisi;
 /// Create a copy of IlanModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,7 +48,7 @@ abstract mixin class $IlanModelCopyWith<$Res>  {
   factory $IlanModelCopyWith(IlanModel value, $Res Function(IlanModel) _then) = _$IlanModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String tip, String nereden, String nereye, String ucret, String urun, String notlar, String kategori, String kullaniciId, String kullaniciAd, bool aktif,@TimestampConverter() DateTime? tarih,@TimestampConverter() DateTime? olusturmaTarihi, String resimUrl, List<String> resimUrller, String urunLinki
+ String id, String tip, String nereden, String nereye, String ucret, String urun, String notlar, String kategori, String kullaniciId, String kullaniciAd, bool aktif,@TimestampConverter() DateTime? tarih,@TimestampConverter() DateTime? olusturmaTarihi, String resimUrl, List<String> resimUrller, String urunLinki, int favoriSayisi
 });
 
 
@@ -65,7 +65,7 @@ class _$IlanModelCopyWithImpl<$Res>
 
 /// Create a copy of IlanModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? tip = null,Object? nereden = null,Object? nereye = null,Object? ucret = null,Object? urun = null,Object? notlar = null,Object? kategori = null,Object? kullaniciId = null,Object? kullaniciAd = null,Object? aktif = null,Object? tarih = freezed,Object? olusturmaTarihi = freezed,Object? resimUrl = null,Object? resimUrller = null,Object? urunLinki = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? tip = null,Object? nereden = null,Object? nereye = null,Object? ucret = null,Object? urun = null,Object? notlar = null,Object? kategori = null,Object? kullaniciId = null,Object? kullaniciAd = null,Object? aktif = null,Object? tarih = freezed,Object? olusturmaTarihi = freezed,Object? resimUrl = null,Object? resimUrller = null,Object? urunLinki = null,Object? favoriSayisi = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,tip: null == tip ? _self.tip : tip // ignore: cast_nullable_to_non_nullable
@@ -83,7 +83,8 @@ as DateTime?,olusturmaTarihi: freezed == olusturmaTarihi ? _self.olusturmaTarihi
 as DateTime?,resimUrl: null == resimUrl ? _self.resimUrl : resimUrl // ignore: cast_nullable_to_non_nullable
 as String,resimUrller: null == resimUrller ? _self.resimUrller : resimUrller // ignore: cast_nullable_to_non_nullable
 as List<String>,urunLinki: null == urunLinki ? _self.urunLinki : urunLinki // ignore: cast_nullable_to_non_nullable
-as String,
+as String,favoriSayisi: null == favoriSayisi ? _self.favoriSayisi : favoriSayisi // ignore: cast_nullable_to_non_nullable
+as int,
   ));
 }
 
@@ -224,7 +225,7 @@ return $default(_that.id,_that.tip,_that.nereden,_that.nereye,_that.ucret,_that.
 @JsonSerializable()
 
 class _IlanModel implements IlanModel {
-  const _IlanModel({required this.id, required this.tip, required this.nereden, required this.nereye, this.ucret = '', this.urun = '', this.notlar = '', this.kategori = 'diger', required this.kullaniciId, this.kullaniciAd = 'Kullanıcı', this.aktif = true, @TimestampConverter() this.tarih, @TimestampConverter() this.olusturmaTarihi, this.resimUrl = '', final  List<String> resimUrller = const [], this.urunLinki = ''}): _resimUrller = resimUrller;
+  const _IlanModel({required this.id, required this.tip, required this.nereden, required this.nereye, this.ucret = '', this.urun = '', this.notlar = '', this.kategori = 'diger', required this.kullaniciId, this.kullaniciAd = 'Kullanıcı', this.aktif = true, @TimestampConverter() this.tarih, @TimestampConverter() this.olusturmaTarihi, this.resimUrl = '', final  List<String> resimUrller = const [], this.urunLinki = '', this.favoriSayisi = 0}): _resimUrller = resimUrller;
   factory _IlanModel.fromJson(Map<String, dynamic> json) => _$IlanModelFromJson(json);
 
 @override final  String id;
@@ -249,6 +250,7 @@ class _IlanModel implements IlanModel {
 }
 
 @override@JsonKey() final  String urunLinki;
+@override@JsonKey() final  int favoriSayisi;
 
 /// Create a copy of IlanModel
 /// with the given fields replaced by the non-null parameter values.
@@ -283,7 +285,7 @@ abstract mixin class _$IlanModelCopyWith<$Res> implements $IlanModelCopyWith<$Re
   factory _$IlanModelCopyWith(_IlanModel value, $Res Function(_IlanModel) _then) = __$IlanModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String tip, String nereden, String nereye, String ucret, String urun, String notlar, String kategori, String kullaniciId, String kullaniciAd, bool aktif,@TimestampConverter() DateTime? tarih,@TimestampConverter() DateTime? olusturmaTarihi, String resimUrl, List<String> resimUrller, String urunLinki
+ String id, String tip, String nereden, String nereye, String ucret, String urun, String notlar, String kategori, String kullaniciId, String kullaniciAd, bool aktif,@TimestampConverter() DateTime? tarih,@TimestampConverter() DateTime? olusturmaTarihi, String resimUrl, List<String> resimUrller, String urunLinki, int favoriSayisi
 });
 
 
@@ -300,7 +302,7 @@ class __$IlanModelCopyWithImpl<$Res>
 
 /// Create a copy of IlanModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? tip = null,Object? nereden = null,Object? nereye = null,Object? ucret = null,Object? urun = null,Object? notlar = null,Object? kategori = null,Object? kullaniciId = null,Object? kullaniciAd = null,Object? aktif = null,Object? tarih = freezed,Object? olusturmaTarihi = freezed,Object? resimUrl = null,Object? resimUrller = null,Object? urunLinki = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? tip = null,Object? nereden = null,Object? nereye = null,Object? ucret = null,Object? urun = null,Object? notlar = null,Object? kategori = null,Object? kullaniciId = null,Object? kullaniciAd = null,Object? aktif = null,Object? tarih = freezed,Object? olusturmaTarihi = freezed,Object? resimUrl = null,Object? resimUrller = null,Object? urunLinki = null,Object? favoriSayisi = null,}) {
   return _then(_IlanModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,tip: null == tip ? _self.tip : tip // ignore: cast_nullable_to_non_nullable
@@ -318,7 +320,8 @@ as DateTime?,olusturmaTarihi: freezed == olusturmaTarihi ? _self.olusturmaTarihi
 as DateTime?,resimUrl: null == resimUrl ? _self.resimUrl : resimUrl // ignore: cast_nullable_to_non_nullable
 as String,resimUrller: null == resimUrller ? _self._resimUrller : resimUrller // ignore: cast_nullable_to_non_nullable
 as List<String>,urunLinki: null == urunLinki ? _self.urunLinki : urunLinki // ignore: cast_nullable_to_non_nullable
-as String,
+as String,favoriSayisi: null == favoriSayisi ? _self.favoriSayisi : favoriSayisi // ignore: cast_nullable_to_non_nullable
+as int,
   ));
 }
 

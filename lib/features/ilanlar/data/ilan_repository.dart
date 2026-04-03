@@ -190,7 +190,10 @@ class IlanRepository {
     required String kullaniciId,
     required IlanModel ilan,
   }) async {
-    await firestore.collection(Collections.favoriler).add({
+    final batch = firestore.batch();
+
+    final favoriRef = firestore.collection(Collections.favoriler).doc();
+    batch.set(favoriRef, {
       'kullaniciId': kullaniciId,
       'ilanId':      ilan.id,
       'tip':         ilan.tip,
@@ -203,6 +206,13 @@ class IlanRepository {
       if (ilan.resimUrl.isNotEmpty) 'resimUrl': ilan.resimUrl,
       'eklemeTarihi': FieldValue.serverTimestamp(),
     });
+
+    final ilanRef = _col.doc(ilan.id);
+    batch.update(ilanRef, {
+      'favoriSayisi': FieldValue.increment(1),
+    });
+
+    await batch.commit();
   }
  
   Future<void> favoridanCikar({
@@ -214,9 +224,18 @@ class IlanRepository {
         .where('kullaniciId', isEqualTo: kullaniciId)
         .where('ilanId', isEqualTo: ilanId)
         .get();
+
+    if (snap.docs.isEmpty) return;
+
+    final batch = firestore.batch();
     for (final doc in snap.docs) {
-      await doc.reference.delete();
+      batch.delete(doc.reference);
     }
+    batch.update(_col.doc(ilanId), {
+      'favoriSayisi': FieldValue.increment(-1),
+    });
+
+    await batch.commit();
   }
  
   Stream<List<Map<String, dynamic>>> favorilerStream(String kullaniciId) {

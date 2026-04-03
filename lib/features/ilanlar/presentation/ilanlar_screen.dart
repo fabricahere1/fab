@@ -37,6 +37,7 @@ class IsteklerScreen extends ConsumerStatefulWidget {
  
 class _IsteklerScreenState extends ConsumerState<IsteklerScreen> {
   final _scrollController = ScrollController();
+  final _aramaCtrl = TextEditingController();
   SiralamaTipi _siralama = SiralamaTipi.enYeni;
   String? _seciliKategori;
  
@@ -49,6 +50,7 @@ class _IsteklerScreenState extends ConsumerState<IsteklerScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _aramaCtrl.dispose();
     super.dispose();
   }
  
@@ -119,10 +121,63 @@ class _IsteklerScreenState extends ConsumerState<IsteklerScreen> {
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(44),
-          child: _KategoriBar(
-            seciliKategori: _seciliKategori,
-            onSecildi: (k) => setState(() => _seciliKategori = k),
+          preferredSize: const Size.fromHeight(88),
+          child: Column(
+            children: [
+              Container(
+                color: Colors.white,
+                padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+                child: TextField(
+                  controller: _aramaCtrl,
+                  onChanged: (val) {
+                    ref.read(istekIlanlarProvider.notifier)
+                        .filtreAramaGuncelle(val);
+                    setState(() {});
+                  },
+                  style: GoogleFonts.dmSans(fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: 'İlanlarda ara...',
+                    hintStyle: GoogleFonts.dmSans(
+                        color: AppColors.textHint, fontSize: 14),
+                    prefixIcon: const Icon(Icons.search,
+                        color: AppColors.textSecondary, size: 20),
+                    suffixIcon: _aramaCtrl.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.close,
+                                size: 16, color: AppColors.textSecondary),
+                            onPressed: () {
+                              _aramaCtrl.clear();
+                              ref.read(istekIlanlarProvider.notifier)
+                                  .filtreAramaGuncelle('');
+                              setState(() {});
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: AppColors.surface,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: AppColors.divider),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: AppColors.divider),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(
+                          color: AppColors.primary, width: 1.5),
+                    ),
+                  ),
+                ),
+              ),
+              _KategoriBar(
+                seciliKategori: _seciliKategori,
+                onSecildi: (k) => setState(() => _seciliKategori = k),
+              ),
+            ],
           ),
         ),
       ),
@@ -144,7 +199,7 @@ class _IsteklerScreenState extends ConsumerState<IsteklerScreen> {
                     padding: const EdgeInsets.all(6),
                     itemCount: ilanlar.length,
                     itemBuilder: (context, index) {
-                      return _IlanKarti(ilan: ilanlar[index]);
+                      return _IlanKarti(ilanId: ilanlar[index].id);
                     },
                   ),
                 ),
@@ -368,16 +423,19 @@ class _KategoriChip extends StatelessWidget {
 // ── İlan Kartı (Hero destekli) ────────────────────────────
  
 class _IlanKarti extends ConsumerWidget {
-  final IlanModel ilan;
-  const _IlanKarti({required this.ilan});
+  final String ilanId;
+  const _IlanKarti({required this.ilanId});
  
   double _resimYuksekligi() {
     final heights = [160.0, 200.0, 140.0, 180.0, 220.0, 150.0];
-    return heights[ilan.id.hashCode.abs() % heights.length];
+    return heights[ilanId.hashCode.abs() % heights.length];
   }
  
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final ilan = ref.watch(istekIlanlarProvider).ilanlar
+        .firstWhere((i) => i.id == ilanId, orElse: () => IlanModel(
+          id: ilanId, tip: '', nereden: '', nereye: '', kullaniciId: ''));
     final resimler = ilan.tumResimler;
     final kategoriAdi_ = kategoriAdi(ilan.kategori);
     final uid = ref.watch(currentUserProvider)?.uid;
@@ -474,39 +532,58 @@ class _IlanKarti extends ConsumerWidget {
                         ),
                       ),
                       if (gosterFavori)
-                        GestureDetector(
-                          onTap: () async {
-                            if (favorideMi) {
-                              await ref
-                                  .read(ilanRepositoryProvider)
-                                  .favoridanCikar(
-                                    kullaniciId: uid,
-                                    ilanId: ilan.id,
-                                  );
-                            } else {
-                              await ref
-                                  .read(ilanRepositoryProvider)
-                                  .favoriyeEkle(
-                                    kullaniciId: uid,
-                                    ilan: ilan,
-                                  );
-                            }
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: AppColors.red.withValues(alpha: 0.08),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              favorideMi
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
-                              color: AppColors.red,
-                              size: 16,
+                          GestureDetector(
+                            onTap: () async {
+  if (favorideMi) {
+    await ref
+        .read(ilanRepositoryProvider)
+        .favoridanCikar(
+          kullaniciId: uid,
+          ilanId: ilan.id,
+        );
+    ref.read(istekIlanlarProvider.notifier)
+        .ilanFavoriSayisiGuncelle(ilan.id, -1);
+  } else {
+    await ref
+        .read(ilanRepositoryProvider)
+        .favoriyeEkle(
+          kullaniciId: uid,
+          ilan: ilan,
+        );
+    ref.read(istekIlanlarProvider.notifier)
+        .ilanFavoriSayisiGuncelle(ilan.id, 1);
+  }
+},
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (ilan.favoriSayisi > 0)
+                                  Text(
+                                    '${ilan.favoriSayisi}',
+                                    style: GoogleFonts.dmSans(
+                                      fontSize: 11,
+                                      color: AppColors.red,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                const SizedBox(width: 2),
+                                Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.red.withValues(alpha: 0.08),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    favorideMi
+                                        ? Icons.favorite
+                                        : Icons.favorite_border,
+                                    color: AppColors.red,
+                                    size: 16,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ),
                     ],
                   ),
                   const SizedBox(height: 4),

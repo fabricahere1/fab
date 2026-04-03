@@ -17,8 +17,9 @@ class IlanListeState {
   final String siralama;
   final String? filtreKategori;
   final String filtreNereye;
+  final String filtreArama;
   final List<String> engellenenler;
- 
+
   const IlanListeState({
     this.ilanlar = const [],
     this.yukleniyor = false,
@@ -27,6 +28,7 @@ class IlanListeState {
     this.siralama = 'tarih',
     this.filtreKategori,
     this.filtreNereye = '',
+    this.filtreArama = '',
     this.engellenenler = const [],
   });
  
@@ -39,6 +41,7 @@ class IlanListeState {
     String? filtreKategori,
     bool clearFiltreKategori = false,
     String? filtreNereye,
+    String? filtreArama,
     List<String>? engellenenler,
   }) =>
       IlanListeState(
@@ -51,6 +54,7 @@ class IlanListeState {
             ? null
             : (filtreKategori ?? this.filtreKategori),
         filtreNereye: filtreNereye ?? this.filtreNereye,
+        filtreArama: filtreArama ?? this.filtreArama,
         engellenenler: engellenenler ?? this.engellenenler,
       );
  
@@ -69,6 +73,16 @@ class IlanListeState {
       liste = liste
           .where((i) => i.nereye.toLowerCase().contains(q))
           .toList();
+    }
+    if (filtreArama.isNotEmpty) {
+      final q = filtreArama.toLowerCase();
+      liste = liste.where((i) =>
+        i.urun.toLowerCase().contains(q) ||
+        i.nereden.toLowerCase().contains(q) ||
+        i.nereye.toLowerCase().contains(q) ||
+        i.notlar.toLowerCase().contains(q) ||
+        i.kullaniciAd.toLowerCase().contains(q)
+      ).toList();
     }
     return liste;
   }
@@ -144,6 +158,20 @@ class IstekIlanlar extends _$IstekIlanlar {
  
   void filtreNereyeGuncelle(String nereye) {
     state = state.copyWith(filtreNereye: nereye);
+  }
+
+  void filtreAramaGuncelle(String arama) {
+    state = state.copyWith(filtreArama: arama);
+  }
+
+  void ilanFavoriSayisiGuncelle(String ilanId, int delta) {
+    final guncellenmis = state.ilanlar.map((i) {
+      if (i.id == ilanId) {
+        return i.copyWith(favoriSayisi: (i.favoriSayisi + delta).clamp(0, 999999));
+      }
+      return i;
+    }).toList();
+    state = state.copyWith(ilanlar: guncellenmis);
   }
  
   void filtreleriTemizle() {
@@ -229,7 +257,21 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
   void filtreNereyeGuncelle(String nereye) {
     state = state.copyWith(filtreNereye: nereye);
   }
- 
+
+  void filtreAramaGuncelle(String arama) {
+    state = state.copyWith(filtreArama: arama);
+  }
+
+  void ilanFavoriSayisiGuncelle(String ilanId, int delta) {
+    final guncellenmis = state.ilanlar.map((i) {
+      if (i.id == ilanId) {
+        return i.copyWith(favoriSayisi: (i.favoriSayisi + delta).clamp(0, 999999));
+      }
+      return i;
+    }).toList();
+    state = state.copyWith(ilanlar: guncellenmis);
+  }
+
   void engellenenlerGuncelle(List<String> engellenenler) {
     state = state.copyWith(engellenenler: engellenenler);
   }
