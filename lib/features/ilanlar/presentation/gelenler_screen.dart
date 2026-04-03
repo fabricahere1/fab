@@ -15,8 +15,12 @@ class GelenlerScreen extends ConsumerStatefulWidget {
   ConsumerState<GelenlerScreen> createState() => _GelenlerScreenState();
 }
  
-class _GelenlerScreenState extends ConsumerState<GelenlerScreen> {
+class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
+    with AutomaticKeepAliveClientMixin {
   final _scrollController = ScrollController();
+ 
+  @override
+  bool get wantKeepAlive => true;
  
   @override
   void initState() {
@@ -39,6 +43,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen> {
  
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final state = ref.watch(tasiyiciIlanlarProvider);
     final ilanlar = state.filtrelenmis;
  
@@ -86,7 +91,9 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen> {
                           ),
                         );
                       }
-                      return _GelenKarti(ilan: ilanlar[index]);
+                      return RepaintBoundary(
+                        child: _GelenKarti(ilan: ilanlar[index]),
+                      );
                     },
                   ),
                 ),
@@ -111,7 +118,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen> {
  
 class _GelenKarti extends StatelessWidget {
   final IlanModel ilan;
-  const _GelenKarti({required this.ilan});
+  const _GelenKarti({required this.ilan, super.key});
  
   String? _gelisYazisi() {
     if (ilan.tarih == null) return null;
@@ -128,8 +135,7 @@ class _GelenKarti extends StatelessWidget {
  
   @override
   Widget build(BuildContext context) {
-    final kategoriAdi_ = ilan.kategori.isNotEmpty &&
-            ilan.kategori != 'diger'
+    final kategoriAdiStr = ilan.kategori.isNotEmpty && ilan.kategori != 'diger'
         ? ilan.kategori
             .split(',')
             .map((k) => kKategoriler[k.trim()] ?? k.trim())
@@ -142,13 +148,10 @@ class _GelenKarti extends StatelessWidget {
  
     final gelisYazisi = _gelisYazisi();
  
-    // Renk — yaklaştıkça daha canlı yeşil
     Color gelisRenk = const Color(0xFF2E7D32);
     Color gelisArkaRenk = const Color(0xFFE8F5E9);
     if (gelisYazisi != null) {
-      final fark = ilan.tarih!
-          .difference(DateTime.now())
-          .inDays;
+      final fark = ilan.tarih!.difference(DateTime.now()).inDays;
       if (fark <= 3) {
         gelisRenk = const Color(0xFFE65100);
         gelisArkaRenk = const Color(0xFFFFF3E0);
@@ -177,12 +180,10 @@ class _GelenKarti extends StatelessWidget {
       ),
       child: Container(
         color: Colors.white,
-        padding: const EdgeInsets.symmetric(
-            horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Nereden → Nereye
             Row(
               children: [
                 const Icon(Icons.flight_takeoff_outlined,
@@ -203,7 +204,6 @@ class _GelenKarti extends StatelessWidget {
             ),
             const SizedBox(height: 8),
  
-            // Tarih + Geliş yazısı + Ücret
             Row(
               children: [
                 if (tarihYazi.isNotEmpty) ...[
@@ -212,8 +212,7 @@ class _GelenKarti extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text(tarihYazi,
                       style: GoogleFonts.dmSans(
-                          fontSize: 13,
-                          color: AppColors.textSecondary)),
+                          fontSize: 13, color: AppColors.textSecondary)),
                   const SizedBox(width: 8),
                 ],
                 if (gelisYazisi != null)
@@ -251,8 +250,7 @@ class _GelenKarti extends StatelessWidget {
               ],
             ),
  
-            // Kategoriler
-            if (kategoriAdi_.isNotEmpty) ...[
+            if (kategoriAdiStr.isNotEmpty) ...[
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -261,10 +259,9 @@ class _GelenKarti extends StatelessWidget {
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      kategoriAdi_,
+                      kategoriAdiStr,
                       style: GoogleFonts.dmSans(
-                          fontSize: 12,
-                          color: AppColors.textSecondary),
+                          fontSize: 12, color: AppColors.textSecondary),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -273,7 +270,6 @@ class _GelenKarti extends StatelessWidget {
               ),
             ],
  
-            // Notlar
             if (ilan.notlar.isNotEmpty) ...[
               const SizedBox(height: 6),
               Text(
@@ -285,14 +281,12 @@ class _GelenKarti extends StatelessWidget {
               ),
             ],
  
-            // İlan sahibi
             const SizedBox(height: 10),
             Row(
               children: [
                 CircleAvatar(
                   radius: 12,
-                  backgroundColor:
-                      AppColors.avatarColor(ilan.kullaniciAd),
+                  backgroundColor: AppColors.avatarColor(ilan.kullaniciAd),
                   child: Text(
                     ilan.kullaniciAd.isNotEmpty
                         ? ilan.kullaniciAd[0].toUpperCase()

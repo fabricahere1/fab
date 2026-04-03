@@ -17,7 +17,11 @@ class ProfilScreen extends ConsumerStatefulWidget {
   ConsumerState<ProfilScreen> createState() => _ProfilScreenState();
 }
  
-class _ProfilScreenState extends ConsumerState<ProfilScreen> {
+class _ProfilScreenState extends ConsumerState<ProfilScreen>
+    with AutomaticKeepAliveClientMixin {
+ 
+  @override
+  bool get wantKeepAlive => true;
  
   Future<void> _cikisDialog() async {
     final onay = await showDialog<bool>(
@@ -56,6 +60,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
  
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final user = ref.watch(currentUserProvider);
     final benimProfilAsync = ref.watch(benimKullaniciProfilProvider);
  
@@ -69,7 +74,6 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
       ),
       body: ListView(
         children: [
-          // ── Profil Kartı ───────────────────────────────
           Container(
             color: Colors.white,
             padding: const EdgeInsets.all(20),
