@@ -90,9 +90,14 @@ class IlanListeState {
  
 @riverpod
 class IstekIlanlar extends _$IstekIlanlar {
+  bool _ilkYuklemeYapildi = false;
+
   @override
   IlanListeState build() {
-    Future.microtask(() => _ilkYukle());
+    if (!_ilkYuklemeYapildi) {
+      _ilkYuklemeYapildi = true;
+      Future.microtask(() => _ilkYukle());
+    }
     return const IlanListeState(yukleniyor: true);
   }
  
@@ -115,17 +120,18 @@ class IstekIlanlar extends _$IstekIlanlar {
   }
  
   Future<void> yenile() async {
-    state = const IlanListeState(yukleniyor: true);
+    state = state.copyWith(yukleniyor: true);
     try {
       final sonuc = await _repo.istekIlanlariniGetir();
-      state = IlanListeState(
+      state = state.copyWith(
         ilanlar: sonuc.ilanlar,
         sonDoc: sonuc.sonDoc,
         dahaFazlaVar: !sonuc.bitti,
+        yukleniyor: false,
       );
     } catch (e) {
       debugPrint('İstek ilanları yenileme hatası: $e');
-      state = const IlanListeState();
+      state = state.copyWith(yukleniyor: false);
     }
   }
  

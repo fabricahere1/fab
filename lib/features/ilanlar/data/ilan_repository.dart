@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/ilan_model.dart';
 import '../../../shared/constants/app_constants.dart';
+import 'package:flutter/foundation.dart';
  
 part 'ilan_repository.g.dart';
  
@@ -54,6 +55,7 @@ class IlanRepository {
         .limit(limit);
     if (kategori != null) q = q.where('kategori', isEqualTo: kategori);
     final snap = await q.get();
+    debugPrint('İlk ilan favoriSayisi raw: ${(snap.docs.first.data() as Map<String, dynamic>)['favoriSayisi']}');
     return IlanSayfasi(
       ilanlar: snap.docs.map(IlanModel.fromFirestore).toList(),
       sonDoc: snap.docs.isNotEmpty ? snap.docs.last : null,
@@ -211,6 +213,7 @@ class IlanRepository {
     batch.update(ilanRef, {
       'favoriSayisi': FieldValue.increment(1),
     });
+    debugPrint('favoriSayisi increment edildi: ${ilan.id}');
 
     await batch.commit();
   }
