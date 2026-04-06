@@ -8,45 +8,41 @@ import '../../ilanlar/presentation/gelenler_screen.dart';
 import '../../mesajlar/presentation/mesajlar_screen.dart';
 import '../../mesajlar/providers/mesaj_provider.dart';
 import '../../profil/presentation/profil_screen.dart';
-import '../../bildirimler/presentation/bildirimler_screen.dart';
-import '../../bildirimler/providers/bildirim_provider.dart';
 import '../../../shared/constants/app_colors.dart';
- 
+
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
- 
+
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
- 
+
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
   DateTime? _sonGeriTusu;
- 
+
   final List<Widget> _pages = const [
     IsteklerScreen(),
     GelenlerScreen(),
     MesajlarScreen(),
-    BildirimlerScreen(),
     ProfilScreen(),
   ];
- 
+
   @override
   Widget build(BuildContext context) {
     final uid = ref.watch(currentUserProvider)?.uid;
     final toplamOkunmamis = ref.watch(okunmamisSayiProvider);
-    final okunmamisBildirim = ref.watch(okunmamisBildirimSayiProvider).value ?? 0;
- 
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
- 
+
         if (_selectedIndex != 0) {
           setState(() => _selectedIndex = 0);
           return;
         }
- 
+
         final simdi = DateTime.now();
         if (_sonGeriTusu == null ||
             simdi.difference(_sonGeriTusu!) > const Duration(seconds: 2)) {
@@ -86,7 +82,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               selectedIcon: Icon(Icons.flight_land, color: AppColors.red),
               label: 'Gelenler',
             ),
-            // Mesajlar — okunmamış badge
             NavigationDestination(
               icon: uid == null || toplamOkunmamis == 0
                   ? const Icon(Icons.chat_bubble_outline)
@@ -117,41 +112,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
               label: 'Mesajlar',
             ),
-            // Bildirimler — okunmamış badge
-            NavigationDestination(
-              icon: okunmamisBildirim == 0
-                  ? const Icon(Icons.notifications_outlined)
-                  : Badge(
-                      label: Text(
-                        okunmamisBildirim > 99 ? '99+' : '$okunmamisBildirim',
-                        style: GoogleFonts.dmSans(
-                            fontSize: 10,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600),
-                      ),
-                      backgroundColor: AppColors.red,
-                      child: const Icon(Icons.notifications_outlined),
-                    ),
-              selectedIcon: okunmamisBildirim == 0
-                  ? const Icon(Icons.notifications, color: AppColors.red)
-                  : Badge(
-                      label: Text(
-                        okunmamisBildirim > 99 ? '99+' : '$okunmamisBildirim',
-                        style: GoogleFonts.dmSans(
-                            fontSize: 10,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600),
-                      ),
-                      backgroundColor: AppColors.red,
-                      child: const Icon(Icons.notifications,
-                          color: AppColors.red),
-                    ),
-              label: 'Bildirimler',
-            ),
+            // ✅ 3 çizgi ikonu
             const NavigationDestination(
-              icon: Icon(Icons.person_outline),
-              selectedIcon: Icon(Icons.person, color: AppColors.red),
-              label: 'Profil',
+              icon: Icon(Icons.menu),
+              selectedIcon: Icon(Icons.menu, color: AppColors.red),
+              label: 'Menü',
             ),
           ],
         ),

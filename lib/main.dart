@@ -4,18 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
- 
+
 import 'core/theme/app_theme.dart';
 import 'firebase_options.dart';
 import 'router/app_router.dart';
- 
+
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 }
- 
+
 Future<void> _migrateFavoriSayisi() async {
   final firestore = FirebaseFirestore.instance;
   final snap = await firestore.collection('ilanlar').get();
@@ -39,25 +38,25 @@ void main() async {
   await _migrateFavoriSayisi();
 
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
- 
+
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(statusBarColor: Colors.transparent),
   );
- 
+
   runApp(
     const ProviderScope(
       child: IsteApp(),
     ),
   );
 }
- 
+
 class IsteApp extends ConsumerWidget {
   const IsteApp({super.key});
- 
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
- 
+
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'İSTE',

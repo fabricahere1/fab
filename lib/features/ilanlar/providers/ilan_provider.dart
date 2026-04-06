@@ -360,3 +360,20 @@ Stream<bool> ilanFavorideMi(Ref ref, String ilanId) {
 Stream<List<IlanModel>> kullaniciIlanlarStream(Ref ref, String kullaniciId) {
   return ref.watch(ilanRepositoryProvider).kullaniciIlanlarStream(kullaniciId);
 }
+// ✅ Detay sayfası için real-time favori sayacı
+@riverpod
+Stream<int> ilanFavoriSayisi(Ref ref, String ilanId) {
+  return ref.watch(ilanRepositoryProvider).favoriSayisiStream(ilanId);
+}
+@riverpod
+Set<String> favoriliIlanIdler(Ref ref) {
+  final favoriler = ref.watch(favorilerProvider);
+  return favoriler.when(
+    data: (liste) => liste
+        .map((f) => f['ilanId'] as String? ?? '')
+        .where((id) => id.isNotEmpty)
+        .toSet(),
+    loading: () => {},
+    error: (_, __) => {},
+  );
+}

@@ -7,21 +7,21 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/ilan_model.dart';
 import '../../../shared/constants/app_constants.dart';
 import 'package:flutter/foundation.dart';
- 
+
 part 'ilan_repository.g.dart';
- 
+
 class IlanSayfasi {
   final List<IlanModel> ilanlar;
   final DocumentSnapshot? sonDoc;
   final bool bitti;
- 
+
   const IlanSayfasi({
     required this.ilanlar,
     required this.sonDoc,
     required this.bitti,
   });
 }
- 
+
 @riverpod
 IlanRepository ilanRepository(Ref ref) {
   return IlanRepository(
@@ -30,20 +30,20 @@ IlanRepository ilanRepository(Ref ref) {
     auth: FirebaseAuth.instance,
   );
 }
- 
+
 class IlanRepository {
   final FirebaseFirestore firestore;
   final FirebaseStorage storage;
   final FirebaseAuth auth;
- 
+
   IlanRepository({
     required this.firestore,
     required this.storage,
     required this.auth,
   });
- 
+
   CollectionReference get _col => firestore.collection(Collections.ilanlar);
- 
+
   Future<IlanSayfasi> istekIlanlariniGetir({
     String? kategori,
     int limit = Pagination.ilanSayfaBoyutu,
@@ -55,14 +55,13 @@ class IlanRepository {
         .limit(limit);
     if (kategori != null) q = q.where('kategori', isEqualTo: kategori);
     final snap = await q.get();
-    debugPrint('İlk ilan favoriSayisi raw: ${(snap.docs.first.data() as Map<String, dynamic>)['favoriSayisi']}');
     return IlanSayfasi(
       ilanlar: snap.docs.map(IlanModel.fromFirestore).toList(),
       sonDoc: snap.docs.isNotEmpty ? snap.docs.last : null,
       bitti: snap.docs.length < limit,
     );
   }
- 
+
   Future<IlanSayfasi> tasiyiciIlanlariniGetir({
     bool tariheSore = true,
     int limit = Pagination.ilanSayfaBoyutu,
@@ -106,7 +105,7 @@ class IlanRepository {
       bitti: snap.docs.length < limit,
     );
   }
- 
+
   Future<IlanSayfasi> sonrakiSayfayiGetir({
     required String tip,
     required DocumentSnapshot sonDoc,
@@ -129,7 +128,7 @@ class IlanRepository {
       bitti: snap.docs.length < limit,
     );
   }
- 
+
   Stream<List<IlanModel>> kullaniciIlanlarStream(String kullaniciId) {
     return _col
         .where('kullaniciId', isEqualTo: kullaniciId)
@@ -137,7 +136,7 @@ class IlanRepository {
         .snapshots()
         .map((snap) => snap.docs.map(IlanModel.fromFirestore).toList());
   }
- 
+
   Future<String> ilanOlustur({
     required IlanModel ilan,
     List<File> resimler = const [],
@@ -167,15 +166,23 @@ class IlanRepository {
     final ref = await _col.add(ilanData);
     return ref.id;
   }
- 
+
   Future<void> ilanGuncelle(String ilanId, Map<String, dynamic> data) =>
       _col.doc(ilanId).update(data);
- 
+
   Future<void> ilanSil(String ilanId) => _col.doc(ilanId).delete();
- 
+
   Future<void> ilanPasifYap(String ilanId) =>
       _col.doc(ilanId).update({'aktif': false});
- 
+
+  // ✅ Detay sayfası için real-time favori sayacı
+  Stream<int> favoriSayisiStream(String ilanId) {
+    return _col.doc(ilanId).snapshots().map((doc) =>
+        ((doc.data() as Map<String, dynamic>?)?['favoriSayisi'] as num?)
+            ?.toInt() ??
+        0);
+  }
+
   Stream<bool> favorideMi({
     required String kullaniciId,
     required String ilanId,
@@ -187,7 +194,7 @@ class IlanRepository {
         .snapshots()
         .map((snap) => snap.docs.isNotEmpty);
   }
- 
+
   Future<void> favoriyeEkle({
     required String kullaniciId,
     required IlanModel ilan,
@@ -213,11 +220,10 @@ class IlanRepository {
     batch.update(ilanRef, {
       'favoriSayisi': FieldValue.increment(1),
     });
-    debugPrint('favoriSayisi increment edildi: ${ilan.id}');
 
     await batch.commit();
   }
- 
+
   Future<void> favoridanCikar({
     required String kullaniciId,
     required String ilanId,
@@ -240,7 +246,7 @@ class IlanRepository {
 
     await batch.commit();
   }
- 
+
   Stream<List<Map<String, dynamic>>> favorilerStream(String kullaniciId) {
     return firestore
         .collection(Collections.favoriler)

@@ -9,26 +9,26 @@ import 'ayarlar_screen.dart';
 import 'profil_duzenle_screen.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/widgets/avatar_widget.dart';
- 
+
 class ProfilScreen extends ConsumerStatefulWidget {
   const ProfilScreen({super.key});
- 
+
   @override
   ConsumerState<ProfilScreen> createState() => _ProfilScreenState();
 }
- 
+
 class _ProfilScreenState extends ConsumerState<ProfilScreen>
     with AutomaticKeepAliveClientMixin {
- 
+
   @override
   bool get wantKeepAlive => true;
- 
+
   Future<void> _cikisDialog() async {
     final onay = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12)),
+            borderRadius: BorderRadius.circular(16)),
         title: Text('Çıkış Yap',
             style: GoogleFonts.dmSans(
                 fontSize: 16, fontWeight: FontWeight.w600)),
@@ -57,25 +57,37 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
       ref.read(authProvider.notifier).cikisYap();
     }
   }
- 
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     final user = ref.watch(currentUserProvider);
     final benimProfilAsync = ref.watch(benimKullaniciProfilProvider);
- 
+
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: Text('Profil',
-            style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
         elevation: 0,
       ),
       body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 12),
         children: [
+          // ── Profil Kartı ──────────────────────────────
           Container(
-            color: Colors.white,
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
@@ -143,97 +155,82 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
               ],
             ),
           ),
- 
-          const SizedBox(height: 8),
- 
-          Container(
-            color: Colors.white,
-            child: Column(
-              children: [
-                _MenuOgesi(
-                  icon: Icons.list_alt_outlined,
-                  label: 'İlanlarım',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const IlanlarimScreen()),
-                  ),
+
+          // ── İlanlarım, Favorilerim, Değerlendirmelerim ─
+          _BolumBasligi('Hesabım'),
+          _Kart(
+            children: [
+              _SatirOge(
+                icon: Icons.list_alt_outlined,
+                label: 'İlanlarım',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const IlanlarimScreen()),
                 ),
-                const Divider(height: 1, indent: 56),
-                _MenuOgesi(
-                  icon: Icons.favorite_border_outlined,
-                  label: 'Favorilerim',
-                  iconColor: AppColors.red,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const FavorilerScreen()),
-                  ),
+              ),
+              _Ayrac(),
+              _SatirOge(
+                icon: Icons.favorite_border,
+                label: 'Favorilerim',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const FavorilerScreen()),
                 ),
-                const Divider(height: 1, indent: 56),
-                _MenuOgesi(
-                  icon: Icons.star_border_outlined,
-                  label: 'Değerlendirmelerim',
-                  iconColor: Colors.amber,
-                  onTap: () {},
-                ),
-              ],
-            ),
+              ),
+              _Ayrac(),
+              _SatirOge(
+                icon: Icons.star_border,
+                label: 'Değerlendirmelerim',
+                onTap: () {},
+              ),
+            ],
           ),
- 
-          const SizedBox(height: 8),
- 
-          Container(
-            color: Colors.white,
-            child: Column(
-              children: [
-                _MenuOgesi(
-                  icon: Icons.notifications_outlined,
-                  label: 'Bildirimler',
-                  onTap: () {},
+
+          // ── Ayarlar, İletişim, Gizlilik ───────────────
+          _BolumBasligi('Diğer'),
+          _Kart(
+            children: [
+              _SatirOge(
+                icon: Icons.settings_outlined,
+                label: 'Ayarlar',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const AyarlarScreen()),
                 ),
-                const Divider(height: 1, indent: 56),
-                _MenuOgesi(
-                  icon: Icons.settings_outlined,
-                  label: 'Ayarlar',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const AyarlarScreen()),
-                  ),
-                ),
-                const Divider(height: 1, indent: 56),
-                _MenuOgesi(
-                  icon: Icons.mail_outline,
-                  label: 'İletişim',
-                  onTap: () {},
-                ),
-                const Divider(height: 1, indent: 56),
-                _MenuOgesi(
-                  icon: Icons.privacy_tip_outlined,
-                  label: 'Gizlilik Politikası',
-                  onTap: () {},
-                ),
-              ],
-            ),
+              ),
+              _Ayrac(),
+              _SatirOge(
+                icon: Icons.mail_outline,
+                label: 'İletişim',
+                onTap: () {},
+              ),
+              _Ayrac(),
+              _SatirOge(
+                icon: Icons.privacy_tip_outlined,
+                label: 'Gizlilik Politikası',
+                onTap: () {},
+              ),
+            ],
           ),
- 
-          const SizedBox(height: 8),
- 
-          Container(
-            color: Colors.white,
-            child: _MenuOgesi(
-              icon: Icons.logout,
-              label: 'Çıkış Yap',
-              iconColor: AppColors.red,
-              labelColor: AppColors.red,
-              showArrow: false,
-              onTap: _cikisDialog,
-            ),
+
+          // ── Çıkış Yap ────────────────────────────────
+          _BolumBasligi(''),
+          _Kart(
+            children: [
+              _SatirOge(
+                icon: Icons.logout,
+                label: 'Çıkış Yap',
+                labelColor: AppColors.red,
+                showArrow: false,
+                onTap: _cikisDialog,
+              ),
+            ],
           ),
- 
+
           const SizedBox(height: 32),
- 
           Center(
             child: Text(
               'İSTE v2.0',
@@ -249,42 +246,100 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
     );
   }
 }
- 
-class _MenuOgesi extends StatelessWidget {
+
+// ── Yardımcı Widget'lar ───────────────────────────────────
+
+class _BolumBasligi extends StatelessWidget {
+  final String baslik;
+  const _BolumBasligi(this.baslik);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+      child: Text(
+        baslik.toUpperCase(),
+        style: GoogleFonts.dmSans(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textSecondary,
+            letterSpacing: 1.0),
+      ),
+    );
+  }
+}
+
+class _Kart extends StatelessWidget {
+  final List<Widget> children;
+  const _Kart({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(children: children),
+    );
+  }
+}
+
+class _Ayrac extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return const Divider(height: 1, indent: 54, endIndent: 0);
+  }
+}
+
+class _SatirOge extends StatelessWidget {
   final IconData icon;
   final String label;
-  final Color iconColor;
   final Color labelColor;
   final VoidCallback onTap;
   final bool showArrow;
- 
-  const _MenuOgesi({
+
+  const _SatirOge({
     required this.icon,
     required this.label,
     required this.onTap,
-    this.iconColor = AppColors.textSecondary,
     this.labelColor = AppColors.textPrimary,
     this.showArrow = true,
   });
- 
+
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            Icon(icon, color: iconColor, size: 22),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                label,
-                style: GoogleFonts.dmSans(
-                    fontSize: 15,
-                    color: labelColor,
-                    fontWeight: FontWeight.w500),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(10),
               ),
+              child: Icon(icon, color: Colors.black87, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(label,
+                  style: GoogleFonts.dmSans(
+                      fontSize: 15,
+                      color: labelColor,
+                      fontWeight: FontWeight.w500)),
             ),
             if (showArrow)
               const Icon(Icons.chevron_right,

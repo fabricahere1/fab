@@ -7,46 +7,46 @@ import '../presentation/gelenler_form_screen.dart';
 import '../presentation/ilan_detay_screen.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart';
- 
+
 class GelenlerScreen extends ConsumerStatefulWidget {
   const GelenlerScreen({super.key});
- 
+
   @override
   ConsumerState<GelenlerScreen> createState() => _GelenlerScreenState();
 }
- 
+
 class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
     with AutomaticKeepAliveClientMixin {
   final _scrollController = ScrollController();
- 
+
   @override
   bool get wantKeepAlive => true;
- 
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
   }
- 
+
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
   }
- 
+
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 400) {
       ref.read(tasiyiciIlanlarProvider.notifier).dahaFazlaYukle();
     }
   }
- 
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     final state = ref.watch(tasiyiciIlanlarProvider);
     final ilanlar = state.filtrelenmis;
- 
+
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
@@ -72,6 +72,8 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                       ref.read(tasiyiciIlanlarProvider.notifier).yenile(),
                   child: ListView.separated(
                     controller: _scrollController,
+                    // ✅ Ekran dışındaki öğeleri önceden render et
+                    cacheExtent: 500,
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     itemCount:
                         ilanlar.length + (state.dahaFazlaVar ? 1 : 0),
@@ -113,13 +115,13 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
     );
   }
 }
- 
+
 // ── Gelen İlan Kartı ──────────────────────────────────────
- 
+
 class _GelenKarti extends StatelessWidget {
   final IlanModel ilan;
   const _GelenKarti({required this.ilan, super.key});
- 
+
   String? _gelisYazisi() {
     if (ilan.tarih == null) return null;
     final bugun = DateTime.now();
@@ -132,7 +134,7 @@ class _GelenKarti extends StatelessWidget {
     if (fark == 1) return 'Yarın geliyor';
     return '$fark gün sonra geliyor';
   }
- 
+
   @override
   Widget build(BuildContext context) {
     final kategoriAdiStr = ilan.kategori.isNotEmpty && ilan.kategori != 'diger'
@@ -141,13 +143,13 @@ class _GelenKarti extends StatelessWidget {
             .map((k) => kKategoriler[k.trim()] ?? k.trim())
             .join(', ')
         : '';
- 
+
     final tarihYazi = ilan.tarih != null
         ? '${ilan.tarih!.day}.${ilan.tarih!.month}.${ilan.tarih!.year}'
         : '';
- 
+
     final gelisYazisi = _gelisYazisi();
- 
+
     Color gelisRenk = const Color(0xFF2E7D32);
     Color gelisArkaRenk = const Color(0xFFE8F5E9);
     if (gelisYazisi != null) {
@@ -160,7 +162,7 @@ class _GelenKarti extends StatelessWidget {
         gelisArkaRenk = const Color(0xFFFFFDE7);
       }
     }
- 
+
     return InkWell(
       onTap: () => Navigator.push(
         context,
@@ -174,8 +176,14 @@ class _GelenKarti extends StatelessWidget {
               parent: anim,
               curve: Curves.easeOutCubic,
             )),
-            child: child,
+            child: FadeTransition(
+              opacity: Tween<double>(begin: 0.5, end: 1.0).animate(
+                CurvedAnimation(parent: anim, curve: Curves.easeOut),
+              ),
+              child: child,
+            ),
           ),
+          transitionDuration: const Duration(milliseconds: 280),
         ),
       ),
       child: Container(
@@ -203,7 +211,7 @@ class _GelenKarti extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
- 
+
             Row(
               children: [
                 if (tarihYazi.isNotEmpty) ...[
@@ -249,7 +257,7 @@ class _GelenKarti extends StatelessWidget {
                 ),
               ],
             ),
- 
+
             if (kategoriAdiStr.isNotEmpty) ...[
               const SizedBox(height: 8),
               Row(
@@ -269,7 +277,7 @@ class _GelenKarti extends StatelessWidget {
                 ],
               ),
             ],
- 
+
             if (ilan.notlar.isNotEmpty) ...[
               const SizedBox(height: 6),
               Text(
@@ -280,7 +288,7 @@ class _GelenKarti extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ],
- 
+
             const SizedBox(height: 10),
             Row(
               children: [
@@ -311,13 +319,13 @@ class _GelenKarti extends StatelessWidget {
     );
   }
 }
- 
+
 // ── Boş ekran ─────────────────────────────────────────────
- 
+
 class _BosEkran extends StatelessWidget {
   final VoidCallback onYenile;
   const _BosEkran({required this.onYenile});
- 
+
   @override
   Widget build(BuildContext context) {
     return Center(

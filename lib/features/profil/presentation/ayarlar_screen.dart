@@ -8,26 +8,26 @@ import '../../profil/providers/profil_provider.dart';
 import '../../profil/data/kullanici_repository.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/widgets/avatar_widget.dart';
- 
+
 class AyarlarScreen extends ConsumerStatefulWidget {
   const AyarlarScreen({super.key});
- 
+
   @override
   ConsumerState<AyarlarScreen> createState() => _AyarlarScreenState();
 }
- 
+
 class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
   bool _ilanBildirimleri = true;
   bool _mesajBildirimleri = true;
   bool _sistemBildirimleri = true;
   bool _bildirimlerYuklendi = false;
- 
+
   @override
   void initState() {
     super.initState();
     _bildirimlerYukle();
   }
- 
+
   Future<void> _bildirimlerYukle() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -37,23 +37,23 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       _bildirimlerYuklendi = true;
     });
   }
- 
+
   Future<void> _bildirimKaydet(String key, bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(key, value);
   }
- 
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     final benimProfilAsync = ref.watch(benimKullaniciProfilProvider);
     final engellenenlerAsync = ref.watch(engellenenlerProvider);
- 
+
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: Text('Ayarlar',
-            style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
+            style: GoogleFonts.dmSans(fontWeight: FontWeight.w700, fontSize: 18)),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -63,158 +63,164 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
         ),
       ),
       body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 12),
         children: [
-          // ── Hesap ──────────────────────────────────────
-          _BaslikSatiri('Hesap'),
-          Container(
-            color: Colors.white,
-            child: Column(
-              children: [
-                _MenuOgesi(
-                  icon: Icons.email_outlined,
-                  label: 'E-posta',
-                  deger: user?.email ?? '',
-                  onTap: () {},
-                  showArrow: false,
+
+          // ── Hesap ───────────────────────────────────
+          _BolumBasligi('Hesap'),
+          _Kart(
+            children: [
+              _SatirOge(
+                icon: Icons.email_outlined,
+                label: 'E-posta',
+                trailing: Text(
+                  user?.email ?? '',
+                  style: GoogleFonts.dmSans(
+                      fontSize: 13, color: AppColors.textSecondary),
                 ),
-                const Divider(height: 1, indent: 56),
-                _MenuOgesi(
-                  icon: Icons.lock_outline,
-                  label: 'Şifre Değiştir',
-                  onTap: () => _sifreDegistirDialog(user?.email),
-                ),
-                const Divider(height: 1, indent: 56),
-                _MenuOgesi(
-                  icon: Icons.phone_outlined,
-                  label: 'Telefon Numarası',
-                  deger: benimProfilAsync.value?.telefon?.isNotEmpty == true
+                onTap: () {},
+              ),
+              _Ayrac(),
+              _SatirOge(
+                icon: Icons.lock_outline,
+                label: 'Şifre Değiştir',
+                onTap: () => _sifreDegistirDialog(user?.email),
+              ),
+              _Ayrac(),
+              _SatirOge(
+                icon: Icons.phone_outlined,
+                label: 'Telefon Numarası',
+                trailing: Text(
+                  benimProfilAsync.value?.telefon?.isNotEmpty == true
                       ? benimProfilAsync.value!.telefon!
                       : 'Eklenmemiş',
-                  onTap: () => _telefonGuncelleDialog(
-                      benimProfilAsync.value?.telefon ?? ''),
+                  style: GoogleFonts.dmSans(
+                      fontSize: 13, color: AppColors.textSecondary),
                 ),
-              ],
-            ),
+                onTap: () => _telefonGuncelleDialog(
+                    benimProfilAsync.value?.telefon ?? ''),
+              ),
+            ],
           ),
- 
-          const SizedBox(height: 8),
- 
-          // ── Bildirimler ─────────────────────────────────
-          _BaslikSatiri('Bildirimler'),
-          Container(
-            color: Colors.white,
-            child: !_bildirimlerYuklendi
-                ? const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Center(
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: AppColors.red)),
-                  )
-                : Column(
-                    children: [
-                      _SwitchOgesi(
-                        icon: Icons.mark_chat_unread_outlined,
-                        label: 'Mesaj bildirimleri',
-                        acik: _mesajBildirimleri,
-                        onChanged: (v) {
-                          setState(() => _mesajBildirimleri = v);
-                          _bildirimKaydet('bildirim_mesaj', v);
-                        },
-                      ),
-                      const Divider(height: 1, indent: 56),
-                      _SwitchOgesi(
-                        icon: Icons.campaign_outlined,
-                        label: 'İlan bildirimleri',
-                        acik: _ilanBildirimleri,
-                        onChanged: (v) {
-                          setState(() => _ilanBildirimleri = v);
-                          _bildirimKaydet('bildirim_ilan', v);
-                        },
-                      ),
-                      const Divider(height: 1, indent: 56),
-                      _SwitchOgesi(
-                        icon: Icons.notifications_outlined,
-                        label: 'Sistem bildirimleri',
-                        acik: _sistemBildirimleri,
-                        onChanged: (v) {
-                          setState(() => _sistemBildirimleri = v);
-                          _bildirimKaydet('bildirim_sistem', v);
-                        },
-                      ),
-                    ],
+
+          // ── Bildirimler ─────────────────────────────
+          _BolumBasligi('Bildirimler'),
+          _Kart(
+            children: !_bildirimlerYuklendi
+                ? [
+                    const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Center(
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: AppColors.red)),
+                    )
+                  ]
+                : [
+                    _SwitchSatir(
+                      icon: Icons.mark_chat_unread_outlined,
+                      label: 'Mesaj bildirimleri',
+                      acik: _mesajBildirimleri,
+                      onChanged: (v) {
+                        setState(() => _mesajBildirimleri = v);
+                        _bildirimKaydet('bildirim_mesaj', v);
+                      },
+                    ),
+                    _Ayrac(),
+                    _SwitchSatir(
+                      icon: Icons.campaign_outlined,
+                      label: 'İlan bildirimleri',
+                      acik: _ilanBildirimleri,
+                      onChanged: (v) {
+                        setState(() => _ilanBildirimleri = v);
+                        _bildirimKaydet('bildirim_ilan', v);
+                      },
+                    ),
+                    _Ayrac(),
+                    _SwitchSatir(
+                      icon: Icons.notifications_outlined,
+                      label: 'Sistem bildirimleri',
+                      acik: _sistemBildirimleri,
+                      onChanged: (v) {
+                        setState(() => _sistemBildirimleri = v);
+                        _bildirimKaydet('bildirim_sistem', v);
+                      },
+                    ),
+                  ],
+          ),
+
+          // ── Gizlilik ────────────────────────────────
+          _BolumBasligi('Gizlilik'),
+          _Kart(
+            children: [
+              _SatirOge(
+                icon: Icons.block_outlined,
+                label: 'Engellenen Kullanıcılar',
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(10),
                   ),
+                  child: Text(
+                    engellenenlerAsync.value?.length.toString() ?? '0',
+                    style: GoogleFonts.dmSans(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600),
+                  ),
+                ),
+                onTap: () => _engellenenlerSayfasi(
+                    engellenenlerAsync.value ?? []),
+              ),
+              _Ayrac(),
+              _SatirOge(
+                icon: Icons.privacy_tip_outlined,
+                label: 'Gizlilik Politikası',
+                onTap: () {},
+              ),
+              _Ayrac(),
+              _SatirOge(
+                icon: Icons.description_outlined,
+                label: 'Kullanım Koşulları',
+                onTap: () {},
+              ),
+            ],
           ),
- 
-          const SizedBox(height: 8),
- 
-          // ── Gizlilik ────────────────────────────────────
-          _BaslikSatiri('Gizlilik'),
-          Container(
-            color: Colors.white,
-            child: Column(
-              children: [
-                _MenuOgesi(
-                  icon: Icons.block_outlined,
-                  label: 'Engellenen Kullanıcılar',
-                  deger: engellenenlerAsync.value?.length.toString() ?? '0',
-                  onTap: () => _engellenenlerSayfasi(
-                      engellenenlerAsync.value ?? []),
-                ),
-                const Divider(height: 1, indent: 56),
-                _MenuOgesi(
-                  icon: Icons.privacy_tip_outlined,
-                  label: 'Gizlilik Politikası',
-                  onTap: () {},
-                ),
-                const Divider(height: 1, indent: 56),
-                _MenuOgesi(
-                  icon: Icons.description_outlined,
-                  label: 'Kullanım Koşulları',
-                  onTap: () {},
-                ),
-              ],
-            ),
+
+          // ── Destek ──────────────────────────────────
+          _BolumBasligi('Destek'),
+          _Kart(
+            children: [
+              _SatirOge(
+                icon: Icons.mail_outline,
+                label: 'Bize Ulaşın',
+                onTap: () => _iletisimDialog(),
+              ),
+              _Ayrac(),
+              _SatirOge(
+                icon: Icons.help_outline,
+                label: 'Sık Sorulan Sorular',
+                onTap: () {},
+              ),
+            ],
           ),
- 
-          const SizedBox(height: 8),
- 
-          // ── Destek ─────────────────────────────────────
-          _BaslikSatiri('Destek'),
-          Container(
-            color: Colors.white,
-            child: Column(
-              children: [
-                _MenuOgesi(
-                  icon: Icons.mail_outline,
-                  label: 'Bize Ulaşın',
-                  onTap: () => _iletisimDialog(),
-                ),
-                const Divider(height: 1, indent: 56),
-                _MenuOgesi(
-                  icon: Icons.help_outline,
-                  label: 'Sık Sorulan Sorular',
-                  onTap: () {},
-                ),
-              ],
-            ),
+
+          // ── Hesap İşlemleri ─────────────────────────
+          _BolumBasligi('Tehlikeli Bölge'),
+          _Kart(
+            children: [
+              _SatirOge(
+                icon: Icons.delete_forever_outlined,
+                label: 'Hesabı Sil',
+                labelColor: AppColors.red,
+                iconColor: AppColors.red,
+                showArrow: false,
+                onTap: () => _hesapSilDialog(),
+              ),
+            ],
           ),
- 
-          const SizedBox(height: 8),
- 
-          // ── Hesap İşlemleri ─────────────────────────────
-          _BaslikSatiri('Hesap İşlemleri'),
-          Container(
-            color: Colors.white,
-            child: _MenuOgesi(
-              icon: Icons.delete_forever_outlined,
-              label: 'Hesabı Sil',
-              iconColor: AppColors.red,
-              labelColor: AppColors.red,
-              showArrow: false,
-              onTap: () => _hesapSilDialog(),
-            ),
-          ),
- 
+
           const SizedBox(height: 32),
           Center(
             child: Text('İSTE v2.0',
@@ -228,15 +234,13 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       ),
     );
   }
- 
-  // ── Şifre Değiştir Dialog ──────────────────────────────
- 
+
   Future<void> _sifreDegistirDialog(String? email) async {
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12)),
+            borderRadius: BorderRadius.circular(16)),
         title: Text('Şifre Sıfırla',
             style: GoogleFonts.dmSans(
                 fontSize: 16, fontWeight: FontWeight.w600)),
@@ -258,8 +262,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text('İptal',
-                style:
-                    GoogleFonts.dmSans(color: AppColors.textSecondary)),
+                style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () async {
@@ -284,19 +287,17 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       ),
     );
   }
- 
-  // ── Telefon Güncelle Dialog ────────────────────────────
- 
+
   Future<void> _telefonGuncelleDialog(String mevcutTelefon) async {
     final ctrl = TextEditingController(text: mevcutTelefon);
     bool gizli = ref.read(benimKullaniciProfilProvider).value?.telefonGizli ?? false;
- 
+
     await showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
+              borderRadius: BorderRadius.circular(16)),
           title: Text('Telefon Numarası',
               style: GoogleFonts.dmSans(
                   fontSize: 16, fontWeight: FontWeight.w600)),
@@ -316,15 +317,15 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                   filled: true,
                   fillColor: AppColors.surface,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(color: AppColors.divider),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(color: AppColors.divider),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(
                         color: AppColors.primary, width: 1.5),
                   ),
@@ -405,9 +406,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     );
     ctrl.dispose();
   }
- 
-  // ── Engellenenler Sayfası ──────────────────────────────
- 
+
   void _engellenenlerSayfasi(List<String> engellenenUidler) {
     Navigator.push(
       context,
@@ -417,18 +416,16 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       ),
     );
   }
- 
-  // ── İletişim Dialog ────────────────────────────────────
- 
+
   Future<void> _iletisimDialog() async {
     final konuCtrl = TextEditingController();
     final mesajCtrl = TextEditingController();
- 
+
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12)),
+            borderRadius: BorderRadius.circular(16)),
         title: Text('Bize Ulaşın',
             style: GoogleFonts.dmSans(
                 fontSize: 16, fontWeight: FontWeight.w600)),
@@ -445,13 +442,13 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 filled: true,
                 fillColor: AppColors.surface,
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(color: AppColors.divider)),
                 enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(color: AppColors.divider)),
                 focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(
                         color: AppColors.primary, width: 1.5)),
                 contentPadding: const EdgeInsets.symmetric(
@@ -470,13 +467,13 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 filled: true,
                 fillColor: AppColors.surface,
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(color: AppColors.divider)),
                 enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(color: AppColors.divider)),
                 focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(
                         color: AppColors.primary, width: 1.5)),
                 contentPadding: const EdgeInsets.all(12),
@@ -512,23 +509,19 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     konuCtrl.dispose();
     mesajCtrl.dispose();
   }
- 
-  // ── Hesap Sil Dialog ───────────────────────────────────
- 
+
   Future<void> _hesapSilDialog() async {
     final user = ref.read(currentUserProvider);
     if (user == null) return;
- 
-    // Google ile mi email ile mi giriş yaptı?
+
     final googleGiris = user.providerData
         .any((p) => p.providerId == 'google.com');
- 
-    // Adım 1: Uyarı dialog
+
     final onay = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12)),
+            borderRadius: BorderRadius.circular(16)),
         title: Text('Hesabı Sil',
             style: GoogleFonts.dmSans(
                 fontSize: 16, fontWeight: FontWeight.w600)),
@@ -552,27 +545,24 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
         ],
       ),
     );
- 
+
     if (onay != true || !mounted) return;
- 
-    // Adım 2: Re-authentication
+
     if (googleGiris) {
-      // Google ile re-auth
       await _googleReAuth();
     } else {
-      // Email ile re-auth
       await _emailReAuth(user.email ?? '');
     }
   }
- 
+
   Future<void> _emailReAuth(String email) async {
     final sifreCtrl = TextEditingController();
- 
+
     final onay = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12)),
+            borderRadius: BorderRadius.circular(16)),
         title: Text('Kimliğini Doğrula',
             style: GoogleFonts.dmSans(
                 fontSize: 16, fontWeight: FontWeight.w600)),
@@ -598,13 +588,13 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 filled: true,
                 fillColor: AppColors.surface,
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(color: AppColors.divider)),
                 enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(color: AppColors.divider)),
                 focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(
                         color: AppColors.primary, width: 1.5)),
                 contentPadding: const EdgeInsets.symmetric(
@@ -628,12 +618,12 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
         ],
       ),
     );
- 
+
     if (onay != true || !mounted) {
       sifreCtrl.dispose();
       return;
     }
- 
+
     try {
       await ref.read(authRepositoryProvider).emailIleYenidenGiris(
             email: email,
@@ -642,8 +632,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       await ref.read(authRepositoryProvider).hesapSil();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content:
-              Text('Hesabın silindi.', style: GoogleFonts.dmSans()),
+          content: Text('Hesabın silindi.', style: GoogleFonts.dmSans()),
           behavior: SnackBarBehavior.floating,
         ));
       }
@@ -659,13 +648,13 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     }
     sifreCtrl.dispose();
   }
- 
+
   Future<void> _googleReAuth() async {
     final onay = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12)),
+            borderRadius: BorderRadius.circular(16)),
         title: Text('Kimliğini Doğrula',
             style: GoogleFonts.dmSans(
                 fontSize: 16, fontWeight: FontWeight.w600)),
@@ -689,16 +678,15 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
         ],
       ),
     );
- 
+
     if (onay != true || !mounted) return;
- 
+
     try {
       await ref.read(authRepositoryProvider).googleIleYenidenGiris();
       await ref.read(authRepositoryProvider).hesapSil();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content:
-              Text('Hesabın silindi.', style: GoogleFonts.dmSans()),
+          content: Text('Hesabın silindi.', style: GoogleFonts.dmSans()),
           behavior: SnackBarBehavior.floating,
         ));
       }
@@ -714,19 +702,19 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     }
   }
 }
- 
-// ── Engellenenler Sayfası ──────────────────────────────────
- 
+
+// ── Engellenenler Sayfası ─────────────────────────────────
+
 class _EngellenenlerScreen extends ConsumerWidget {
   final List<String> engellenenUidler;
   const _EngellenenlerScreen({required this.engellenenUidler});
- 
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final benimUid = ref.watch(currentUserProvider)?.uid ?? '';
- 
+
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: Text('Engellenen Kullanıcılar',
             style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
@@ -762,7 +750,7 @@ class _EngellenenlerScreen extends ConsumerWidget {
                 final hedefUid = engellenenUidler[index];
                 final profilAsync =
                     ref.watch(kullaniciBilgiProvider(hedefUid));
- 
+
                 return profilAsync.when(
                   loading: () => const ListTile(
                     leading: CircleAvatar(
@@ -848,58 +836,98 @@ class _EngellenenlerScreen extends ConsumerWidget {
     );
   }
 }
- 
-// ── Yardımcı Widget'lar ────────────────────────────────────
- 
-class _BaslikSatiri extends StatelessWidget {
+
+// ── Yardımcı Widget'lar ───────────────────────────────────
+
+class _BolumBasligi extends StatelessWidget {
   final String baslik;
-  const _BaslikSatiri(this.baslik);
- 
+  const _BolumBasligi(this.baslik);
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
       child: Text(
         baslik.toUpperCase(),
         style: GoogleFonts.dmSans(
             fontSize: 11,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
             color: AppColors.textSecondary,
-            letterSpacing: 0.8),
+            letterSpacing: 1.0),
       ),
     );
   }
 }
- 
-class _MenuOgesi extends StatelessWidget {
+
+class _Kart extends StatelessWidget {
+  final List<Widget> children;
+  const _Kart({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(children: children),
+    );
+  }
+}
+
+class _Ayrac extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return const Divider(height: 1, indent: 54, endIndent: 0);
+  }
+}
+
+class _SatirOge extends StatelessWidget {
   final IconData icon;
   final String label;
-  final String? deger;
   final Color iconColor;
   final Color labelColor;
+  final Widget? trailing;
   final VoidCallback onTap;
   final bool showArrow;
- 
-  const _MenuOgesi({
+
+  const _SatirOge({
     required this.icon,
     required this.label,
     required this.onTap,
-    this.deger,
     this.iconColor = AppColors.textSecondary,
     this.labelColor = AppColors.textPrimary,
+    this.trailing,
     this.showArrow = true,
   });
- 
+
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            Icon(icon, color: iconColor, size: 22),
-            const SizedBox(width: 16),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: iconColor, size: 20),
+            ),
+            const SizedBox(width: 14),
             Expanded(
               child: Text(label,
                   style: GoogleFonts.dmSans(
@@ -907,11 +935,8 @@ class _MenuOgesi extends StatelessWidget {
                       color: labelColor,
                       fontWeight: FontWeight.w500)),
             ),
-            if (deger != null && deger!.isNotEmpty)
-              Text(deger!,
-                  style: GoogleFonts.dmSans(
-                      fontSize: 13, color: AppColors.textSecondary)),
-            if (showArrow)
+            if (trailing != null) trailing!,
+            if (trailing == null && showArrow)
               const Icon(Icons.chevron_right,
                   color: AppColors.textSecondary, size: 20),
           ],
@@ -920,28 +945,36 @@ class _MenuOgesi extends StatelessWidget {
     );
   }
 }
- 
-class _SwitchOgesi extends StatelessWidget {
+
+class _SwitchSatir extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool acik;
   final ValueChanged<bool> onChanged;
- 
-  const _SwitchOgesi({
+
+  const _SwitchSatir({
     required this.icon,
     required this.label,
     required this.acik,
     required this.onChanged,
   });
- 
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          Icon(icon, color: AppColors.textSecondary, size: 22),
-          const SizedBox(width: 16),
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.textSecondary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: AppColors.textSecondary, size: 20),
+          ),
+          const SizedBox(width: 14),
           Expanded(
             child: Text(label,
                 style: GoogleFonts.dmSans(
