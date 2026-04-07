@@ -1,0 +1,171 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function girisYapilmis() {
+      return request.auth != null;
+    }
+
+    function kendiDoc(uid) {
+      return request.auth.uid == uid;
+    }
+
+    match /kullanicilar/{uid} {
+      allow read: if girisYapilmis();
+
+      allow create: if girisYapilmis()
+        && kendiDoc(uid)
+        && request.resource.data.keys().hasAll(['adSoyad', 'email'])
+        && request.resource.data.adSoyad is string
+        && request.resource.data.adSoyad.size() > 0
+        && request.resource.data.adSoyad.size() <= 100;
+
+      allow update: if girisYapilmis()
+        && kendiDoc(uid)
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly([
+              'adSoyad', 'sehir', 'telefon', 'fotoUrl',
+              'profilTamamlandi', 'kullaniciTipi', 'geldigiSehirler',
+              'ulke', 'instagram', 'whatsapp', 'yasadigiUlke', 'bulunduguSehir',
+              'hakkinda', 'notlar', 'guncellemeTarihi', 'email', 'fcmToken',
+              'engellenenler', 'telefonGizli', 'ilanBaslik'
+            ]);
+
+      allow delete: if false;
+    }
+
+    match /ilanlar/{ilanId} {
+      allow read: if true;
+
+      allow create: if girisYapilmis()
+        && request.resource.data.kullaniciId == request.auth.uid
+        && request.resource.data.keys().hasAll(['tip', 'kullaniciId', 'aktif'])
+        && request.resource.data.tip in ['istek', 'tasiyici']
+        && request.resource.data.aktif == true;
+
+      // Kendi ilanını tam düzenleyebilir
+      allow update: if girisYapilmis()
+        && resource.data.kullaniciId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly([
+              'aktif', 'urun', 'notlar', 'ucret',
+              'nereden', 'nereye', 'tarih', 'resimUrl',
+              'resimUrller', 'kategori', 'urunLinki', 'tasimaTercihi', 'favoriSayisi'
+            ]);
+
+      // Başkası sadece favoriSayisi güncelleyebilir (favori ekle/çıkar)
+      allow update: if girisYapilmis()
+        && resource.data.kullaniciId != request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['favoriSayisi']);
+
+      allow delete: if girisYapilmis()
+        && resource.data.kullaniciId == request.auth.uid;
+    }
+
+    match /sohbetler/{sohbetId} {
+      allow read: if girisYapilmis()
+        && request.auth.uid in resource.data.kullanicilar;
+
+      allow create: if girisYapilmis()
+        && request.auth.uid in request.resource.data.kullanicilar
+        && request.resource.data.kullanicilar.size() == 2;
+
+      // Katılımcılar sadece izin verilen alanları güncelleyebilir
+      allow update: if girisYapilmis()
+        && request.auth.uid in resource.data.kullanicilar
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly([
+              'sonMesaj', 'sonMesajZamani', 'sonGondereId',
+              'okunmamis', 'gizli', 'sabitlenmis',
+              'degerlendirmeYapildi', 'olusturmaTarihi',
+              'kullaniciAdlari', 'ilanBaslik', 'ilanResimUrl'
+            ]);
+
+      allow delete: if false;
+
+      match /mesajlar/{mesajId} {
+        // Sadece sohbetin katılımcıları okuyabilir
+        allow read: if girisYapilmis()
+          && request.auth.uid in get(/databases/$(database)/documents/sohbetler/$(sohbetId)).data.kullanicilar;
+
+        allow create: if girisYapilmis()
+          && request.resource.data.gondereId == request.auth.uid
+          && request.resource.data.metin is string
+          && request.resource.data.metin.size() > 0
+          && request.resource.data.metin.size() <= 2000;
+
+        allow update: if girisYapilmis()
+          && resource.data.gondereId != request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['okundu']);
+
+        allow delete: if girisYapilmis()
+          && resource.data.gondereId == request.auth.uid;
+      }
+    }
+
+    match /favoriler/{favoriId} {
+      // list: query için (where kullaniciId == uid)
+      allow list: if girisYapilmis()
+        && request.auth.uid == request.query.filters.kullaniciId;
+      // get: tek belge okuma için
+      allow get: if girisYapilmis()
+        && resource.data.kullaniciId == request.auth.uid;
+
+      allow create: if girisYapilmis()
+        && request.resource.data.kullaniciId == request.auth.uid
+        && request.resource.data.keys().hasAll(['kullaniciId', 'ilanId']);
+
+      allow delete: if girisYapilmis()
+        && resource.data.kullaniciId == request.auth.uid;
+
+      allow update: if false;
+    }
+
+    match /degerlendirmeler/{degId} {
+      allow read: if girisYapilmis();
+
+      allow create: if girisYapilmis()
+        && request.resource.data.degerelendirenId == request.auth.uid
+        && request.resource.data.hedefId != request.auth.uid
+        && request.resource.data.puan is number
+        && request.resource.data.puan >= 1
+        && request.resource.data.puan <= 5
+        && request.resource.data.yorum is string
+        && request.resource.data.yorum.size() <= 500;
+
+      allow update, delete: if false;
+    }
+
+    match /sikayetler/{sikayetId} {
+      allow read: if false;
+
+      allow create: if girisYapilmis()
+        && request.resource.data.sikayetEdenId == request.auth.uid
+        && request.resource.data.sebep is string
+        && request.resource.data.sebep.size() > 0;
+
+      allow update, delete: if false;
+    }
+
+    match /bildirimler/{bildirimId} {
+      allow read: if girisYapilmis()
+        && resource.data.kullaniciId == request.auth.uid;
+
+      allow create: if girisYapilmis()
+        && request.resource.data.kullaniciId is string
+        && request.resource.data.kullaniciId.size() > 0;
+
+      allow update: if girisYapilmis()
+        && resource.data.kullaniciId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['okundu']);
+
+      allow delete: if girisYapilmis()
+        && resource.data.kullaniciId == request.auth.uid;
+    }
+
+  }
+}

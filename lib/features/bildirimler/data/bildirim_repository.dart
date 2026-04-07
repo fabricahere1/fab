@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/bildirim_model.dart';
+import '../../../shared/constants/app_constants.dart';
  
 part 'bildirim_repository.g.dart';
  
@@ -14,7 +15,7 @@ class BildirimRepository {
  
   BildirimRepository({required this.firestore});
  
-  CollectionReference get _col => firestore.collection('bildirimler');
+  CollectionReference get _col => firestore.collection(Collections.bildirimler);
  
   // Kullanıcının bildirimlerini stream olarak dinle
   Stream<List<BildirimModel>> bildirimlerStream(String kullaniciId) {

@@ -9,6 +9,7 @@ class Collections {
   static const String favoriler        = 'favoriler';
   static const String degerlendirmeler = 'degerlendirmeler';
   static const String sikayetler       = 'sikayetler';
+  static const String bildirimler      = 'bildirimler';
   static const String mail             = 'mail';
 }
 
@@ -67,14 +68,14 @@ const List<AnaKategori> kKategoriAgaci = [
     ad: 'Elektronik',
     emoji: '📱',
     altlar: [
-      AltKategori(key: 'elek_telefon',  ad: 'Telefon'),
+      AltKategori(key: 'elek_telefon',    ad: 'Telefon'),
       AltKategori(key: 'elek_bilgisayar', ad: 'Bilgisayar'),
-      AltKategori(key: 'elek_tablet',   ad: 'Tablet'),
-      AltKategori(key: 'elek_tv',       ad: 'TV & Görüntü'),
-      AltKategori(key: 'elek_ses',      ad: 'Ses Sistemleri'),
-      AltKategori(key: 'elek_oyun',     ad: 'Oyun & Konsol'),
-      AltKategori(key: 'elek_kamera',   ad: 'Fotoğraf & Kamera'),
-      AltKategori(key: 'elek_aksesuar', ad: 'Aksesuar'),
+      AltKategori(key: 'elek_tablet',     ad: 'Tablet'),
+      AltKategori(key: 'elek_tv',         ad: 'TV & Görüntü'),
+      AltKategori(key: 'elek_ses',        ad: 'Ses Sistemleri'),
+      AltKategori(key: 'elek_oyun',       ad: 'Oyun & Konsol'),
+      AltKategori(key: 'elek_kamera',     ad: 'Fotoğraf & Kamera'),
+      AltKategori(key: 'elek_aksesuar',   ad: 'Aksesuar'),
     ],
   ),
   AnaKategori(
@@ -82,11 +83,11 @@ const List<AnaKategori> kKategoriAgaci = [
     ad: 'Güzellik & Sağlık',
     emoji: '💄',
     altlar: [
-      AltKategori(key: 'guz_makyaj',    ad: 'Makyaj'),
-      AltKategori(key: 'guz_cilt',      ad: 'Cilt Bakımı'),
-      AltKategori(key: 'guz_sac',       ad: 'Saç Bakımı'),
-      AltKategori(key: 'guz_parfum',    ad: 'Parfüm'),
-      AltKategori(key: 'guz_saglik',    ad: 'Sağlık Ürünleri'),
+      AltKategori(key: 'guz_makyaj',  ad: 'Makyaj'),
+      AltKategori(key: 'guz_cilt',    ad: 'Cilt Bakımı'),
+      AltKategori(key: 'guz_sac',     ad: 'Saç Bakımı'),
+      AltKategori(key: 'guz_parfum',  ad: 'Parfüm'),
+      AltKategori(key: 'guz_saglik',  ad: 'Sağlık Ürünleri'),
     ],
   ),
   AnaKategori(
@@ -94,11 +95,11 @@ const List<AnaKategori> kKategoriAgaci = [
     ad: 'Ev & Yaşam',
     emoji: '🏠',
     altlar: [
-      AltKategori(key: 'ev_mobilya',    ad: 'Mobilya'),
-      AltKategori(key: 'ev_mutfak',     ad: 'Mutfak'),
-      AltKategori(key: 'ev_dekor',      ad: 'Dekorasyon'),
-      AltKategori(key: 'ev_tekstil',    ad: 'Ev Tekstili'),
-      AltKategori(key: 'ev_bahce',      ad: 'Bahçe'),
+      AltKategori(key: 'ev_mobilya',  ad: 'Mobilya'),
+      AltKategori(key: 'ev_mutfak',   ad: 'Mutfak'),
+      AltKategori(key: 'ev_dekor',    ad: 'Dekorasyon'),
+      AltKategori(key: 'ev_tekstil',  ad: 'Ev Tekstili'),
+      AltKategori(key: 'ev_bahce',    ad: 'Bahçe'),
     ],
   ),
   AnaKategori(
@@ -118,10 +119,10 @@ const List<AnaKategori> kKategoriAgaci = [
     ad: 'Kültür & Eğlence',
     emoji: '📚',
     altlar: [
-      AltKategori(key: 'kul_kitap',     ad: 'Kitap'),
-      AltKategori(key: 'kul_muzik',     ad: 'Müzik'),
-      AltKategori(key: 'kul_film',      ad: 'Film & Dizi'),
-      AltKategori(key: 'kul_oyuncak',   ad: 'Oyuncak & Hobi'),
+      AltKategori(key: 'kul_kitap',      ad: 'Kitap'),
+      AltKategori(key: 'kul_muzik',      ad: 'Müzik'),
+      AltKategori(key: 'kul_film',       ad: 'Film & Dizi'),
+      AltKategori(key: 'kul_oyuncak',    ad: 'Oyuncak & Hobi'),
       AltKategori(key: 'kul_koleksiyon', ad: 'Koleksiyon'),
     ],
   ),
@@ -130,9 +131,9 @@ const List<AnaKategori> kKategoriAgaci = [
     ad: 'Gıda & İçecek',
     emoji: '🍫',
     altlar: [
-      AltKategori(key: 'gida_yiyecek',  ad: 'Yiyecek'),
-      AltKategori(key: 'gida_icecek',   ad: 'İçecek'),
-      AltKategori(key: 'gida_organik',  ad: 'Organik & Doğal'),
+      AltKategori(key: 'gida_yiyecek', ad: 'Yiyecek'),
+      AltKategori(key: 'gida_icecek',  ad: 'İçecek'),
+      AltKategori(key: 'gida_organik', ad: 'Organik & Doğal'),
     ],
   ),
   AnaKategori(
@@ -145,7 +146,7 @@ const List<AnaKategori> kKategoriAgaci = [
 
 /// Geriye dönük uyumluluk için düz map — ilan kaydetme/okumada kullanılır.
 /// kKategoriAgaci'ndan otomatik üretilir, ayrıca güncellemeye gerek yok.
-Map<String, String> get kKategoriler {
+final Map<String, String> kKategoriler = () {
   final map = <String, String>{};
   for (final ana in kKategoriAgaci) {
     map[ana.key] = '${ana.emoji} ${ana.ad}';
@@ -154,12 +155,11 @@ Map<String, String> get kKategoriler {
     }
   }
   return map;
-}
+}();
 
 /// Kategori anahtarından okunabilir ad döndürür.
 String kategoriAdi(String? key) {
   if (key == null || key.isEmpty) return '';
-  // Önce alt kategorilerde ara
   for (final ana in kKategoriAgaci) {
     if (ana.key == key) return '${ana.emoji} ${ana.ad}';
     for (final alt in ana.altlar) {

@@ -11,7 +11,7 @@ import '../../profil/providers/profil_provider.dart';
 import '../../profil/presentation/kullanici_profil_screen.dart';
 import '../../mesajlar/presentation/sohbet_screen.dart';
 import '../../../shared/constants/app_colors.dart';
-import '../../../shared/constants/app_constants.dart' as appConstants;
+import '../../../shared/constants/app_constants.dart' as app_constants;
 import '../../../shared/widgets/avatar_widget.dart';
 import '../../../core/cache/app_cache_manager.dart';
 
@@ -61,14 +61,14 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
     Navigator.push(
       context,
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => SohbetScreen(
+        pageBuilder: (_, _, _) => SohbetScreen(
           karsiKullaniciId: ilan.kullaniciId,
           karsiKullaniciAd: ilan.kullaniciAd,
           ilanId: ilan.id,
           ilanBaslik: ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
           ilanResimUrl: resimler.isNotEmpty ? resimler.first : null,
         ),
-        transitionsBuilder: (_, anim, __, child) => SlideTransition(
+        transitionsBuilder: (_, anim, _, child) => SlideTransition(
           position: Tween(
             begin: const Offset(1, 0),
             end: Offset.zero,
@@ -231,18 +231,20 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
           title: Text('Şikayet Et',
               style: GoogleFonts.dmSans(
                   fontSize: 16, fontWeight: FontWeight.w600)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: sebepler
-                .map((s) => RadioListTile<String>(
-                      value: s,
-                      groupValue: seciliSebep,
-                      onChanged: (v) => setS(() => seciliSebep = v),
-                      title: Text(s, style: GoogleFonts.dmSans(fontSize: 14)),
-                      activeColor: AppColors.red,
-                      contentPadding: EdgeInsets.zero,
-                    ))
-                .toList(),
+          content: RadioGroup<String>(
+            groupValue: seciliSebep,
+            onChanged: (v) => setS(() => seciliSebep = v),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: sebepler
+                  .map((s) => RadioListTile<String>(
+                        value: s,
+                        title: Text(s, style: GoogleFonts.dmSans(fontSize: 14)),
+                        activeColor: AppColors.red,
+                        contentPadding: EdgeInsets.zero,
+                      ))
+                  .toList(),
+            ),
           ),
           actions: [
             TextButton(
@@ -288,7 +290,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
   Widget build(BuildContext context) {
     final ilan = widget.ilan;
     final resimler = ilan.tumResimler;
-    final kategoriAdiStr = appConstants.kategoriAdi(ilan.kategori);
+    final kategoriAdiStr = app_constants.kategoriAdi(ilan.kategori);
     final uid = ref.watch(currentUserProvider)?.uid;
     final benimIlan = _benimIlanim;
 
@@ -850,8 +852,8 @@ class _BenzerIlanKarti extends StatelessWidget {
       onTap: () => Navigator.push(
         context,
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => IlanDetayScreen(ilan: ilan),
-          transitionsBuilder: (_, anim, __, child) => SlideTransition(
+          pageBuilder: (_, _, _) => IlanDetayScreen(ilan: ilan),
+          transitionsBuilder: (_, anim, _, child) => SlideTransition(
             position: Tween(
               begin: const Offset(1, 0),
               end: Offset.zero,
@@ -885,9 +887,9 @@ class _BenzerIlanKarti extends StatelessWidget {
                       fit: BoxFit.cover,
                       fadeInDuration: Duration.zero,
                       memCacheWidth: 260,
-                      placeholder: (_, __) =>
+                      placeholder: (_, _) =>
                           Container(height: 90, color: AppColors.divider),
-                      errorWidget: (_, __, ___) => Container(
+                      errorWidget: (_, _, _) => Container(
                         height: 90,
                         color: AppColors.divider,
                         child: const Icon(Icons.image_outlined,
@@ -1016,13 +1018,11 @@ class _BottomSheetHandle extends StatelessWidget {
 
 class _CircleIconButton extends StatelessWidget {
   final IconData icon;
-  final Color iconColor;
   final VoidCallback onTap;
 
   const _CircleIconButton({
     required this.icon,
     required this.onTap,
-    this.iconColor = AppColors.textPrimary,
   });
 
   @override
@@ -1034,7 +1034,7 @@ class _CircleIconButton extends StatelessWidget {
           color: Colors.white.withValues(alpha: 0.9),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 20, color: iconColor),
+        child: Icon(icon, size: 20, color: AppColors.textPrimary),
       ),
       onPressed: onTap,
     );
@@ -1060,11 +1060,11 @@ class _ResimWidget extends StatelessWidget {
         context,
         PageRouteBuilder(
           opaque: false,
-          pageBuilder: (_, __, ___) => _ResimBuyukEkran(
+          pageBuilder: (_, _, _) => _ResimBuyukEkran(
             resimler: tumResimler,
             baslangicIndex: baslangicIndex,
           ),
-          transitionsBuilder: (_, anim, __, child) => FadeTransition(
+          transitionsBuilder: (_, anim, _, child) => FadeTransition(
             opacity: anim,
             child: child,
           ),
@@ -1078,8 +1078,8 @@ class _ResimWidget extends StatelessWidget {
         width: double.infinity,
         fadeInDuration: Duration.zero,
         memCacheWidth: 600,
-        placeholder: (_, __) => Container(color: AppColors.surface),
-        errorWidget: (_, __, ___) => Container(
+        placeholder: (_, _) => Container(color: AppColors.surface),
+        errorWidget: (_, _, _) => Container(
           color: AppColors.surface,
           child: const Icon(Icons.image_outlined,
               color: AppColors.textHint, size: 48),
@@ -1126,8 +1126,8 @@ class _ResimBuyukEkranState extends State<_ResimBuyukEkran> {
     } else {
       final position = details.localPosition;
       _transformController.value = Matrix4.identity()
-        ..translate(-position.dx * 1.5, -position.dy * 1.5)
-        ..scale(2.5);
+        ..translateByDouble(-position.dx * 1.5, -position.dy * 1.5, 0, 1)
+        ..scaleByDouble(2.5, 2.5, 1, 1);
     }
   }
 
@@ -1170,11 +1170,11 @@ class _ResimBuyukEkranState extends State<_ResimBuyukEkran> {
                 imageUrl: widget.resimler[i],
                 fit: BoxFit.contain,
                 fadeInDuration: Duration.zero,
-                placeholder: (_, __) => const CircularProgressIndicator(
+                placeholder: (_, _) => const CircularProgressIndicator(
                   color: Colors.white,
                   strokeWidth: 2,
                 ),
-                errorWidget: (_, __, ___) => const Icon(
+                errorWidget: (_, _, _) => const Icon(
                   Icons.broken_image_outlined,
                   color: Colors.white54,
                   size: 64,

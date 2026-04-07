@@ -191,9 +191,14 @@ class IstekIlanlar extends _$IstekIlanlar {
  
 @riverpod
 class TasiyiciIlanlar extends _$TasiyiciIlanlar {
+  bool _ilkYuklemeYapildi = false;
+
   @override
   IlanListeState build() {
-    Future.microtask(() => _ilkYukle());
+    if (!_ilkYuklemeYapildi) {
+      _ilkYuklemeYapildi = true;
+      Future.microtask(() => _ilkYukle());
+    }
     return const IlanListeState(yukleniyor: true);
   }
  
@@ -203,7 +208,7 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
     state = state.copyWith(yukleniyor: true);
     try {
       final sonuc = await _repo.tasiyiciIlanlariniGetir(
-        tariheSore: state.siralama == 'tarih',
+        tariheGore: state.siralama == 'tarih',
       );
       state = state.copyWith(
         ilanlar: sonuc.ilanlar,
@@ -221,7 +226,7 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
     state = IlanListeState(siralama: state.siralama, yukleniyor: true);
     try {
       final sonuc = await _repo.tasiyiciIlanlariniGetir(
-        tariheSore: state.siralama == 'tarih',
+        tariheGore: state.siralama == 'tarih',
       );
       state = IlanListeState(
         ilanlar: sonuc.ilanlar,

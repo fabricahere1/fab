@@ -2,30 +2,30 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../shared/constants/app_constants.dart';
- 
+
 part 'mesaj_repository.g.dart';
- 
+
 String sohbetIdUret(String uid1, String uid2, String ilanId) {
   final ids = [uid1, uid2]..sort();
   return '${ids[0]}_${ids[1]}_$ilanId';
 }
- 
+
 @riverpod
 MesajRepository mesajRepository(Ref ref) {
   return MesajRepository(firestore: FirebaseFirestore.instance);
 }
- 
+
 class MesajRepository {
   final FirebaseFirestore firestore;
- 
+
   MesajRepository({required this.firestore});
- 
+
   CollectionReference get _sohbetler =>
       firestore.collection(Collections.sohbetler);
- 
+
   CollectionReference _mesajlar(String sohbetId) =>
       _sohbetler.doc(sohbetId).collection(Collections.mesajlar);
- 
+
   Future<void> mesajGonder({
     required String sohbetId,
     required String gondereId,
@@ -41,7 +41,8 @@ class MesajRepository {
     final sohbetRef = _sohbetler.doc(sohbetId);
     final mesajRef = _mesajlar(sohbetId).doc();
     final batch = firestore.batch();
- 
+
+    // ✅ okunmamis batch içine alındı — ayrı update yok
     batch.set(sohbetRef, {
       'kullanicilar':         [gondereId, karsiId],
       'kullaniciAdlari':      {gondereId: gondereAd, karsiId: karsiAd},
@@ -53,8 +54,9 @@ class MesajRepository {
       'sonGondereId':         gondereId,
       'degerlendirmeYapildi': false,
       'olusturmaTarihi':      FieldValue.serverTimestamp(),
+      'okunmamis':            {karsiId: FieldValue.increment(1)},
     }, SetOptions(merge: true));
- 
+
     batch.set(mesajRef, {
       'metin':     metin,
       'gondereId': gondereId,
@@ -63,15 +65,10 @@ class MesajRepository {
       'zaman':     FieldValue.serverTimestamp(),
       'okundu':    false,
     });
- 
+
     await batch.commit();
- 
-    // ✅ okunmamis sayacını ayrı update ile artır
-    await sohbetRef.update({
-      'okunmamis.$karsiId': FieldValue.increment(1),
-    });
   }
- 
+
   Stream<QuerySnapshot> mesajlarStream({
     required String sohbetId,
     int limit = Pagination.mesajSayfaBoyutu,
@@ -81,7 +78,7 @@ class MesajRepository {
         .limit(limit)
         .snapshots();
   }
- 
+
   Future<QuerySnapshot> eskiMesajlariGetir({
     required String sohbetId,
     required DocumentSnapshot sonDoc,
@@ -93,35 +90,32 @@ class MesajRepository {
         .limit(limit)
         .get();
   }
- 
+
   Future<void> okunduIsaretle({
     required String sohbetId,
     required String kullaniciId,
   }) async {
     try {
-      // Okunmamis sayacını sıfırla
       await _sohbetler.doc(sohbetId).update({
         'okunmamis.$kullaniciId': 0,
       });
- 
-      // ✅ isNotEqualTo kaldırıldı — Firestore'da isNotEqualTo + isEqualTo birlikte çalışmıyor
+
       final mesajlar = await _mesajlar(sohbetId)
           .where('okundu', isEqualTo: false)
           .get();
- 
+
       if (mesajlar.docs.isEmpty) return;
- 
+
       final batch = firestore.batch();
       for (final doc in mesajlar.docs) {
         final data = doc.data() as Map<String, dynamic>;
-        // Kendi gönderdiğimiz mesajları atlat
         if (data['gondereId'] == kullaniciId) continue;
         batch.update(doc.reference, {'okundu': true});
       }
       await batch.commit();
     } catch (_) {}
   }
- 
+
   Future<void> mesajSil({
     required String sohbetId,
     required String mesajId,
@@ -143,7 +137,7 @@ class MesajRepository {
       });
     }
   }
- 
+
   Stream<List<Map<String, dynamic>>> sohbetlerStream(String kullaniciId) {
     return _sohbetler
         .where('kullanicilar', arrayContains: kullaniciId)
@@ -153,7 +147,7 @@ class MesajRepository {
             .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
             .toList());
   }
- 
+
   Future<void> sohbetiGizle({
     required String sohbetId,
     required String kullaniciId,
@@ -161,7 +155,7 @@ class MesajRepository {
       _sohbetler.doc(sohbetId).update({
         'gizli.$kullaniciId': FieldValue.serverTimestamp(),
       });
- 
+
   Future<void> sohbetiSabitle({
     required String sohbetId,
     required String kullaniciId,
@@ -170,7 +164,7 @@ class MesajRepository {
       _sohbetler.doc(sohbetId).update({
         'sabitlenmis.$kullaniciId': !sabitlenmis,
       });
- 
+
   Stream<int> toplamOkunmamisStream(String kullaniciId) {
     return _sohbetler
         .where('kullanicilar', arrayContains: kullaniciId)

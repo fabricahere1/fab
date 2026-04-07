@@ -63,10 +63,10 @@ class IlanRepository {
   }
 
   Future<IlanSayfasi> tasiyiciIlanlariniGetir({
-    bool tariheSore = true,
+    bool tariheGore = true,
     int limit = Pagination.ilanSayfaBoyutu,
   }) async {
-    if (tariheSore) {
+    if (tariheGore) {
       final bugun = Timestamp.fromDate(
         DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
       );
@@ -175,7 +175,6 @@ class IlanRepository {
   Future<void> ilanPasifYap(String ilanId) =>
       _col.doc(ilanId).update({'aktif': false});
 
-  // ✅ Detay sayfası için real-time favori sayacı
   Stream<int> favoriSayisiStream(String ilanId) {
     return _col.doc(ilanId).snapshots().map((doc) =>
         ((doc.data() as Map<String, dynamic>?)?['favoriSayisi'] as num?)
@@ -199,25 +198,33 @@ class IlanRepository {
     required String kullaniciId,
     required IlanModel ilan,
   }) async {
+    // ✅ Zaten favoride mi kontrol et — spam önleme
+    final mevcutSnap = await firestore
+        .collection(Collections.favoriler)
+        .where('kullaniciId', isEqualTo: kullaniciId)
+        .where('ilanId', isEqualTo: ilan.id)
+        .get();
+
+    if (mevcutSnap.docs.isNotEmpty) return;
+
     final batch = firestore.batch();
 
     final favoriRef = firestore.collection(Collections.favoriler).doc();
     batch.set(favoriRef, {
-      'kullaniciId': kullaniciId,
-      'ilanId':      ilan.id,
-      'tip':         ilan.tip,
-      'kullaniciAd': ilan.kullaniciAd,
-      'nereden':     ilan.nereden,
-      'nereye':      ilan.nereye,
-      'urun':        ilan.urun,
-      'ucret':       ilan.ucret,
-      'kategori':    ilan.kategori,
+      'kullaniciId':  kullaniciId,
+      'ilanId':       ilan.id,
+      'tip':          ilan.tip,
+      'kullaniciAd':  ilan.kullaniciAd,
+      'nereden':      ilan.nereden,
+      'nereye':       ilan.nereye,
+      'urun':         ilan.urun,
+      'ucret':        ilan.ucret,
+      'kategori':     ilan.kategori,
       if (ilan.resimUrl.isNotEmpty) 'resimUrl': ilan.resimUrl,
       'eklemeTarihi': FieldValue.serverTimestamp(),
     });
 
-    final ilanRef = _col.doc(ilan.id);
-    batch.update(ilanRef, {
+    batch.update(_col.doc(ilan.id), {
       'favoriSayisi': FieldValue.increment(1),
     });
 

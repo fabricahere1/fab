@@ -55,6 +55,7 @@ class AuthRepository {
     final user = credential.user;
     if (user != null) {
       await user.updateDisplayName(adSoyad.trim());
+      await user.sendEmailVerification();
       await firestore.collection(Collections.kullanicilar).doc(user.uid).set({
         'adSoyad':          adSoyad.trim(),
         'email':            user.email,

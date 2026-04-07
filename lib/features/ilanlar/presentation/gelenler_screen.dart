@@ -58,25 +58,33 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
         scrolledUnderElevation: 1,
         shadowColor: AppColors.divider,
       ),
-      body: state.yukleniyor && ilanlar.isEmpty
-          ? const Center(
-              child: CircularProgressIndicator(
-                  color: AppColors.red, strokeWidth: 2))
-          : ilanlar.isEmpty
-              ? _BosEkran(
-                  onYenile: () =>
-                      ref.read(tasiyiciIlanlarProvider.notifier).yenile())
-              : RefreshIndicator(
-                  color: AppColors.red,
-                  onRefresh: () =>
-                      ref.read(tasiyiciIlanlarProvider.notifier).yenile(),
-                  child: ListView.separated(
+      body: RefreshIndicator(
+        color: AppColors.red,
+        onRefresh: () =>
+            ref.read(tasiyiciIlanlarProvider.notifier).yenile(),
+        child: state.yukleniyor && ilanlar.isEmpty
+            ? const Center(
+                child: CircularProgressIndicator(
+                    color: AppColors.red, strokeWidth: 2))
+            : ilanlar.isEmpty
+                ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.6,
+                        child: _BosEkran(
+                          onYenile: () =>
+                              ref.read(tasiyiciIlanlarProvider.notifier).yenile(),
+                        ),
+                      ),
+                    ],
+                  )
+                : ListView.separated(
                     controller: _scrollController,
-                    // ✅ Ekran dışındaki öğeleri önceden render et
+                    physics: const AlwaysScrollableScrollPhysics(),
                     cacheExtent: 500,
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount:
-                        ilanlar.length + (state.dahaFazlaVar ? 1 : 0),
+                    itemCount: ilanlar.length + (state.dahaFazlaVar ? 1 : 0),
                     separatorBuilder: (_, __) =>
                         const Divider(height: 1, indent: 0),
                     itemBuilder: (context, index) {
@@ -98,7 +106,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                       );
                     },
                   ),
-                ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.push(
           context,

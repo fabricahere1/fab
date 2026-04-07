@@ -938,6 +938,7 @@ class KategoriSecimSheet extends StatefulWidget {
   final void Function(String anaKey, String? altKey) onSecildi;
 
   const KategoriSecimSheet({
+    super.key,
     required this.seciliAnaKey,
     required this.seciliAltKey,
     required this.onSecildi,
@@ -1235,7 +1236,7 @@ class _Bolum extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary)),
               ),
-              if (trailing != null) trailing!,
+              ?trailing,
             ],
           ),
           const SizedBox(height: 16),

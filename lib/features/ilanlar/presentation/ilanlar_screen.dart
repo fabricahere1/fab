@@ -63,7 +63,10 @@ class _IsteklerScreenState extends ConsumerState<IsteklerScreen>
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 400) {
-      ref.read(istekIlanlarProvider.notifier).dahaFazlaYukle();
+      final state = ref.read(istekIlanlarProvider);
+      if (!state.yukleniyor) {
+        ref.read(istekIlanlarProvider.notifier).dahaFazlaYukle();
+      }
     }
   }
 
@@ -149,8 +152,8 @@ class _IsteklerScreenState extends ConsumerState<IsteklerScreen>
       barrierLabel: 'Filtre kapat',
       barrierColor: Colors.black54,
       transitionDuration: const Duration(milliseconds: 250),
-      pageBuilder: (_, __, ___) => const SizedBox.shrink(),
-      transitionBuilder: (ctx, anim, __, ___) {
+      pageBuilder: (_, _, _) => const SizedBox.shrink(),
+      transitionBuilder: (ctx, anim, _, _) {
         final slide = Tween<Offset>(
           begin: const Offset(1, 0),
           end: Offset.zero,
@@ -366,9 +369,18 @@ class _IsteklerScreenState extends ConsumerState<IsteklerScreen>
       body: state.yukleniyor && ilanlar.isEmpty
           ? const _ShimmerGrid()
           : ilanlar.isEmpty
-              ? _BosEkran(
-                  onYenile: () =>
-                      ref.read(istekIlanlarProvider.notifier).yenile())
+              ? filtrAktif || _aramaMetni.isNotEmpty
+                  ? _FiltreBosBekran(
+                      onTemizle: () => setState(() {
+                        _seciliAnaKey = null;
+                        _seciliAltKey = null;
+                        _aramaMetni = '';
+                        _aramaCtrl.clear();
+                      }),
+                    )
+                  : _BosEkran(
+                      onYenile: () =>
+                          ref.read(istekIlanlarProvider.notifier).yenile())
               : RefreshIndicator(
                   color: AppColors.red,
                   onRefresh: () =>
@@ -779,7 +791,7 @@ class _ShimmerGrid extends StatelessWidget {
 
 class _IlanKarti extends ConsumerWidget {
   final IlanModel ilan;
-  const _IlanKarti({required this.ilan, super.key});
+  const _IlanKarti({required this.ilan});
 
   double _resimYuksekligi() {
     final heights = [160.0, 200.0, 140.0, 180.0, 220.0, 150.0];
@@ -800,8 +812,8 @@ class _IlanKarti extends ConsumerWidget {
       onTap: () => Navigator.push(
         context,
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => IlanDetayScreen(ilan: ilan),
-          transitionsBuilder: (_, anim, __, child) => SlideTransition(
+          pageBuilder: (_, _, _) => IlanDetayScreen(ilan: ilan),
+          transitionsBuilder: (_, anim, _, child) => SlideTransition(
             position: Tween(
               begin: const Offset(1, 0),
               end: Offset.zero,
@@ -840,9 +852,9 @@ class _IlanKarti extends ConsumerWidget {
                           fit: BoxFit.cover,
                           fadeInDuration: Duration.zero,
                           memCacheWidth: 400,
-                          placeholder: (_, __) =>
+                          placeholder: (_, _) =>
                               Container(color: AppColors.surface),
-                          errorWidget: (_, __, ___) => Container(
+                          errorWidget: (_, _, _) => Container(
                             color: AppColors.surface,
                             child: const Center(
                               child: Icon(Icons.image_outlined,
@@ -978,6 +990,40 @@ class _IlanKarti extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Filtre sonucu boş ─────────────────────────────────────
+
+class _FiltreBosBekran extends StatelessWidget {
+  final VoidCallback onTemizle;
+  const _FiltreBosBekran({required this.onTemizle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.search_off_outlined,
+              size: 64, color: AppColors.divider),
+          const SizedBox(height: 16),
+          Text('Sonuç bulunamadı',
+              style: GoogleFonts.dmSans(
+                  fontSize: 15, color: AppColors.textSecondary)),
+          const SizedBox(height: 8),
+          Text('Filtre veya aramayı temizlemeyi deneyin',
+              style: GoogleFonts.dmSans(
+                  fontSize: 13, color: AppColors.textHint)),
+          const SizedBox(height: 24),
+          OutlinedButton(
+            onPressed: onTemizle,
+            child: Text('Filtreyi Temizle',
+                style: GoogleFonts.dmSans(color: AppColors.primary)),
+          ),
+        ],
       ),
     );
   }

@@ -7,16 +7,16 @@ import '../../auth/providers/auth_provider.dart';
 import '../../profil/data/kullanici_repository.dart';
 import '../../bildirimler/data/bildirim_repository.dart';
 import '../../../shared/constants/app_constants.dart';
- 
+
 part 'mesaj_provider.g.dart';
- 
+
 @riverpod
 Stream<List<Map<String, dynamic>>> sohbetler(Ref ref) {
   final uid = ref.watch(currentUserProvider)?.uid;
   if (uid == null) return const Stream.empty();
   return ref.watch(mesajRepositoryProvider).sohbetlerStream(uid);
 }
- 
+
 @riverpod
 int okunmamisSayi(Ref ref) {
   final uid = ref.watch(currentUserProvider)?.uid;
@@ -39,7 +39,7 @@ int okunmamisSayi(Ref ref) {
   }
   return toplam;
 }
- 
+
 class SohbetEkraniState {
   final Map<String, Map<String, dynamic>> mesajMap;
   final List<Map<String, dynamic>> siraliMesajlar;
@@ -47,7 +47,7 @@ class SohbetEkraniState {
   final bool gonderiyor;
   final bool dahaFazlaVar;
   final DocumentSnapshot? enEskiDoc;
- 
+
   const SohbetEkraniState({
     this.mesajMap = const {},
     this.siraliMesajlar = const [],
@@ -56,7 +56,7 @@ class SohbetEkraniState {
     this.dahaFazlaVar = true,
     this.enEskiDoc,
   });
- 
+
   SohbetEkraniState copyWith({
     Map<String, Map<String, dynamic>>? mesajMap,
     List<Map<String, dynamic>>? siraliMesajlar,
@@ -74,17 +74,16 @@ class SohbetEkraniState {
         enEskiDoc: enEskiDoc ?? this.enEskiDoc,
       );
 }
- 
+
 @riverpod
 class SohbetNotifier extends _$SohbetNotifier {
   late String _sohbetId;
   late String _benimId;
   StreamSubscription? _mesajSub;
- 
-  // Debounce için — çok sık Firestore yazma önlenir
+
   Timer? _okunduTimer;
   String? _sonOkunduMesajId;
- 
+
   @override
   SohbetEkraniState build({
     required String karsiKullaniciId,
@@ -92,28 +91,28 @@ class SohbetNotifier extends _$SohbetNotifier {
   }) {
     final user = ref.watch(currentUserProvider);
     if (user == null) return const SohbetEkraniState();
- 
+
     _benimId = user.uid;
     final ids = [_benimId, karsiKullaniciId]..sort();
     _sohbetId = '${ids[0]}_${ids[1]}_$ilanId';
- 
+
     _mesajlariDinle();
- 
+
     ref.onDispose(() {
       _mesajSub?.cancel();
       _mesajSub = null;
       _okunduTimer?.cancel();
       _okunduTimer = null;
     });
- 
+
     return const SohbetEkraniState();
   }
- 
+
   MesajRepository get _repo => ref.read(mesajRepositoryProvider);
- 
+
   void _mesajlariDinle() {
     _mesajSub?.cancel();
- 
+
     final stream = _repo.mesajlarStream(sohbetId: _sohbetId);
     _mesajSub = stream.listen((snap) {
       final yeniMap =
@@ -125,7 +124,7 @@ class SohbetNotifier extends _$SohbetNotifier {
       }
       final snapIds = snap.docs.map((d) => d.id).toSet();
       yeniMap.removeWhere((id, _) => !snapIds.contains(id));
- 
+
       if (snap.docs.isNotEmpty) {
         state = state.copyWith(
           mesajMap: yeniMap,
@@ -142,9 +141,7 @@ class SohbetNotifier extends _$SohbetNotifier {
           dahaFazlaVar: false,
         );
       }
- 
-      // Yeni mesaj var mı kontrol et, varsa okundu işaretle
-      // Debounce ile gereksiz Firestore yazımını önle
+
       if (snap.docs.isNotEmpty) {
         final sonMesajId = snap.docs.first.id;
         if (_sonOkunduMesajId != sonMesajId) {
@@ -154,15 +151,14 @@ class SohbetNotifier extends _$SohbetNotifier {
       }
     });
   }
- 
-  // 500ms debounce — ekranda hızlı mesaj gelirse tek seferde işaretle
+
   void _okunduDebounce() {
     _okunduTimer?.cancel();
     _okunduTimer = Timer(const Duration(milliseconds: 500), () {
       _okunduIsaretle();
     });
   }
- 
+
   Future<void> _okunduIsaretle() async {
     try {
       await _repo.okunduIsaretle(
@@ -171,7 +167,7 @@ class SohbetNotifier extends _$SohbetNotifier {
       );
     } catch (_) {}
   }
- 
+
   List<Map<String, dynamic>> _sirala(
       Map<String, Map<String, dynamic>> map) {
     final liste = map.values.toList();
@@ -182,7 +178,7 @@ class SohbetNotifier extends _$SohbetNotifier {
     });
     return liste;
   }
- 
+
   Future<void> dahaFazlaYukle() async {
     if (state.yukleniyor ||
         !state.dahaFazlaVar ||
@@ -207,7 +203,7 @@ class SohbetNotifier extends _$SohbetNotifier {
       enEskiDoc: snap.docs.isNotEmpty ? snap.docs.last : state.enEskiDoc,
     );
   }
- 
+
   Future<void> mesajGonder({
     required String metin,
     required String karsiKullaniciId,
@@ -217,8 +213,11 @@ class SohbetNotifier extends _$SohbetNotifier {
     String ilanResimUrl = '',
   }) async {
     if (metin.trim().isEmpty || state.gonderiyor) return;
-    state = state.copyWith(gonderiyor: true);
+
+    // ✅ Önce adı al — timeout ile takılmayı önle
     final benimAd = await _getBenimAd();
+
+    state = state.copyWith(gonderiyor: true);
     try {
       await _repo.mesajGonder(
         sohbetId: _sohbetId,
@@ -231,22 +230,22 @@ class SohbetNotifier extends _$SohbetNotifier {
         ilanResimUrl: ilanResimUrl,
         metin: metin.trim(),
       );
-      // Karşı tarafa bildirim gönder
-try {
-  print('BİLDİRİM GÖNDERİLİYOR: $karsiKullaniciId');
-  await ref.read(bildirimRepositoryProvider).mesajBildirimiGonder(
-          aliciId: karsiKullaniciId,
-          gondereId: _benimId,
-          gondereAd: benimAd,
-          ilanBaslik: ilanBaslik,
-          sohbetId: _sohbetId,
-        );
+      // Bildirim gönder — hata olsa da mesaj gönderimini etkilemesin
+      try {
+        await ref.read(bildirimRepositoryProvider).mesajBildirimiGonder(
+              aliciId: karsiKullaniciId,
+              gondereId: _benimId,
+              gondereAd: benimAd,
+              ilanBaslik: ilanBaslik,
+              sohbetId: _sohbetId,
+            );
       } catch (_) {}
     } finally {
+      // ✅ Her durumda gonderiyor false yap
       if (ref.mounted) state = state.copyWith(gonderiyor: false);
     }
   }
- 
+
   Future<void> mesajSil({
     required String mesajId,
     required String metin,
@@ -264,28 +263,30 @@ try {
       siraliMesajlar: _sirala(yeniMap),
     );
   }
- 
+
+  // ✅ Timeout eklendi — takılmayı önle
   Future<String> _getBenimAd() async {
     try {
       final doc = await ref
           .read(kullaniciRepositoryProvider)
-          .kullaniciGetir(_benimId);
+          .kullaniciGetir(_benimId)
+          .timeout(const Duration(seconds: 5));
       return doc?.adSoyad ?? '';
     } catch (_) {
       return '';
     }
   }
- 
+
   String get sohbetId => _sohbetId;
 }
- 
+
 @riverpod
 Stream<Map<String, dynamic>?> kullaniciProfil(Ref ref, String uid) {
   return ref
       .watch(kullaniciRepositoryProvider)
       .kullaniciDataStream(uid);
 }
- 
+
 @riverpod
 Stream<Map<String, dynamic>?> benimProfil(Ref ref) {
   final uid = ref.watch(currentUserProvider)?.uid;

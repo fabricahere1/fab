@@ -1,29 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
- 
+import '../../ilanlar/domain/ilan_model.dart' show TimestampConverter;
+
 part 'mesaj_model.freezed.dart';
 part 'mesaj_model.g.dart';
- 
-// ── Timestamp Converter ───────────────────────────────────
- 
-class TimestampConverter implements JsonConverter<DateTime?, Object?> {
-  const TimestampConverter();
- 
-  @override
-  DateTime? fromJson(Object? json) {
-    if (json == null) return null;
-    if (json is Timestamp) return json.toDate();
-    if (json is String) return DateTime.tryParse(json);
-    return null;
-  }
- 
-  @override
-  Object? toJson(DateTime? date) {
-    if (date == null) return null;
-    return Timestamp.fromDate(date);
-  }
-}
- 
+
 // ── Mesaj Tipi ────────────────────────────────────────────
  
 enum MesajTip { mesaj, sistem }

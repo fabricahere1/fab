@@ -266,8 +266,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
             ],
  
             // İstek veren alanı
-            if (_kullaniciTipi == 'istek' ||
-                _kullaniciTipi == 'her_ikisi') ...[
+            if (_istekMi) ...[
               Container(
                 color: Colors.white,
                 padding: const EdgeInsets.all(20),

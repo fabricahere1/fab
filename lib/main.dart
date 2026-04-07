@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'core/theme/app_theme.dart';
 import 'firebase_options.dart';
@@ -15,18 +14,6 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 }
 
-Future<void> _migrateFavoriSayisi() async {
-  final firestore = FirebaseFirestore.instance;
-  final snap = await firestore.collection('ilanlar').get();
-  final batch = firestore.batch();
-  for (final doc in snap.docs) {
-    if ((doc.data())['favoriSayisi'] == null) {
-      batch.update(doc.reference, {'favoriSayisi': 0});
-    }
-  }
-  await batch.commit();
-  debugPrint('Migration tamamlandı!');
-}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,8 +21,6 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
-  await _migrateFavoriSayisi();
 
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 

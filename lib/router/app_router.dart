@@ -1,17 +1,17 @@
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
- 
+
 import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
 import '../features/auth/presentation/profil_tamamla_screen.dart';
-import '../features/auth/providers/auth_provider.dart';
 import '../features/home/presentation/home_screen.dart';
- 
+
 part 'app_router.g.dart';
- 
+
 abstract class AppRoutes {
   static const splash        = '/';
   static const login         = '/login';
@@ -19,35 +19,53 @@ abstract class AppRoutes {
   static const profilTamamla = '/profil-tamamla';
   static const home          = '/home';
 }
- 
-@riverpod
+
+/// Auth state değiştiğinde GoRouter'ı tetikleyen listenable.
+/// GoRouter bir kez oluşturulur, yeniden build edilmez.
+class _AuthChangeNotifier extends ChangeNotifier {
+  _AuthChangeNotifier() {
+    _sub = FirebaseAuth.instance
+        .authStateChanges()
+        .listen((_) => notifyListeners());
+  }
+
+  late final StreamSubscription<User?> _sub;
+
+  @override
+  void dispose() {
+    _sub.cancel();
+    super.dispose();
+  }
+}
+
+@Riverpod(keepAlive: true)
 GoRouter router(Ref ref) {
-  final authAsync = ref.watch(authStateProvider);
- 
+  final notifier = _AuthChangeNotifier();
+  ref.onDispose(notifier.dispose);
+
   return GoRouter(
     initialLocation: AppRoutes.splash,
+    refreshListenable: notifier,
     redirect: (context, state) {
-      if (authAsync.isLoading) return null;
- 
-      final user = authAsync.value;
+      final user = FirebaseAuth.instance.currentUser;
       final isLoggedIn = user != null;
       final loc = state.matchedLocation;
- 
+
       if (loc == AppRoutes.splash) {
         return isLoggedIn ? AppRoutes.home : AppRoutes.login;
       }
- 
+
       if (!isLoggedIn &&
           loc != AppRoutes.login &&
           loc != AppRoutes.register) {
         return AppRoutes.login;
       }
- 
+
       if (isLoggedIn &&
           (loc == AppRoutes.login || loc == AppRoutes.register)) {
         return AppRoutes.home;
       }
- 
+
       return null;
     },
     routes: [
@@ -74,9 +92,10 @@ GoRouter router(Ref ref) {
     ],
   );
 }
- 
+
 class _SplashPage extends StatelessWidget {
   const _SplashPage();
+
   @override
   Widget build(BuildContext context) => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
