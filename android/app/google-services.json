@@ -1,78 +1,41 @@
 {
   "project_info": {
-    "project_number": "405772402645",
-    "project_id": "glocal2",
-    "storage_bucket": "glocal2.firebasestorage.app"
+    "project_number": "783365190841",
+    "project_id": "bring-in-3a17c",
+    "storage_bucket": "bring-in-3a17c.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:405772402645:android:541f71e2b5d0db81e9c75c",
+        "mobilesdk_app_id": "1:783365190841:android:6a6d87a303b3e9a4059768",
         "android_client_info": {
-          "package_name": "com.example.yeni_proje"
+          "package_name": "com.fabricahere.iste_v3"
         }
       },
       "oauth_client": [
         {
-          "client_id": "405772402645-otnn9p3s6hn46cmlhe7fod66pj3qbia5.apps.googleusercontent.com",
+          "client_id": "783365190841-sr6uf51d775c35osuesfr6k9s3cttci0.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.example.yeni_proje",
+            "package_name": "com.fabricahere.iste_v3",
             "certificate_hash": "230665ed8d0f4059eafdf4478fef612e2a406bb3"
           }
         },
         {
-          "client_id": "405772402645-4ek3ca64am0u6djph788bbncut8ffbm5.apps.googleusercontent.com",
+          "client_id": "783365190841-7gr2vigmdov0sbt8dsqu71udikt3m96a.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyDAKheJCtb7IZjJXNm8VgtGMS_XR6Sd548"
+          "current_key": "AIzaSyCPZmpHNl2T8CJKZ6R5IEJLxc42-UPOxKA"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "405772402645-4ek3ca64am0u6djph788bbncut8ffbm5.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:405772402645:android:aadbd8ef70edebc9e9c75c",
-        "android_client_info": {
-          "package_name": "com.fabricahere.iste_v2"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "405772402645-p1ghs74ku558n3gu4k48moslc9qhauqq.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.fabricahere.iste_v2",
-            "certificate_hash": "230665ed8d0f4059eafdf4478fef612e2a406bb3"
-          }
-        },
-        {
-          "client_id": "405772402645-4ek3ca64am0u6djph788bbncut8ffbm5.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyDAKheJCtb7IZjJXNm8VgtGMS_XR6Sd548"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "405772402645-4ek3ca64am0u6djph788bbncut8ffbm5.apps.googleusercontent.com",
+              "client_id": "783365190841-7gr2vigmdov0sbt8dsqu71udikt3m96a.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

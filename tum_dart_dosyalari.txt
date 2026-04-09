@@ -1,5 +1,5 @@
 ﻿
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\core\cache\app_cache_manager.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\core\cache\app_cache_manager.dart ---
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 class AppCacheManager {
@@ -14,133 +14,30 @@ class AppCacheManager {
   );
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\core\theme\app_theme.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\core\theme\app_theme.dart ---
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../shared/constants/app_colors.dart';
- 
+
 class AppTheme {
-  AppTheme._();
- 
   static ThemeData get light => ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primary,
-          brightness: Brightness.light,
-        ),
-        fontFamily: GoogleFonts.dmSans().fontFamily,
- 
-        // â”€â”€ AppBar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        appBarTheme: AppBarTheme(
-          backgroundColor: AppColors.white,
-          foregroundColor: AppColors.textPrimary,
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFE53935)),
+        textTheme: GoogleFonts.dmSansTextTheme(),
+        scaffoldBackgroundColor: const Color(0xFFF5F5F5),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: Color(0xFF1A1A1A),
           elevation: 0,
           scrolledUnderElevation: 1,
-          shadowColor: AppColors.divider,
-          titleTextStyle: GoogleFonts.dmSans(
-            color: AppColors.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
         ),
- 
-        // â”€â”€ Scaffold â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        scaffoldBackgroundColor: AppColors.surface,
- 
-        // â”€â”€ Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        cardTheme: const CardThemeData(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.zero,
-          ),
-          margin: EdgeInsets.zero,
-          color: AppColors.white,
-        ),
- 
-        // â”€â”€ ElevatedButton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.red,
-            foregroundColor: AppColors.white,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            textStyle: GoogleFonts.dmSans(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
- 
-        // â”€â”€ OutlinedButton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        outlinedButtonTheme: OutlinedButtonThemeData(
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.primary,
-            side: const BorderSide(color: AppColors.divider),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        ),
- 
-        // â”€â”€ TextButton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        textButtonTheme: TextButtonThemeData(
-          style: TextButton.styleFrom(
-            foregroundColor: AppColors.primary,
-          ),
-        ),
- 
-        // â”€â”€ InputDecoration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: AppColors.surface,
-          hintStyle: GoogleFonts.dmSans(
-            color: AppColors.textHint,
-            fontSize: 14,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: AppColors.divider),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: AppColors.divider),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(
-              color: AppColors.primary,
-              width: 1.5,
-            ),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 14,
-          ),
-        ),
- 
-        // â”€â”€ Divider â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        dividerTheme: const DividerThemeData(
-          color: AppColors.divider,
-          thickness: 1,
-          space: 1,
-        ),
- 
-        // â”€â”€ SnackBar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        snackBarTheme: SnackBarThemeData(
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          contentTextStyle: GoogleFonts.dmSans(
-            color: AppColors.white,
-            fontSize: 13,
-          ),
+        navigationBarTheme: NavigationBarThemeData(
+          backgroundColor: Colors.white,
+          indicatorColor: const Color(0xFFE53935).withValues(alpha: 0.1),
         ),
       );
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\auth\data\auth_repository.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\auth\data\auth_repository.dart ---
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -198,6 +95,7 @@ class AuthRepository {
     final user = credential.user;
     if (user != null) {
       await user.updateDisplayName(adSoyad.trim());
+      await user.sendEmailVerification();
       await firestore.collection(Collections.kullanicilar).doc(user.uid).set({
         'adSoyad':          adSoyad.trim(),
         'email':            user.email,
@@ -381,7 +279,7 @@ class AuthRepository {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\auth\data\auth_repository.g.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\auth\data\auth_repository.g.dart ---
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'auth_repository.dart';
@@ -434,7 +332,7 @@ final class AuthRepositoryProvider
 
 String _$authRepositoryHash() => r'3f79dd69207ed0a2c3100c23838a0b03f98b6f6a';
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\auth\presentation\login_screen.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\auth\presentation\login_screen.dart ---
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -761,7 +659,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\auth\presentation\profil_tamamla_screen.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\auth\presentation\profil_tamamla_screen.dart ---
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -771,7 +669,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../../../router/app_router.dart';
- 
+
 const List<String> _tumUlkeler = [
   'Afganistan', 'Almanya', 'Amerika BirleÅŸik Devletleri', 'Arjantin',
   'Avustralya', 'Avusturya', 'Azerbaycan', 'BelÃ§ika',
@@ -785,22 +683,22 @@ const List<String> _tumUlkeler = [
   'Suudi Arabistan', 'Singapur', 'Tayland', 'Tunus', 'TÃ¼rkmenistan',
   'Ukrayna', 'ÃœrdÃ¼n', 'Vietnam', 'Yunanistan',
 ];
- 
+
 const List<String> _turkiyeSehirleri = [
   'Adana', 'Ankara', 'Antalya', 'Bursa', 'DiyarbakÄ±r', 'Erzurum',
   'EskiÅŸehir', 'Gaziantep', 'Ä°stanbul', 'Ä°zmir', 'Kayseri', 'Konya',
   'Malatya', 'Mersin', 'Samsun', 'Trabzon',
 ];
- 
+
 class ProfilTamamlaScreen extends ConsumerStatefulWidget {
   final bool ilkGiris;
   const ProfilTamamlaScreen({super.key, this.ilkGiris = true});
- 
+
   @override
   ConsumerState<ProfilTamamlaScreen> createState() =>
       _ProfilTamamlaScreenState();
 }
- 
+
 class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
   String? _kullaniciTipi;
   String _yasadigiUlke = '';
@@ -811,19 +709,19 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
   bool _telefonGizli = false;
   bool _yukleniyor = false;
   String _hata = '';
- 
+
   @override
   void dispose() {
     _hakkindaCtrl.dispose();
     _telefonCtrl.dispose();
     super.dispose();
   }
- 
+
   bool get _tasiyiciMi =>
       _kullaniciTipi == 'tasiyici' || _kullaniciTipi == 'her_ikisi';
   bool get _istekMi =>
       _kullaniciTipi == 'istek' || _kullaniciTipi == 'her_ikisi';
- 
+
   Future<void> _kaydet() async {
     if (_kullaniciTipi == null) {
       setState(() => _hata = 'LÃ¼tfen kullanÄ±cÄ± tipini seÃ§in.');
@@ -841,12 +739,13 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
       setState(() => _hata = 'BulunduÄŸunuz ÅŸehri girin.');
       return;
     }
- 
+
     setState(() { _yukleniyor = true; _hata = ''; });
- 
+
     final uid = ref.read(currentUserProvider)?.uid;
     if (uid == null) return;
- 
+
+    // âœ… email alanÄ± eklendi
     final data = {
       'kullaniciTipi':   _kullaniciTipi,
       'yasadigiUlke':    _tasiyiciMi ? _yasadigiUlke.trim() : '',
@@ -855,24 +754,24 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
       'hakkinda':        _hakkindaCtrl.text.trim(),
       'telefon':         _telefonCtrl.text.trim(),
       'telefonGizli':    _telefonGizli,
-      'adSoyad':
-          ref.read(currentUserProvider)?.displayName ?? '',
+      'adSoyad':         ref.read(currentUserProvider)?.displayName ?? '',
+      'email':           ref.read(currentUserProvider)?.email ?? '',
     };
- 
+
     final basarili = await ref
         .read(profilDuzenleProvider.notifier)
         .profilTamamla(uid: uid, data: data);
- 
+
     if (!mounted) return;
     setState(() => _yukleniyor = false);
- 
+
     if (basarili) {
       context.go(AppRoutes.home);
     } else {
       setState(() => _hata = 'Bir hata oluÅŸtu. Tekrar deneyin.');
     }
   }
- 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -923,8 +822,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
               ),
               const SizedBox(height: 8),
             ],
- 
-            // KullanÄ±cÄ± tipi seÃ§imi
+
             Container(
               color: Colors.white,
               padding: const EdgeInsets.all(20),
@@ -975,8 +873,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
               ),
             ),
             const SizedBox(height: 8),
- 
-            // TaÅŸÄ±yÄ±cÄ± alanlarÄ±
+
             if (_tasiyiciMi) ...[
               Container(
                 color: Colors.white,
@@ -1028,10 +925,8 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
               ),
               const SizedBox(height: 8),
             ],
- 
-            // Ä°stek veren alanÄ±
-            if (_kullaniciTipi == 'istek' ||
-                _kullaniciTipi == 'her_ikisi') ...[
+
+            if (_istekMi) ...[
               Container(
                 color: Colors.white,
                 padding: const EdgeInsets.all(20),
@@ -1061,8 +956,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
               ),
               const SizedBox(height: 8),
             ],
- 
-            // Telefon
+
             if (_kullaniciTipi != null) ...[
               Container(
                 color: Colors.white,
@@ -1140,8 +1034,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
               ),
               const SizedBox(height: 8),
             ],
- 
-            // HakkÄ±nda
+
             if (_kullaniciTipi != null) ...[
               Container(
                 color: Colors.white,
@@ -1177,8 +1070,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
               ),
               const SizedBox(height: 8),
             ],
- 
-            // Hata
+
             if (_hata.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
@@ -1202,8 +1094,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
                   ),
                 ),
               ),
- 
-            // Kaydet butonu
+
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
               child: SizedBox(
@@ -1231,14 +1122,12 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
     );
   }
 }
- 
-// â”€â”€ Tip KartÄ± â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
- 
+
 class _TipKart extends StatelessWidget {
   final String emoji, baslik, aciklama;
   final bool secili;
   final VoidCallback onTap;
- 
+
   const _TipKart({
     required this.emoji,
     required this.baslik,
@@ -1246,7 +1135,7 @@ class _TipKart extends StatelessWidget {
     required this.secili,
     required this.onTap,
   });
- 
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -1286,12 +1175,12 @@ class _TipKart extends StatelessWidget {
     );
   }
 }
- 
+
 class _TipKartGenis extends StatelessWidget {
   final String emoji, baslik, aciklama;
   final bool secili;
   final VoidCallback onTap;
- 
+
   const _TipKartGenis({
     required this.emoji,
     required this.baslik,
@@ -1299,7 +1188,7 @@ class _TipKartGenis extends StatelessWidget {
     required this.secili,
     required this.onTap,
   });
- 
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -1346,16 +1235,14 @@ class _TipKartGenis extends StatelessWidget {
     );
   }
 }
- 
-// â”€â”€ Autocomplete AlanÄ± â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
- 
+
 class _AutocompleteAlani extends StatefulWidget {
   final String value;
   final List<String> secenekler;
   final String hint;
   final IconData icon;
   final ValueChanged<String> onSecildi;
- 
+
   const _AutocompleteAlani({
     required this.value,
     required this.secenekler,
@@ -1363,28 +1250,28 @@ class _AutocompleteAlani extends StatefulWidget {
     required this.icon,
     required this.onSecildi,
   });
- 
+
   @override
   State<_AutocompleteAlani> createState() => _AutocompleteAlaniState();
 }
- 
+
 class _AutocompleteAlaniState extends State<_AutocompleteAlani> {
   late TextEditingController _ctrl;
   List<String> _filtreli = [];
   bool _acik = false;
- 
+
   @override
   void initState() {
     super.initState();
     _ctrl = TextEditingController(text: widget.value);
   }
- 
+
   @override
   void dispose() {
     _ctrl.dispose();
     super.dispose();
   }
- 
+
   void _filtrele(String q) {
     setState(() {
       _acik = q.isNotEmpty;
@@ -1394,7 +1281,7 @@ class _AutocompleteAlaniState extends State<_AutocompleteAlani> {
           .toList();
     });
   }
- 
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -1468,14 +1355,12 @@ class _AutocompleteAlaniState extends State<_AutocompleteAlani> {
     );
   }
 }
- 
-// â”€â”€ Ã‡oklu Åžehir AlanÄ± â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
- 
+
 class _CokluSehirAlani extends StatefulWidget {
   final List<String> secilenler, secenekler;
   final String hint;
   final ValueChanged<String> onEklendi, onKaldirildi;
- 
+
   const _CokluSehirAlani({
     required this.secilenler,
     required this.secenekler,
@@ -1483,22 +1368,22 @@ class _CokluSehirAlani extends StatefulWidget {
     required this.onEklendi,
     required this.onKaldirildi,
   });
- 
+
   @override
   State<_CokluSehirAlani> createState() => _CokluSehirAlaniState();
 }
- 
+
 class _CokluSehirAlaniState extends State<_CokluSehirAlani> {
   final _ctrl = TextEditingController();
   List<String> _filtreli = [];
   bool _acik = false;
- 
+
   @override
   void dispose() {
     _ctrl.dispose();
     super.dispose();
   }
- 
+
   void _filtrele(String q) {
     setState(() {
       _acik = q.isNotEmpty;
@@ -1510,7 +1395,7 @@ class _CokluSehirAlaniState extends State<_CokluSehirAlani> {
           .toList();
     });
   }
- 
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -1601,7 +1486,7 @@ class _CokluSehirAlaniState extends State<_CokluSehirAlani> {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\auth\presentation\register_screen.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\auth\presentation\register_screen.dart ---
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -1886,7 +1771,7 @@ class _Etiket extends StatelessWidget {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\auth\providers\auth_provider.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\auth\providers\auth_provider.dart ---
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -2014,7 +1899,7 @@ class AuthSonuc {
       AuthSonuc._(basarili: false, hata: mesaj);
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\auth\providers\auth_provider.g.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\auth\providers\auth_provider.g.dart ---
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'auth_provider.dart';
@@ -2143,10 +2028,11 @@ abstract class _$AuthNotifier extends $AsyncNotifier<void> {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\bildirimler\data\bildirim_repository.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\bildirimler\data\bildirim_repository.dart ---
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/bildirim_model.dart';
+import '../../../shared/constants/app_constants.dart';
  
 part 'bildirim_repository.g.dart';
  
@@ -2160,7 +2046,7 @@ class BildirimRepository {
  
   BildirimRepository({required this.firestore});
  
-  CollectionReference get _col => firestore.collection('bildirimler');
+  CollectionReference get _col => firestore.collection(Collections.bildirimler);
  
   // KullanÄ±cÄ±nÄ±n bildirimlerini stream olarak dinle
   Stream<List<BildirimModel>> bildirimlerStream(String kullaniciId) {
@@ -2250,7 +2136,7 @@ class BildirimRepository {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\bildirimler\data\bildirim_repository.g.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\bildirimler\data\bildirim_repository.g.dart ---
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'bildirim_repository.dart';
@@ -2310,7 +2196,7 @@ final class BildirimRepositoryProvider
 String _$bildirimRepositoryHash() =>
     r'f713cef9f5c80804e3bc131fdc74de70baa9e4b0';
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\bildirimler\domain\bildirim_model.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\bildirimler\domain\bildirim_model.dart ---
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
  
@@ -2376,7 +2262,7 @@ extension BildirimModelX on BildirimModel {
   };
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\bildirimler\domain\bildirim_model.freezed.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\bildirimler\domain\bildirim_model.freezed.dart ---
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -2682,7 +2568,7 @@ as String,
 
 // dart format on
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\bildirimler\domain\bildirim_model.g.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\bildirimler\domain\bildirim_model.g.dart ---
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'bildirim_model.dart';
@@ -2729,7 +2615,7 @@ const _$BildirimTipEnumMap = {
   BildirimTip.sistem: 'sistem',
 };
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\bildirimler\presentation\bildirimler_screen.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\bildirimler\presentation\bildirimler_screen.dart ---
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -2976,7 +2862,7 @@ class _BildirimSatiri extends ConsumerWidget {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\bildirimler\providers\bildirim_provider.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\bildirimler\providers\bildirim_provider.dart ---
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/bildirim_repository.dart';
@@ -3054,7 +2940,7 @@ class BildirimNotifier extends _$BildirimNotifier {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\bildirimler\providers\bildirim_provider.g.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\bildirimler\providers\bildirim_provider.g.dart ---
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'bildirim_provider.dart';
@@ -3193,7 +3079,7 @@ abstract class _$BildirimNotifier extends $Notifier<AsyncValue<void>> {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\favoriler\presentation\favoriler_screen.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\favoriler\presentation\favoriler_screen.dart ---
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../ilanlar/data/ilan_repository.dart';
@@ -3509,7 +3395,7 @@ class _FavoriKarti extends StatelessWidget {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\home\presentation\home_screen.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\home\presentation\home_screen.dart ---
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -3520,45 +3406,41 @@ import '../../ilanlar/presentation/gelenler_screen.dart';
 import '../../mesajlar/presentation/mesajlar_screen.dart';
 import '../../mesajlar/providers/mesaj_provider.dart';
 import '../../profil/presentation/profil_screen.dart';
-import '../../bildirimler/presentation/bildirimler_screen.dart';
-import '../../bildirimler/providers/bildirim_provider.dart';
 import '../../../shared/constants/app_colors.dart';
- 
+
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
- 
+
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
- 
+
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
   DateTime? _sonGeriTusu;
- 
+
   final List<Widget> _pages = const [
     IsteklerScreen(),
     GelenlerScreen(),
     MesajlarScreen(),
-    BildirimlerScreen(),
     ProfilScreen(),
   ];
- 
+
   @override
   Widget build(BuildContext context) {
     final uid = ref.watch(currentUserProvider)?.uid;
     final toplamOkunmamis = ref.watch(okunmamisSayiProvider);
-    final okunmamisBildirim = ref.watch(okunmamisBildirimSayiProvider).value ?? 0;
- 
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
- 
+
         if (_selectedIndex != 0) {
           setState(() => _selectedIndex = 0);
           return;
         }
- 
+
         final simdi = DateTime.now();
         if (_sonGeriTusu == null ||
             simdi.difference(_sonGeriTusu!) > const Duration(seconds: 2)) {
@@ -3598,7 +3480,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               selectedIcon: Icon(Icons.flight_land, color: AppColors.red),
               label: 'Gelenler',
             ),
-            // Mesajlar â€” okunmamÄ±ÅŸ badge
             NavigationDestination(
               icon: uid == null || toplamOkunmamis == 0
                   ? const Icon(Icons.chat_bubble_outline)
@@ -3629,41 +3510,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
               label: 'Mesajlar',
             ),
-            // Bildirimler â€” okunmamÄ±ÅŸ badge
-            NavigationDestination(
-              icon: okunmamisBildirim == 0
-                  ? const Icon(Icons.notifications_outlined)
-                  : Badge(
-                      label: Text(
-                        okunmamisBildirim > 99 ? '99+' : '$okunmamisBildirim',
-                        style: GoogleFonts.dmSans(
-                            fontSize: 10,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600),
-                      ),
-                      backgroundColor: AppColors.red,
-                      child: const Icon(Icons.notifications_outlined),
-                    ),
-              selectedIcon: okunmamisBildirim == 0
-                  ? const Icon(Icons.notifications, color: AppColors.red)
-                  : Badge(
-                      label: Text(
-                        okunmamisBildirim > 99 ? '99+' : '$okunmamisBildirim',
-                        style: GoogleFonts.dmSans(
-                            fontSize: 10,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600),
-                      ),
-                      backgroundColor: AppColors.red,
-                      child: const Icon(Icons.notifications,
-                          color: AppColors.red),
-                    ),
-              label: 'Bildirimler',
-            ),
+            // âœ… 3 Ã§izgi ikonu
             const NavigationDestination(
-              icon: Icon(Icons.person_outline),
-              selectedIcon: Icon(Icons.person, color: AppColors.red),
-              label: 'Profil',
+              icon: Icon(Icons.menu),
+              selectedIcon: Icon(Icons.menu, color: AppColors.red),
+              label: 'MenÃ¼',
             ),
           ],
         ),
@@ -3672,7 +3523,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\ilanlar\data\ilan_repository.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\ilanlar\data\ilan_repository.dart ---
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -3738,10 +3589,10 @@ class IlanRepository {
   }
 
   Future<IlanSayfasi> tasiyiciIlanlariniGetir({
-    bool tariheSore = true,
+    bool tariheGore = true,
     int limit = Pagination.ilanSayfaBoyutu,
   }) async {
-    if (tariheSore) {
+    if (tariheGore) {
       final bugun = Timestamp.fromDate(
         DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
       );
@@ -3850,7 +3701,6 @@ class IlanRepository {
   Future<void> ilanPasifYap(String ilanId) =>
       _col.doc(ilanId).update({'aktif': false});
 
-  // âœ… Detay sayfasÄ± iÃ§in real-time favori sayacÄ±
   Stream<int> favoriSayisiStream(String ilanId) {
     return _col.doc(ilanId).snapshots().map((doc) =>
         ((doc.data() as Map<String, dynamic>?)?['favoriSayisi'] as num?)
@@ -3874,25 +3724,33 @@ class IlanRepository {
     required String kullaniciId,
     required IlanModel ilan,
   }) async {
+    // âœ… Zaten favoride mi kontrol et â€” spam Ã¶nleme
+    final mevcutSnap = await firestore
+        .collection(Collections.favoriler)
+        .where('kullaniciId', isEqualTo: kullaniciId)
+        .where('ilanId', isEqualTo: ilan.id)
+        .get();
+
+    if (mevcutSnap.docs.isNotEmpty) return;
+
     final batch = firestore.batch();
 
     final favoriRef = firestore.collection(Collections.favoriler).doc();
     batch.set(favoriRef, {
-      'kullaniciId': kullaniciId,
-      'ilanId':      ilan.id,
-      'tip':         ilan.tip,
-      'kullaniciAd': ilan.kullaniciAd,
-      'nereden':     ilan.nereden,
-      'nereye':      ilan.nereye,
-      'urun':        ilan.urun,
-      'ucret':       ilan.ucret,
-      'kategori':    ilan.kategori,
+      'kullaniciId':  kullaniciId,
+      'ilanId':       ilan.id,
+      'tip':          ilan.tip,
+      'kullaniciAd':  ilan.kullaniciAd,
+      'nereden':      ilan.nereden,
+      'nereye':       ilan.nereye,
+      'urun':         ilan.urun,
+      'ucret':        ilan.ucret,
+      'kategori':     ilan.kategori,
       if (ilan.resimUrl.isNotEmpty) 'resimUrl': ilan.resimUrl,
       'eklemeTarihi': FieldValue.serverTimestamp(),
     });
 
-    final ilanRef = _col.doc(ilan.id);
-    batch.update(ilanRef, {
+    batch.update(_col.doc(ilan.id), {
       'favoriSayisi': FieldValue.increment(1),
     });
 
@@ -3934,7 +3792,7 @@ class IlanRepository {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\ilanlar\data\ilan_repository.g.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\ilanlar\data\ilan_repository.g.dart ---
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'ilan_repository.dart';
@@ -3987,7 +3845,7 @@ final class IlanRepositoryProvider
 
 String _$ilanRepositoryHash() => r'e511946b1fa2aab8744881907ce7718b8faef28f';
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\ilanlar\domain\ilan_model.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\ilanlar\domain\ilan_model.dart ---
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -4090,7 +3948,7 @@ extension IlanModelX on IlanModel {
   };
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\ilanlar\domain\ilan_model.freezed.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\ilanlar\domain\ilan_model.freezed.dart ---
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -4426,7 +4284,7 @@ as String,
 
 // dart format on
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\ilanlar\domain\ilan_model.g.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\ilanlar\domain\ilan_model.g.dart ---
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'ilan_model.dart';
@@ -4484,7 +4342,7 @@ Map<String, dynamic> _$IlanModelToJson(_IlanModel instance) =>
       'tasimaTercihi': instance.tasimaTercihi,
     };
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\ilanlar\presentation\gelenler_form_screen.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\ilanlar\presentation\gelenler_form_screen.dart ---
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5518,7 +5376,7 @@ class _AutocompleteAlanState extends State<_AutocompleteAlan> {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\ilanlar\presentation\gelenler_screen.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\ilanlar\presentation\gelenler_screen.dart ---
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -5528,46 +5386,46 @@ import '../presentation/gelenler_form_screen.dart';
 import '../presentation/ilan_detay_screen.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart';
- 
+
 class GelenlerScreen extends ConsumerStatefulWidget {
   const GelenlerScreen({super.key});
- 
+
   @override
   ConsumerState<GelenlerScreen> createState() => _GelenlerScreenState();
 }
- 
+
 class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
     with AutomaticKeepAliveClientMixin {
   final _scrollController = ScrollController();
- 
+
   @override
   bool get wantKeepAlive => true;
- 
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
   }
- 
+
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
   }
- 
+
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 400) {
       ref.read(tasiyiciIlanlarProvider.notifier).dahaFazlaYukle();
     }
   }
- 
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     final state = ref.watch(tasiyiciIlanlarProvider);
     final ilanlar = state.filtrelenmis;
- 
+
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
@@ -5579,23 +5437,33 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
         scrolledUnderElevation: 1,
         shadowColor: AppColors.divider,
       ),
-      body: state.yukleniyor && ilanlar.isEmpty
-          ? const Center(
-              child: CircularProgressIndicator(
-                  color: AppColors.red, strokeWidth: 2))
-          : ilanlar.isEmpty
-              ? _BosEkran(
-                  onYenile: () =>
-                      ref.read(tasiyiciIlanlarProvider.notifier).yenile())
-              : RefreshIndicator(
-                  color: AppColors.red,
-                  onRefresh: () =>
-                      ref.read(tasiyiciIlanlarProvider.notifier).yenile(),
-                  child: ListView.separated(
+      body: RefreshIndicator(
+        color: AppColors.red,
+        onRefresh: () =>
+            ref.read(tasiyiciIlanlarProvider.notifier).yenile(),
+        child: state.yukleniyor && ilanlar.isEmpty
+            ? const Center(
+                child: CircularProgressIndicator(
+                    color: AppColors.red, strokeWidth: 2))
+            : ilanlar.isEmpty
+                ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.6,
+                        child: _BosEkran(
+                          onYenile: () =>
+                              ref.read(tasiyiciIlanlarProvider.notifier).yenile(),
+                        ),
+                      ),
+                    ],
+                  )
+                : ListView.separated(
                     controller: _scrollController,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    cacheExtent: 500,
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount:
-                        ilanlar.length + (state.dahaFazlaVar ? 1 : 0),
+                    itemCount: ilanlar.length + (state.dahaFazlaVar ? 1 : 0),
                     separatorBuilder: (_, __) =>
                         const Divider(height: 1, indent: 0),
                     itemBuilder: (context, index) {
@@ -5617,7 +5485,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                       );
                     },
                   ),
-                ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.push(
           context,
@@ -5634,13 +5502,13 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
     );
   }
 }
- 
+
 // â”€â”€ Gelen Ä°lan KartÄ± â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
- 
+
 class _GelenKarti extends StatelessWidget {
   final IlanModel ilan;
   const _GelenKarti({required this.ilan, super.key});
- 
+
   String? _gelisYazisi() {
     if (ilan.tarih == null) return null;
     final bugun = DateTime.now();
@@ -5653,7 +5521,7 @@ class _GelenKarti extends StatelessWidget {
     if (fark == 1) return 'YarÄ±n geliyor';
     return '$fark gÃ¼n sonra geliyor';
   }
- 
+
   @override
   Widget build(BuildContext context) {
     final kategoriAdiStr = ilan.kategori.isNotEmpty && ilan.kategori != 'diger'
@@ -5662,13 +5530,13 @@ class _GelenKarti extends StatelessWidget {
             .map((k) => kKategoriler[k.trim()] ?? k.trim())
             .join(', ')
         : '';
- 
+
     final tarihYazi = ilan.tarih != null
         ? '${ilan.tarih!.day}.${ilan.tarih!.month}.${ilan.tarih!.year}'
         : '';
- 
+
     final gelisYazisi = _gelisYazisi();
- 
+
     Color gelisRenk = const Color(0xFF2E7D32);
     Color gelisArkaRenk = const Color(0xFFE8F5E9);
     if (gelisYazisi != null) {
@@ -5681,7 +5549,7 @@ class _GelenKarti extends StatelessWidget {
         gelisArkaRenk = const Color(0xFFFFFDE7);
       }
     }
- 
+
     return InkWell(
       onTap: () => Navigator.push(
         context,
@@ -5695,8 +5563,14 @@ class _GelenKarti extends StatelessWidget {
               parent: anim,
               curve: Curves.easeOutCubic,
             )),
-            child: child,
+            child: FadeTransition(
+              opacity: Tween<double>(begin: 0.5, end: 1.0).animate(
+                CurvedAnimation(parent: anim, curve: Curves.easeOut),
+              ),
+              child: child,
+            ),
           ),
+          transitionDuration: const Duration(milliseconds: 280),
         ),
       ),
       child: Container(
@@ -5724,7 +5598,7 @@ class _GelenKarti extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
- 
+
             Row(
               children: [
                 if (tarihYazi.isNotEmpty) ...[
@@ -5770,7 +5644,7 @@ class _GelenKarti extends StatelessWidget {
                 ),
               ],
             ),
- 
+
             if (kategoriAdiStr.isNotEmpty) ...[
               const SizedBox(height: 8),
               Row(
@@ -5790,7 +5664,7 @@ class _GelenKarti extends StatelessWidget {
                 ],
               ),
             ],
- 
+
             if (ilan.notlar.isNotEmpty) ...[
               const SizedBox(height: 6),
               Text(
@@ -5801,7 +5675,7 @@ class _GelenKarti extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ],
- 
+
             const SizedBox(height: 10),
             Row(
               children: [
@@ -5832,13 +5706,13 @@ class _GelenKarti extends StatelessWidget {
     );
   }
 }
- 
+
 // â”€â”€ BoÅŸ ekran â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
- 
+
 class _BosEkran extends StatelessWidget {
   final VoidCallback onYenile;
   const _BosEkran({required this.onYenile});
- 
+
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -5867,7 +5741,7 @@ class _BosEkran extends StatelessWidget {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\ilanlar\presentation\ilanlar_screen.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\ilanlar\presentation\ilanlar_screen.dart ---
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5933,7 +5807,10 @@ class _IsteklerScreenState extends ConsumerState<IsteklerScreen>
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 400) {
-      ref.read(istekIlanlarProvider.notifier).dahaFazlaYukle();
+      final state = ref.read(istekIlanlarProvider);
+      if (!state.yukleniyor) {
+        ref.read(istekIlanlarProvider.notifier).dahaFazlaYukle();
+      }
     }
   }
 
@@ -6019,8 +5896,8 @@ class _IsteklerScreenState extends ConsumerState<IsteklerScreen>
       barrierLabel: 'Filtre kapat',
       barrierColor: Colors.black54,
       transitionDuration: const Duration(milliseconds: 250),
-      pageBuilder: (_, __, ___) => const SizedBox.shrink(),
-      transitionBuilder: (ctx, anim, __, ___) {
+      pageBuilder: (_, _, _) => const SizedBox.shrink(),
+      transitionBuilder: (ctx, anim, _, _) {
         final slide = Tween<Offset>(
           begin: const Offset(1, 0),
           end: Offset.zero,
@@ -6236,9 +6113,18 @@ class _IsteklerScreenState extends ConsumerState<IsteklerScreen>
       body: state.yukleniyor && ilanlar.isEmpty
           ? const _ShimmerGrid()
           : ilanlar.isEmpty
-              ? _BosEkran(
-                  onYenile: () =>
-                      ref.read(istekIlanlarProvider.notifier).yenile())
+              ? filtrAktif || _aramaMetni.isNotEmpty
+                  ? _FiltreBosBekran(
+                      onTemizle: () => setState(() {
+                        _seciliAnaKey = null;
+                        _seciliAltKey = null;
+                        _aramaMetni = '';
+                        _aramaCtrl.clear();
+                      }),
+                    )
+                  : _BosEkran(
+                      onYenile: () =>
+                          ref.read(istekIlanlarProvider.notifier).yenile())
               : RefreshIndicator(
                   color: AppColors.red,
                   onRefresh: () =>
@@ -6649,7 +6535,7 @@ class _ShimmerGrid extends StatelessWidget {
 
 class _IlanKarti extends ConsumerWidget {
   final IlanModel ilan;
-  const _IlanKarti({required this.ilan, super.key});
+  const _IlanKarti({required this.ilan});
 
   double _resimYuksekligi() {
     final heights = [160.0, 200.0, 140.0, 180.0, 220.0, 150.0];
@@ -6670,8 +6556,8 @@ class _IlanKarti extends ConsumerWidget {
       onTap: () => Navigator.push(
         context,
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => IlanDetayScreen(ilan: ilan),
-          transitionsBuilder: (_, anim, __, child) => SlideTransition(
+          pageBuilder: (_, _, _) => IlanDetayScreen(ilan: ilan),
+          transitionsBuilder: (_, anim, _, child) => SlideTransition(
             position: Tween(
               begin: const Offset(1, 0),
               end: Offset.zero,
@@ -6710,9 +6596,9 @@ class _IlanKarti extends ConsumerWidget {
                           fit: BoxFit.cover,
                           fadeInDuration: Duration.zero,
                           memCacheWidth: 400,
-                          placeholder: (_, __) =>
+                          placeholder: (_, _) =>
                               Container(color: AppColors.surface),
-                          errorWidget: (_, __, ___) => Container(
+                          errorWidget: (_, _, _) => Container(
                             color: AppColors.surface,
                             child: const Center(
                               child: Icon(Icons.image_outlined,
@@ -6853,6 +6739,40 @@ class _IlanKarti extends ConsumerWidget {
   }
 }
 
+// â”€â”€ Filtre sonucu boÅŸ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+class _FiltreBosBekran extends StatelessWidget {
+  final VoidCallback onTemizle;
+  const _FiltreBosBekran({required this.onTemizle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.search_off_outlined,
+              size: 64, color: AppColors.divider),
+          const SizedBox(height: 16),
+          Text('SonuÃ§ bulunamadÄ±',
+              style: GoogleFonts.dmSans(
+                  fontSize: 15, color: AppColors.textSecondary)),
+          const SizedBox(height: 8),
+          Text('Filtre veya aramayÄ± temizlemeyi deneyin',
+              style: GoogleFonts.dmSans(
+                  fontSize: 13, color: AppColors.textHint)),
+          const SizedBox(height: 24),
+          OutlinedButton(
+            onPressed: onTemizle,
+            child: Text('Filtreyi Temizle',
+                style: GoogleFonts.dmSans(color: AppColors.primary)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // â”€â”€ BoÅŸ ekran â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _BosEkran extends StatelessWidget {
@@ -6888,7 +6808,7 @@ class _BosEkran extends StatelessWidget {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\ilanlar\presentation\ilan_detay_screen.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\ilanlar\presentation\ilan_detay_screen.dart ---
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6902,7 +6822,7 @@ import '../../profil/providers/profil_provider.dart';
 import '../../profil/presentation/kullanici_profil_screen.dart';
 import '../../mesajlar/presentation/sohbet_screen.dart';
 import '../../../shared/constants/app_colors.dart';
-import '../../../shared/constants/app_constants.dart' as appConstants;
+import '../../../shared/constants/app_constants.dart' as app_constants;
 import '../../../shared/widgets/avatar_widget.dart';
 import '../../../core/cache/app_cache_manager.dart';
 
@@ -6952,14 +6872,14 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
     Navigator.push(
       context,
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => SohbetScreen(
+        pageBuilder: (_, _, _) => SohbetScreen(
           karsiKullaniciId: ilan.kullaniciId,
           karsiKullaniciAd: ilan.kullaniciAd,
           ilanId: ilan.id,
           ilanBaslik: ilan.urun.isNotEmpty ? ilan.urun : 'Ä°lan',
           ilanResimUrl: resimler.isNotEmpty ? resimler.first : null,
         ),
-        transitionsBuilder: (_, anim, __, child) => SlideTransition(
+        transitionsBuilder: (_, anim, _, child) => SlideTransition(
           position: Tween(
             begin: const Offset(1, 0),
             end: Offset.zero,
@@ -7122,25 +7042,26 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
           title: Text('Åžikayet Et',
               style: GoogleFonts.dmSans(
                   fontSize: 16, fontWeight: FontWeight.w600)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: sebepler
-                .map((s) => RadioListTile<String>(
-                      value: s,
-                      groupValue: seciliSebep,
-                      onChanged: (v) => setS(() => seciliSebep = v),
-                      title: Text(s, style: GoogleFonts.dmSans(fontSize: 14)),
-                      activeColor: AppColors.red,
-                      contentPadding: EdgeInsets.zero,
-                    ))
-                .toList(),
+          content: RadioGroup<String>(
+            groupValue: seciliSebep,
+            onChanged: (v) => setS(() => seciliSebep = v),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: sebepler
+                  .map((s) => RadioListTile<String>(
+                        value: s,
+                        title: Text(s, style: GoogleFonts.dmSans(fontSize: 14)),
+                        activeColor: AppColors.red,
+                        contentPadding: EdgeInsets.zero,
+                      ))
+                  .toList(),
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: Text('Ä°ptal',
-                  style:
-                      GoogleFonts.dmSans(color: AppColors.textSecondary)),
+                  style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
             ),
             TextButton(
               onPressed: seciliSebep == null
@@ -7180,7 +7101,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
   Widget build(BuildContext context) {
     final ilan = widget.ilan;
     final resimler = ilan.tumResimler;
-    final kategoriAdiStr = appConstants.kategoriAdi(ilan.kategori);
+    final kategoriAdiStr = app_constants.kategoriAdi(ilan.kategori);
     final uid = ref.watch(currentUserProvider)?.uid;
     final benimIlan = _benimIlanim;
 
@@ -7193,7 +7114,6 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
         ref.watch(ilanFavoriSayisiProvider(ilan.id)).value ??
             ilan.favoriSayisi;
 
-    // âœ… Benzer ilanlar
     final benzerIlanlarAsync = ref.watch(istekIlanlarProvider);
     final benzerIlanlar = benzerIlanlarAsync.filtrelenmis
         .where((i) =>
@@ -7207,7 +7127,6 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
       backgroundColor: AppColors.surface,
       body: CustomScrollView(
         slivers: [
-          // â”€â”€ AppBar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           SliverAppBar(
             expandedHeight: resimler.isNotEmpty ? 320 : 0,
             pinned: true,
@@ -7250,8 +7169,11 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                           itemCount: resimler.length,
                           onPageChanged: (i) =>
                               setState(() => _aktifResim = i),
-                          itemBuilder: (_, i) =>
-                              _ResimWidget(url: resimler[i]),
+                          itemBuilder: (_, i) => _ResimWidget(
+                            url: resimler[i],
+                            tumResimler: resimler,
+                            baslangicIndex: i,
+                          ),
                         ),
                         if (resimler.length > 1)
                           Positioned(
@@ -7263,8 +7185,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                               children: List.generate(
                                 resimler.length,
                                 (i) => AnimatedContainer(
-                                  duration:
-                                      const Duration(milliseconds: 200),
+                                  duration: const Duration(milliseconds: 200),
                                   margin: const EdgeInsets.symmetric(
                                       horizontal: 3),
                                   width: _aktifResim == i ? 20 : 6,
@@ -7272,15 +7193,13 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                                   decoration: BoxDecoration(
                                     color: _aktifResim == i
                                         ? Colors.white
-                                        : Colors.white
-                                            .withValues(alpha: 0.5),
+                                        : Colors.white.withValues(alpha: 0.5),
                                     borderRadius: BorderRadius.circular(3),
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                        // Resim sayÄ±sÄ± gÃ¶stergesi
                         if (resimler.length > 1)
                           Positioned(
                             top: 12,
@@ -7311,15 +7230,12 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
-                // â”€â”€ Ana Bilgiler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 Container(
                   color: Colors.white,
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Kategori chip
                       if (kategoriAdiStr.isNotEmpty) ...[
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -7336,8 +7252,6 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                         ),
                         const SizedBox(height: 10),
                       ],
-
-                      // ÃœrÃ¼n adÄ±
                       Text(
                         ilan.urun.isNotEmpty ? ilan.urun : 'Ä°lan',
                         style: GoogleFonts.dmSans(
@@ -7346,8 +7260,6 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                             color: AppColors.textPrimary),
                       ),
                       const SizedBox(height: 12),
-
-                      // Ãœcret
                       Row(
                         children: [
                           Container(
@@ -7393,7 +7305,6 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
 
                 const SizedBox(height: 8),
 
-                // â”€â”€ GÃ¼zergah KartÄ± â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 Container(
                   color: Colors.white,
                   padding: const EdgeInsets.all(20),
@@ -7413,7 +7324,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                               Container(
                                 width: 10,
                                 height: 10,
-                                decoration: BoxDecoration(
+                                decoration: const BoxDecoration(
                                   color: AppColors.red,
                                   shape: BoxShape.circle,
                                 ),
@@ -7426,7 +7337,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                               Container(
                                 width: 10,
                                 height: 10,
-                                decoration: BoxDecoration(
+                                decoration: const BoxDecoration(
                                   color: AppColors.primary,
                                   shape: BoxShape.circle,
                                 ),
@@ -7489,7 +7400,6 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
 
                 const SizedBox(height: 8),
 
-                // â”€â”€ Notlar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 if (ilan.notlar.isNotEmpty) ...[
                   Container(
                     color: Colors.white,
@@ -7516,7 +7426,6 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                   const SizedBox(height: 8),
                 ],
 
-                // â”€â”€ Ä°lan Tarihi â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 if (ilan.olusturmaTarihi != null)
                   Container(
                     color: Colors.white,
@@ -7538,7 +7447,6 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
 
                 const SizedBox(height: 8),
 
-                // â”€â”€ SatÄ±cÄ± KartÄ± â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 Container(
                   color: Colors.white,
                   padding: const EdgeInsets.all(20),
@@ -7606,7 +7514,6 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
 
                 const SizedBox(height: 8),
 
-                // â”€â”€ Benzer Ä°lanlar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 if (benzerIlanlar.isNotEmpty) ...[
                   Container(
                     color: Colors.white,
@@ -7644,7 +7551,6 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
         ],
       ),
 
-      // â”€â”€ Bottom Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       bottomNavigationBar: uid != null && !benimIlan
           ? Container(
               padding: EdgeInsets.fromLTRB(
@@ -7663,7 +7569,6 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
               ),
               child: Row(
                 children: [
-                  // Favori butonu
                   GestureDetector(
                     onTap: () async {
                       if (favorideMi) {
@@ -7703,7 +7608,6 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  // Mesaj gÃ¶nder butonu
                   Expanded(
                     child: SizedBox(
                       height: 48,
@@ -7759,8 +7663,8 @@ class _BenzerIlanKarti extends StatelessWidget {
       onTap: () => Navigator.push(
         context,
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => IlanDetayScreen(ilan: ilan),
-          transitionsBuilder: (_, anim, __, child) => SlideTransition(
+          pageBuilder: (_, _, _) => IlanDetayScreen(ilan: ilan),
+          transitionsBuilder: (_, anim, _, child) => SlideTransition(
             position: Tween(
               begin: const Offset(1, 0),
               end: Offset.zero,
@@ -7794,9 +7698,9 @@ class _BenzerIlanKarti extends StatelessWidget {
                       fit: BoxFit.cover,
                       fadeInDuration: Duration.zero,
                       memCacheWidth: 260,
-                      placeholder: (_, __) =>
+                      placeholder: (_, _) =>
                           Container(height: 90, color: AppColors.divider),
-                      errorWidget: (_, __, ___) => Container(
+                      errorWidget: (_, _, _) => Container(
                         height: 90,
                         color: AppColors.divider,
                         child: const Icon(Icons.image_outlined,
@@ -7850,7 +7754,7 @@ class _BenzerIlanKarti extends StatelessWidget {
   }
 }
 
-// â”€â”€ Favori Buton (AppBar) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ Favori Buton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _FavoriButon extends StatelessWidget {
   final bool favorideMi;
@@ -7925,13 +7829,11 @@ class _BottomSheetHandle extends StatelessWidget {
 
 class _CircleIconButton extends StatelessWidget {
   final IconData icon;
-  final Color iconColor;
   final VoidCallback onTap;
 
   const _CircleIconButton({
     required this.icon,
     required this.onTap,
-    this.iconColor = AppColors.textPrimary,
   });
 
   @override
@@ -7943,31 +7845,155 @@ class _CircleIconButton extends StatelessWidget {
           color: Colors.white.withValues(alpha: 0.9),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 20, color: iconColor),
+        child: Icon(icon, size: 20, color: AppColors.textPrimary),
       ),
       onPressed: onTap,
     );
   }
 }
 
+// âœ… Resme tÄ±klayÄ±nca bÃ¼yÃ¼k ekran aÃ§Ä±lÄ±yor
 class _ResimWidget extends StatelessWidget {
   final String url;
-  const _ResimWidget({required this.url});
+  final List<String> tumResimler;
+  final int baslangicIndex;
+
+  const _ResimWidget({
+    required this.url,
+    required this.tumResimler,
+    required this.baslangicIndex,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return CachedNetworkImage(
-      cacheManager: AppCacheManager.instance,
-      imageUrl: url,
-      fit: BoxFit.cover,
-      width: double.infinity,
-      fadeInDuration: Duration.zero,
-      memCacheWidth: 600,
-      placeholder: (_, __) => Container(color: AppColors.surface),
-      errorWidget: (_, __, ___) => Container(
-        color: AppColors.surface,
-        child: const Icon(Icons.image_outlined,
-            color: AppColors.textHint, size: 48),
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        PageRouteBuilder(
+          opaque: false,
+          pageBuilder: (_, _, _) => _ResimBuyukEkran(
+            resimler: tumResimler,
+            baslangicIndex: baslangicIndex,
+          ),
+          transitionsBuilder: (_, anim, _, child) => FadeTransition(
+            opacity: anim,
+            child: child,
+          ),
+          transitionDuration: const Duration(milliseconds: 200),
+        ),
+      ),
+      child: CachedNetworkImage(
+        cacheManager: AppCacheManager.instance,
+        imageUrl: url,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        fadeInDuration: Duration.zero,
+        memCacheWidth: 600,
+        placeholder: (_, _) => Container(color: AppColors.surface),
+        errorWidget: (_, _, _) => Container(
+          color: AppColors.surface,
+          child: const Icon(Icons.image_outlined,
+              color: AppColors.textHint, size: 48),
+        ),
+      ),
+    );
+  }
+}
+
+// âœ… BÃ¼yÃ¼k ekran â€” Ã§ift tÄ±klayÄ±nca 2.5x zoom
+class _ResimBuyukEkran extends StatefulWidget {
+  final List<String> resimler;
+  final int baslangicIndex;
+
+  const _ResimBuyukEkran({
+    required this.resimler,
+    required this.baslangicIndex,
+  });
+
+  @override
+  State<_ResimBuyukEkran> createState() => _ResimBuyukEkranState();
+}
+
+class _ResimBuyukEkranState extends State<_ResimBuyukEkran> {
+  late int _aktif;
+  late TransformationController _transformController;
+
+  @override
+  void initState() {
+    super.initState();
+    _aktif = widget.baslangicIndex;
+    _transformController = TransformationController();
+  }
+
+  @override
+  void dispose() {
+    _transformController.dispose();
+    super.dispose();
+  }
+
+  void _doubleTapZoom(TapDownDetails details) {
+    if (_transformController.value != Matrix4.identity()) {
+      _transformController.value = Matrix4.identity();
+    } else {
+      final position = details.localPosition;
+      _transformController.value = Matrix4.identity()
+        ..translateByDouble(-position.dx * 1.5, -position.dy * 1.5, 0, 1)
+        ..scaleByDouble(2.5, 2.5, 1, 1);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: widget.resimler.length > 1
+            ? Text(
+                '${_aktif + 1} / ${widget.resimler.length}',
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+              )
+            : null,
+      ),
+      body: PageView.builder(
+        controller: PageController(initialPage: widget.baslangicIndex),
+        itemCount: widget.resimler.length,
+        onPageChanged: (i) {
+          setState(() => _aktif = i);
+          _transformController.value = Matrix4.identity();
+        },
+        itemBuilder: (_, i) => GestureDetector(
+          onDoubleTapDown: _doubleTapZoom,
+          onDoubleTap: () {},
+          child: InteractiveViewer(
+            transformationController: _transformController,
+            minScale: 0.5,
+            maxScale: 5.0,
+            child: Center(
+              child: CachedNetworkImage(
+                cacheManager: AppCacheManager.instance,
+                imageUrl: widget.resimler[i],
+                fit: BoxFit.contain,
+                fadeInDuration: Duration.zero,
+                placeholder: (_, _) => const CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+                errorWidget: (_, _, _) => const Icon(
+                  Icons.broken_image_outlined,
+                  color: Colors.white54,
+                  size: 64,
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -8002,7 +8028,7 @@ class _MenuItem extends StatelessWidget {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\ilanlar\presentation\ilan_form_screen.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\ilanlar\presentation\ilan_form_screen.dart ---
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8943,6 +8969,7 @@ class KategoriSecimSheet extends StatefulWidget {
   final void Function(String anaKey, String? altKey) onSecildi;
 
   const KategoriSecimSheet({
+    super.key,
     required this.seciliAnaKey,
     required this.seciliAltKey,
     required this.onSecildi,
@@ -9240,7 +9267,7 @@ class _Bolum extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary)),
               ),
-              if (trailing != null) trailing!,
+              ?trailing,
             ],
           ),
           const SizedBox(height: 16),
@@ -9464,7 +9491,7 @@ class _AutocompleteAlanState extends State<_AutocompleteAlan> {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\ilanlar\providers\ilan_provider.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\ilanlar\providers\ilan_provider.dart ---
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
@@ -9658,9 +9685,14 @@ class IstekIlanlar extends _$IstekIlanlar {
  
 @riverpod
 class TasiyiciIlanlar extends _$TasiyiciIlanlar {
+  bool _ilkYuklemeYapildi = false;
+
   @override
   IlanListeState build() {
-    Future.microtask(() => _ilkYukle());
+    if (!_ilkYuklemeYapildi) {
+      _ilkYuklemeYapildi = true;
+      Future.microtask(() => _ilkYukle());
+    }
     return const IlanListeState(yukleniyor: true);
   }
  
@@ -9670,7 +9702,7 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
     state = state.copyWith(yukleniyor: true);
     try {
       final sonuc = await _repo.tasiyiciIlanlariniGetir(
-        tariheSore: state.siralama == 'tarih',
+        tariheGore: state.siralama == 'tarih',
       );
       state = state.copyWith(
         ilanlar: sonuc.ilanlar,
@@ -9688,7 +9720,7 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
     state = IlanListeState(siralama: state.siralama, yukleniyor: true);
     try {
       final sonuc = await _repo.tasiyiciIlanlariniGetir(
-        tariheSore: state.siralama == 'tarih',
+        tariheGore: state.siralama == 'tarih',
       );
       state = IlanListeState(
         ilanlar: sonuc.ilanlar,
@@ -9845,7 +9877,7 @@ Set<String> favoriliIlanIdler(Ref ref) {
   );
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\ilanlar\providers\ilan_provider.g.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\ilanlar\providers\ilan_provider.g.dart ---
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'ilan_provider.dart';
@@ -10310,35 +10342,35 @@ final class FavoriliIlanIdlerProvider
 
 String _$favoriliIlanIdlerHash() => r'4227ac428dd605d021478da42f777b9a9b81f616';
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\mesajlar\data\mesaj_repository.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\mesajlar\data\mesaj_repository.dart ---
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../shared/constants/app_constants.dart';
- 
+
 part 'mesaj_repository.g.dart';
- 
+
 String sohbetIdUret(String uid1, String uid2, String ilanId) {
   final ids = [uid1, uid2]..sort();
   return '${ids[0]}_${ids[1]}_$ilanId';
 }
- 
+
 @riverpod
 MesajRepository mesajRepository(Ref ref) {
   return MesajRepository(firestore: FirebaseFirestore.instance);
 }
- 
+
 class MesajRepository {
   final FirebaseFirestore firestore;
- 
+
   MesajRepository({required this.firestore});
- 
+
   CollectionReference get _sohbetler =>
       firestore.collection(Collections.sohbetler);
- 
+
   CollectionReference _mesajlar(String sohbetId) =>
       _sohbetler.doc(sohbetId).collection(Collections.mesajlar);
- 
+
   Future<void> mesajGonder({
     required String sohbetId,
     required String gondereId,
@@ -10354,7 +10386,8 @@ class MesajRepository {
     final sohbetRef = _sohbetler.doc(sohbetId);
     final mesajRef = _mesajlar(sohbetId).doc();
     final batch = firestore.batch();
- 
+
+    // âœ… okunmamis batch iÃ§ine alÄ±ndÄ± â€” ayrÄ± update yok
     batch.set(sohbetRef, {
       'kullanicilar':         [gondereId, karsiId],
       'kullaniciAdlari':      {gondereId: gondereAd, karsiId: karsiAd},
@@ -10366,8 +10399,9 @@ class MesajRepository {
       'sonGondereId':         gondereId,
       'degerlendirmeYapildi': false,
       'olusturmaTarihi':      FieldValue.serverTimestamp(),
+      'okunmamis':            {karsiId: FieldValue.increment(1)},
     }, SetOptions(merge: true));
- 
+
     batch.set(mesajRef, {
       'metin':     metin,
       'gondereId': gondereId,
@@ -10376,15 +10410,10 @@ class MesajRepository {
       'zaman':     FieldValue.serverTimestamp(),
       'okundu':    false,
     });
- 
+
     await batch.commit();
- 
-    // âœ… okunmamis sayacÄ±nÄ± ayrÄ± update ile artÄ±r
-    await sohbetRef.update({
-      'okunmamis.$karsiId': FieldValue.increment(1),
-    });
   }
- 
+
   Stream<QuerySnapshot> mesajlarStream({
     required String sohbetId,
     int limit = Pagination.mesajSayfaBoyutu,
@@ -10394,7 +10423,7 @@ class MesajRepository {
         .limit(limit)
         .snapshots();
   }
- 
+
   Future<QuerySnapshot> eskiMesajlariGetir({
     required String sohbetId,
     required DocumentSnapshot sonDoc,
@@ -10406,35 +10435,32 @@ class MesajRepository {
         .limit(limit)
         .get();
   }
- 
+
   Future<void> okunduIsaretle({
     required String sohbetId,
     required String kullaniciId,
   }) async {
     try {
-      // Okunmamis sayacÄ±nÄ± sÄ±fÄ±rla
       await _sohbetler.doc(sohbetId).update({
         'okunmamis.$kullaniciId': 0,
       });
- 
-      // âœ… isNotEqualTo kaldÄ±rÄ±ldÄ± â€” Firestore'da isNotEqualTo + isEqualTo birlikte Ã§alÄ±ÅŸmÄ±yor
+
       final mesajlar = await _mesajlar(sohbetId)
           .where('okundu', isEqualTo: false)
           .get();
- 
+
       if (mesajlar.docs.isEmpty) return;
- 
+
       final batch = firestore.batch();
       for (final doc in mesajlar.docs) {
         final data = doc.data() as Map<String, dynamic>;
-        // Kendi gÃ¶nderdiÄŸimiz mesajlarÄ± atlat
         if (data['gondereId'] == kullaniciId) continue;
         batch.update(doc.reference, {'okundu': true});
       }
       await batch.commit();
     } catch (_) {}
   }
- 
+
   Future<void> mesajSil({
     required String sohbetId,
     required String mesajId,
@@ -10456,7 +10482,7 @@ class MesajRepository {
       });
     }
   }
- 
+
   Stream<List<Map<String, dynamic>>> sohbetlerStream(String kullaniciId) {
     return _sohbetler
         .where('kullanicilar', arrayContains: kullaniciId)
@@ -10466,7 +10492,7 @@ class MesajRepository {
             .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
             .toList());
   }
- 
+
   Future<void> sohbetiGizle({
     required String sohbetId,
     required String kullaniciId,
@@ -10474,7 +10500,7 @@ class MesajRepository {
       _sohbetler.doc(sohbetId).update({
         'gizli.$kullaniciId': FieldValue.serverTimestamp(),
       });
- 
+
   Future<void> sohbetiSabitle({
     required String sohbetId,
     required String kullaniciId,
@@ -10483,7 +10509,7 @@ class MesajRepository {
       _sohbetler.doc(sohbetId).update({
         'sabitlenmis.$kullaniciId': !sabitlenmis,
       });
- 
+
   Stream<int> toplamOkunmamisStream(String kullaniciId) {
     return _sohbetler
         .where('kullanicilar', arrayContains: kullaniciId)
@@ -10510,7 +10536,7 @@ class MesajRepository {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\mesajlar\data\mesaj_repository.g.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\mesajlar\data\mesaj_repository.g.dart ---
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'mesaj_repository.dart';
@@ -10564,33 +10590,14 @@ final class MesajRepositoryProvider
 
 String _$mesajRepositoryHash() => r'b3f5f0941ef0b1876cf1729136d7ad28b63603a9';
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\mesajlar\domain\mesaj_model.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\mesajlar\domain\mesaj_model.dart ---
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
- 
+import '../../ilanlar/domain/ilan_model.dart' show TimestampConverter;
+
 part 'mesaj_model.freezed.dart';
 part 'mesaj_model.g.dart';
- 
-// â”€â”€ Timestamp Converter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
- 
-class TimestampConverter implements JsonConverter<DateTime?, Object?> {
-  const TimestampConverter();
- 
-  @override
-  DateTime? fromJson(Object? json) {
-    if (json == null) return null;
-    if (json is Timestamp) return json.toDate();
-    if (json is String) return DateTime.tryParse(json);
-    return null;
-  }
- 
-  @override
-  Object? toJson(DateTime? date) {
-    if (date == null) return null;
-    return Timestamp.fromDate(date);
-  }
-}
- 
+
 // â”€â”€ Mesaj Tipi â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
  
 enum MesajTip { mesaj, sistem }
@@ -10705,7 +10712,7 @@ extension SohbetModelX on SohbetModel {
       sabitlenmis[kullaniciId] ?? false;
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\mesajlar\domain\mesaj_model.freezed.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\mesajlar\domain\mesaj_model.freezed.dart ---
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -11331,7 +11338,7 @@ as bool,
 
 // dart format on
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\mesajlar\domain\mesaj_model.g.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\mesajlar\domain\mesaj_model.g.dart ---
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'mesaj_model.dart';
@@ -11411,7 +11418,7 @@ Map<String, dynamic> _$SohbetModelToJson(
   'degerlendirmeYapildi': instance.degerlendirmeYapildi,
 };
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\mesajlar\presentation\mesajlar_screen.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\mesajlar\presentation\mesajlar_screen.dart ---
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -11783,7 +11790,7 @@ class _SohbetKarti extends ConsumerWidget {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\mesajlar\presentation\sohbet_screen.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\mesajlar\presentation\sohbet_screen.dart ---
 import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -12455,7 +12462,7 @@ class _SistemMesaji extends StatelessWidget {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\mesajlar\providers\mesaj_provider.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\mesajlar\providers\mesaj_provider.dart ---
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12465,16 +12472,16 @@ import '../../auth/providers/auth_provider.dart';
 import '../../profil/data/kullanici_repository.dart';
 import '../../bildirimler/data/bildirim_repository.dart';
 import '../../../shared/constants/app_constants.dart';
- 
+
 part 'mesaj_provider.g.dart';
- 
+
 @riverpod
 Stream<List<Map<String, dynamic>>> sohbetler(Ref ref) {
   final uid = ref.watch(currentUserProvider)?.uid;
   if (uid == null) return const Stream.empty();
   return ref.watch(mesajRepositoryProvider).sohbetlerStream(uid);
 }
- 
+
 @riverpod
 int okunmamisSayi(Ref ref) {
   final uid = ref.watch(currentUserProvider)?.uid;
@@ -12497,7 +12504,7 @@ int okunmamisSayi(Ref ref) {
   }
   return toplam;
 }
- 
+
 class SohbetEkraniState {
   final Map<String, Map<String, dynamic>> mesajMap;
   final List<Map<String, dynamic>> siraliMesajlar;
@@ -12505,7 +12512,7 @@ class SohbetEkraniState {
   final bool gonderiyor;
   final bool dahaFazlaVar;
   final DocumentSnapshot? enEskiDoc;
- 
+
   const SohbetEkraniState({
     this.mesajMap = const {},
     this.siraliMesajlar = const [],
@@ -12514,7 +12521,7 @@ class SohbetEkraniState {
     this.dahaFazlaVar = true,
     this.enEskiDoc,
   });
- 
+
   SohbetEkraniState copyWith({
     Map<String, Map<String, dynamic>>? mesajMap,
     List<Map<String, dynamic>>? siraliMesajlar,
@@ -12532,17 +12539,16 @@ class SohbetEkraniState {
         enEskiDoc: enEskiDoc ?? this.enEskiDoc,
       );
 }
- 
+
 @riverpod
 class SohbetNotifier extends _$SohbetNotifier {
   late String _sohbetId;
   late String _benimId;
   StreamSubscription? _mesajSub;
- 
-  // Debounce iÃ§in â€” Ã§ok sÄ±k Firestore yazma Ã¶nlenir
+
   Timer? _okunduTimer;
   String? _sonOkunduMesajId;
- 
+
   @override
   SohbetEkraniState build({
     required String karsiKullaniciId,
@@ -12550,28 +12556,28 @@ class SohbetNotifier extends _$SohbetNotifier {
   }) {
     final user = ref.watch(currentUserProvider);
     if (user == null) return const SohbetEkraniState();
- 
+
     _benimId = user.uid;
     final ids = [_benimId, karsiKullaniciId]..sort();
     _sohbetId = '${ids[0]}_${ids[1]}_$ilanId';
- 
+
     _mesajlariDinle();
- 
+
     ref.onDispose(() {
       _mesajSub?.cancel();
       _mesajSub = null;
       _okunduTimer?.cancel();
       _okunduTimer = null;
     });
- 
+
     return const SohbetEkraniState();
   }
- 
+
   MesajRepository get _repo => ref.read(mesajRepositoryProvider);
- 
+
   void _mesajlariDinle() {
     _mesajSub?.cancel();
- 
+
     final stream = _repo.mesajlarStream(sohbetId: _sohbetId);
     _mesajSub = stream.listen((snap) {
       final yeniMap =
@@ -12583,7 +12589,7 @@ class SohbetNotifier extends _$SohbetNotifier {
       }
       final snapIds = snap.docs.map((d) => d.id).toSet();
       yeniMap.removeWhere((id, _) => !snapIds.contains(id));
- 
+
       if (snap.docs.isNotEmpty) {
         state = state.copyWith(
           mesajMap: yeniMap,
@@ -12600,9 +12606,7 @@ class SohbetNotifier extends _$SohbetNotifier {
           dahaFazlaVar: false,
         );
       }
- 
-      // Yeni mesaj var mÄ± kontrol et, varsa okundu iÅŸaretle
-      // Debounce ile gereksiz Firestore yazÄ±mÄ±nÄ± Ã¶nle
+
       if (snap.docs.isNotEmpty) {
         final sonMesajId = snap.docs.first.id;
         if (_sonOkunduMesajId != sonMesajId) {
@@ -12612,15 +12616,14 @@ class SohbetNotifier extends _$SohbetNotifier {
       }
     });
   }
- 
-  // 500ms debounce â€” ekranda hÄ±zlÄ± mesaj gelirse tek seferde iÅŸaretle
+
   void _okunduDebounce() {
     _okunduTimer?.cancel();
     _okunduTimer = Timer(const Duration(milliseconds: 500), () {
       _okunduIsaretle();
     });
   }
- 
+
   Future<void> _okunduIsaretle() async {
     try {
       await _repo.okunduIsaretle(
@@ -12629,7 +12632,7 @@ class SohbetNotifier extends _$SohbetNotifier {
       );
     } catch (_) {}
   }
- 
+
   List<Map<String, dynamic>> _sirala(
       Map<String, Map<String, dynamic>> map) {
     final liste = map.values.toList();
@@ -12640,7 +12643,7 @@ class SohbetNotifier extends _$SohbetNotifier {
     });
     return liste;
   }
- 
+
   Future<void> dahaFazlaYukle() async {
     if (state.yukleniyor ||
         !state.dahaFazlaVar ||
@@ -12665,7 +12668,7 @@ class SohbetNotifier extends _$SohbetNotifier {
       enEskiDoc: snap.docs.isNotEmpty ? snap.docs.last : state.enEskiDoc,
     );
   }
- 
+
   Future<void> mesajGonder({
     required String metin,
     required String karsiKullaniciId,
@@ -12675,8 +12678,11 @@ class SohbetNotifier extends _$SohbetNotifier {
     String ilanResimUrl = '',
   }) async {
     if (metin.trim().isEmpty || state.gonderiyor) return;
-    state = state.copyWith(gonderiyor: true);
+
+    // âœ… Ã–nce adÄ± al â€” timeout ile takÄ±lmayÄ± Ã¶nle
     final benimAd = await _getBenimAd();
+
+    state = state.copyWith(gonderiyor: true);
     try {
       await _repo.mesajGonder(
         sohbetId: _sohbetId,
@@ -12689,22 +12695,22 @@ class SohbetNotifier extends _$SohbetNotifier {
         ilanResimUrl: ilanResimUrl,
         metin: metin.trim(),
       );
-      // KarÅŸÄ± tarafa bildirim gÃ¶nder
-try {
-  print('BÄ°LDÄ°RÄ°M GÃ–NDERÄ°LÄ°YOR: $karsiKullaniciId');
-  await ref.read(bildirimRepositoryProvider).mesajBildirimiGonder(
-          aliciId: karsiKullaniciId,
-          gondereId: _benimId,
-          gondereAd: benimAd,
-          ilanBaslik: ilanBaslik,
-          sohbetId: _sohbetId,
-        );
+      // Bildirim gÃ¶nder â€” hata olsa da mesaj gÃ¶nderimini etkilemesin
+      try {
+        await ref.read(bildirimRepositoryProvider).mesajBildirimiGonder(
+              aliciId: karsiKullaniciId,
+              gondereId: _benimId,
+              gondereAd: benimAd,
+              ilanBaslik: ilanBaslik,
+              sohbetId: _sohbetId,
+            );
       } catch (_) {}
     } finally {
+      // âœ… Her durumda gonderiyor false yap
       if (ref.mounted) state = state.copyWith(gonderiyor: false);
     }
   }
- 
+
   Future<void> mesajSil({
     required String mesajId,
     required String metin,
@@ -12722,28 +12728,30 @@ try {
       siraliMesajlar: _sirala(yeniMap),
     );
   }
- 
+
+  // âœ… Timeout eklendi â€” takÄ±lmayÄ± Ã¶nle
   Future<String> _getBenimAd() async {
     try {
       final doc = await ref
           .read(kullaniciRepositoryProvider)
-          .kullaniciGetir(_benimId);
+          .kullaniciGetir(_benimId)
+          .timeout(const Duration(seconds: 5));
       return doc?.adSoyad ?? '';
     } catch (_) {
       return '';
     }
   }
- 
+
   String get sohbetId => _sohbetId;
 }
- 
+
 @riverpod
 Stream<Map<String, dynamic>?> kullaniciProfil(Ref ref, String uid) {
   return ref
       .watch(kullaniciRepositoryProvider)
       .kullaniciDataStream(uid);
 }
- 
+
 @riverpod
 Stream<Map<String, dynamic>?> benimProfil(Ref ref) {
   final uid = ref.watch(currentUserProvider)?.uid;
@@ -12753,7 +12761,7 @@ Stream<Map<String, dynamic>?> benimProfil(Ref ref) {
       .kullaniciDataStream(uid);
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\mesajlar\providers\mesaj_provider.g.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\mesajlar\providers\mesaj_provider.g.dart ---
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'mesaj_provider.dart';
@@ -13076,7 +13084,7 @@ final class BenimProfilProvider
 
 String _$benimProfilHash() => r'4391d383b930a8c55321342f716c9083ad2a7053';
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\profil\data\kullanici_repository.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\profil\data\kullanici_repository.dart ---
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -13232,7 +13240,7 @@ class KullaniciRepository {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\profil\data\kullanici_repository.g.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\profil\data\kullanici_repository.g.dart ---
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'kullanici_repository.dart';
@@ -13292,7 +13300,7 @@ final class KullaniciRepositoryProvider
 String _$kullaniciRepositoryHash() =>
     r'6cf471da3a6571ecfe44850ac8307defec973922';
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\profil\domain\kullanici_model.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\profil\domain\kullanici_model.dart ---
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
  
@@ -13375,7 +13383,7 @@ extension KullaniciModelX on KullaniciModel {
       kullaniciTipi == 'istek' || kullaniciTipi == 'her_ikisi';
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\profil\domain\kullanici_model.freezed.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\profil\domain\kullanici_model.freezed.dart ---
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -13714,7 +13722,7 @@ as List<String>,
 
 // dart format on
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\profil\domain\kullanici_model.g.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\profil\domain\kullanici_model.g.dart ---
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'kullanici_model.dart';
@@ -13773,7 +13781,7 @@ Map<String, dynamic> _$KullaniciModelToJson(_KullaniciModel instance) =>
       'engellenenler': instance.engellenenler,
     };
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\profil\presentation\ayarlar_screen.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\profil\presentation\ayarlar_screen.dart ---
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -13784,26 +13792,26 @@ import '../../profil/providers/profil_provider.dart';
 import '../../profil/data/kullanici_repository.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/widgets/avatar_widget.dart';
- 
+
 class AyarlarScreen extends ConsumerStatefulWidget {
   const AyarlarScreen({super.key});
- 
+
   @override
   ConsumerState<AyarlarScreen> createState() => _AyarlarScreenState();
 }
- 
+
 class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
   bool _ilanBildirimleri = true;
   bool _mesajBildirimleri = true;
   bool _sistemBildirimleri = true;
   bool _bildirimlerYuklendi = false;
- 
+
   @override
   void initState() {
     super.initState();
     _bildirimlerYukle();
   }
- 
+
   Future<void> _bildirimlerYukle() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -13813,23 +13821,23 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       _bildirimlerYuklendi = true;
     });
   }
- 
+
   Future<void> _bildirimKaydet(String key, bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(key, value);
   }
- 
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     final benimProfilAsync = ref.watch(benimKullaniciProfilProvider);
     final engellenenlerAsync = ref.watch(engellenenlerProvider);
- 
+
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: Text('Ayarlar',
-            style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
+            style: GoogleFonts.dmSans(fontWeight: FontWeight.w700, fontSize: 18)),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -13839,158 +13847,164 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
         ),
       ),
       body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 12),
         children: [
-          // â”€â”€ Hesap â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-          _BaslikSatiri('Hesap'),
-          Container(
-            color: Colors.white,
-            child: Column(
-              children: [
-                _MenuOgesi(
-                  icon: Icons.email_outlined,
-                  label: 'E-posta',
-                  deger: user?.email ?? '',
-                  onTap: () {},
-                  showArrow: false,
+
+          // â”€â”€ Hesap â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+          _BolumBasligi('Hesap'),
+          _Kart(
+            children: [
+              _SatirOge(
+                icon: Icons.email_outlined,
+                label: 'E-posta',
+                trailing: Text(
+                  user?.email ?? '',
+                  style: GoogleFonts.dmSans(
+                      fontSize: 13, color: AppColors.textSecondary),
                 ),
-                const Divider(height: 1, indent: 56),
-                _MenuOgesi(
-                  icon: Icons.lock_outline,
-                  label: 'Åžifre DeÄŸiÅŸtir',
-                  onTap: () => _sifreDegistirDialog(user?.email),
-                ),
-                const Divider(height: 1, indent: 56),
-                _MenuOgesi(
-                  icon: Icons.phone_outlined,
-                  label: 'Telefon NumarasÄ±',
-                  deger: benimProfilAsync.value?.telefon?.isNotEmpty == true
+                onTap: () {},
+              ),
+              _Ayrac(),
+              _SatirOge(
+                icon: Icons.lock_outline,
+                label: 'Åžifre DeÄŸiÅŸtir',
+                onTap: () => _sifreDegistirDialog(user?.email),
+              ),
+              _Ayrac(),
+              _SatirOge(
+                icon: Icons.phone_outlined,
+                label: 'Telefon NumarasÄ±',
+                trailing: Text(
+                  benimProfilAsync.value?.telefon?.isNotEmpty == true
                       ? benimProfilAsync.value!.telefon!
                       : 'EklenmemiÅŸ',
-                  onTap: () => _telefonGuncelleDialog(
-                      benimProfilAsync.value?.telefon ?? ''),
+                  style: GoogleFonts.dmSans(
+                      fontSize: 13, color: AppColors.textSecondary),
                 ),
-              ],
-            ),
+                onTap: () => _telefonGuncelleDialog(
+                    benimProfilAsync.value?.telefon ?? ''),
+              ),
+            ],
           ),
- 
-          const SizedBox(height: 8),
- 
-          // â”€â”€ Bildirimler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-          _BaslikSatiri('Bildirimler'),
-          Container(
-            color: Colors.white,
-            child: !_bildirimlerYuklendi
-                ? const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Center(
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: AppColors.red)),
-                  )
-                : Column(
-                    children: [
-                      _SwitchOgesi(
-                        icon: Icons.mark_chat_unread_outlined,
-                        label: 'Mesaj bildirimleri',
-                        acik: _mesajBildirimleri,
-                        onChanged: (v) {
-                          setState(() => _mesajBildirimleri = v);
-                          _bildirimKaydet('bildirim_mesaj', v);
-                        },
-                      ),
-                      const Divider(height: 1, indent: 56),
-                      _SwitchOgesi(
-                        icon: Icons.campaign_outlined,
-                        label: 'Ä°lan bildirimleri',
-                        acik: _ilanBildirimleri,
-                        onChanged: (v) {
-                          setState(() => _ilanBildirimleri = v);
-                          _bildirimKaydet('bildirim_ilan', v);
-                        },
-                      ),
-                      const Divider(height: 1, indent: 56),
-                      _SwitchOgesi(
-                        icon: Icons.notifications_outlined,
-                        label: 'Sistem bildirimleri',
-                        acik: _sistemBildirimleri,
-                        onChanged: (v) {
-                          setState(() => _sistemBildirimleri = v);
-                          _bildirimKaydet('bildirim_sistem', v);
-                        },
-                      ),
-                    ],
+
+          // â”€â”€ Bildirimler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+          _BolumBasligi('Bildirimler'),
+          _Kart(
+            children: !_bildirimlerYuklendi
+                ? [
+                    const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Center(
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: AppColors.red)),
+                    )
+                  ]
+                : [
+                    _SwitchSatir(
+                      icon: Icons.mark_chat_unread_outlined,
+                      label: 'Mesaj bildirimleri',
+                      acik: _mesajBildirimleri,
+                      onChanged: (v) {
+                        setState(() => _mesajBildirimleri = v);
+                        _bildirimKaydet('bildirim_mesaj', v);
+                      },
+                    ),
+                    _Ayrac(),
+                    _SwitchSatir(
+                      icon: Icons.campaign_outlined,
+                      label: 'Ä°lan bildirimleri',
+                      acik: _ilanBildirimleri,
+                      onChanged: (v) {
+                        setState(() => _ilanBildirimleri = v);
+                        _bildirimKaydet('bildirim_ilan', v);
+                      },
+                    ),
+                    _Ayrac(),
+                    _SwitchSatir(
+                      icon: Icons.notifications_outlined,
+                      label: 'Sistem bildirimleri',
+                      acik: _sistemBildirimleri,
+                      onChanged: (v) {
+                        setState(() => _sistemBildirimleri = v);
+                        _bildirimKaydet('bildirim_sistem', v);
+                      },
+                    ),
+                  ],
+          ),
+
+          // â”€â”€ Gizlilik â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+          _BolumBasligi('Gizlilik'),
+          _Kart(
+            children: [
+              _SatirOge(
+                icon: Icons.block_outlined,
+                label: 'Engellenen KullanÄ±cÄ±lar',
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(10),
                   ),
+                  child: Text(
+                    engellenenlerAsync.value?.length.toString() ?? '0',
+                    style: GoogleFonts.dmSans(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600),
+                  ),
+                ),
+                onTap: () => _engellenenlerSayfasi(
+                    engellenenlerAsync.value ?? []),
+              ),
+              _Ayrac(),
+              _SatirOge(
+                icon: Icons.privacy_tip_outlined,
+                label: 'Gizlilik PolitikasÄ±',
+                onTap: () {},
+              ),
+              _Ayrac(),
+              _SatirOge(
+                icon: Icons.description_outlined,
+                label: 'KullanÄ±m KoÅŸullarÄ±',
+                onTap: () {},
+              ),
+            ],
           ),
- 
-          const SizedBox(height: 8),
- 
-          // â”€â”€ Gizlilik â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-          _BaslikSatiri('Gizlilik'),
-          Container(
-            color: Colors.white,
-            child: Column(
-              children: [
-                _MenuOgesi(
-                  icon: Icons.block_outlined,
-                  label: 'Engellenen KullanÄ±cÄ±lar',
-                  deger: engellenenlerAsync.value?.length.toString() ?? '0',
-                  onTap: () => _engellenenlerSayfasi(
-                      engellenenlerAsync.value ?? []),
-                ),
-                const Divider(height: 1, indent: 56),
-                _MenuOgesi(
-                  icon: Icons.privacy_tip_outlined,
-                  label: 'Gizlilik PolitikasÄ±',
-                  onTap: () {},
-                ),
-                const Divider(height: 1, indent: 56),
-                _MenuOgesi(
-                  icon: Icons.description_outlined,
-                  label: 'KullanÄ±m KoÅŸullarÄ±',
-                  onTap: () {},
-                ),
-              ],
-            ),
+
+          // â”€â”€ Destek â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+          _BolumBasligi('Destek'),
+          _Kart(
+            children: [
+              _SatirOge(
+                icon: Icons.mail_outline,
+                label: 'Bize UlaÅŸÄ±n',
+                onTap: () => _iletisimDialog(),
+              ),
+              _Ayrac(),
+              _SatirOge(
+                icon: Icons.help_outline,
+                label: 'SÄ±k Sorulan Sorular',
+                onTap: () {},
+              ),
+            ],
           ),
- 
-          const SizedBox(height: 8),
- 
-          // â”€â”€ Destek â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-          _BaslikSatiri('Destek'),
-          Container(
-            color: Colors.white,
-            child: Column(
-              children: [
-                _MenuOgesi(
-                  icon: Icons.mail_outline,
-                  label: 'Bize UlaÅŸÄ±n',
-                  onTap: () => _iletisimDialog(),
-                ),
-                const Divider(height: 1, indent: 56),
-                _MenuOgesi(
-                  icon: Icons.help_outline,
-                  label: 'SÄ±k Sorulan Sorular',
-                  onTap: () {},
-                ),
-              ],
-            ),
+
+          // â”€â”€ Hesap Ä°ÅŸlemleri â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+          _BolumBasligi('Tehlikeli BÃ¶lge'),
+          _Kart(
+            children: [
+              _SatirOge(
+                icon: Icons.delete_forever_outlined,
+                label: 'HesabÄ± Sil',
+                labelColor: AppColors.red,
+                iconColor: AppColors.red,
+                showArrow: false,
+                onTap: () => _hesapSilDialog(),
+              ),
+            ],
           ),
- 
-          const SizedBox(height: 8),
- 
-          // â”€â”€ Hesap Ä°ÅŸlemleri â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-          _BaslikSatiri('Hesap Ä°ÅŸlemleri'),
-          Container(
-            color: Colors.white,
-            child: _MenuOgesi(
-              icon: Icons.delete_forever_outlined,
-              label: 'HesabÄ± Sil',
-              iconColor: AppColors.red,
-              labelColor: AppColors.red,
-              showArrow: false,
-              onTap: () => _hesapSilDialog(),
-            ),
-          ),
- 
+
           const SizedBox(height: 32),
           Center(
             child: Text('Ä°STE v2.0',
@@ -14004,15 +14018,13 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       ),
     );
   }
- 
-  // â”€â”€ Åžifre DeÄŸiÅŸtir Dialog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
- 
+
   Future<void> _sifreDegistirDialog(String? email) async {
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12)),
+            borderRadius: BorderRadius.circular(16)),
         title: Text('Åžifre SÄ±fÄ±rla',
             style: GoogleFonts.dmSans(
                 fontSize: 16, fontWeight: FontWeight.w600)),
@@ -14034,8 +14046,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text('Ä°ptal',
-                style:
-                    GoogleFonts.dmSans(color: AppColors.textSecondary)),
+                style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () async {
@@ -14060,19 +14071,17 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       ),
     );
   }
- 
-  // â”€â”€ Telefon GÃ¼ncelle Dialog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
- 
+
   Future<void> _telefonGuncelleDialog(String mevcutTelefon) async {
     final ctrl = TextEditingController(text: mevcutTelefon);
     bool gizli = ref.read(benimKullaniciProfilProvider).value?.telefonGizli ?? false;
- 
+
     await showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
+              borderRadius: BorderRadius.circular(16)),
           title: Text('Telefon NumarasÄ±',
               style: GoogleFonts.dmSans(
                   fontSize: 16, fontWeight: FontWeight.w600)),
@@ -14092,15 +14101,15 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                   filled: true,
                   fillColor: AppColors.surface,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(color: AppColors.divider),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(color: AppColors.divider),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(
                         color: AppColors.primary, width: 1.5),
                   ),
@@ -14181,9 +14190,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     );
     ctrl.dispose();
   }
- 
-  // â”€â”€ Engellenenler SayfasÄ± â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
- 
+
   void _engellenenlerSayfasi(List<String> engellenenUidler) {
     Navigator.push(
       context,
@@ -14193,18 +14200,16 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       ),
     );
   }
- 
-  // â”€â”€ Ä°letiÅŸim Dialog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
- 
+
   Future<void> _iletisimDialog() async {
     final konuCtrl = TextEditingController();
     final mesajCtrl = TextEditingController();
- 
+
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12)),
+            borderRadius: BorderRadius.circular(16)),
         title: Text('Bize UlaÅŸÄ±n',
             style: GoogleFonts.dmSans(
                 fontSize: 16, fontWeight: FontWeight.w600)),
@@ -14221,13 +14226,13 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 filled: true,
                 fillColor: AppColors.surface,
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(color: AppColors.divider)),
                 enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(color: AppColors.divider)),
                 focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(
                         color: AppColors.primary, width: 1.5)),
                 contentPadding: const EdgeInsets.symmetric(
@@ -14246,13 +14251,13 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 filled: true,
                 fillColor: AppColors.surface,
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(color: AppColors.divider)),
                 enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(color: AppColors.divider)),
                 focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(
                         color: AppColors.primary, width: 1.5)),
                 contentPadding: const EdgeInsets.all(12),
@@ -14288,23 +14293,19 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     konuCtrl.dispose();
     mesajCtrl.dispose();
   }
- 
-  // â”€â”€ Hesap Sil Dialog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
- 
+
   Future<void> _hesapSilDialog() async {
     final user = ref.read(currentUserProvider);
     if (user == null) return;
- 
-    // Google ile mi email ile mi giriÅŸ yaptÄ±?
+
     final googleGiris = user.providerData
         .any((p) => p.providerId == 'google.com');
- 
-    // AdÄ±m 1: UyarÄ± dialog
+
     final onay = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12)),
+            borderRadius: BorderRadius.circular(16)),
         title: Text('HesabÄ± Sil',
             style: GoogleFonts.dmSans(
                 fontSize: 16, fontWeight: FontWeight.w600)),
@@ -14328,27 +14329,24 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
         ],
       ),
     );
- 
+
     if (onay != true || !mounted) return;
- 
-    // AdÄ±m 2: Re-authentication
+
     if (googleGiris) {
-      // Google ile re-auth
       await _googleReAuth();
     } else {
-      // Email ile re-auth
       await _emailReAuth(user.email ?? '');
     }
   }
- 
+
   Future<void> _emailReAuth(String email) async {
     final sifreCtrl = TextEditingController();
- 
+
     final onay = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12)),
+            borderRadius: BorderRadius.circular(16)),
         title: Text('KimliÄŸini DoÄŸrula',
             style: GoogleFonts.dmSans(
                 fontSize: 16, fontWeight: FontWeight.w600)),
@@ -14374,13 +14372,13 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 filled: true,
                 fillColor: AppColors.surface,
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(color: AppColors.divider)),
                 enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(color: AppColors.divider)),
                 focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(
                         color: AppColors.primary, width: 1.5)),
                 contentPadding: const EdgeInsets.symmetric(
@@ -14404,12 +14402,12 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
         ],
       ),
     );
- 
+
     if (onay != true || !mounted) {
       sifreCtrl.dispose();
       return;
     }
- 
+
     try {
       await ref.read(authRepositoryProvider).emailIleYenidenGiris(
             email: email,
@@ -14418,8 +14416,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       await ref.read(authRepositoryProvider).hesapSil();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content:
-              Text('HesabÄ±n silindi.', style: GoogleFonts.dmSans()),
+          content: Text('HesabÄ±n silindi.', style: GoogleFonts.dmSans()),
           behavior: SnackBarBehavior.floating,
         ));
       }
@@ -14435,13 +14432,13 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     }
     sifreCtrl.dispose();
   }
- 
+
   Future<void> _googleReAuth() async {
     final onay = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12)),
+            borderRadius: BorderRadius.circular(16)),
         title: Text('KimliÄŸini DoÄŸrula',
             style: GoogleFonts.dmSans(
                 fontSize: 16, fontWeight: FontWeight.w600)),
@@ -14465,16 +14462,15 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
         ],
       ),
     );
- 
+
     if (onay != true || !mounted) return;
- 
+
     try {
       await ref.read(authRepositoryProvider).googleIleYenidenGiris();
       await ref.read(authRepositoryProvider).hesapSil();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content:
-              Text('HesabÄ±n silindi.', style: GoogleFonts.dmSans()),
+          content: Text('HesabÄ±n silindi.', style: GoogleFonts.dmSans()),
           behavior: SnackBarBehavior.floating,
         ));
       }
@@ -14490,19 +14486,19 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     }
   }
 }
- 
-// â”€â”€ Engellenenler SayfasÄ± â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
- 
+
+// â”€â”€ Engellenenler SayfasÄ± â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
 class _EngellenenlerScreen extends ConsumerWidget {
   final List<String> engellenenUidler;
   const _EngellenenlerScreen({required this.engellenenUidler});
- 
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final benimUid = ref.watch(currentUserProvider)?.uid ?? '';
- 
+
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: Text('Engellenen KullanÄ±cÄ±lar',
             style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
@@ -14538,7 +14534,7 @@ class _EngellenenlerScreen extends ConsumerWidget {
                 final hedefUid = engellenenUidler[index];
                 final profilAsync =
                     ref.watch(kullaniciBilgiProvider(hedefUid));
- 
+
                 return profilAsync.when(
                   loading: () => const ListTile(
                     leading: CircleAvatar(
@@ -14624,58 +14620,98 @@ class _EngellenenlerScreen extends ConsumerWidget {
     );
   }
 }
- 
-// â”€â”€ YardÄ±mcÄ± Widget'lar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
- 
-class _BaslikSatiri extends StatelessWidget {
+
+// â”€â”€ YardÄ±mcÄ± Widget'lar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+class _BolumBasligi extends StatelessWidget {
   final String baslik;
-  const _BaslikSatiri(this.baslik);
- 
+  const _BolumBasligi(this.baslik);
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
       child: Text(
         baslik.toUpperCase(),
         style: GoogleFonts.dmSans(
             fontSize: 11,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
             color: AppColors.textSecondary,
-            letterSpacing: 0.8),
+            letterSpacing: 1.0),
       ),
     );
   }
 }
- 
-class _MenuOgesi extends StatelessWidget {
+
+class _Kart extends StatelessWidget {
+  final List<Widget> children;
+  const _Kart({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(children: children),
+    );
+  }
+}
+
+class _Ayrac extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return const Divider(height: 1, indent: 54, endIndent: 0);
+  }
+}
+
+class _SatirOge extends StatelessWidget {
   final IconData icon;
   final String label;
-  final String? deger;
   final Color iconColor;
   final Color labelColor;
+  final Widget? trailing;
   final VoidCallback onTap;
   final bool showArrow;
- 
-  const _MenuOgesi({
+
+  const _SatirOge({
     required this.icon,
     required this.label,
     required this.onTap,
-    this.deger,
     this.iconColor = AppColors.textSecondary,
     this.labelColor = AppColors.textPrimary,
+    this.trailing,
     this.showArrow = true,
   });
- 
+
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            Icon(icon, color: iconColor, size: 22),
-            const SizedBox(width: 16),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: iconColor, size: 20),
+            ),
+            const SizedBox(width: 14),
             Expanded(
               child: Text(label,
                   style: GoogleFonts.dmSans(
@@ -14683,11 +14719,8 @@ class _MenuOgesi extends StatelessWidget {
                       color: labelColor,
                       fontWeight: FontWeight.w500)),
             ),
-            if (deger != null && deger!.isNotEmpty)
-              Text(deger!,
-                  style: GoogleFonts.dmSans(
-                      fontSize: 13, color: AppColors.textSecondary)),
-            if (showArrow)
+            if (trailing != null) trailing!,
+            if (trailing == null && showArrow)
               const Icon(Icons.chevron_right,
                   color: AppColors.textSecondary, size: 20),
           ],
@@ -14696,28 +14729,36 @@ class _MenuOgesi extends StatelessWidget {
     );
   }
 }
- 
-class _SwitchOgesi extends StatelessWidget {
+
+class _SwitchSatir extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool acik;
   final ValueChanged<bool> onChanged;
- 
-  const _SwitchOgesi({
+
+  const _SwitchSatir({
     required this.icon,
     required this.label,
     required this.acik,
     required this.onChanged,
   });
- 
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          Icon(icon, color: AppColors.textSecondary, size: 22),
-          const SizedBox(width: 16),
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.textSecondary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: AppColors.textSecondary, size: 20),
+          ),
+          const SizedBox(width: 14),
           Expanded(
             child: Text(label,
                 style: GoogleFonts.dmSans(
@@ -14736,7 +14777,7 @@ class _SwitchOgesi extends StatelessWidget {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\profil\presentation\ilanlarim_screen.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\profil\presentation\ilanlarim_screen.dart ---
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../profil/providers/profil_provider.dart';
@@ -15148,7 +15189,7 @@ class _GelenKarti extends StatelessWidget {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\profil\presentation\kullanici_profil_screen.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\profil\presentation\kullanici_profil_screen.dart ---
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -15525,7 +15566,7 @@ class _IlanSatiri extends StatelessWidget {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\profil\presentation\profil_duzenle_screen.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\profil\presentation\profil_duzenle_screen.dart ---
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16081,7 +16122,7 @@ class _AutocompleteAlanState extends State<_AutocompleteAlan> {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\profil\presentation\profil_screen.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\profil\presentation\profil_screen.dart ---
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16093,26 +16134,26 @@ import 'ayarlar_screen.dart';
 import 'profil_duzenle_screen.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/widgets/avatar_widget.dart';
- 
+
 class ProfilScreen extends ConsumerStatefulWidget {
   const ProfilScreen({super.key});
- 
+
   @override
   ConsumerState<ProfilScreen> createState() => _ProfilScreenState();
 }
- 
+
 class _ProfilScreenState extends ConsumerState<ProfilScreen>
     with AutomaticKeepAliveClientMixin {
- 
+
   @override
   bool get wantKeepAlive => true;
- 
+
   Future<void> _cikisDialog() async {
     final onay = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12)),
+            borderRadius: BorderRadius.circular(16)),
         title: Text('Ã‡Ä±kÄ±ÅŸ Yap',
             style: GoogleFonts.dmSans(
                 fontSize: 16, fontWeight: FontWeight.w600)),
@@ -16141,25 +16182,37 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
       ref.read(authProvider.notifier).cikisYap();
     }
   }
- 
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     final user = ref.watch(currentUserProvider);
     final benimProfilAsync = ref.watch(benimKullaniciProfilProvider);
- 
+
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: Text('Profil',
-            style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
         elevation: 0,
       ),
       body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 12),
         children: [
+          // â”€â”€ Profil KartÄ± â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           Container(
-            color: Colors.white,
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
@@ -16227,97 +16280,82 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
               ],
             ),
           ),
- 
-          const SizedBox(height: 8),
- 
-          Container(
-            color: Colors.white,
-            child: Column(
-              children: [
-                _MenuOgesi(
-                  icon: Icons.list_alt_outlined,
-                  label: 'Ä°lanlarÄ±m',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const IlanlarimScreen()),
-                  ),
+
+          // â”€â”€ Ä°lanlarÄ±m, Favorilerim, DeÄŸerlendirmelerim â”€
+          _BolumBasligi('HesabÄ±m'),
+          _Kart(
+            children: [
+              _SatirOge(
+                icon: Icons.list_alt_outlined,
+                label: 'Ä°lanlarÄ±m',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const IlanlarimScreen()),
                 ),
-                const Divider(height: 1, indent: 56),
-                _MenuOgesi(
-                  icon: Icons.favorite_border_outlined,
-                  label: 'Favorilerim',
-                  iconColor: AppColors.red,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const FavorilerScreen()),
-                  ),
+              ),
+              _Ayrac(),
+              _SatirOge(
+                icon: Icons.favorite_border,
+                label: 'Favorilerim',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const FavorilerScreen()),
                 ),
-                const Divider(height: 1, indent: 56),
-                _MenuOgesi(
-                  icon: Icons.star_border_outlined,
-                  label: 'DeÄŸerlendirmelerim',
-                  iconColor: Colors.amber,
-                  onTap: () {},
-                ),
-              ],
-            ),
+              ),
+              _Ayrac(),
+              _SatirOge(
+                icon: Icons.star_border,
+                label: 'DeÄŸerlendirmelerim',
+                onTap: () {},
+              ),
+            ],
           ),
- 
-          const SizedBox(height: 8),
- 
-          Container(
-            color: Colors.white,
-            child: Column(
-              children: [
-                _MenuOgesi(
-                  icon: Icons.notifications_outlined,
-                  label: 'Bildirimler',
-                  onTap: () {},
+
+          // â”€â”€ Ayarlar, Ä°letiÅŸim, Gizlilik â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+          _BolumBasligi('DiÄŸer'),
+          _Kart(
+            children: [
+              _SatirOge(
+                icon: Icons.settings_outlined,
+                label: 'Ayarlar',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const AyarlarScreen()),
                 ),
-                const Divider(height: 1, indent: 56),
-                _MenuOgesi(
-                  icon: Icons.settings_outlined,
-                  label: 'Ayarlar',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const AyarlarScreen()),
-                  ),
-                ),
-                const Divider(height: 1, indent: 56),
-                _MenuOgesi(
-                  icon: Icons.mail_outline,
-                  label: 'Ä°letiÅŸim',
-                  onTap: () {},
-                ),
-                const Divider(height: 1, indent: 56),
-                _MenuOgesi(
-                  icon: Icons.privacy_tip_outlined,
-                  label: 'Gizlilik PolitikasÄ±',
-                  onTap: () {},
-                ),
-              ],
-            ),
+              ),
+              _Ayrac(),
+              _SatirOge(
+                icon: Icons.mail_outline,
+                label: 'Ä°letiÅŸim',
+                onTap: () {},
+              ),
+              _Ayrac(),
+              _SatirOge(
+                icon: Icons.privacy_tip_outlined,
+                label: 'Gizlilik PolitikasÄ±',
+                onTap: () {},
+              ),
+            ],
           ),
- 
-          const SizedBox(height: 8),
- 
-          Container(
-            color: Colors.white,
-            child: _MenuOgesi(
-              icon: Icons.logout,
-              label: 'Ã‡Ä±kÄ±ÅŸ Yap',
-              iconColor: AppColors.red,
-              labelColor: AppColors.red,
-              showArrow: false,
-              onTap: _cikisDialog,
-            ),
+
+          // â”€â”€ Ã‡Ä±kÄ±ÅŸ Yap â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+          _BolumBasligi(''),
+          _Kart(
+            children: [
+              _SatirOge(
+                icon: Icons.logout,
+                label: 'Ã‡Ä±kÄ±ÅŸ Yap',
+                labelColor: AppColors.red,
+                showArrow: false,
+                onTap: _cikisDialog,
+              ),
+            ],
           ),
- 
+
           const SizedBox(height: 32),
- 
           Center(
             child: Text(
               'Ä°STE v2.0',
@@ -16333,42 +16371,100 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
     );
   }
 }
- 
-class _MenuOgesi extends StatelessWidget {
+
+// â”€â”€ YardÄ±mcÄ± Widget'lar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+class _BolumBasligi extends StatelessWidget {
+  final String baslik;
+  const _BolumBasligi(this.baslik);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+      child: Text(
+        baslik.toUpperCase(),
+        style: GoogleFonts.dmSans(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textSecondary,
+            letterSpacing: 1.0),
+      ),
+    );
+  }
+}
+
+class _Kart extends StatelessWidget {
+  final List<Widget> children;
+  const _Kart({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(children: children),
+    );
+  }
+}
+
+class _Ayrac extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return const Divider(height: 1, indent: 54, endIndent: 0);
+  }
+}
+
+class _SatirOge extends StatelessWidget {
   final IconData icon;
   final String label;
-  final Color iconColor;
   final Color labelColor;
   final VoidCallback onTap;
   final bool showArrow;
- 
-  const _MenuOgesi({
+
+  const _SatirOge({
     required this.icon,
     required this.label,
     required this.onTap,
-    this.iconColor = AppColors.textSecondary,
     this.labelColor = AppColors.textPrimary,
     this.showArrow = true,
   });
- 
+
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            Icon(icon, color: iconColor, size: 22),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                label,
-                style: GoogleFonts.dmSans(
-                    fontSize: 15,
-                    color: labelColor,
-                    fontWeight: FontWeight.w500),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(10),
               ),
+              child: Icon(icon, color: Colors.black87, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(label,
+                  style: GoogleFonts.dmSans(
+                      fontSize: 15,
+                      color: labelColor,
+                      fontWeight: FontWeight.w500)),
             ),
             if (showArrow)
               const Icon(Icons.chevron_right,
@@ -16380,7 +16476,7 @@ class _MenuOgesi extends StatelessWidget {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\profil\providers\profil_provider.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\profil\providers\profil_provider.dart ---
 import 'dart:io';
 import '../../ilanlar/data/ilan_repository.dart';
 import '../../ilanlar/domain/ilan_model.dart';
@@ -16534,7 +16630,7 @@ Stream<List<IlanModel>> ilanlarim(Ref ref) {
   return ref.watch(ilanRepositoryProvider).kullaniciIlanlarStream(uid);
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\features\profil\providers\profil_provider.g.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\features\profil\providers\profil_provider.g.dart ---
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'profil_provider.dart';
@@ -16895,21 +16991,22 @@ final class IlanlarimProvider
 
 String _$ilanlarimHash() => r'6ee031a8383bd670f4bb96d480d93ce75801ed96';
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\router\app_router.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\router\app_router.dart ---
+import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
- 
+
 import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
 import '../features/auth/presentation/profil_tamamla_screen.dart';
-import '../features/auth/providers/auth_provider.dart';
 import '../features/home/presentation/home_screen.dart';
- 
+
 part 'app_router.g.dart';
- 
+
 abstract class AppRoutes {
   static const splash        = '/';
   static const login         = '/login';
@@ -16917,35 +17014,64 @@ abstract class AppRoutes {
   static const profilTamamla = '/profil-tamamla';
   static const home          = '/home';
 }
- 
-@riverpod
+
+class _AuthChangeNotifier extends ChangeNotifier {
+  _AuthChangeNotifier() {
+    _sub = FirebaseAuth.instance
+        .authStateChanges()
+        .listen((_) => notifyListeners());
+  }
+
+  late final StreamSubscription<User?> _sub;
+
+  @override
+  void dispose() {
+    _sub.cancel();
+    super.dispose();
+  }
+}
+
+@Riverpod(keepAlive: true)
 GoRouter router(Ref ref) {
-  final authAsync = ref.watch(authStateProvider);
- 
+  final notifier = _AuthChangeNotifier();
+  ref.onDispose(notifier.dispose);
+
   return GoRouter(
     initialLocation: AppRoutes.splash,
-    redirect: (context, state) {
-      if (authAsync.isLoading) return null;
- 
-      final user = authAsync.value;
+    refreshListenable: notifier,
+    redirect: (context, state) async {
+      final user = FirebaseAuth.instance.currentUser;
       final isLoggedIn = user != null;
       final loc = state.matchedLocation;
- 
+
       if (loc == AppRoutes.splash) {
-        return isLoggedIn ? AppRoutes.home : AppRoutes.login;
+        if (!isLoggedIn) return AppRoutes.login;
+
+        // âœ… Profil tamamlandÄ± mÄ± kontrol et
+        try {
+          final doc = await FirebaseFirestore.instance
+              .collection('kullanicilar')
+              .doc(user.uid)
+              .get();
+          final tamamlandi =
+              doc.data()?['profilTamamlandi'] as bool? ?? false;
+          return tamamlandi ? AppRoutes.home : AppRoutes.profilTamamla;
+        } catch (_) {
+          return AppRoutes.profilTamamla;
+        }
       }
- 
+
       if (!isLoggedIn &&
           loc != AppRoutes.login &&
           loc != AppRoutes.register) {
         return AppRoutes.login;
       }
- 
+
       if (isLoggedIn &&
           (loc == AppRoutes.login || loc == AppRoutes.register)) {
         return AppRoutes.home;
       }
- 
+
       return null;
     },
     routes: [
@@ -16972,16 +17098,17 @@ GoRouter router(Ref ref) {
     ],
   );
 }
- 
+
 class _SplashPage extends StatelessWidget {
   const _SplashPage();
+
   @override
   Widget build(BuildContext context) => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\router\app_router.g.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\router\app_router.g.dart ---
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'app_router.dart';
@@ -17034,7 +17161,7 @@ final class RouterProvider
 
 String _$routerHash() => r'd5411dd107a5f27a4538fcd253cf8e4cbe12b294';
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\shared\constants\app_colors.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\shared\constants\app_colors.dart ---
 import 'package:flutter/material.dart';
  
 /// UygulamanÄ±n tÃ¼m renk sabitleri tek yerden yÃ¶netilir.
@@ -17090,7 +17217,7 @@ class AppColors {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\shared\constants\app_constants.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\shared\constants\app_constants.dart ---
 /// Firestore koleksiyon adlarÄ±.
 /// String literal yerine bu sabitleri kullan â€” yazÄ±m hatalarÄ±nÄ± Ã¶nler.
 class Collections {
@@ -17102,6 +17229,7 @@ class Collections {
   static const String favoriler        = 'favoriler';
   static const String degerlendirmeler = 'degerlendirmeler';
   static const String sikayetler       = 'sikayetler';
+  static const String bildirimler      = 'bildirimler';
   static const String mail             = 'mail';
 }
 
@@ -17160,14 +17288,14 @@ const List<AnaKategori> kKategoriAgaci = [
     ad: 'Elektronik',
     emoji: 'ðŸ“±',
     altlar: [
-      AltKategori(key: 'elek_telefon',  ad: 'Telefon'),
+      AltKategori(key: 'elek_telefon',    ad: 'Telefon'),
       AltKategori(key: 'elek_bilgisayar', ad: 'Bilgisayar'),
-      AltKategori(key: 'elek_tablet',   ad: 'Tablet'),
-      AltKategori(key: 'elek_tv',       ad: 'TV & GÃ¶rÃ¼ntÃ¼'),
-      AltKategori(key: 'elek_ses',      ad: 'Ses Sistemleri'),
-      AltKategori(key: 'elek_oyun',     ad: 'Oyun & Konsol'),
-      AltKategori(key: 'elek_kamera',   ad: 'FotoÄŸraf & Kamera'),
-      AltKategori(key: 'elek_aksesuar', ad: 'Aksesuar'),
+      AltKategori(key: 'elek_tablet',     ad: 'Tablet'),
+      AltKategori(key: 'elek_tv',         ad: 'TV & GÃ¶rÃ¼ntÃ¼'),
+      AltKategori(key: 'elek_ses',        ad: 'Ses Sistemleri'),
+      AltKategori(key: 'elek_oyun',       ad: 'Oyun & Konsol'),
+      AltKategori(key: 'elek_kamera',     ad: 'FotoÄŸraf & Kamera'),
+      AltKategori(key: 'elek_aksesuar',   ad: 'Aksesuar'),
     ],
   ),
   AnaKategori(
@@ -17175,11 +17303,11 @@ const List<AnaKategori> kKategoriAgaci = [
     ad: 'GÃ¼zellik & SaÄŸlÄ±k',
     emoji: 'ðŸ’„',
     altlar: [
-      AltKategori(key: 'guz_makyaj',    ad: 'Makyaj'),
-      AltKategori(key: 'guz_cilt',      ad: 'Cilt BakÄ±mÄ±'),
-      AltKategori(key: 'guz_sac',       ad: 'SaÃ§ BakÄ±mÄ±'),
-      AltKategori(key: 'guz_parfum',    ad: 'ParfÃ¼m'),
-      AltKategori(key: 'guz_saglik',    ad: 'SaÄŸlÄ±k ÃœrÃ¼nleri'),
+      AltKategori(key: 'guz_makyaj',  ad: 'Makyaj'),
+      AltKategori(key: 'guz_cilt',    ad: 'Cilt BakÄ±mÄ±'),
+      AltKategori(key: 'guz_sac',     ad: 'SaÃ§ BakÄ±mÄ±'),
+      AltKategori(key: 'guz_parfum',  ad: 'ParfÃ¼m'),
+      AltKategori(key: 'guz_saglik',  ad: 'SaÄŸlÄ±k ÃœrÃ¼nleri'),
     ],
   ),
   AnaKategori(
@@ -17187,11 +17315,11 @@ const List<AnaKategori> kKategoriAgaci = [
     ad: 'Ev & YaÅŸam',
     emoji: 'ðŸ ',
     altlar: [
-      AltKategori(key: 'ev_mobilya',    ad: 'Mobilya'),
-      AltKategori(key: 'ev_mutfak',     ad: 'Mutfak'),
-      AltKategori(key: 'ev_dekor',      ad: 'Dekorasyon'),
-      AltKategori(key: 'ev_tekstil',    ad: 'Ev Tekstili'),
-      AltKategori(key: 'ev_bahce',      ad: 'BahÃ§e'),
+      AltKategori(key: 'ev_mobilya',  ad: 'Mobilya'),
+      AltKategori(key: 'ev_mutfak',   ad: 'Mutfak'),
+      AltKategori(key: 'ev_dekor',    ad: 'Dekorasyon'),
+      AltKategori(key: 'ev_tekstil',  ad: 'Ev Tekstili'),
+      AltKategori(key: 'ev_bahce',    ad: 'BahÃ§e'),
     ],
   ),
   AnaKategori(
@@ -17211,10 +17339,10 @@ const List<AnaKategori> kKategoriAgaci = [
     ad: 'KÃ¼ltÃ¼r & EÄŸlence',
     emoji: 'ðŸ“š',
     altlar: [
-      AltKategori(key: 'kul_kitap',     ad: 'Kitap'),
-      AltKategori(key: 'kul_muzik',     ad: 'MÃ¼zik'),
-      AltKategori(key: 'kul_film',      ad: 'Film & Dizi'),
-      AltKategori(key: 'kul_oyuncak',   ad: 'Oyuncak & Hobi'),
+      AltKategori(key: 'kul_kitap',      ad: 'Kitap'),
+      AltKategori(key: 'kul_muzik',      ad: 'MÃ¼zik'),
+      AltKategori(key: 'kul_film',       ad: 'Film & Dizi'),
+      AltKategori(key: 'kul_oyuncak',    ad: 'Oyuncak & Hobi'),
       AltKategori(key: 'kul_koleksiyon', ad: 'Koleksiyon'),
     ],
   ),
@@ -17223,9 +17351,9 @@ const List<AnaKategori> kKategoriAgaci = [
     ad: 'GÄ±da & Ä°Ã§ecek',
     emoji: 'ðŸ«',
     altlar: [
-      AltKategori(key: 'gida_yiyecek',  ad: 'Yiyecek'),
-      AltKategori(key: 'gida_icecek',   ad: 'Ä°Ã§ecek'),
-      AltKategori(key: 'gida_organik',  ad: 'Organik & DoÄŸal'),
+      AltKategori(key: 'gida_yiyecek', ad: 'Yiyecek'),
+      AltKategori(key: 'gida_icecek',  ad: 'Ä°Ã§ecek'),
+      AltKategori(key: 'gida_organik', ad: 'Organik & DoÄŸal'),
     ],
   ),
   AnaKategori(
@@ -17238,7 +17366,7 @@ const List<AnaKategori> kKategoriAgaci = [
 
 /// Geriye dÃ¶nÃ¼k uyumluluk iÃ§in dÃ¼z map â€” ilan kaydetme/okumada kullanÄ±lÄ±r.
 /// kKategoriAgaci'ndan otomatik Ã¼retilir, ayrÄ±ca gÃ¼ncellemeye gerek yok.
-Map<String, String> get kKategoriler {
+final Map<String, String> kKategoriler = () {
   final map = <String, String>{};
   for (final ana in kKategoriAgaci) {
     map[ana.key] = '${ana.emoji} ${ana.ad}';
@@ -17247,12 +17375,11 @@ Map<String, String> get kKategoriler {
     }
   }
   return map;
-}
+}();
 
 /// Kategori anahtarÄ±ndan okunabilir ad dÃ¶ndÃ¼rÃ¼r.
 String kategoriAdi(String? key) {
   if (key == null || key.isEmpty) return '';
-  // Ã–nce alt kategorilerde ara
   for (final ana in kKategoriAgaci) {
     if (ana.key == key) return '${ana.emoji} ${ana.ad}';
     for (final alt in ana.altlar) {
@@ -17277,7 +17404,7 @@ class Pagination {
   static const int maxResimSayisi   = 4;
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\shared\widgets\avatar_widget.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\shared\widgets\avatar_widget.dart ---
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -17354,7 +17481,7 @@ class _HarfAvatar extends StatelessWidget {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\shared\widgets\bildirim_cani_widget.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\shared\widgets\bildirim_cani_widget.dart ---
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -17407,7 +17534,7 @@ class BildirimCaniWidget extends ConsumerWidget {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\shared\widgets\bos_ekran_widget.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\shared\widgets\bos_ekran_widget.dart ---
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_colors.dart';
@@ -17591,7 +17718,7 @@ class DuzenleAlani extends StatelessWidget {
   }
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\firebase_options.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\firebase_options.dart ---
 // File generated by FlutterFire CLI.
 // ignore_for_file: type=lint
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
@@ -17647,45 +17774,32 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDAKheJCtb7IZjJXNm8VgtGMS_XR6Sd548',
-    appId: '1:405772402645:android:541f71e2b5d0db81e9c75c',
-    messagingSenderId: '405772402645',
-    projectId: 'glocal2',
-    storageBucket: 'glocal2.firebasestorage.app',
+    apiKey: 'AIzaSyCPZmpHNl2T8CJKZ6R5IEJLxc42-UPOxKA',
+    appId: '1:783365190841:android:1e3df8a724817498059768',
+    messagingSenderId: '783365190841',
+    projectId: 'bring-in-3a17c',
+    storageBucket: 'bring-in-3a17c.firebasestorage.app',
   );
+
 }
 
-// --- DOSYA: C:\src\yeni_proje\iste_v2\lib\main.dart ---
+// --- DOSYA: C:\src\iste_v3\lib\main.dart ---
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
- 
+
 import 'core/theme/app_theme.dart';
 import 'firebase_options.dart';
 import 'router/app_router.dart';
- 
+
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 }
- 
-Future<void> _migrateFavoriSayisi() async {
-  final firestore = FirebaseFirestore.instance;
-  final snap = await firestore.collection('ilanlar').get();
-  final batch = firestore.batch();
-  for (final doc in snap.docs) {
-    if ((doc.data())['favoriSayisi'] == null) {
-      batch.update(doc.reference, {'favoriSayisi': 0});
-    }
-  }
-  await batch.commit();
-  debugPrint('Migration tamamlandÄ±!');
-}
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17694,28 +17808,26 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  await _migrateFavoriSayisi();
-
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
- 
+
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(statusBarColor: Colors.transparent),
   );
- 
+
   runApp(
     const ProviderScope(
       child: IsteApp(),
     ),
   );
 }
- 
+
 class IsteApp extends ConsumerWidget {
   const IsteApp({super.key});
- 
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
- 
+
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'Ä°STE',

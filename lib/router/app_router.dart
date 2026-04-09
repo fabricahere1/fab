@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,8 +21,6 @@ abstract class AppRoutes {
   static const home          = '/home';
 }
 
-/// Auth state değiştiğinde GoRouter'ı tetikleyen listenable.
-/// GoRouter bir kez oluşturulur, yeniden build edilmez.
 class _AuthChangeNotifier extends ChangeNotifier {
   _AuthChangeNotifier() {
     _sub = FirebaseAuth.instance
@@ -46,13 +45,26 @@ GoRouter router(Ref ref) {
   return GoRouter(
     initialLocation: AppRoutes.splash,
     refreshListenable: notifier,
-    redirect: (context, state) {
+    redirect: (context, state) async {
       final user = FirebaseAuth.instance.currentUser;
       final isLoggedIn = user != null;
       final loc = state.matchedLocation;
 
       if (loc == AppRoutes.splash) {
-        return isLoggedIn ? AppRoutes.home : AppRoutes.login;
+        if (!isLoggedIn) return AppRoutes.login;
+
+        // ✅ Profil tamamlandı mı kontrol et
+        try {
+          final doc = await FirebaseFirestore.instance
+              .collection('kullanicilar')
+              .doc(user.uid)
+              .get();
+          final tamamlandi =
+              doc.data()?['profilTamamlandi'] as bool? ?? false;
+          return tamamlandi ? AppRoutes.home : AppRoutes.profilTamamla;
+        } catch (_) {
+          return AppRoutes.profilTamamla;
+        }
       }
 
       if (!isLoggedIn &&

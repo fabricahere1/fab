@@ -1,4 +1,4 @@
-package com.fabricahere.iste_v2
+package com.fabricahere.iste_v3
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -7,7 +7,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../../../router/app_router.dart';
- 
+
 const List<String> _tumUlkeler = [
   'Afganistan', 'Almanya', 'Amerika Birleşik Devletleri', 'Arjantin',
   'Avustralya', 'Avusturya', 'Azerbaycan', 'Belçika',
@@ -21,22 +21,22 @@ const List<String> _tumUlkeler = [
   'Suudi Arabistan', 'Singapur', 'Tayland', 'Tunus', 'Türkmenistan',
   'Ukrayna', 'Ürdün', 'Vietnam', 'Yunanistan',
 ];
- 
+
 const List<String> _turkiyeSehirleri = [
   'Adana', 'Ankara', 'Antalya', 'Bursa', 'Diyarbakır', 'Erzurum',
   'Eskişehir', 'Gaziantep', 'İstanbul', 'İzmir', 'Kayseri', 'Konya',
   'Malatya', 'Mersin', 'Samsun', 'Trabzon',
 ];
- 
+
 class ProfilTamamlaScreen extends ConsumerStatefulWidget {
   final bool ilkGiris;
   const ProfilTamamlaScreen({super.key, this.ilkGiris = true});
- 
+
   @override
   ConsumerState<ProfilTamamlaScreen> createState() =>
       _ProfilTamamlaScreenState();
 }
- 
+
 class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
   String? _kullaniciTipi;
   String _yasadigiUlke = '';
@@ -47,19 +47,19 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
   bool _telefonGizli = false;
   bool _yukleniyor = false;
   String _hata = '';
- 
+
   @override
   void dispose() {
     _hakkindaCtrl.dispose();
     _telefonCtrl.dispose();
     super.dispose();
   }
- 
+
   bool get _tasiyiciMi =>
       _kullaniciTipi == 'tasiyici' || _kullaniciTipi == 'her_ikisi';
   bool get _istekMi =>
       _kullaniciTipi == 'istek' || _kullaniciTipi == 'her_ikisi';
- 
+
   Future<void> _kaydet() async {
     if (_kullaniciTipi == null) {
       setState(() => _hata = 'Lütfen kullanıcı tipini seçin.');
@@ -77,12 +77,13 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
       setState(() => _hata = 'Bulunduğunuz şehri girin.');
       return;
     }
- 
+
     setState(() { _yukleniyor = true; _hata = ''; });
- 
+
     final uid = ref.read(currentUserProvider)?.uid;
     if (uid == null) return;
- 
+
+    // ✅ email alanı eklendi
     final data = {
       'kullaniciTipi':   _kullaniciTipi,
       'yasadigiUlke':    _tasiyiciMi ? _yasadigiUlke.trim() : '',
@@ -91,24 +92,24 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
       'hakkinda':        _hakkindaCtrl.text.trim(),
       'telefon':         _telefonCtrl.text.trim(),
       'telefonGizli':    _telefonGizli,
-      'adSoyad':
-          ref.read(currentUserProvider)?.displayName ?? '',
+      'adSoyad':         ref.read(currentUserProvider)?.displayName ?? '',
+      'email':           ref.read(currentUserProvider)?.email ?? '',
     };
- 
+
     final basarili = await ref
         .read(profilDuzenleProvider.notifier)
         .profilTamamla(uid: uid, data: data);
- 
+
     if (!mounted) return;
     setState(() => _yukleniyor = false);
- 
+
     if (basarili) {
       context.go(AppRoutes.home);
     } else {
       setState(() => _hata = 'Bir hata oluştu. Tekrar deneyin.');
     }
   }
- 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -159,8 +160,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
               ),
               const SizedBox(height: 8),
             ],
- 
-            // Kullanıcı tipi seçimi
+
             Container(
               color: Colors.white,
               padding: const EdgeInsets.all(20),
@@ -211,8 +211,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
               ),
             ),
             const SizedBox(height: 8),
- 
-            // Taşıyıcı alanları
+
             if (_tasiyiciMi) ...[
               Container(
                 color: Colors.white,
@@ -264,8 +263,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
               ),
               const SizedBox(height: 8),
             ],
- 
-            // İstek veren alanı
+
             if (_istekMi) ...[
               Container(
                 color: Colors.white,
@@ -296,8 +294,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
               ),
               const SizedBox(height: 8),
             ],
- 
-            // Telefon
+
             if (_kullaniciTipi != null) ...[
               Container(
                 color: Colors.white,
@@ -375,8 +372,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
               ),
               const SizedBox(height: 8),
             ],
- 
-            // Hakkında
+
             if (_kullaniciTipi != null) ...[
               Container(
                 color: Colors.white,
@@ -412,8 +408,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
               ),
               const SizedBox(height: 8),
             ],
- 
-            // Hata
+
             if (_hata.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
@@ -437,8 +432,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
                   ),
                 ),
               ),
- 
-            // Kaydet butonu
+
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
               child: SizedBox(
@@ -466,14 +460,12 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
     );
   }
 }
- 
-// ── Tip Kartı ─────────────────────────────────────────────
- 
+
 class _TipKart extends StatelessWidget {
   final String emoji, baslik, aciklama;
   final bool secili;
   final VoidCallback onTap;
- 
+
   const _TipKart({
     required this.emoji,
     required this.baslik,
@@ -481,7 +473,7 @@ class _TipKart extends StatelessWidget {
     required this.secili,
     required this.onTap,
   });
- 
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -521,12 +513,12 @@ class _TipKart extends StatelessWidget {
     );
   }
 }
- 
+
 class _TipKartGenis extends StatelessWidget {
   final String emoji, baslik, aciklama;
   final bool secili;
   final VoidCallback onTap;
- 
+
   const _TipKartGenis({
     required this.emoji,
     required this.baslik,
@@ -534,7 +526,7 @@ class _TipKartGenis extends StatelessWidget {
     required this.secili,
     required this.onTap,
   });
- 
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -581,16 +573,14 @@ class _TipKartGenis extends StatelessWidget {
     );
   }
 }
- 
-// ── Autocomplete Alanı ────────────────────────────────────
- 
+
 class _AutocompleteAlani extends StatefulWidget {
   final String value;
   final List<String> secenekler;
   final String hint;
   final IconData icon;
   final ValueChanged<String> onSecildi;
- 
+
   const _AutocompleteAlani({
     required this.value,
     required this.secenekler,
@@ -598,28 +588,28 @@ class _AutocompleteAlani extends StatefulWidget {
     required this.icon,
     required this.onSecildi,
   });
- 
+
   @override
   State<_AutocompleteAlani> createState() => _AutocompleteAlaniState();
 }
- 
+
 class _AutocompleteAlaniState extends State<_AutocompleteAlani> {
   late TextEditingController _ctrl;
   List<String> _filtreli = [];
   bool _acik = false;
- 
+
   @override
   void initState() {
     super.initState();
     _ctrl = TextEditingController(text: widget.value);
   }
- 
+
   @override
   void dispose() {
     _ctrl.dispose();
     super.dispose();
   }
- 
+
   void _filtrele(String q) {
     setState(() {
       _acik = q.isNotEmpty;
@@ -629,7 +619,7 @@ class _AutocompleteAlaniState extends State<_AutocompleteAlani> {
           .toList();
     });
   }
- 
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -703,14 +693,12 @@ class _AutocompleteAlaniState extends State<_AutocompleteAlani> {
     );
   }
 }
- 
-// ── Çoklu Şehir Alanı ─────────────────────────────────────
- 
+
 class _CokluSehirAlani extends StatefulWidget {
   final List<String> secilenler, secenekler;
   final String hint;
   final ValueChanged<String> onEklendi, onKaldirildi;
- 
+
   const _CokluSehirAlani({
     required this.secilenler,
     required this.secenekler,
@@ -718,22 +706,22 @@ class _CokluSehirAlani extends StatefulWidget {
     required this.onEklendi,
     required this.onKaldirildi,
   });
- 
+
   @override
   State<_CokluSehirAlani> createState() => _CokluSehirAlaniState();
 }
- 
+
 class _CokluSehirAlaniState extends State<_CokluSehirAlani> {
   final _ctrl = TextEditingController();
   List<String> _filtreli = [];
   bool _acik = false;
- 
+
   @override
   void dispose() {
     _ctrl.dispose();
     super.dispose();
   }
- 
+
   void _filtrele(String q) {
     setState(() {
       _acik = q.isNotEmpty;
@@ -745,7 +733,7 @@ class _CokluSehirAlaniState extends State<_CokluSehirAlani> {
           .toList();
     });
   }
- 
+
   @override
   Widget build(BuildContext context) {
     return Column(
