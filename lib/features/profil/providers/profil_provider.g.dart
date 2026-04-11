@@ -319,8 +319,18 @@ abstract class _$Sikayet extends $Notifier<AsyncValue<void>> {
   }
 }
 
+/// Kullanıcının kendi ilanlarını real-time dinler.
+/// [keepAlive] sayesinde sayfa kapanınca dispose olmaz,
+/// tekrar açılınca Firestore'a yeniden bağlanmaz.
+/// uid null olduğunda (çıkış yapıldığında) provider invalidate edilir.
+
 @ProviderFor(ilanlarim)
 final ilanlarimProvider = IlanlarimProvider._();
+
+/// Kullanıcının kendi ilanlarını real-time dinler.
+/// [keepAlive] sayesinde sayfa kapanınca dispose olmaz,
+/// tekrar açılınca Firestore'a yeniden bağlanmaz.
+/// uid null olduğunda (çıkış yapıldığında) provider invalidate edilir.
 
 final class IlanlarimProvider
     extends
@@ -330,13 +340,17 @@ final class IlanlarimProvider
           Stream<List<IlanModel>>
         >
     with $FutureModifier<List<IlanModel>>, $StreamProvider<List<IlanModel>> {
+  /// Kullanıcının kendi ilanlarını real-time dinler.
+  /// [keepAlive] sayesinde sayfa kapanınca dispose olmaz,
+  /// tekrar açılınca Firestore'a yeniden bağlanmaz.
+  /// uid null olduğunda (çıkış yapıldığında) provider invalidate edilir.
   IlanlarimProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'ilanlarimProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -356,4 +370,4 @@ final class IlanlarimProvider
   }
 }
 
-String _$ilanlarimHash() => r'6ee031a8383bd670f4bb96d480d93ce75801ed96';
+String _$ilanlarimHash() => r'e4590c00e1002eb544b796ca09f105886a89ab59';

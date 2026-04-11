@@ -80,7 +80,7 @@ final class CurrentUserProvider extends $FunctionalProvider<User?, User?, User?>
   }
 }
 
-String _$currentUserHash() => r'ab87a355dd423d79a81ba656f9396a458ad8ed84';
+String _$currentUserHash() => r'c650c2308a132b406d45f437b8ded39975405d84';
 
 @ProviderFor(AuthNotifier)
 final authProvider = AuthNotifierProvider._();
@@ -106,7 +106,7 @@ final class AuthNotifierProvider
   AuthNotifier create() => AuthNotifier();
 }
 
-String _$authNotifierHash() => r'0d2d67cdc1bbde9031bfccab8840e68e848032ee';
+String _$authNotifierHash() => r'0946cd7f93f89bc3567699842859f895edcf4444';
 
 abstract class _$AuthNotifier extends $AsyncNotifier<void> {
   FutureOr<void> build();

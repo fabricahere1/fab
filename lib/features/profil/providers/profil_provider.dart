@@ -6,28 +6,28 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/kullanici_repository.dart';
 import '../domain/kullanici_model.dart';
 import '../../auth/providers/auth_provider.dart';
- 
+
 part 'profil_provider.g.dart';
- 
+
 @riverpod
 Stream<KullaniciModel?> benimKullaniciProfil(Ref ref) {
   final uid = ref.watch(currentUserProvider)?.uid;
   if (uid == null) return const Stream.empty();
   return ref.watch(kullaniciRepositoryProvider).kullaniciStream(uid);
 }
- 
+
 @riverpod
 Future<KullaniciModel?> kullaniciBilgi(Ref ref, String uid) {
   return ref.watch(kullaniciRepositoryProvider).kullaniciGetir(uid);
 }
- 
+
 @riverpod
 class ProfilDuzenle extends _$ProfilDuzenle {
   @override
   AsyncValue<void> build() => const AsyncData(null);
- 
+
   KullaniciRepository get _repo => ref.read(kullaniciRepositoryProvider);
- 
+
   Future<bool> profilGuncelle({
     required String uid,
     required Map<String, dynamic> data,
@@ -42,7 +42,7 @@ class ProfilDuzenle extends _$ProfilDuzenle {
       return false;
     }
   }
- 
+
   Future<bool> profilTamamla({
     required String uid,
     required Map<String, dynamic> data,
@@ -57,7 +57,7 @@ class ProfilDuzenle extends _$ProfilDuzenle {
       return false;
     }
   }
- 
+
   Future<String?> fotoGuncelle({
     required String uid,
     required File foto,
@@ -73,14 +73,14 @@ class ProfilDuzenle extends _$ProfilDuzenle {
     }
   }
 }
- 
+
 @riverpod
 class Engelleme extends _$Engelleme {
   @override
   AsyncValue<void> build() => const AsyncData(null);
- 
+
   KullaniciRepository get _repo => ref.read(kullaniciRepositoryProvider);
- 
+
   Future<void> engelle({
     required String benimUid,
     required String hedefUid,
@@ -93,7 +93,7 @@ class Engelleme extends _$Engelleme {
       if (ref.mounted) state = AsyncError(e, StackTrace.current);
     }
   }
- 
+
   Future<void> engelKaldir({
     required String benimUid,
     required String hedefUid,
@@ -107,19 +107,19 @@ class Engelleme extends _$Engelleme {
     }
   }
 }
- 
+
 @riverpod
 Stream<List<String>> engellenenler(Ref ref) {
   final uid = ref.watch(currentUserProvider)?.uid;
   if (uid == null) return Stream.value([]);
   return ref.watch(kullaniciRepositoryProvider).engellenenlerStream(uid);
 }
- 
+
 @riverpod
 class Sikayet extends _$Sikayet {
   @override
   AsyncValue<void> build() => const AsyncData(null);
- 
+
   Future<bool> sikayetGonder({
     required String sikayetEdenId,
     required String hedefId,
@@ -144,9 +144,19 @@ class Sikayet extends _$Sikayet {
     }
   }
 }
-@riverpod
+
+/// Kullanıcının kendi ilanlarını real-time dinler.
+/// [keepAlive] sayesinde sayfa kapanınca dispose olmaz,
+/// tekrar açılınca Firestore'a yeniden bağlanmaz.
+/// uid null olduğunda (çıkış yapıldığında) provider invalidate edilir.
+@Riverpod(keepAlive: true)
 Stream<List<IlanModel>> ilanlarim(Ref ref) {
   final uid = ref.watch(currentUserProvider)?.uid;
-  if (uid == null) return const Stream.empty();
+
+  if (uid == null) {
+    Future.microtask(() => ref.invalidateSelf());
+    return const Stream.empty();
+  }
+
   return ref.watch(ilanRepositoryProvider).kullaniciIlanlarStream(uid);
 }

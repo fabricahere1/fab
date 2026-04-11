@@ -6,32 +6,33 @@ import '../../profil/providers/profil_provider.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
 import '../../ilanlar/domain/ilan_model.dart';
 import '../../ilanlar/presentation/ilan_detay_screen.dart';
+import '../../mesajlar/presentation/sohbet_screen.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../../../shared/widgets/avatar_widget.dart';
- 
+
 class KullaniciProfilScreen extends ConsumerWidget {
   final String kullaniciId;
   final String kullaniciAd;
- 
+
   const KullaniciProfilScreen({
     super.key,
     required this.kullaniciId,
     required this.kullaniciAd,
   });
- 
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final benimUid = ref.watch(currentUserProvider)?.uid;
-    final profilAsync = ref.watch(kullaniciBilgiProvider(kullaniciId));
+    final benimUid  = ref.watch(currentUserProvider)?.uid;
+    final benimKisi = benimUid != null && benimUid != kullaniciId;
+    final profilAsync  = ref.watch(kullaniciBilgiProvider(kullaniciId));
     final ilanlarAsync = ref.watch(kullaniciIlanlarStreamProvider(kullaniciId));
- 
+
     return Scaffold(
       backgroundColor: AppColors.surface,
       body: profilAsync.when(
         loading: () => const Center(
-            child: CircularProgressIndicator(
-                color: AppColors.red, strokeWidth: 2)),
+            child: CircularProgressIndicator(color: AppColors.red, strokeWidth: 2)),
         error: (_, __) => Center(
           child: Text('Profil yüklenemedi.',
               style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
@@ -47,7 +48,7 @@ class KullaniciProfilScreen extends ConsumerWidget {
           final telefon = profil?.telefonGizli == false
               ? profil?.telefon ?? ''
               : '';
- 
+
           return CustomScrollView(
             slivers: [
               // ── AppBar ──────────────────────────────────
@@ -65,7 +66,7 @@ class KullaniciProfilScreen extends ConsumerWidget {
                     style: GoogleFonts.dmSans(
                         fontWeight: FontWeight.w700, fontSize: 17)),
               ),
- 
+
               SliverToBoxAdapter(
                 child: Column(
                   children: [
@@ -90,18 +91,16 @@ class KullaniciProfilScreen extends ConsumerWidget {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 const Icon(Icons.location_on_outlined,
-                                    size: 14,
-                                    color: AppColors.textSecondary),
+                                    size: 14, color: AppColors.textSecondary),
                                 const SizedBox(width: 4),
                                 Text(sehir,
                                     style: GoogleFonts.dmSans(
-                                        fontSize: 13,
-                                        color: AppColors.textSecondary)),
+                                        fontSize: 13, color: AppColors.textSecondary)),
                               ],
                             ),
                           ],
                           const SizedBox(height: 12),
- 
+
                           // Yıldız puanı
                           if (degerlendirmeSayisi > 0) ...[
                             Row(
@@ -111,9 +110,7 @@ class KullaniciProfilScreen extends ConsumerWidget {
                                   return Icon(
                                     i < puan.floor()
                                         ? Icons.star
-                                        : (i < puan
-                                            ? Icons.star_half
-                                            : Icons.star_border),
+                                        : (i < puan ? Icons.star_half : Icons.star_border),
                                     color: Colors.amber,
                                     size: 20,
                                   );
@@ -122,14 +119,13 @@ class KullaniciProfilScreen extends ConsumerWidget {
                                 Text(
                                   '${puan.toStringAsFixed(1)} ($degerlendirmeSayisi değerlendirme)',
                                   style: GoogleFonts.dmSans(
-                                      fontSize: 13,
-                                      color: AppColors.textSecondary),
+                                      fontSize: 13, color: AppColors.textSecondary),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 12),
                           ],
- 
+
                           if (hakkinda.isNotEmpty) ...[
                             const Divider(color: AppColors.divider),
                             const SizedBox(height: 12),
@@ -142,7 +138,7 @@ class KullaniciProfilScreen extends ConsumerWidget {
                               textAlign: TextAlign.center,
                             ),
                           ],
- 
+
                           if (telefon.isNotEmpty) ...[
                             const SizedBox(height: 12),
                             const Divider(color: AppColors.divider),
@@ -151,22 +147,66 @@ class KullaniciProfilScreen extends ConsumerWidget {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 const Icon(Icons.phone_outlined,
-                                    size: 16,
-                                    color: AppColors.textSecondary),
+                                    size: 16, color: AppColors.textSecondary),
                                 const SizedBox(width: 6),
                                 Text(telefon,
                                     style: GoogleFonts.dmSans(
-                                        fontSize: 14,
-                                        color: AppColors.textPrimary)),
+                                        fontSize: 14, color: AppColors.textPrimary)),
                               ],
+                            ),
+                          ],
+
+                          // ── Mesaj Gönder Butonu ──────────
+                          if (benimKisi) ...[
+                            const SizedBox(height: 16),
+                            const Divider(color: AppColors.divider),
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 48,
+                              child: ElevatedButton.icon(
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                    pageBuilder: (ctx, anim, secAnim) => SohbetScreen(
+                                      karsiKullaniciId: kullaniciId,
+                                      karsiKullaniciAd: ad,
+                                      ilanId: '',
+                                      ilanBaslik: '',
+                                    ),
+                                    transitionsBuilder: (ctx, anim, secAnim, child) =>
+                                        SlideTransition(
+                                      position: Tween(
+                                        begin: const Offset(1, 0),
+                                        end: Offset.zero,
+                                      ).animate(CurvedAnimation(
+                                          parent: anim, curve: Curves.easeOutCubic)),
+                                      child: child,
+                                    ),
+                                    transitionDuration:
+                                        const Duration(milliseconds: 280),
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.red,
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                ),
+                                icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                                label: Text('Mesaj Gönder',
+                                    style: GoogleFonts.dmSans(
+                                        fontSize: 15, fontWeight: FontWeight.w600)),
+                              ),
                             ),
                           ],
                         ],
                       ),
                     ),
- 
+
                     const SizedBox(height: 8),
- 
+
                     // ── İlanları ─────────────────────────
                     Container(
                       color: Colors.white,
@@ -184,7 +224,7 @@ class KullaniciProfilScreen extends ConsumerWidget {
                   ],
                 ),
               ),
- 
+
               // ── İlanlar Listesi ──────────────────────────
               ilanlarAsync.when(
                 loading: () => const SliverToBoxAdapter(
@@ -225,19 +265,16 @@ class KullaniciProfilScreen extends ConsumerWidget {
                       ),
                     );
                   }
- 
+
                   return SliverList(
                     delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final ilan = ilanlar[index];
-                        return _IlanSatiri(ilan: ilan);
-                      },
+                      (context, index) => _IlanSatiri(ilan: ilanlar[index]),
                       childCount: ilanlar.length,
                     ),
                   );
                 },
               ),
- 
+
               const SliverToBoxAdapter(child: SizedBox(height: 32)),
             ],
           );
@@ -246,44 +283,38 @@ class KullaniciProfilScreen extends ConsumerWidget {
     );
   }
 }
- 
+
 // ── İlan Satırı ───────────────────────────────────────────
- 
+
 class _IlanSatiri extends StatelessWidget {
   final IlanModel ilan;
   const _IlanSatiri({required this.ilan});
- 
+
   @override
   Widget build(BuildContext context) {
     final kategoriAdi_ = kategoriAdi(ilan.kategori);
- 
+
     return InkWell(
       onTap: () => Navigator.push(
         context,
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => IlanDetayScreen(ilan: ilan),
-          transitionsBuilder: (_, anim, __, child) => SlideTransition(
+          pageBuilder: (ctx, anim, secAnim) => IlanDetayScreen(ilan: ilan),
+          transitionsBuilder: (ctx, anim, secAnim, child) => SlideTransition(
             position: Tween(
               begin: const Offset(1, 0),
               end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: anim,
-              curve: Curves.easeOutCubic,
-            )),
+            ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
             child: child,
           ),
         ),
       ),
       child: Container(
         color: Colors.white,
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            // Tip ikonu
             Container(
-              width: 40,
-              height: 40,
+              width: 40, height: 40,
               decoration: BoxDecoration(
                 color: ilan.tip == IlanTip.istek
                     ? AppColors.red.withValues(alpha: 0.08)
@@ -295,9 +326,7 @@ class _IlanSatiri extends StatelessWidget {
                     ? Icons.shopping_bag_outlined
                     : Icons.flight_land_outlined,
                 size: 18,
-                color: ilan.tip == IlanTip.istek
-                    ? AppColors.red
-                    : AppColors.primary,
+                color: ilan.tip == IlanTip.istek ? AppColors.red : AppColors.primary,
               ),
             ),
             const SizedBox(width: 12),
@@ -306,9 +335,7 @@ class _IlanSatiri extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    ilan.urun.isNotEmpty
-                        ? ilan.urun
-                        : '${ilan.nereden} → ${ilan.nereye}',
+                    ilan.urun.isNotEmpty ? ilan.urun : '${ilan.nereden} → ${ilan.nereye}',
                     style: GoogleFonts.dmSans(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -326,8 +353,7 @@ class _IlanSatiri extends StatelessWidget {
                         child: Text(
                           '${ilan.nereden} → ${ilan.nereye}',
                           style: GoogleFonts.dmSans(
-                              fontSize: 11,
-                              color: AppColors.textSecondary),
+                              fontSize: 11, color: AppColors.textSecondary),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -352,21 +378,18 @@ class _IlanSatiri extends StatelessWidget {
                 if (kategoriAdi_.isNotEmpty)
                   Container(
                     margin: const EdgeInsets.only(top: 4),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     color: AppColors.chipBg,
                     child: Text(
                       kategoriAdi_,
                       style: GoogleFonts.dmSans(
-                          fontSize: 9,
-                          color: AppColors.textSecondary),
+                          fontSize: 9, color: AppColors.textSecondary),
                     ),
                   ),
               ],
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.chevron_right,
-                color: AppColors.textSecondary, size: 18),
+            const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 18),
           ],
         ),
       ),

@@ -1,5 +1,8 @@
+// lib/features/ilanlar/presentation/ilan_detay_screen.dart
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../domain/ilan_model.dart';
@@ -10,6 +13,8 @@ import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../profil/presentation/kullanici_profil_screen.dart';
 import '../../mesajlar/presentation/sohbet_screen.dart';
+import '../../teklifler/providers/teklif_provider.dart';
+import '../../teklifler/domain/teklif_model.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart' as app_constants;
 import '../../../shared/widgets/avatar_widget.dart';
@@ -61,14 +66,14 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
     Navigator.push(
       context,
       PageRouteBuilder(
-        pageBuilder: (_, _, _) => SohbetScreen(
+        pageBuilder: (ctx, anim, secAnim) => SohbetScreen(
           karsiKullaniciId: ilan.kullaniciId,
           karsiKullaniciAd: ilan.kullaniciAd,
           ilanId: ilan.id,
           ilanBaslik: ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
           ilanResimUrl: resimler.isNotEmpty ? resimler.first : null,
         ),
-        transitionsBuilder: (_, anim, _, child) => SlideTransition(
+        transitionsBuilder: (ctx, anim, secAnim, child) => SlideTransition(
           position: Tween(
             begin: const Offset(1, 0),
             end: Offset.zero,
@@ -76,6 +81,40 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
           child: child,
         ),
         transitionDuration: const Duration(milliseconds: 280),
+      ),
+    );
+  }
+
+  void _teklifVerSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => _TeklifVerSheet(ilan: widget.ilan),
+    );
+  }
+
+  void _gelenTekliflerSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (_, scrollCtrl) => _GelenTekliflerSheet(
+          ilanId: widget.ilan.id,
+          ilanBaslik: widget.ilan.urun.isNotEmpty ? widget.ilan.urun : 'İlan',
+          scrollController: scrollCtrl,
+        ),
       ),
     );
   }
@@ -190,11 +229,9 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
       builder: (c) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text(baslik,
-            style: GoogleFonts.dmSans(
-                fontSize: 16, fontWeight: FontWeight.w600)),
+            style: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w600)),
         content: Text(icerik,
-            style: GoogleFonts.dmSans(
-                fontSize: 14, color: AppColors.textSecondary)),
+            style: GoogleFonts.dmSans(fontSize: 14, color: AppColors.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(c, false),
@@ -214,37 +251,27 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
 
   Future<void> _sikayetDialog(String uid) async {
     String? seciliSebep;
-    final sebepler = [
-      'Sahte ilan',
-      'Yanıltıcı bilgi',
-      'Uygunsuz içerik',
-      'Spam',
-      'Diğer'
-    ];
+    final sebepler = ['Sahte ilan', 'Yanıltıcı bilgi', 'Uygunsuz içerik', 'Spam', 'Diğer'];
 
     await showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           title: Text('Şikayet Et',
-              style: GoogleFonts.dmSans(
-                  fontSize: 16, fontWeight: FontWeight.w600)),
-          content: RadioGroup<String>(
-            groupValue: seciliSebep,
-            onChanged: (v) => setS(() => seciliSebep = v),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: sebepler
-                  .map((s) => RadioListTile<String>(
-                        value: s,
-                        title: Text(s, style: GoogleFonts.dmSans(fontSize: 14)),
-                        activeColor: AppColors.red,
-                        contentPadding: EdgeInsets.zero,
-                      ))
-                  .toList(),
-            ),
+              style: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w600)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: sebepler
+                .map((s) => RadioListTile<String>(
+                      value: s,
+                      groupValue: seciliSebep,
+                      title: Text(s, style: GoogleFonts.dmSans(fontSize: 14)),
+                      activeColor: AppColors.red,
+                      contentPadding: EdgeInsets.zero,
+                      onChanged: (v) => setS(() => seciliSebep = v),
+                    ))
+                .toList(),
           ),
           actions: [
             TextButton(
@@ -300,15 +327,22 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
     final favorideMi = favoriAsync.value ?? false;
 
     final favoriSayisi =
-        ref.watch(ilanFavoriSayisiProvider(ilan.id)).value ??
-            ilan.favoriSayisi;
+        ref.watch(ilanFavoriSayisiProvider(ilan.id)).value ?? ilan.favoriSayisi;
+
+    final teklifOzetAsync = benimIlan
+        ? ref.watch(ilanTeklifOzetProvider(ilan.id))
+        : null;
+    final teklifOzet = teklifOzetAsync?.value;
+
+    // ✅ Kabul edilmiş teklif var mı? (teklif veren için)
+    final kabulTeklifAsync = !benimIlan && uid != null
+        ? ref.watch(ilanKabulTeklifiProvider(ilan.id, uid))
+        : null;
+    final anlasildi = kabulTeklifAsync?.value != null;
 
     final benzerIlanlarAsync = ref.watch(istekIlanlarProvider);
     final benzerIlanlar = benzerIlanlarAsync.filtrelenmis
-        .where((i) =>
-            i.id != ilan.id &&
-            i.kategori == ilan.kategori &&
-            i.aktif)
+        .where((i) => i.id != ilan.id && i.kategori == ilan.kategori && i.aktif)
         .take(6)
         .toList();
 
@@ -333,21 +367,15 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                   favoriSayisi: favoriSayisi,
                   onTap: () async {
                     if (favorideMi) {
-                      await ref
-                          .read(ilanRepositoryProvider)
-                          .favoridanCikar(
-                              kullaniciId: uid, ilanId: ilan.id);
+                      await ref.read(ilanRepositoryProvider)
+                          .favoridanCikar(kullaniciId: uid, ilanId: ilan.id);
                     } else {
-                      await ref
-                          .read(ilanRepositoryProvider)
+                      await ref.read(ilanRepositoryProvider)
                           .favoriyeEkle(kullaniciId: uid, ilan: ilan);
                     }
                   },
                 ),
-              _CircleIconButton(
-                icon: Icons.more_vert,
-                onTap: _ucNoktaMenu,
-              ),
+              _CircleIconButton(icon: Icons.more_vert, onTap: _ucNoktaMenu),
             ],
             flexibleSpace: resimler.isNotEmpty
                 ? FlexibleSpaceBar(
@@ -356,8 +384,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                         PageView.builder(
                           controller: _pageController,
                           itemCount: resimler.length,
-                          onPageChanged: (i) =>
-                              setState(() => _aktifResim = i),
+                          onPageChanged: (i) => setState(() => _aktifResim = i),
                           itemBuilder: (_, i) => _ResimWidget(
                             url: resimler[i],
                             tumResimler: resimler,
@@ -366,17 +393,14 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                         ),
                         if (resimler.length > 1)
                           Positioned(
-                            bottom: 12,
-                            left: 0,
-                            right: 0,
+                            bottom: 12, left: 0, right: 0,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: List.generate(
                                 resimler.length,
                                 (i) => AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
-                                  margin: const EdgeInsets.symmetric(
-                                      horizontal: 3),
+                                  margin: const EdgeInsets.symmetric(horizontal: 3),
                                   width: _aktifResim == i ? 20 : 6,
                                   height: 6,
                                   decoration: BoxDecoration(
@@ -391,11 +415,9 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                           ),
                         if (resimler.length > 1)
                           Positioned(
-                            top: 12,
-                            right: 56,
+                            top: 12, right: 56,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
                                 color: Colors.black.withValues(alpha: 0.5),
                                 borderRadius: BorderRadius.circular(12),
@@ -403,9 +425,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                               child: Text(
                                 '${_aktifResim + 1}/${resimler.length}',
                                 style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600),
+                                    color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
                               ),
                             ),
                           ),
@@ -427,33 +447,27 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                     children: [
                       if (kategoriAdiStr.isNotEmpty) ...[
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             color: AppColors.red.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(kategoriAdiStr,
                               style: GoogleFonts.dmSans(
-                                  fontSize: 12,
-                                  color: AppColors.red,
-                                  fontWeight: FontWeight.w500)),
+                                  fontSize: 12, color: AppColors.red, fontWeight: FontWeight.w500)),
                         ),
                         const SizedBox(height: 10),
                       ],
                       Text(
                         ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
                         style: GoogleFonts.dmSans(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary),
+                            fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                       ),
                       const SizedBox(height: 12),
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                             decoration: BoxDecoration(
                               color: ilan.ucret.isNotEmpty
                                   ? AppColors.red.withValues(alpha: 0.08)
@@ -463,29 +477,80 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(
-                                  Icons.attach_money_outlined,
-                                  size: 18,
-                                  color: ilan.ucret.isNotEmpty
-                                      ? AppColors.red
-                                      : AppColors.textSecondary,
-                                ),
+                                Icon(Icons.attach_money_outlined,
+                                    size: 18,
+                                    color: ilan.ucret.isNotEmpty
+                                        ? AppColors.red : AppColors.textSecondary),
                                 const SizedBox(width: 4),
                                 Text(
-                                  ilan.ucret.isNotEmpty
-                                      ? '${ilan.ucret} ₺'
-                                      : 'Ücret belirtilmemiş',
+                                  ilan.ucret.isNotEmpty ? '${ilan.ucret} ₺' : 'Ücret belirtilmemiş',
                                   style: GoogleFonts.dmSans(
                                     fontSize: 20,
                                     fontWeight: FontWeight.w700,
                                     color: ilan.ucret.isNotEmpty
-                                        ? AppColors.red
-                                        : AppColors.textSecondary,
+                                        ? AppColors.red : AppColors.textSecondary,
                                   ),
                                 ),
                               ],
                             ),
                           ),
+                          // İlan sahibine teklif badge
+                          if (benimIlan && teklifOzet != null && teklifOzet.sayi > 0) ...[
+                            const SizedBox(width: 10),
+                            GestureDetector(
+                              onTap: _gelenTekliflerSheet,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFF9800),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.local_offer_outlined,
+                                        size: 15, color: Colors.white),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                      teklifOzet.sayi == 1
+                                          ? '${teklifOzet.enYuksek!.toStringAsFixed(0)} ₺ teklif'
+                                          : '${teklifOzet.sayi} teklif • En yüksek: ${teklifOzet.enYuksek!.toStringAsFixed(0)} ₺',
+                                      style: GoogleFonts.dmSans(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.white),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                          // ✅ Teklif verene anlaşıldı badge
+                          if (!benimIlan && anlasildi) ...[
+                            const SizedBox(width: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE8F5E9),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                    color: AppColors.green.withValues(alpha: 0.4)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.handshake_outlined,
+                                      size: 15, color: AppColors.green),
+                                  const SizedBox(width: 5),
+                                  Text('Anlaşıldı',
+                                      style: GoogleFonts.dmSans(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.green)),
+                                ],
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ],
@@ -502,35 +567,17 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                     children: [
                       Text('Güzergah',
                           style: GoogleFonts.dmSans(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textSecondary)),
+                              fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
                       const SizedBox(height: 14),
                       Row(
                         children: [
                           Column(
                             children: [
-                              Container(
-                                width: 10,
-                                height: 10,
-                                decoration: const BoxDecoration(
-                                  color: AppColors.red,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              Container(
-                                width: 2,
-                                height: 30,
-                                color: AppColors.divider,
-                              ),
-                              Container(
-                                width: 10,
-                                height: 10,
-                                decoration: const BoxDecoration(
-                                  color: AppColors.primary,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
+                              Container(width: 10, height: 10,
+                                  decoration: const BoxDecoration(color: AppColors.red, shape: BoxShape.circle)),
+                              Container(width: 2, height: 30, color: AppColors.divider),
+                              Container(width: 10, height: 10,
+                                  decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle)),
                             ],
                           ),
                           const SizedBox(width: 14),
@@ -538,21 +585,13 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  ilan.nereden,
-                                  style: GoogleFonts.dmSans(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.textPrimary),
-                                ),
+                                Text(ilan.nereden,
+                                    style: GoogleFonts.dmSans(
+                                        fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
                                 const SizedBox(height: 20),
-                                Text(
-                                  ilan.nereye,
-                                  style: GoogleFonts.dmSans(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.textPrimary),
-                                ),
+                                Text(ilan.nereye,
+                                    style: GoogleFonts.dmSans(
+                                        fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
                               ],
                             ),
                           ),
@@ -567,18 +606,12 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                             const Icon(Icons.calendar_today_outlined,
                                 size: 16, color: AppColors.textSecondary),
                             const SizedBox(width: 8),
-                            Text(
-                              'Seyahat Tarihi: ',
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 13,
-                                  color: AppColors.textSecondary),
-                            ),
+                            Text('Seyahat Tarihi: ',
+                                style: GoogleFonts.dmSans(fontSize: 13, color: AppColors.textSecondary)),
                             Text(
                               '${ilan.tarih!.day}.${ilan.tarih!.month}.${ilan.tarih!.year}',
                               style: GoogleFonts.dmSans(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary),
+                                  fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                             ),
                           ],
                         ),
@@ -598,17 +631,11 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                       children: [
                         Text('Notlar',
                             style: GoogleFonts.dmSans(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textSecondary)),
+                                fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
                         const SizedBox(height: 10),
-                        Text(
-                          ilan.notlar,
-                          style: GoogleFonts.dmSans(
-                              fontSize: 14,
-                              color: AppColors.textPrimary,
-                              height: 1.6),
-                        ),
+                        Text(ilan.notlar,
+                            style: GoogleFonts.dmSans(
+                                fontSize: 14, color: AppColors.textPrimary, height: 1.6)),
                       ],
                     ),
                   ),
@@ -618,18 +645,13 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                 if (ilan.olusturmaTarihi != null)
                   Container(
                     color: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     child: Row(
                       children: [
-                        const Icon(Icons.access_time_outlined,
-                            size: 15, color: AppColors.textHint),
+                        const Icon(Icons.access_time_outlined, size: 15, color: AppColors.textHint),
                         const SizedBox(width: 6),
-                        Text(
-                          'İlan tarihi: ${_tamTarih(ilan.olusturmaTarihi!)}',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 12, color: AppColors.textHint),
-                        ),
+                        Text('İlan tarihi: ${_tamTarih(ilan.olusturmaTarihi!)}',
+                            style: GoogleFonts.dmSans(fontSize: 12, color: AppColors.textHint)),
                       ],
                     ),
                   ),
@@ -644,20 +666,15 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                     children: [
                       Text('İlan Sahibi',
                           style: GoogleFonts.dmSans(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textSecondary)),
+                              fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
                       const SizedBox(height: 14),
                       GestureDetector(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => KullaniciProfilScreen(
-                              kullaniciId: ilan.kullaniciId,
-                              kullaniciAd: ilan.kullaniciAd,
-                            ),
+                        onTap: () => Navigator.push(context, MaterialPageRoute(
+                          builder: (_) => KullaniciProfilScreen(
+                            kullaniciId: ilan.kullaniciId,
+                            kullaniciAd: ilan.kullaniciAd,
                           ),
-                        ),
+                        )),
                         child: Container(
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
@@ -667,32 +684,21 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                           ),
                           child: Row(
                             children: [
-                              AvatarWidget(
-                                  isim: ilan.kullaniciAd, radius: 24),
+                              AvatarWidget(isim: ilan.kullaniciAd, radius: 24),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      ilan.kullaniciAd,
-                                      style: GoogleFonts.dmSans(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.textPrimary),
-                                    ),
-                                    Text(
-                                      'Profili görüntüle →',
-                                      style: GoogleFonts.dmSans(
-                                          fontSize: 12,
-                                          color: AppColors.red),
-                                    ),
+                                    Text(ilan.kullaniciAd,
+                                        style: GoogleFonts.dmSans(
+                                            fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                                    Text('Profili görüntüle →',
+                                        style: GoogleFonts.dmSans(fontSize: 12, color: AppColors.red)),
                                   ],
                                 ),
                               ),
-                              const Icon(Icons.chevron_right,
-                                  color: AppColors.textSecondary),
+                              const Icon(Icons.chevron_right, color: AppColors.textSecondary),
                             ],
                           ),
                         ),
@@ -712,19 +718,15 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                       children: [
                         Text('Benzer İlanlar',
                             style: GoogleFonts.dmSans(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textSecondary)),
+                                fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
                         const SizedBox(height: 14),
                         SizedBox(
                           height: 160,
                           child: ListView.builder(
                             scrollDirection: Axis.horizontal,
                             itemCount: benzerIlanlar.length,
-                            itemBuilder: (context, index) {
-                              final benzer = benzerIlanlar[index];
-                              return _BenzerIlanKarti(ilan: benzer);
-                            },
+                            itemBuilder: (context, index) =>
+                                _BenzerIlanKarti(ilan: benzerIlanlar[index]),
                           ),
                         ),
                       ],
@@ -740,14 +742,14 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
         ],
       ),
 
+      // ✅ Bottom bar: anlaşıldıysa teklif ver yerine anlaşıldı badge göster
       bottomNavigationBar: uid != null && !benimIlan
           ? Container(
               padding: EdgeInsets.fromLTRB(
                   16, 10, 16, MediaQuery.of(context).padding.bottom + 10),
               decoration: BoxDecoration(
                 color: Colors.white,
-                border: const Border(
-                    top: BorderSide(color: AppColors.divider)),
+                border: const Border(top: BorderSide(color: AppColors.divider)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
@@ -761,19 +763,15 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                   GestureDetector(
                     onTap: () async {
                       if (favorideMi) {
-                        await ref
-                            .read(ilanRepositoryProvider)
-                            .favoridanCikar(
-                                kullaniciId: uid, ilanId: ilan.id);
+                        await ref.read(ilanRepositoryProvider)
+                            .favoridanCikar(kullaniciId: uid, ilanId: ilan.id);
                       } else {
-                        await ref
-                            .read(ilanRepositoryProvider)
+                        await ref.read(ilanRepositoryProvider)
                             .favoriyeEkle(kullaniciId: uid, ilan: ilan);
                       }
                     },
                     child: Container(
-                      width: 48,
-                      height: 48,
+                      width: 48, height: 48,
                       decoration: BoxDecoration(
                         color: favorideMi
                             ? AppColors.red.withValues(alpha: 0.08)
@@ -786,17 +784,58 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                         ),
                       ),
                       child: Icon(
-                        favorideMi
-                            ? Icons.favorite
-                            : Icons.favorite_border,
-                        color: favorideMi
-                            ? AppColors.red
-                            : AppColors.textSecondary,
+                        favorideMi ? Icons.favorite : Icons.favorite_border,
+                        color: favorideMi ? AppColors.red : AppColors.textSecondary,
                         size: 22,
                       ),
                     ),
                   ),
                   const SizedBox(width: 10),
+                  if (ilan.ucret.isNotEmpty) ...[
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        // ✅ Anlaşıldıysa badge, değilse teklif ver butonu
+                        child: anlasildi
+                            ? Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE8F5E9),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                      color: AppColors.green.withValues(alpha: 0.4)),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.handshake_outlined,
+                                        size: 18, color: AppColors.green),
+                                    const SizedBox(width: 8),
+                                    Text('Anlaşıldı',
+                                        style: GoogleFonts.dmSans(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.green)),
+                                  ],
+                                ),
+                              )
+                            : OutlinedButton.icon(
+                                onPressed: _teklifVerSheet,
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFFFF9800),
+                                  side: const BorderSide(
+                                      color: Color(0xFFFF9800), width: 1.5),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                ),
+                                icon: const Icon(Icons.local_offer_outlined, size: 18),
+                                label: Text('Teklif Ver',
+                                    style: GoogleFonts.dmSans(
+                                        fontSize: 14, fontWeight: FontWeight.w600)),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                  ],
                   Expanded(
                     child: SizedBox(
                       height: 48,
@@ -807,17 +846,12 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                           foregroundColor: Colors.white,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                              borderRadius: BorderRadius.circular(12)),
                         ),
-                        icon: const Icon(Icons.chat_bubble_outline,
-                            size: 18),
-                        label: Text(
-                          'Mesaj Gönder',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600),
-                        ),
+                        icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                        label: Text('Mesaj Gönder',
+                            style: GoogleFonts.dmSans(
+                                fontSize: 14, fontWeight: FontWeight.w600)),
                       ),
                     ),
                   ),
@@ -829,16 +863,457 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
   }
 
   String _tamTarih(DateTime tarih) {
-    const ay = [
-      '',
-      'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
-      'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
-    ];
+    const ay = ['', 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+        'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
     return '${tarih.day} ${ay[tarih.month]} ${tarih.year}';
   }
 }
 
-// ── Benzer İlan Kartı ─────────────────────────────────────
+// ── Teklif Ver Sheet ──────────────────────────────────────────────────────────
+
+class _TeklifVerSheet extends ConsumerStatefulWidget {
+  final IlanModel ilan;
+  const _TeklifVerSheet({required this.ilan});
+
+  @override
+  ConsumerState<_TeklifVerSheet> createState() => _TeklifVerSheetState();
+}
+
+class _TeklifVerSheetState extends ConsumerState<_TeklifVerSheet> {
+  final _ctrl    = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ilan       = widget.ilan;
+    final ilanMiktar = double.tryParse(ilan.ucret) ?? 0;
+    final yukleniyor = ref.watch(teklifProvider).isLoading;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36, height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.divider,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Text('Teklif Ver',
+                  style: GoogleFonts.dmSans(fontSize: 18, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 4),
+              if (ilanMiktar > 0)
+                Text('İlan fiyatı: ${ilan.ucret} ₺',
+                    style: GoogleFonts.dmSans(fontSize: 13, color: AppColors.textSecondary)),
+              const SizedBox(height: 20),
+              TextFormField(
+                controller: _ctrl,
+                autofocus: true,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                ],
+                style: GoogleFonts.dmSans(fontSize: 22, fontWeight: FontWeight.w700),
+                decoration: InputDecoration(
+                  hintText: '0',
+                  hintStyle: GoogleFonts.dmSans(
+                      fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textHint),
+                  suffixText: '₺',
+                  suffixStyle: GoogleFonts.dmSans(
+                      fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                  filled: true,
+                  fillColor: AppColors.surface,
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.divider)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.divider)),
+                  focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Lütfen bir tutar girin';
+                  final m = double.tryParse(v);
+                  if (m == null || m <= 0) return 'Geçerli bir tutar girin';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              if (ilanMiktar > 0)
+                Wrap(
+                  spacing: 8,
+                  children: [0.9, 0.8, 0.7].map((oran) {
+                    final deger = (ilanMiktar * oran).round();
+                    return ActionChip(
+                      label: Text('$deger ₺',
+                          style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w500)),
+                      backgroundColor: AppColors.surface,
+                      side: const BorderSide(color: AppColors.divider),
+                      onPressed: () => setState(() => _ctrl.text = deger.toString()),
+                    );
+                  }).toList(),
+                ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: yukleniyor ? null : _gonder,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.red,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: yukleniyor
+                      ? const SizedBox(
+                          width: 20, height: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : Text('Teklifi Gönder',
+                          style: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w600)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _gonder() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final miktar    = double.parse(_ctrl.text.trim());
+    final kullanici = ref.read(currentUserProvider);
+    if (kullanici == null) return;
+
+    final ilan       = widget.ilan;
+    final ilanMiktar = double.tryParse(ilan.ucret) ?? 0;
+    final profil     = ref.read(benimKullaniciProfilProvider).value;
+    final adSoyad    = profil?.adSoyad ?? kullanici.displayName ?? 'Kullanıcı';
+
+    final basarili = await ref.read(teklifProvider.notifier).teklifVer(
+      ilanId:        ilan.id,
+      ilanBaslik:    ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
+      ilanSahibiId:  ilan.kullaniciId,
+      ilanSahibiAd:  ilan.kullaniciAd,
+      teklifVerenId: kullanici.uid,
+      teklifVerenAd: adSoyad,
+      miktar:        miktar,
+      ilanMiktar:    ilanMiktar,
+    );
+
+    if (!mounted) return;
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+        basarili ? 'Teklifiniz gönderildi! 🎉' : 'Bir hata oluştu, tekrar deneyin.',
+        style: GoogleFonts.dmSans(),
+      ),
+      backgroundColor: basarili ? AppColors.green : AppColors.red,
+      behavior: SnackBarBehavior.floating,
+    ));
+  }
+}
+
+// ── Gelen Teklifler Sheet ─────────────────────────────────────────────────────
+
+class _GelenTekliflerSheet extends ConsumerWidget {
+  final String ilanId;
+  final String ilanBaslik;
+  final ScrollController scrollController;
+
+  const _GelenTekliflerSheet({
+    required this.ilanId,
+    required this.ilanBaslik,
+    required this.scrollController,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tekliflerAsync = ref.watch(ilanTeklifleriProvider(ilanId));
+
+    return Column(
+      children: [
+        Container(
+          width: 36, height: 4,
+          margin: const EdgeInsets.only(top: 12, bottom: 12),
+          decoration: BoxDecoration(
+              color: AppColors.divider, borderRadius: BorderRadius.circular(2)),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+          child: Row(
+            children: [
+              Text('Gelen Teklifler',
+                  style: GoogleFonts.dmSans(fontSize: 17, fontWeight: FontWeight.w700)),
+              const Spacer(),
+              tekliflerAsync.when(
+                data: (t) => Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF9800).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text('${t.length} teklif',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFFFF9800))),
+                ),
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1, color: AppColors.divider),
+        Expanded(
+          child: tekliflerAsync.when(
+            loading: () => const Center(
+                child: CircularProgressIndicator(color: AppColors.red, strokeWidth: 2)),
+            error: (_, __) => Center(
+                child: Text('Bir hata oluştu',
+                    style: GoogleFonts.dmSans(color: AppColors.textSecondary))),
+            data: (teklifler) {
+              if (teklifler.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.local_offer_outlined, size: 48, color: AppColors.divider),
+                      const SizedBox(height: 12),
+                      Text('Henüz teklif yok',
+                          style: GoogleFonts.dmSans(fontSize: 15, color: AppColors.textSecondary)),
+                    ],
+                  ),
+                );
+              }
+              return ListView.separated(
+                controller: scrollController,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                itemCount: teklifler.length,
+                separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.divider),
+                itemBuilder: (_, i) => _TeklifKarti(teklif: teklifler[i]),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Teklif Kartı ──────────────────────────────────────────────────────────────
+
+class _TeklifKarti extends ConsumerWidget {
+  final TeklifModel teklif;
+  const _TeklifKarti({required this.teklif});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final yukleniyor = ref.watch(teklifProvider).isLoading;
+    final benimUid   = ref.watch(currentUserProvider)?.uid ?? '';
+    final benimAd    = ref.watch(currentUserProvider)?.displayName ?? '';
+    final karsiCtrl  = TextEditingController();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              AvatarWidget(isim: teklif.teklifVerenAd, radius: 18),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(teklif.teklifVerenAd,
+                        style: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w600)),
+                    if (teklif.olusturmaTarihi != null)
+                      Text(_zamanFarki(teklif.olusturmaTarihi!),
+                          style: GoogleFonts.dmSans(fontSize: 11, color: AppColors.textHint)),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF9800).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '${teklif.miktar.toStringAsFixed(0)} ₺',
+                  style: GoogleFonts.dmSans(
+                      fontSize: 16, fontWeight: FontWeight.w700, color: const Color(0xFFE65100)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 38,
+                  child: ElevatedButton(
+                    onPressed: yukleniyor
+                        ? null
+                        : () async {
+                            final basarili = await ref
+                                .read(teklifProvider.notifier)
+                                .teklifKabul(
+                                  teklif: teklif,
+                                  kabulEdenId: benimUid,
+                                  kabulEdenAd: benimAd,
+                                );
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text(
+                                  basarili ? 'Teklif kabul edildi! 🎉' : 'Hata oluştu.',
+                                  style: GoogleFonts.dmSans(),
+                                ),
+                                backgroundColor: basarili ? AppColors.green : AppColors.red,
+                                behavior: SnackBarBehavior.floating,
+                              ));
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.green,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: Text('Kabul Et',
+                        style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: SizedBox(
+                  height: 38,
+                  child: OutlinedButton(
+                    onPressed: yukleniyor
+                        ? null
+                        : () => _karsiTeklifDialog(context, ref, karsiCtrl),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFFF9800),
+                      side: const BorderSide(color: Color(0xFFFF9800)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: Text('Karşı Teklif',
+                        style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                height: 38, width: 38,
+                child: IconButton(
+                  onPressed: yukleniyor
+                      ? null
+                      : () async {
+                          await ref.read(teklifProvider.notifier).teklifReddet(teklif);
+                        },
+                  icon: const Icon(Icons.close, color: AppColors.textSecondary, size: 20),
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.surface,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _karsiTeklifDialog(BuildContext context, WidgetRef ref, TextEditingController ctrl) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Karşı Teklif',
+            style: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w700)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Gelen teklif: ${teklif.miktar.toStringAsFixed(0)} ₺',
+                style: GoogleFonts.dmSans(fontSize: 13, color: AppColors.textSecondary)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: ctrl,
+              autofocus: true,
+              keyboardType: TextInputType.number,
+              style: GoogleFonts.dmSans(fontSize: 18, fontWeight: FontWeight.w700),
+              decoration: InputDecoration(
+                hintText: 'Teklifiniz',
+                suffixText: '₺',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Color(0xFFFF9800), width: 1.5),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('İptal', style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () async {
+              final miktar = double.tryParse(ctrl.text.trim());
+              if (miktar == null || miktar <= 0) return;
+              Navigator.pop(ctx);
+              await ref.read(teklifProvider.notifier)
+                  .karsiTeklifVer(teklif: teklif, karsiMiktar: miktar);
+            },
+            child: Text('Gönder',
+                style: GoogleFonts.dmSans(
+                    color: const Color(0xFFFF9800), fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _zamanFarki(DateTime tarih) {
+    final fark = DateTime.now().difference(tarih);
+    if (fark.inMinutes < 1) return 'Az önce';
+    if (fark.inMinutes < 60) return '${fark.inMinutes} dk önce';
+    if (fark.inHours < 24) return '${fark.inHours} saat önce';
+    return '${fark.inDays} gün önce';
+  }
+}
+
+// ── Ortak widget'lar ──────────────────────────────────────────────────────────
 
 class _BenzerIlanKarti extends StatelessWidget {
   final IlanModel ilan;
@@ -847,23 +1322,16 @@ class _BenzerIlanKarti extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final resimler = ilan.tumResimler;
-
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (_, _, _) => IlanDetayScreen(ilan: ilan),
-          transitionsBuilder: (_, anim, _, child) => SlideTransition(
-            position: Tween(
-              begin: const Offset(1, 0),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-                parent: anim, curve: Curves.easeOutCubic)),
-            child: child,
-          ),
-          transitionDuration: const Duration(milliseconds: 280),
+      onTap: () => Navigator.push(context, PageRouteBuilder(
+        pageBuilder: (ctx, anim, secAnim) => IlanDetayScreen(ilan: ilan),
+        transitionsBuilder: (ctx, anim, secAnim, child) => SlideTransition(
+          position: Tween(begin: const Offset(1, 0), end: Offset.zero)
+              .animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
+          child: child,
         ),
-      ),
+        transitionDuration: const Duration(milliseconds: 280),
+      )),
       child: Container(
         width: 130,
         margin: const EdgeInsets.only(right: 10),
@@ -876,63 +1344,34 @@ class _BenzerIlanKarti extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(10)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
               child: resimler.isNotEmpty
                   ? CachedNetworkImage(
                       cacheManager: AppCacheManager.instance,
                       imageUrl: resimler.first,
-                      width: 130,
-                      height: 90,
-                      fit: BoxFit.cover,
-                      fadeInDuration: Duration.zero,
-                      memCacheWidth: 260,
-                      placeholder: (_, _) =>
-                          Container(height: 90, color: AppColors.divider),
-                      errorWidget: (_, _, _) => Container(
-                        height: 90,
-                        color: AppColors.divider,
-                        child: const Icon(Icons.image_outlined,
-                            color: AppColors.textHint),
-                      ),
-                    )
-                  : Container(
-                      width: 130,
-                      height: 90,
-                      color: AppColors.divider,
-                      child: const Icon(Icons.image_outlined,
-                          color: AppColors.textHint),
-                    ),
+                      width: 130, height: 90, fit: BoxFit.cover,
+                      fadeInDuration: Duration.zero, memCacheWidth: 260,
+                      placeholder: (_, __) => Container(height: 90, color: AppColors.divider),
+                      errorWidget: (_, __, ___) => Container(height: 90, color: AppColors.divider,
+                          child: const Icon(Icons.image_outlined, color: AppColors.textHint)))
+                  : Container(width: 130, height: 90, color: AppColors.divider,
+                      child: const Icon(Icons.image_outlined, color: AppColors.textHint)),
             ),
             Padding(
               padding: const EdgeInsets.all(8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
-                    style: GoogleFonts.dmSans(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  Text(ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 2),
-                  Text(
-                    ilan.ucret.isNotEmpty
-                        ? '${ilan.ucret} ₺'
-                        : 'Belirtilmemiş',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 12,
-                      fontWeight: ilan.ucret.isNotEmpty
-                          ? FontWeight.w700
-                          : FontWeight.w400,
-                      color: ilan.ucret.isNotEmpty
-                          ? AppColors.red
-                          : AppColors.textHint,
-                    ),
-                  ),
+                  Text(ilan.ucret.isNotEmpty ? '${ilan.ucret} ₺' : 'Belirtilmemiş',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 12,
+                          fontWeight: ilan.ucret.isNotEmpty ? FontWeight.w700 : FontWeight.w400,
+                          color: ilan.ucret.isNotEmpty ? AppColors.red : AppColors.textHint)),
                 ],
               ),
             ),
@@ -943,18 +1382,11 @@ class _BenzerIlanKarti extends StatelessWidget {
   }
 }
 
-// ── Favori Buton ──────────────────────────────────────────
-
 class _FavoriButon extends StatelessWidget {
   final bool favorideMi;
   final int favoriSayisi;
   final VoidCallback onTap;
-
-  const _FavoriButon({
-    required this.favorideMi,
-    required this.favoriSayisi,
-    required this.onTap,
-  });
+  const _FavoriButon({required this.favorideMi, required this.favoriSayisi, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -966,32 +1398,20 @@ class _FavoriButon extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.9),
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
+          boxShadow: [BoxShadow(
               color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
+              blurRadius: 4, offset: const Offset(0, 2))],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              favorideMi ? Icons.favorite : Icons.favorite_border,
-              color: favorideMi ? AppColors.red : AppColors.textPrimary,
-              size: 20,
-            ),
+            Icon(favorideMi ? Icons.favorite : Icons.favorite_border,
+                color: favorideMi ? AppColors.red : AppColors.textPrimary, size: 20),
             if (favoriSayisi > 0) ...[
               const SizedBox(width: 4),
-              Text(
-                '$favoriSayisi',
-                style: GoogleFonts.dmSans(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
+              Text('$favoriSayisi',
+                  style: GoogleFonts.dmSans(
+                      fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
             ],
           ],
         ),
@@ -1000,18 +1420,13 @@ class _FavoriButon extends StatelessWidget {
   }
 }
 
-// ── Yardımcı Widget'lar ───────────────────────────────────
-
 class _BottomSheetHandle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 36,
-      height: 4,
+      width: 36, height: 4,
       margin: const EdgeInsets.only(top: 12, bottom: 8),
-      decoration: BoxDecoration(
-          color: AppColors.divider,
-          borderRadius: BorderRadius.circular(2)),
+      decoration: BoxDecoration(color: AppColors.divider, borderRadius: BorderRadius.circular(2)),
     );
   }
 }
@@ -1019,21 +1434,14 @@ class _BottomSheetHandle extends StatelessWidget {
 class _CircleIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
-
-  const _CircleIconButton({
-    required this.icon,
-    required this.onTap,
-  });
+  const _CircleIconButton({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return IconButton(
       icon: Container(
         padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.9),
-          shape: BoxShape.circle,
-        ),
+        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.9), shape: BoxShape.circle),
         child: Icon(icon, size: 20, color: AppColors.textPrimary),
       ),
       onPressed: onTap,
@@ -1041,63 +1449,39 @@ class _CircleIconButton extends StatelessWidget {
   }
 }
 
-// ✅ Resme tıklayınca büyük ekran açılıyor
 class _ResimWidget extends StatelessWidget {
   final String url;
   final List<String> tumResimler;
   final int baslangicIndex;
-
-  const _ResimWidget({
-    required this.url,
-    required this.tumResimler,
-    required this.baslangicIndex,
-  });
+  const _ResimWidget({required this.url, required this.tumResimler, required this.baslangicIndex});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        PageRouteBuilder(
-          opaque: false,
-          pageBuilder: (_, _, _) => _ResimBuyukEkran(
-            resimler: tumResimler,
-            baslangicIndex: baslangicIndex,
-          ),
-          transitionsBuilder: (_, anim, _, child) => FadeTransition(
-            opacity: anim,
-            child: child,
-          ),
-          transitionDuration: const Duration(milliseconds: 200),
-        ),
-      ),
+      onTap: () => Navigator.push(context, PageRouteBuilder(
+        opaque: false,
+        pageBuilder: (ctx, anim, secAnim) => _ResimBuyukEkran(
+            resimler: tumResimler, baslangicIndex: baslangicIndex),
+        transitionsBuilder: (ctx, anim, secAnim, child) =>
+            FadeTransition(opacity: anim, child: child),
+        transitionDuration: const Duration(milliseconds: 200),
+      )),
       child: CachedNetworkImage(
         cacheManager: AppCacheManager.instance,
-        imageUrl: url,
-        fit: BoxFit.cover,
-        width: double.infinity,
-        fadeInDuration: Duration.zero,
-        memCacheWidth: 600,
-        placeholder: (_, _) => Container(color: AppColors.surface),
-        errorWidget: (_, _, _) => Container(
-          color: AppColors.surface,
-          child: const Icon(Icons.image_outlined,
-              color: AppColors.textHint, size: 48),
-        ),
+        imageUrl: url, fit: BoxFit.cover, width: double.infinity,
+        fadeInDuration: Duration.zero, memCacheWidth: 600,
+        placeholder: (_, __) => Container(color: AppColors.surface),
+        errorWidget: (_, __, ___) => Container(color: AppColors.surface,
+            child: const Icon(Icons.image_outlined, color: AppColors.textHint, size: 48)),
       ),
     );
   }
 }
 
-// ✅ Büyük ekran — çift tıklayınca 2.5x zoom
 class _ResimBuyukEkran extends StatefulWidget {
   final List<String> resimler;
   final int baslangicIndex;
-
-  const _ResimBuyukEkran({
-    required this.resimler,
-    required this.baslangicIndex,
-  });
+  const _ResimBuyukEkran({required this.resimler, required this.baslangicIndex});
 
   @override
   State<_ResimBuyukEkran> createState() => _ResimBuyukEkranState();
@@ -1124,9 +1508,9 @@ class _ResimBuyukEkranState extends State<_ResimBuyukEkran> {
     if (_transformController.value != Matrix4.identity()) {
       _transformController.value = Matrix4.identity();
     } else {
-      final position = details.localPosition;
+      final p = details.localPosition;
       _transformController.value = Matrix4.identity()
-        ..translateByDouble(-position.dx * 1.5, -position.dy * 1.5, 0, 1)
+        ..translateByDouble(-p.dx * 1.5, -p.dy * 1.5, 0, 1)
         ..scaleByDouble(2.5, 2.5, 1, 1);
     }
   }
@@ -1140,14 +1524,11 @@ class _ResimBuyukEkranState extends State<_ResimBuyukEkran> {
         foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+            icon: const Icon(Icons.close, color: Colors.white),
+            onPressed: () => Navigator.pop(context)),
         title: widget.resimler.length > 1
-            ? Text(
-                '${_aktif + 1} / ${widget.resimler.length}',
-                style: const TextStyle(color: Colors.white, fontSize: 14),
-              )
+            ? Text('${_aktif + 1} / ${widget.resimler.length}',
+                style: const TextStyle(color: Colors.white, fontSize: 14))
             : null,
       ),
       body: PageView.builder(
@@ -1170,15 +1551,10 @@ class _ResimBuyukEkranState extends State<_ResimBuyukEkran> {
                 imageUrl: widget.resimler[i],
                 fit: BoxFit.contain,
                 fadeInDuration: Duration.zero,
-                placeholder: (_, _) => const CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
-                errorWidget: (_, _, _) => const Icon(
-                  Icons.broken_image_outlined,
-                  color: Colors.white54,
-                  size: 64,
-                ),
+                placeholder: (_, __) => const CircularProgressIndicator(
+                    color: Colors.white, strokeWidth: 2),
+                errorWidget: (_, __, ___) => const Icon(
+                    Icons.broken_image_outlined, color: Colors.white54, size: 64),
               ),
             ),
           ),
@@ -1194,7 +1570,6 @@ class _MenuItem extends StatelessWidget {
   final String label;
   final Color labelColor;
   final VoidCallback onTap;
-
   const _MenuItem({
     required this.icon,
     required this.iconColor,
@@ -1209,9 +1584,7 @@ class _MenuItem extends StatelessWidget {
       leading: Icon(icon, color: iconColor),
       title: Text(label,
           style: GoogleFonts.dmSans(
-              fontSize: 14,
-              color: labelColor,
-              fontWeight: FontWeight.w500)),
+              fontSize: 14, color: labelColor, fontWeight: FontWeight.w500)),
       onTap: onTap,
     );
   }

@@ -4,7 +4,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'bildirim_model.freezed.dart';
 part 'bildirim_model.g.dart';
  
-enum BildirimTip { mesaj, ilan, sistem }
+enum BildirimTip { mesaj, ilan, sistem, teklif } // ← teklif eklendi
  
 @freezed
 abstract class BildirimModel with _$BildirimModel {
@@ -43,22 +43,25 @@ abstract class BildirimModel with _$BildirimModel {
  
 BildirimTip _tipFromString(String tip) {
   switch (tip) {
-    case 'mesaj': return BildirimTip.mesaj;
-    case 'ilan': return BildirimTip.ilan;
-    default: return BildirimTip.sistem;
+    case 'mesaj':   return BildirimTip.mesaj;
+    case 'ilan':    return BildirimTip.ilan;
+    case 'teklif':  return BildirimTip.teklif; // ← eklendi
+    default:        return BildirimTip.sistem;
   }
 }
  
 extension BildirimModelX on BildirimModel {
   Map<String, dynamic> toFirestore() => {
     'kullaniciId': kullaniciId,
-    'tip': tip.name,
-    'baslik': baslik,
-    'icerik': icerik,
-    'okundu': okundu,
-    'tarih': tarih != null ? Timestamp.fromDate(tarih!) : FieldValue.serverTimestamp(),
-    'hedefId': hedefId,
-    'gondereId': gondereId,
-    'gondereAd': gondereAd,
+    'tip':         tip.name,
+    'baslik':      baslik,
+    'icerik':      icerik,
+    'okundu':      okundu,
+    'tarih':       tarih != null
+        ? Timestamp.fromDate(tarih!)
+        : FieldValue.serverTimestamp(),
+    'hedefId':    hedefId,
+    'gondereId':  gondereId,
+    'gondereAd':  gondereAd,
   };
 }

@@ -2,26 +2,31 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/auth_repository.dart';
- 
+
 part 'auth_provider.g.dart';
- 
+
 @riverpod
 Stream<User?> authState(Ref ref) {
   return ref.watch(authRepositoryProvider).authStateChanges();
 }
- 
+
 @riverpod
 User? currentUser(Ref ref) {
-  return ref.watch(authStateProvider).value;
+  final asyncUser = ref.watch(authStateProvider);
+  return asyncUser.when(
+    data: (user) => user ?? FirebaseAuth.instance.currentUser,
+    loading: () => FirebaseAuth.instance.currentUser,
+    error: (_, __) => FirebaseAuth.instance.currentUser,
+  );
 }
- 
+
 @riverpod
 class AuthNotifier extends _$AuthNotifier {
   @override
   FutureOr<void> build() {}
- 
+
   AuthRepository get _repo => ref.read(authRepositoryProvider);
- 
+
   Future<AuthSonuc> emailIleGiris({
     required String email,
     required String sifre,
@@ -33,21 +38,21 @@ class AuthNotifier extends _$AuthNotifier {
         sifre: sifre,
       );
       if (credential.user == null) {
-        state = const AsyncData(null);
+        if (ref.mounted) state = const AsyncData(null);
         return AuthSonuc.hata('Giriş başarısız.');
       }
       await _repo.fcmTokenKaydet(credential.user!.uid);
-      state = const AsyncData(null);
+      if (ref.mounted) state = const AsyncData(null);
       return AuthSonuc.basarili(credential.user!.uid);
     } on FirebaseAuthException catch (e) {
-      state = const AsyncData(null);
+      if (ref.mounted) state = const AsyncData(null);
       return AuthSonuc.hata(AuthRepository.hataMesaji(e.code));
     } catch (e) {
-      state = const AsyncData(null);
+      if (ref.mounted) state = const AsyncData(null);
       return AuthSonuc.hata('Beklenmeyen bir hata oluştu.');
     }
   }
- 
+
   Future<AuthSonuc> emailIleKayit({
     required String adSoyad,
     required String email,
@@ -60,67 +65,67 @@ class AuthNotifier extends _$AuthNotifier {
         email: email,
         sifre: sifre,
       );
-      state = const AsyncData(null);
+      if (ref.mounted) state = const AsyncData(null);
       return AuthSonuc.basarili(credential.user?.uid ?? '');
     } on FirebaseAuthException catch (e) {
-      state = const AsyncData(null);
+      if (ref.mounted) state = const AsyncData(null);
       return AuthSonuc.hata(AuthRepository.hataMesaji(e.code));
     } catch (e) {
-      state = const AsyncData(null);
+      if (ref.mounted) state = const AsyncData(null);
       return AuthSonuc.hata('Beklenmeyen bir hata oluştu.');
     }
   }
- 
+
   Future<AuthSonuc> googleIleGiris() async {
     state = const AsyncLoading();
     try {
       final credential = await _repo.googleIleGiris();
       if (credential.user == null) {
-        state = const AsyncData(null);
+        if (ref.mounted) state = const AsyncData(null);
         return AuthSonuc.hata('Google girişi başarısız.');
       }
       await _repo.fcmTokenKaydet(credential.user!.uid);
-      state = const AsyncData(null);
+      if (ref.mounted) state = const AsyncData(null);
       return AuthSonuc.basarili(credential.user!.uid);
     } on FirebaseAuthException catch (e) {
-      state = const AsyncData(null);
+      if (ref.mounted) state = const AsyncData(null);
       return AuthSonuc.hata(AuthRepository.hataMesaji(e.code));
     } catch (e) {
-      state = const AsyncData(null);
+      if (ref.mounted) state = const AsyncData(null);
       return AuthSonuc.hata('Google ile giriş yapılamadı.');
     }
   }
- 
+
   Future<AuthSonuc> sifreSifirla(String email) async {
     state = const AsyncLoading();
     try {
       await _repo.sifreSifirlamaGonder(email);
-      state = const AsyncData(null);
+      if (ref.mounted) state = const AsyncData(null);
       return AuthSonuc.basarili('');
     } on FirebaseAuthException catch (e) {
-      state = const AsyncData(null);
+      if (ref.mounted) state = const AsyncData(null);
       return AuthSonuc.hata(AuthRepository.hataMesaji(e.code));
     } catch (e) {
-      state = const AsyncData(null);
+      if (ref.mounted) state = const AsyncData(null);
       return AuthSonuc.hata('Şifre sıfırlama başarısız.');
     }
   }
- 
+
   Future<void> cikisYap() async {
     await _repo.cikisYap();
   }
 }
- 
+
 class AuthSonuc {
   final bool basarili;
   final String? uid;
   final String? hata;
- 
+
   const AuthSonuc._({required this.basarili, this.uid, this.hata});
- 
+
   factory AuthSonuc.basarili(String uid) =>
       AuthSonuc._(basarili: true, uid: uid);
- 
+
   factory AuthSonuc.hata(String mesaj) =>
       AuthSonuc._(basarili: false, hata: mesaj);
 }

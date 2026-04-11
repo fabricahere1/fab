@@ -37,6 +37,18 @@ class _AuthChangeNotifier extends ChangeNotifier {
   }
 }
 
+Future<bool> _profilTamamlandiMi(String uid) async {
+  try {
+    final doc = await FirebaseFirestore.instance
+        .collection('kullanicilar')
+        .doc(uid)
+        .get();
+    return doc.data()?['profilTamamlandi'] as bool? ?? false;
+  } catch (_) {
+    return false;
+  }
+}
+
 @Riverpod(keepAlive: true)
 GoRouter router(Ref ref) {
   final notifier = _AuthChangeNotifier();
@@ -50,32 +62,25 @@ GoRouter router(Ref ref) {
       final isLoggedIn = user != null;
       final loc = state.matchedLocation;
 
+      // Splash — her zaman kontrol et
       if (loc == AppRoutes.splash) {
         if (!isLoggedIn) return AppRoutes.login;
-
-        // ✅ Profil tamamlandı mı kontrol et
-        try {
-          final doc = await FirebaseFirestore.instance
-              .collection('kullanicilar')
-              .doc(user.uid)
-              .get();
-          final tamamlandi =
-              doc.data()?['profilTamamlandi'] as bool? ?? false;
-          return tamamlandi ? AppRoutes.home : AppRoutes.profilTamamla;
-        } catch (_) {
-          return AppRoutes.profilTamamla;
-        }
+        final tamamlandi = await _profilTamamlandiMi(user.uid);
+        return tamamlandi ? AppRoutes.home : AppRoutes.profilTamamla;
       }
 
+      // Giriş yapılmamış — login/register dışında her yerden login'e gönder
       if (!isLoggedIn &&
           loc != AppRoutes.login &&
           loc != AppRoutes.register) {
         return AppRoutes.login;
       }
 
+      // ✅ Giriş yapılmış ama login/register sayfasında — profil kontrolü yap
       if (isLoggedIn &&
           (loc == AppRoutes.login || loc == AppRoutes.register)) {
-        return AppRoutes.home;
+        final tamamlandi = await _profilTamamlandiMi(user.uid);
+        return tamamlandi ? AppRoutes.home : AppRoutes.profilTamamla;
       }
 
       return null;
