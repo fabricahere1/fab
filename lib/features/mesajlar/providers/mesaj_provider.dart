@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/mesaj_repository.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -182,7 +181,9 @@ class SohbetNotifier extends _$SohbetNotifier {
   Future<void> dahaFazlaYukle() async {
     if (state.yukleniyor ||
         !state.dahaFazlaVar ||
-        state.enEskiDoc == null) return;
+        state.enEskiDoc == null) {
+      return;
+    }
     final snap = await _repo.eskiMesajlariGetir(
       sohbetId: _sohbetId,
       sonDoc: state.enEskiDoc!,

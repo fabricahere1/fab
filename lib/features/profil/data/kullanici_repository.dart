@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/kullanici_model.dart';
 import '../../../shared/constants/app_constants.dart';
@@ -60,7 +59,7 @@ class KullaniciRepository {
   }) async {
     await _col.doc(uid).set({
       'adSoyad':          adSoyad,
-      if (email != null) 'email': email,
+      'email': ?email,
       'profilTamamlandi': false,
       'olusturmaTarihi':  FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));

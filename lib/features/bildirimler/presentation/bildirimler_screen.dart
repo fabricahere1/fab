@@ -59,7 +59,7 @@ class _BildirimlerScreenState extends ConsumerState<BildirimlerScreen>
             strokeWidth: 2,
           ),
         ),
-        error: (_, __) => Center(
+        error: (_, _) => Center(
           child: Text(
             'Bildirimler yüklenemedi.',
             style: GoogleFonts.dmSans(color: AppColors.textSecondary),
@@ -91,7 +91,7 @@ class _BildirimlerScreenState extends ConsumerState<BildirimlerScreen>
 
           return ListView.separated(
             itemCount: bildirimler.length,
-            separatorBuilder: (_, __) =>
+            separatorBuilder: (_, _) =>
                 const Divider(height: 1, indent: 72),
             itemBuilder: (context, index) => RepaintBoundary(
               child: _BildirimSatiri(bildirim: bildirimler[index]),

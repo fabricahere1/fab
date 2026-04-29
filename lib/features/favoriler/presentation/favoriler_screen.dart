@@ -42,7 +42,7 @@ class FavorilerScreen extends ConsumerWidget {
               loading: () => const Center(
                   child: CircularProgressIndicator(
                       color: AppColors.red, strokeWidth: 2)),
-              error: (_, __) => Center(
+              error: (_, _) => Center(
                 child: Text('Bir hata oluştu.',
                     style: GoogleFonts.dmSans(
                         color: AppColors.textSecondary)),
@@ -141,8 +141,8 @@ class _FavoriKarti extends StatelessWidget {
       onTap: () => Navigator.push(
         context,
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => IlanDetayScreen(ilan: ilan),
-          transitionsBuilder: (_, anim, __, child) => SlideTransition(
+          pageBuilder: (_, _, _) => IlanDetayScreen(ilan: ilan),
+          transitionsBuilder: (_, anim, _, child) => SlideTransition(
             position: Tween(
               begin: const Offset(1, 0),
               end: Offset.zero,
@@ -178,11 +178,11 @@ class _FavoriKarti extends StatelessWidget {
                         height: _resimYuksekligi(),
                         fit: BoxFit.cover,
                         fadeInDuration: Duration.zero,
-                        placeholder: (_, __) => Container(
+                        placeholder: (_, _) => Container(
                           height: _resimYuksekligi(),
                           color: AppColors.surface,
                         ),
-                        errorWidget: (_, __, ___) => Container(
+                        errorWidget: (_, _, _) => Container(
                           height: _resimYuksekligi(),
                           color: AppColors.surface,
                           child: const Center(

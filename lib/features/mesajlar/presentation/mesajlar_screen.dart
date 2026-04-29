@@ -71,7 +71,7 @@ class _MesajlarScreenState extends ConsumerState<MesajlarScreen>
         loading: () => const Center(
             child: CircularProgressIndicator(
                 color: AppColors.red, strokeWidth: 2)),
-        error: (_, __) => Center(
+        error: (_, _) => Center(
           child: Text('Bir hata oluştu.',
               style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
         ),
@@ -120,7 +120,7 @@ class _MesajlarScreenState extends ConsumerState<MesajlarScreen>
  
           return ListView.separated(
             itemCount: gorunenler.length,
-            separatorBuilder: (_, __) =>
+            separatorBuilder: (_, _) =>
                 const Divider(height: 1, indent: 72),
             itemBuilder: (context, index) {
               final sohbet = gorunenler[index];
@@ -245,7 +245,7 @@ class _SohbetKarti extends ConsumerWidget {
                           height: 48,
                           fit: BoxFit.cover,
                           fadeInDuration: Duration.zero,
-                          errorWidget: (_, __, ___) =>
+                          errorWidget: (_, _, _) =>
                               AvatarWidget(isim: karsiAd, radius: 24),
                         ),
                       )

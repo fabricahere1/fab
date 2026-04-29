@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/ilan_repository.dart';
 import '../domain/ilan_model.dart';
@@ -379,6 +378,6 @@ Set<String> favoriliIlanIdler(Ref ref) {
         .where((id) => id.isNotEmpty)
         .toSet(),
     loading: () => {},
-    error: (_, __) => {},
+    error: (_, _) => {},
   );
 }

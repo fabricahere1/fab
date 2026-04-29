@@ -33,7 +33,7 @@ class AvatarWidget extends StatelessWidget {
             fit: BoxFit.cover,
             fadeInDuration: Duration.zero,
             fadeOutDuration: Duration.zero,
-            errorWidget: (_, __, ___) => _HarfAvatar(
+            errorWidget: (_, _, _) => _HarfAvatar(
               isim: isim,
               radius: radius,
               fontSize: fontSize,

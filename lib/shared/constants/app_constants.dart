@@ -184,3 +184,31 @@ class Pagination {
   static const int mesajSayfaBoyutu = 30;
   static const int maxResimSayisi   = 4;
 }
+
+/// Kargo şirketleri ve takip numarası kuralları.
+class KargoSirketi {
+  final String key;
+  final String ad;
+  final int haneSayisi;
+
+  const KargoSirketi({
+    required this.key,
+    required this.ad,
+    required this.haneSayisi,
+  });
+
+  static const List<KargoSirketi> hepsi = [
+    KargoSirketi(key: 'yurtici', ad: 'Yurtiçi Kargo', haneSayisi: 12),
+    KargoSirketi(key: 'mng',     ad: 'MNG Kargo',      haneSayisi: 12),
+    KargoSirketi(key: 'surat',   ad: 'Sürat Kargo',    haneSayisi: 14),
+    KargoSirketi(key: 'ptt',     ad: 'PTT Kargo',      haneSayisi: 13),
+  ];
+
+  static KargoSirketi? fromKey(String key) {
+    try {
+      return hepsi.firstWhere((k) => k.key == key);
+    } catch (_) {
+      return null;
+    }
+  }
+}

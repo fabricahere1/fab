@@ -1,5 +1,4 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/auth_repository.dart';
 
@@ -16,7 +15,7 @@ User? currentUser(Ref ref) {
   return asyncUser.when(
     data: (user) => user ?? FirebaseAuth.instance.currentUser,
     loading: () => FirebaseAuth.instance.currentUser,
-    error: (_, __) => FirebaseAuth.instance.currentUser,
+    error: (_, _) => FirebaseAuth.instance.currentUser,
   );
 }
 

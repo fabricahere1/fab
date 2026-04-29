@@ -1,7 +1,6 @@
 import 'dart:io';
 import '../../ilanlar/data/ilan_repository.dart';
 import '../../ilanlar/domain/ilan_model.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/kullanici_repository.dart';
 import '../domain/kullanici_model.dart';

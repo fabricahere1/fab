@@ -196,12 +196,82 @@ class TeklifRepository {
     });
   }
 
-  Stream<List<TeklifModel>> benirnTekliflerimStream(String kullaniciId) {
+  Stream<List<TeklifModel>> benimTekliflerimStream(String kullaniciId) {
     return _col
         .where('teklifVerenId', isEqualTo: kullaniciId)
         .orderBy('olusturmaTarihi', descending: true)
         .snapshots()
         .map((s) => s.docs.map(TeklifModel.fromFirestore).toList());
+  }
+
+  Stream<List<TeklifModel>> ilanSahibiTeklifleriStream(String kullaniciId) {
+    return _col
+        .where('ilanSahibiId', isEqualTo: kullaniciId)
+        .orderBy('olusturmaTarihi', descending: true)
+        .snapshots()
+        .map((s) => s.docs.map(TeklifModel.fromFirestore).toList());
+  }
+
+  // ── Teslim metodları ─────────────────────────────────────────────────────────
+  Future<void> eldenTeslimBeyan({required String teklifId}) async {
+    await _col.doc(teklifId).update({
+      'getirenTeslimBeyan': 'teslim_etti',
+      'teslimatTipi':       'elden',
+      'getirenTeslimTarihi': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> henuzDegilBeyan({required String teklifId}) async {
+    await _col.doc(teklifId).update({
+      'getirenTeslimBeyan': 'henuz_degil',
+    });
+  }
+
+  // ── Kargo teslim ─────────────────────────────────────────────────────────────
+  Future<void> kargoVerildiBeyan({
+    required String teklifId,
+    required String kargoSirketi,
+    required String kargoTakipNo,
+  }) async {
+    await _col.doc(teklifId).update({
+      'getirenTeslimBeyan': 'teslim_etti',
+      'teslimatTipi':       'kargo',
+      'kargoSirketi':        kargoSirketi,
+      'kargoTakipNo':        kargoTakipNo,
+      'getirenTeslimTarihi': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // ── İsteyen onay ─────────────────────────────────────────────────────────────
+  Future<void> isteyenTeslimAldi({required String teklifId}) async {
+    await _col.doc(teklifId).update({
+      'isteyenTeslimOnay': 'aldi',
+      'teslimDurumu':      'teslim_edildi',
+      'teslimOnayTarihi':  FieldValue.serverTimestamp(),
+      // Değerlendirme 24 saat sonra açılır
+      'degerlendirmeAcilmaTarihi': Timestamp.fromDate(
+        DateTime.now().add(const Duration(hours: 24)),
+      ),
+    });
+  }
+
+  Future<void> isteyenTeslimAlmadi({required String teklifId}) async {
+    await _col.doc(teklifId).update({
+      'isteyenTeslimOnay': 'almadi',
+    });
+  }
+
+  // ── Değerlendirme ─────────────────────────────────────────────────────────────
+  Future<void> isteyenDegerlendirdi({required String teklifId}) async {
+    await _col.doc(teklifId).update({
+      'isteyenDegerlendirdiMi': true,
+    });
+  }
+
+  Future<void> getirenDegerlendirdi({required String teklifId}) async {
+    await _col.doc(teklifId).update({
+      'getirenDegerlendirdiMi': true,
+    });
   }
 }
 

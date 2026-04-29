@@ -1,5 +1,6 @@
 // lib/features/teklifler/presentation/teklif_detay_screen.dart
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +12,8 @@ import '../../mesajlar/presentation/sohbet_screen.dart';
 import '../../profil/presentation/kullanici_profil_screen.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/widgets/avatar_widget.dart';
+import 'teslim_beyan_popup.dart';
+import 'kargo_bilgi_sheet.dart';
 
 class TeklifDetayScreen extends ConsumerWidget {
   final String teklifId;
@@ -342,11 +345,7 @@ class _TeklifDetayIcerik extends ConsumerWidget {
           ],
 
           if (teklif.durum == TeklifDurum.kabul)
-            _SonucKarti(
-              ikon: Icons.handshake_outlined,
-              mesaj: 'Anlaşma sağlandı! Yukarıdan mesajlaşmaya başlayabilirsiniz.',
-              renk: AppColors.green,
-            ),
+            _TeslimBolumu(teklif: teklif, benimUid: benimUid),
           if (teklif.durum == TeklifDurum.reddedildi)
             _SonucKarti(ikon: Icons.cancel_outlined, mesaj: 'Bu teklif reddedildi.', renk: AppColors.textSecondary),
 
@@ -608,6 +607,400 @@ class _AksiyonButon extends StatelessWidget {
                       child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   : Icon(ikon, size: 20),
               label: Text(label, style: GoogleFonts.dmSans(fontSize: 15, fontWeight: FontWeight.w600))),
+    );
+  }
+}
+
+// ── Teslim Bölümü ─────────────────────────────────────────────────────────────
+
+class _TeslimBolumu extends ConsumerWidget {
+  final TeklifModel teklif;
+  final String benimUid;
+  const _TeslimBolumu({required this.teklif, required this.benimUid});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final benGetiren   = benimUid == teklif.ilanSahibiId;
+    final benIsteyen   = benimUid == teklif.teklifVerenId;
+    final teslimYukleniyor = ref.watch(teslimProvider).isLoading;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Anlaşma sağlandı bilgisi ────────────────────────────
+        _SonucKarti(
+          ikon: Icons.handshake_outlined,
+          mesaj: 'Anlaşma sağlandı!',
+          renk: AppColors.green,
+        ),
+        const SizedBox(height: 12),
+
+        // ── Teslim durumu kartı ─────────────────────────────────
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.divider),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Teslim Durumu',
+                  style: GoogleFonts.dmSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textSecondary)),
+              const SizedBox(height: 12),
+
+              // Teslim edildi
+              if (teklif.teslimEdildiMi) ...[
+                _BilgiSatiri(
+                  ikon: Icons.check_circle_outline,
+                  icerik: 'Teslim tamamlandı',
+                  renk: AppColors.green,
+                ),
+                if (teklif.kargoIleGonderildi &&
+                    teklif.kargoTakipNo.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  _BilgiSatiri(
+                    ikon: Icons.local_shipping_outlined,
+                    icerik: '${teklif.kargoSirketi} · ${teklif.kargoTakipNo}',
+                    renk: AppColors.textSecondary,
+                  ),
+                ],
+              ],
+
+              // Getiren beyan etti, isteyen henüz onaylamadı
+              if (!teklif.teslimEdildiMi &&
+                  teklif.getirenTeslimBeyan == 'teslim_etti') ...[
+                _BilgiSatiri(
+                  ikon: teklif.kargoIleGonderildi
+                      ? Icons.local_shipping_outlined
+                      : Icons.handshake_outlined,
+                  icerik: teklif.kargoIleGonderildi
+                      ? 'Kargo gönderildi · ${teklif.kargoTakipNo}'
+                      : 'Getiren teslim etti, onayınız bekleniyor',
+                  renk: AppColors.orange,
+                ),
+              ],
+
+              // Henüz teslim beyanı yok
+              if (!teklif.teslimEdildiMi &&
+                  teklif.getirenTeslimBeyan == 'yok') ...[
+                _BilgiSatiri(
+                  ikon: Icons.hourglass_empty_outlined,
+                  icerik: 'Teslim bekleniyor',
+                  renk: AppColors.textSecondary,
+                ),
+              ],
+
+              // Henüz değil beyanı
+              if (teklif.getirenTeslimBeyan == 'henuz_degil') ...[
+                _BilgiSatiri(
+                  ikon: Icons.schedule_outlined,
+                  icerik: 'Getiren henüz teslim etmedi',
+                  renk: AppColors.textSecondary,
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // ── Getiren aksiyonları ─────────────────────────────────
+        if (benGetiren && !teklif.teslimEdildiMi) ...[
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton.icon(
+              onPressed: teslimYukleniyor
+                  ? null
+                  : () => TeslimBeyanPopup.goster(context, teklif.id),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.red,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+              ),
+              icon: const Icon(Icons.local_shipping_outlined, size: 20),
+              label: Text(
+                teklif.getirenTeslimBeyan == 'teslim_etti'
+                    ? 'Teslim Bilgilerini Güncelle'
+                    : 'Teslim Bildir',
+                style: GoogleFonts.dmSans(
+                    fontSize: 15, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+
+        // ── İsteyen aksiyonları ─────────────────────────────────
+        if (benIsteyen &&
+            !teklif.teslimEdildiMi &&
+            teklif.getirenTeslimBeyan == 'teslim_etti') ...[
+          Text('Teslim Onayı',
+              style: GoogleFonts.dmSans(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary)),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: teslimYukleniyor
+                        ? null
+                        : () async {
+                            final onay = await showDialog<bool>(
+                              context: context,
+                              builder: (c) => AlertDialog(
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16)),
+                                title: Text('Teslim Onayı',
+                                    style: GoogleFonts.dmSans(
+                                        fontWeight: FontWeight.w700)),
+                                content: Text(
+                                    'Ürünü teslim aldığını onaylıyor musun? Bu işlem geri alınamaz.',
+                                    style: GoogleFonts.dmSans(
+                                        color: AppColors.textSecondary)),
+                                actions: [
+                                  TextButton(
+                                      onPressed: () => Navigator.pop(c, false),
+                                      child: Text('İptal',
+                                          style: GoogleFonts.dmSans(
+                                              color: AppColors.textSecondary))),
+                                  TextButton(
+                                      onPressed: () => Navigator.pop(c, true),
+                                      child: Text('Teslim Aldım',
+                                          style: GoogleFonts.dmSans(
+                                              color: AppColors.green,
+                                              fontWeight: FontWeight.w700))),
+                                ],
+                              ),
+                            );
+                            if (onay == true && context.mounted) {
+                              await ref
+                                  .read(teslimProvider.notifier)
+                                  .isteyenTeslimAldi(teklifId: teklif.id);
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.green,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                    ),
+                    child: Text('Teslim Aldım',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 14, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: SizedBox(
+                  height: 52,
+                  child: OutlinedButton(
+                    onPressed: teslimYukleniyor
+                        ? null
+                        : () async {
+                            await ref
+                                .read(teslimProvider.notifier)
+                                .isteyenTeslimAlmadi(teklifId: teklif.id);
+                          },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.red,
+                      side: const BorderSide(color: AppColors.red),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                    ),
+                    child: Text('Almadım',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 14, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+        ],
+
+        // ── Değerlendirme bölümü ────────────────────────────────
+        if (teklif.teslimEdildiMi)
+          _DegerlendirmeBolumu(
+            teklif: teklif,
+            benIsteyen: benIsteyen,
+          ),
+      ],
+    );
+  }
+}
+
+// ── Değerlendirme Bölümü (Timer'lı) ──────────────────────────────────────────
+
+class _DegerlendirmeBolumu extends StatefulWidget {
+  final TeklifModel teklif;
+  final bool benIsteyen;
+  const _DegerlendirmeBolumu(
+      {required this.teklif, required this.benIsteyen});
+
+  @override
+  State<_DegerlendirmeBolumu> createState() => _DegerlendirmeBolumuState();
+}
+
+class _DegerlendirmeBolumuState extends State<_DegerlendirmeBolumu> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Her dakika rebuild — geri sayım güncel kalsın
+    _timer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  String _formatSure(Duration sure) {
+    if (sure.inHours >= 24) {
+      final gun   = sure.inDays;
+      final saat  = sure.inHours % 24;
+      return '$gun gün $saat saat';
+    }
+    final saat   = sure.inHours;
+    final dakika = sure.inMinutes % 60;
+    if (saat == 0) return '$dakika dakika';
+    if (dakika == 0) return '$saat saat';
+    return '$saat saat $dakika dakika';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final teklif          = widget.teklif;
+    final benDegerlendirdim = widget.benIsteyen
+        ? teklif.isteyenDegerlendirdiMi
+        : teklif.getirenDegerlendirdiMi;
+
+    // Zaten değerlendirdi
+    if (benDegerlendirdim) {
+      return _BilgiSatiri(
+        ikon: Icons.star_rounded,
+        icerik: 'Değerlendirmeni yaptın',
+        renk: AppColors.yellow,
+      );
+    }
+
+    // Değerlendirme açılma tarihi henüz set edilmemiş
+    final acilmaTarihi = teklif.degerlendirmeAcilmaTarihi;
+    if (acilmaTarihi == null) {
+      return _BilgiSatiri(
+        ikon: Icons.info_outline,
+        icerik: 'Teslim onaylandıktan 24 saat sonra değerlendirme açılacak',
+        renk: AppColors.textSecondary,
+      );
+    }
+
+    final simdi    = DateTime.now();
+    final acildiMi = simdi.isAfter(acilmaTarihi);
+
+    // Geri sayım — henüz açılmadı
+    if (!acildiMi) {
+      final kalanSure = acilmaTarihi.difference(simdi);
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.divider),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.timer_outlined,
+                size: 18, color: AppColors.orange),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Değerlendirme başlamasına:',
+                    style: GoogleFonts.dmSans(
+                        fontSize: 11, color: AppColors.textSecondary),
+                  ),
+                  Text(
+                    _formatSure(kalanSure),
+                    style: GoogleFonts.dmSans(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.orange,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Değerlendirme açık
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.yellow.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.yellow.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.star_outline_rounded,
+              color: AppColors.yellow, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Değerlendirme açık — karşı tarafı değerlendir',
+              style: GoogleFonts.dmSans(
+                  fontSize: 13, color: AppColors.textPrimary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Bilgi Satırı ──────────────────────────────────────────────────────────────
+
+class _BilgiSatiri extends StatelessWidget {
+  final IconData ikon;
+  final String icerik;
+  final Color renk;
+  const _BilgiSatiri(
+      {required this.ikon, required this.icerik, required this.renk});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(ikon, size: 16, color: renk),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(icerik,
+              style: GoogleFonts.dmSans(
+                  fontSize: 13, color: AppColors.textPrimary)),
+        ),
+      ],
     );
   }
 }

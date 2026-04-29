@@ -1,4 +1,11 @@
 // lib/features/home/presentation/home_screen.dart
+//
+// DEĞİŞİKLİKLER:
+// - İstekler/Gelenler tab bar KALDIRILDI
+// - İstekler otomatik açılıyor (ana ekran)
+// - Gelenler nav bar'a taşındı (index 1)
+// - Nav sırası: İstekler · Gelenler · Mesajlar · Keşfet · Profil
+// - _AnaSayfaAppBar sadeleşti (tab yok)
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,27 +19,6 @@ import '../../mesajlar/providers/mesaj_provider.dart';
 import '../../profil/presentation/profil_screen.dart';
 import 'kesfet_screen.dart';
 import '../../../shared/constants/app_colors.dart';
-import '../../../shared/widgets/bildirim_cani_widget.dart';
-
-class _UcCizgiIkon extends StatelessWidget {
-  final Color renk;
-  const _UcCizgiIkon({required this.renk});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 22, height: 16,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Container(height: 2, decoration: BoxDecoration(color: renk, borderRadius: BorderRadius.circular(1))),
-          Container(height: 2, decoration: BoxDecoration(color: renk, borderRadius: BorderRadius.circular(1))),
-          Container(height: 2, width: 15, decoration: BoxDecoration(color: renk, borderRadius: BorderRadius.circular(1))),
-        ],
-      ),
-    );
-  }
-}
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -41,52 +27,20 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen>
-    with TickerProviderStateMixin {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
   DateTime? _sonGeriTusu;
 
-  late final TabController _ilanTabCtrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ilanTabCtrl = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _ilanTabCtrl.dispose();
-    super.dispose();
-  }
-
-  Widget _anaSayfa() {
-    return Column(
-      children: [
-        _AnaSayfaAppBar(ilanTabCtrl: _ilanTabCtrl),
-        Expanded(
-          child: TabBarView(
-            controller: _ilanTabCtrl,
-            physics: const NeverScrollableScrollPhysics(),
-            children: const [
-              IsteklerIcEkran(),
-              GelenlerScreen(embedded: true),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final uid = ref.watch(currentUserProvider)?.uid;
+    final uid             = ref.watch(currentUserProvider)?.uid;
     final toplamOkunmamis = ref.watch(okunmamisSayiProvider);
 
     final pages = [
-      _anaSayfa(),
-      const KesfetScreen(),
+      const _IsteklerSayfa(),
+      const GelenlerScreen(embedded: true),
       const MesajlarScreen(),
+      const KesfetScreen(),
       const ProfilScreen(),
     ];
 
@@ -103,7 +57,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             simdi.difference(_sonGeriTusu!) > const Duration(seconds: 2)) {
           _sonGeriTusu = simdi;
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Çıkmak için tekrar basın', style: GoogleFonts.dmSans()),
+            content: Text('Çıkmak için tekrar basın',
+                style: GoogleFonts.dmSans()),
             duration: const Duration(seconds: 2),
             behavior: SnackBarBehavior.floating,
           ));
@@ -116,58 +71,113 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         bottomNavigationBar: Container(
           decoration: const BoxDecoration(
             color: Colors.white,
-            border: Border(top: BorderSide(color: Color(0xFFEEEEEE), width: 0.5)),
+            border: Border(
+                top: BorderSide(color: Color(0xFFEEEEEE), width: 0.5)),
           ),
           child: SafeArea(
             child: SizedBox(
               height: 62,
               child: Row(
                 children: [
+                  // ── İstekler ───────────────────────────────────────
                   _NavItem(
                     secili: _selectedIndex == 0,
                     onTap: () => setState(() => _selectedIndex = 0),
-                    label: 'Ana Sayfa',
-                    child: _selectedIndex == 0
-                        ? const Icon(Icons.home_rounded, size: 24, color: AppColors.red)
-                        : const Icon(Icons.home_outlined, size: 24, color: AppColors.textSecondary),
+                    label: 'İstekler',
+                    child: Icon(
+                      _selectedIndex == 0
+                          ? Icons.home_rounded
+                          : Icons.home_outlined,
+                      size: 24,
+                      color: _selectedIndex == 0
+                          ? AppColors.red
+                          : AppColors.textSecondary,
+                    ),
                   ),
+
+                  // ── Gelenler ───────────────────────────────────────
                   _NavItem(
                     secili: _selectedIndex == 1,
                     onTap: () => setState(() => _selectedIndex = 1),
-                    label: 'Keşfet',
-                    child: _selectedIndex == 1
-                        ? const Icon(Icons.explore_rounded, size: 24, color: AppColors.red)
-                        : const Icon(Icons.explore_outlined, size: 24, color: AppColors.textSecondary),
+                    label: 'Gelenler',
+                    child: Icon(
+                      _selectedIndex == 1
+                          ? Icons.flight_land_rounded
+                          : Icons.flight_land_outlined,
+                      size: 24,
+                      color: _selectedIndex == 1
+                          ? AppColors.red
+                          : AppColors.textSecondary,
+                    ),
                   ),
+
+                  // ── Mesajlar ───────────────────────────────────────
                   _NavItem(
                     secili: _selectedIndex == 2,
                     onTap: () => setState(() => _selectedIndex = 2),
                     label: 'Mesajlar',
                     child: uid == null || toplamOkunmamis == 0
                         ? Icon(
-                            _selectedIndex == 2 ? Icons.chat_bubble : Icons.chat_bubble_outline,
+                            _selectedIndex == 2
+                                ? Icons.chat_bubble
+                                : Icons.chat_bubble_outline,
                             size: 24,
-                            color: _selectedIndex == 2 ? AppColors.red : AppColors.textSecondary,
+                            color: _selectedIndex == 2
+                                ? AppColors.red
+                                : AppColors.textSecondary,
                           )
                         : Badge(
                             label: Text(
-                              toplamOkunmamis > 99 ? '99+' : '$toplamOkunmamis',
-                              style: GoogleFonts.dmSans(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w600),
+                              toplamOkunmamis > 99
+                                  ? '99+'
+                                  : '$toplamOkunmamis',
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 10,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600),
                             ),
                             backgroundColor: AppColors.red,
                             child: Icon(
-                              _selectedIndex == 2 ? Icons.chat_bubble : Icons.chat_bubble_outline,
+                              _selectedIndex == 2
+                                  ? Icons.chat_bubble
+                                  : Icons.chat_bubble_outline,
                               size: 24,
-                              color: _selectedIndex == 2 ? AppColors.red : AppColors.textSecondary,
+                              color: _selectedIndex == 2
+                                  ? AppColors.red
+                                  : AppColors.textSecondary,
                             ),
                           ),
                   ),
+
+                  // ── Keşfet ─────────────────────────────────────────
                   _NavItem(
                     secili: _selectedIndex == 3,
                     onTap: () => setState(() => _selectedIndex = 3),
-                    label: 'Menü',
-                    child: _UcCizgiIkon(
-                      renk: _selectedIndex == 3 ? AppColors.red : AppColors.textSecondary,
+                    label: 'Keşfet',
+                    child: Icon(
+                      _selectedIndex == 3
+                          ? Icons.explore_rounded
+                          : Icons.explore_outlined,
+                      size: 24,
+                      color: _selectedIndex == 3
+                          ? AppColors.red
+                          : AppColors.textSecondary,
+                    ),
+                  ),
+
+                  // ── Profil ─────────────────────────────────────────
+                  _NavItem(
+                    secili: _selectedIndex == 4,
+                    onTap: () => setState(() => _selectedIndex = 4),
+                    label: 'Profil',
+                    child: Icon(
+                      _selectedIndex == 4
+                          ? Icons.person_rounded
+                          : Icons.person_outline,
+                      size: 24,
+                      color: _selectedIndex == 4
+                          ? AppColors.red
+                          : AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -179,6 +189,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 }
+
+// ── İstekler sayfası wrapper — kendi AppBar'ı var ─────────────────────────────
+
+class _IsteklerSayfa extends StatelessWidget {
+  const _IsteklerSayfa();
+
+  @override
+  Widget build(BuildContext context) {
+    return const IsteklerIcEkran();
+  }
+}
+
+// ── Nav Item ──────────────────────────────────────────────────────────────────
 
 class _NavItem extends StatelessWidget {
   final bool secili;
@@ -208,73 +231,15 @@ class _NavItem extends StatelessWidget {
               label,
               style: GoogleFonts.dmSans(
                 fontSize: 10,
-                fontWeight: secili ? FontWeight.w700 : FontWeight.w400,
-                color: secili ? AppColors.red : AppColors.textSecondary,
+                fontWeight:
+                    secili ? FontWeight.w700 : FontWeight.w400,
+                color: secili
+                    ? AppColors.red
+                    : AppColors.textSecondary,
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _AnaSayfaAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final TabController ilanTabCtrl;
-
-  const _AnaSayfaAppBar({required this.ilanTabCtrl});
-
-  @override
-  Size get preferredSize => const Size.fromHeight(56 + 44);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SafeArea(
-            bottom: false,
-            child: SizedBox(
-              height: 56,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    Text(
-                      'İSTE',
-                      style: GoogleFonts.dmSans(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        fontStyle: FontStyle.italic,
-                        color: AppColors.red,
-                        letterSpacing: 2,
-                      ),
-                    ),
-                    const Spacer(),
-                    const BildirimCaniWidget(),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Container(
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE), width: 1)),
-            ),
-            child: TabBar(
-              controller: ilanTabCtrl,
-              labelColor: AppColors.red,
-              unselectedLabelColor: AppColors.textSecondary,
-              indicatorColor: AppColors.red,
-              indicatorWeight: 2.5,
-              labelStyle: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w700),
-              unselectedLabelStyle: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w500),
-              tabs: const [Tab(text: 'İstekler'), Tab(text: 'Gelenler')],
-            ),
-          ),
-        ],
       ),
     );
   }

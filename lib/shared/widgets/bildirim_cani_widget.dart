@@ -6,12 +6,14 @@ import '../../features/bildirimler/providers/bildirim_provider.dart';
 import '../constants/app_colors.dart';
 
 class BildirimCaniWidget extends ConsumerWidget {
-  const BildirimCaniWidget({super.key});
+  final Color? renk;
+  const BildirimCaniWidget({super.key, this.renk});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final okunmamisBildirim =
         ref.watch(okunmamisBildirimSayiProvider).value ?? 0;
+    final ikonRenk = renk ?? AppColors.textPrimary;
 
     return IconButton(
       onPressed: () => Navigator.push(
@@ -32,8 +34,7 @@ class BildirimCaniWidget extends ConsumerWidget {
         ),
       ),
       icon: okunmamisBildirim == 0
-          ? const Icon(Icons.notifications_outlined,
-              color: AppColors.textPrimary)
+          ? Icon(Icons.notifications_outlined, color: ikonRenk)
           : Badge(
               label: Text(
                 okunmamisBildirim > 99 ? '99+' : '$okunmamisBildirim',
@@ -43,8 +44,7 @@ class BildirimCaniWidget extends ConsumerWidget {
                     fontWeight: FontWeight.w600),
               ),
               backgroundColor: AppColors.red,
-              child: const Icon(Icons.notifications_outlined,
-                  color: AppColors.textPrimary),
+              child: Icon(Icons.notifications_outlined, color: ikonRenk),
             ),
     );
   }

@@ -2,11 +2,9 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/ilan_model.dart';
 import '../../../shared/constants/app_constants.dart';
-import 'package:flutter/foundation.dart';
 
 part 'ilan_repository.g.dart';
 

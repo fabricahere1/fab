@@ -26,6 +26,21 @@ _TeklifModel _$TeklifModelFromJson(Map<String, dynamic> json) => _TeklifModel(
   guncellemeTarihi: json['guncellemeTarihi'] == null
       ? null
       : DateTime.parse(json['guncellemeTarihi'] as String),
+  olusumTipi: json['olusumTipi'] as String? ?? OlusumTipi.teklif,
+  teslimDurumu: json['teslimDurumu'] as String? ?? 'beklemede',
+  teslimatTipi: json['teslimatTipi'] as String? ?? 'beklemede',
+  getirenTeslimBeyan: json['getirenTeslimBeyan'] as String? ?? 'yok',
+  isteyenTeslimOnay: json['isteyenTeslimOnay'] as String? ?? 'yok',
+  kargoSirketi: json['kargoSirketi'] as String? ?? '',
+  kargoTakipNo: json['kargoTakipNo'] as String? ?? '',
+  teslimOnayTarihi: json['teslimOnayTarihi'] == null
+      ? null
+      : DateTime.parse(json['teslimOnayTarihi'] as String),
+  isteyenDegerlendirdiMi: json['isteyenDegerlendirdiMi'] as bool? ?? false,
+  getirenDegerlendirdiMi: json['getirenDegerlendirdiMi'] as bool? ?? false,
+  degerlendirmeAcilmaTarihi: json['degerlendirmeAcilmaTarihi'] == null
+      ? null
+      : DateTime.parse(json['degerlendirmeAcilmaTarihi'] as String),
 );
 
 Map<String, dynamic> _$TeklifModelToJson(_TeklifModel instance) =>
@@ -43,6 +58,18 @@ Map<String, dynamic> _$TeklifModelToJson(_TeklifModel instance) =>
       'karsiTeklifMiktar': instance.karsiTeklifMiktar,
       'olusturmaTarihi': instance.olusturmaTarihi?.toIso8601String(),
       'guncellemeTarihi': instance.guncellemeTarihi?.toIso8601String(),
+      'olusumTipi': instance.olusumTipi,
+      'teslimDurumu': instance.teslimDurumu,
+      'teslimatTipi': instance.teslimatTipi,
+      'getirenTeslimBeyan': instance.getirenTeslimBeyan,
+      'isteyenTeslimOnay': instance.isteyenTeslimOnay,
+      'kargoSirketi': instance.kargoSirketi,
+      'kargoTakipNo': instance.kargoTakipNo,
+      'teslimOnayTarihi': instance.teslimOnayTarihi?.toIso8601String(),
+      'isteyenDegerlendirdiMi': instance.isteyenDegerlendirdiMi,
+      'getirenDegerlendirdiMi': instance.getirenDegerlendirdiMi,
+      'degerlendirmeAcilmaTarihi': instance.degerlendirmeAcilmaTarihi
+          ?.toIso8601String(),
     };
 
 const _$TeklifDurumEnumMap = {

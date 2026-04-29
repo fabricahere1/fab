@@ -213,7 +213,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                       height: 40,
                       fit: BoxFit.cover,
                       fadeInDuration: Duration.zero,
-                      errorWidget: (_, __, ___) => _IlanResimPlaceholder(),
+                      errorWidget: (_, _, _) => _IlanResimPlaceholder(),
                     )
                   : _IlanResimPlaceholder(),
             ),

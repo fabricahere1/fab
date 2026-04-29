@@ -490,7 +490,9 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           TextButton(
             onPressed: () {
               if (konuCtrl.text.trim().isEmpty ||
-                  mesajCtrl.text.trim().isEmpty) return;
+                  mesajCtrl.text.trim().isEmpty) {
+                return;
+              }
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                 content: Text('Mesajınız iletildi, teşekkürler!',
@@ -744,7 +746,7 @@ class _EngellenenlerScreen extends ConsumerWidget {
           : ListView.separated(
               padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: engellenenUidler.length,
-              separatorBuilder: (_, __) =>
+              separatorBuilder: (_, _) =>
                   const Divider(height: 1, indent: 72),
               itemBuilder: (context, index) {
                 final hedefUid = engellenenUidler[index];
@@ -759,7 +761,7 @@ class _EngellenenlerScreen extends ConsumerWidget {
                             strokeWidth: 2, color: AppColors.red)),
                     title: Text('Yükleniyor...'),
                   ),
-                  error: (_, __) => ListTile(
+                  error: (_, _) => ListTile(
                     leading: AvatarWidget(isim: hedefUid, radius: 24),
                     title: Text('Kullanıcı',
                         style: GoogleFonts.dmSans(fontSize: 14)),
@@ -935,7 +937,7 @@ class _SatirOge extends StatelessWidget {
                       color: labelColor,
                       fontWeight: FontWeight.w500)),
             ),
-            if (trailing != null) trailing!,
+            ?trailing,
             if (trailing == null && showArrow)
               const Icon(Icons.chevron_right,
                   color: AppColors.textSecondary, size: 20),
@@ -985,7 +987,7 @@ class _SwitchSatir extends StatelessWidget {
           Switch(
             value: acik,
             onChanged: onChanged,
-            activeColor: AppColors.red,
+            activeThumbColor: AppColors.red,
           ),
         ],
       ),

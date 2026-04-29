@@ -5,7 +5,6 @@ import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../profil/data/kullanici_repository.dart';
 import '../../../shared/constants/app_colors.dart';
-import '../../../shared/constants/app_constants.dart';
 import '../../ilanlar/presentation/ilan_form_screen.dart'
     show kDunyaUlkeleri, kDunyaSehirleri;
  

@@ -374,7 +374,7 @@ final class BenimTekliflerimProvider
   }
 }
 
-String _$benimTekliflerimHash() => r'ec7cee63fa0bb38d60be6fc79d2a2fdd9f81cfa9';
+String _$benimTekliflerimHash() => r'df2d1c114f3ea2d8caebef7dc03102f4440113f1';
 
 final class BenimTekliflerimFamily extends $Family
     with $FunctionalFamilyOverride<Stream<List<TeklifModel>>, String> {
@@ -392,6 +392,213 @@ final class BenimTekliflerimFamily extends $Family
 
   @override
   String toString() => r'benimTekliflerimProvider';
+}
+
+@ProviderFor(ilanSahibiTeklifleri)
+final ilanSahibiTeklifleriProvider = IlanSahibiTeklifleriFamily._();
+
+final class IlanSahibiTeklifleriProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<TeklifModel>>,
+          List<TeklifModel>,
+          Stream<List<TeklifModel>>
+        >
+    with
+        $FutureModifier<List<TeklifModel>>,
+        $StreamProvider<List<TeklifModel>> {
+  IlanSahibiTeklifleriProvider._({
+    required IlanSahibiTeklifleriFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'ilanSahibiTeklifleriProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$ilanSahibiTeklifleriHash();
+
+  @override
+  String toString() {
+    return r'ilanSahibiTeklifleriProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<TeklifModel>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<TeklifModel>> create(Ref ref) {
+    final argument = this.argument as String;
+    return ilanSahibiTeklifleri(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is IlanSahibiTeklifleriProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$ilanSahibiTeklifleriHash() =>
+    r'9a4d5f1e00e968336b04ee2a3cc81df2db2c4773';
+
+final class IlanSahibiTeklifleriFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<TeklifModel>>, String> {
+  IlanSahibiTeklifleriFamily._()
+    : super(
+        retry: null,
+        name: r'ilanSahibiTeklifleriProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  IlanSahibiTeklifleriProvider call(String kullaniciId) =>
+      IlanSahibiTeklifleriProvider._(argument: kullaniciId, from: this);
+
+  @override
+  String toString() => r'ilanSahibiTeklifleriProvider';
+}
+
+@ProviderFor(teklifTeslim)
+final teklifTeslimProvider = TeklifTeslimFamily._();
+
+final class TeklifTeslimProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<Map<String, dynamic>>,
+          Map<String, dynamic>,
+          Stream<Map<String, dynamic>>
+        >
+    with
+        $FutureModifier<Map<String, dynamic>>,
+        $StreamProvider<Map<String, dynamic>> {
+  TeklifTeslimProvider._({
+    required TeklifTeslimFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'teklifTeslimProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$teklifTeslimHash();
+
+  @override
+  String toString() {
+    return r'teklifTeslimProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<Map<String, dynamic>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<Map<String, dynamic>> create(Ref ref) {
+    final argument = this.argument as String;
+    return teklifTeslim(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is TeklifTeslimProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$teklifTeslimHash() => r'af4544b1d7e3f67a82a03aa14e3bec08e728dcc1';
+
+final class TeklifTeslimFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<Map<String, dynamic>>, String> {
+  TeklifTeslimFamily._()
+    : super(
+        retry: null,
+        name: r'teklifTeslimProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  TeklifTeslimProvider call(String teklifId) =>
+      TeklifTeslimProvider._(argument: teklifId, from: this);
+
+  @override
+  String toString() => r'teklifTeslimProvider';
+}
+
+@ProviderFor(TeslimNotifier)
+final teslimProvider = TeslimNotifierProvider._();
+
+final class TeslimNotifierProvider
+    extends $NotifierProvider<TeslimNotifier, AsyncValue<void>> {
+  TeslimNotifierProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'teslimProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$teslimNotifierHash();
+
+  @$internal
+  @override
+  TeslimNotifier create() => TeslimNotifier();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AsyncValue<void> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AsyncValue<void>>(value),
+    );
+  }
+}
+
+String _$teslimNotifierHash() => r'3af0ad5e4b4bc1484d4110b327865cef86ff4d07';
+
+abstract class _$TeslimNotifier extends $Notifier<AsyncValue<void>> {
+  AsyncValue<void> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<void>, AsyncValue<void>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<void>, AsyncValue<void>>,
+              AsyncValue<void>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
 }
 
 @ProviderFor(TeklifNotifier)

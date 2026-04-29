@@ -90,7 +90,7 @@ class _IlanlarimScreenState extends ConsumerState<IlanlarimScreen>
             strokeWidth: 2,
           ),
         ),
-        error: (_, __) => Center(
+        error: (_, _) => Center(
           child: Text(
             'Bir hata oluştu.',
             style: GoogleFonts.dmSans(color: AppColors.textSecondary),
@@ -159,7 +159,7 @@ class _IlanListesi extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: ilanlar.length,
-      separatorBuilder: (_, __) => const Divider(height: 1),
+      separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) => _GelenKarti(ilan: ilanlar[index]),
     );
   }
@@ -176,8 +176,8 @@ class _IstekKarti extends StatelessWidget {
     Navigator.push(
       context,
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => IlanDetayScreen(ilan: ilan),
-        transitionsBuilder: (_, anim, __, child) => SlideTransition(
+        pageBuilder: (_, _, _) => IlanDetayScreen(ilan: ilan),
+        transitionsBuilder: (_, anim, _, child) => SlideTransition(
           position: Tween(
             begin: const Offset(1, 0),
             end: Offset.zero,
@@ -240,9 +240,9 @@ class _IstekKarti extends StatelessWidget {
                             fit: BoxFit.cover,
                             fadeInDuration: Duration.zero,
                             memCacheWidth: 300,
-                            placeholder: (_, __) =>
+                            placeholder: (_, _) =>
                                 Container(color: AppColors.surface),
-                            errorWidget: (_, __, ___) => _ResimYok(),
+                            errorWidget: (_, _, _) => _ResimYok(),
                           )
                         : _ResimYok(),
                   ),
@@ -335,8 +335,8 @@ class _GelenKarti extends StatelessWidget {
     Navigator.push(
       context,
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => IlanDetayScreen(ilan: ilan),
-        transitionsBuilder: (_, anim, __, child) => SlideTransition(
+        pageBuilder: (_, _, _) => IlanDetayScreen(ilan: ilan),
+        transitionsBuilder: (_, anim, _, child) => SlideTransition(
           position: Tween(
             begin: const Offset(1, 0),
             end: Offset.zero,

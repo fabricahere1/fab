@@ -1081,7 +1081,7 @@ class _GelenTekliflerSheet extends ConsumerWidget {
                           color: const Color(0xFFFF9800))),
                 ),
                 loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
+                error: (_, _) => const SizedBox.shrink(),
               ),
             ],
           ),
@@ -1091,7 +1091,7 @@ class _GelenTekliflerSheet extends ConsumerWidget {
           child: tekliflerAsync.when(
             loading: () => const Center(
                 child: CircularProgressIndicator(color: AppColors.red, strokeWidth: 2)),
-            error: (_, __) => Center(
+            error: (_, _) => Center(
                 child: Text('Bir hata oluştu',
                     style: GoogleFonts.dmSans(color: AppColors.textSecondary))),
             data: (teklifler) {
@@ -1112,7 +1112,7 @@ class _GelenTekliflerSheet extends ConsumerWidget {
                 controller: scrollController,
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 itemCount: teklifler.length,
-                separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.divider),
+                separatorBuilder: (_, _) => const Divider(height: 1, color: AppColors.divider),
                 itemBuilder: (_, i) => _TeklifKarti(teklif: teklifler[i]),
               );
             },
@@ -1351,8 +1351,8 @@ class _BenzerIlanKarti extends StatelessWidget {
                       imageUrl: resimler.first,
                       width: 130, height: 90, fit: BoxFit.cover,
                       fadeInDuration: Duration.zero, memCacheWidth: 260,
-                      placeholder: (_, __) => Container(height: 90, color: AppColors.divider),
-                      errorWidget: (_, __, ___) => Container(height: 90, color: AppColors.divider,
+                      placeholder: (_, _) => Container(height: 90, color: AppColors.divider),
+                      errorWidget: (_, _, _) => Container(height: 90, color: AppColors.divider,
                           child: const Icon(Icons.image_outlined, color: AppColors.textHint)))
                   : Container(width: 130, height: 90, color: AppColors.divider,
                       child: const Icon(Icons.image_outlined, color: AppColors.textHint)),
@@ -1470,8 +1470,8 @@ class _ResimWidget extends StatelessWidget {
         cacheManager: AppCacheManager.instance,
         imageUrl: url, fit: BoxFit.cover, width: double.infinity,
         fadeInDuration: Duration.zero, memCacheWidth: 600,
-        placeholder: (_, __) => Container(color: AppColors.surface),
-        errorWidget: (_, __, ___) => Container(color: AppColors.surface,
+        placeholder: (_, _) => Container(color: AppColors.surface),
+        errorWidget: (_, _, _) => Container(color: AppColors.surface,
             child: const Icon(Icons.image_outlined, color: AppColors.textHint, size: 48)),
       ),
     );
@@ -1551,9 +1551,9 @@ class _ResimBuyukEkranState extends State<_ResimBuyukEkran> {
                 imageUrl: widget.resimler[i],
                 fit: BoxFit.contain,
                 fadeInDuration: Duration.zero,
-                placeholder: (_, __) => const CircularProgressIndicator(
+                placeholder: (_, _) => const CircularProgressIndicator(
                     color: Colors.white, strokeWidth: 2),
-                errorWidget: (_, __, ___) => const Icon(
+                errorWidget: (_, _, _) => const Icon(
                     Icons.broken_image_outlined, color: Colors.white54, size: 64),
               ),
             ),

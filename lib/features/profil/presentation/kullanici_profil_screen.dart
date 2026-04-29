@@ -33,7 +33,7 @@ class KullaniciProfilScreen extends ConsumerWidget {
       body: profilAsync.when(
         loading: () => const Center(
             child: CircularProgressIndicator(color: AppColors.red, strokeWidth: 2)),
-        error: (_, __) => Center(
+        error: (_, _) => Center(
           child: Text('Profil yüklenemedi.',
               style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
         ),
@@ -235,7 +235,7 @@ class KullaniciProfilScreen extends ConsumerWidget {
                             color: AppColors.red, strokeWidth: 2)),
                   ),
                 ),
-                error: (_, __) => SliverToBoxAdapter(
+                error: (_, _) => SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.all(32),
                     child: Center(

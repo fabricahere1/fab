@@ -40,7 +40,100 @@ Stream<List<TeklifModel>> ilanTeklifleri(Ref ref, String ilanId) {
 
 @riverpod
 Stream<List<TeklifModel>> benimTekliflerim(Ref ref, String kullaniciId) {
-  return ref.watch(teklifRepositoryProvider).benirnTekliflerimStream(kullaniciId);
+  return ref.watch(teklifRepositoryProvider).benimTekliflerimStream(kullaniciId);
+}
+
+@riverpod
+Stream<List<TeklifModel>> ilanSahibiTeklifleri(Ref ref, String kullaniciId) {
+  return ref.watch(teklifRepositoryProvider).ilanSahibiTeklifleriStream(kullaniciId);
+}
+
+@riverpod
+Stream<Map<String, dynamic>> teklifTeslim(Ref ref, String teklifId) {
+  return ref.watch(teklifRepositoryProvider).teklifDetayStream(teklifId)
+      .map((t) => t == null ? {} : {
+        'teslimDurumu': t.teslimDurumu,
+        'teslimatTipi': t.teslimatTipi,
+      });
+}
+
+// teklifDetayProvider zaten tüm alanları içeriyor — teslim için ayrıca
+// stream açmaya gerek yok, teklifDetayProvider(id) kullan.
+
+@riverpod
+class TeslimNotifier extends _$TeslimNotifier {
+  @override
+  AsyncValue<void> build() => const AsyncData(null);
+
+  TeklifRepository get _repo => ref.read(teklifRepositoryProvider);
+
+  Future<bool> eldenTeslimBeyan({required String teklifId}) async {
+    state = const AsyncLoading();
+    try {
+      await _repo.eldenTeslimBeyan(teklifId: teklifId);
+      if (ref.mounted) state = const AsyncData(null);
+      return true;
+    } catch (e) {
+      if (ref.mounted) state = AsyncError(e, StackTrace.current);
+      return false;
+    }
+  }
+
+  Future<bool> henuzDegilBeyan({required String teklifId}) async {
+    state = const AsyncLoading();
+    try {
+      await _repo.henuzDegilBeyan(teklifId: teklifId);
+      if (ref.mounted) state = const AsyncData(null);
+      return true;
+    } catch (e) {
+      if (ref.mounted) state = AsyncError(e, StackTrace.current);
+      return false;
+    }
+  }
+
+  Future<bool> kargoVerildiBeyan({
+    required String teklifId,
+    required String kargoSirketi,
+    required String kargoTakipNo,
+  }) async {
+    state = const AsyncLoading();
+    try {
+      await _repo.kargoVerildiBeyan(
+        teklifId: teklifId,
+        kargoSirketi: kargoSirketi,
+        kargoTakipNo: kargoTakipNo,
+      );
+      if (ref.mounted) state = const AsyncData(null);
+      return true;
+    } catch (e) {
+      if (ref.mounted) state = AsyncError(e, StackTrace.current);
+      return false;
+    }
+  }
+
+  Future<bool> isteyenTeslimAldi({required String teklifId}) async {
+    state = const AsyncLoading();
+    try {
+      await _repo.isteyenTeslimAldi(teklifId: teklifId);
+      if (ref.mounted) state = const AsyncData(null);
+      return true;
+    } catch (e) {
+      if (ref.mounted) state = AsyncError(e, StackTrace.current);
+      return false;
+    }
+  }
+
+  Future<bool> isteyenTeslimAlmadi({required String teklifId}) async {
+    state = const AsyncLoading();
+    try {
+      await _repo.isteyenTeslimAlmadi(teklifId: teklifId);
+      if (ref.mounted) state = const AsyncData(null);
+      return true;
+    } catch (e) {
+      if (ref.mounted) state = AsyncError(e, StackTrace.current);
+      return false;
+    }
+  }
 }
 
 @riverpod
