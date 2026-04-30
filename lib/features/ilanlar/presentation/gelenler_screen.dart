@@ -3,12 +3,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../domain/ilan_model.dart';
 import '../providers/ilan_provider.dart';
-import '../providers/grid_tercihi_notifier.dart';
 import '../presentation/gelenler_form_screen.dart';
 import '../presentation/ilan_detay_screen.dart';
 import '../../../shared/constants/app_colors.dart';
@@ -327,8 +325,8 @@ class _GelenKarti extends StatelessWidget {
       onTap: () => Navigator.push(
         context,
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => IlanDetayScreen(ilan: ilan),
-          transitionsBuilder: (_, anim, __, child) => SlideTransition(
+          pageBuilder: (_, _, _) => IlanDetayScreen(ilan: ilan),
+          transitionsBuilder: (_, anim, _, child) => SlideTransition(
             position: Tween(
               begin: const Offset(1, 0), end: Offset.zero,
             ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
@@ -368,8 +366,8 @@ class _GelenKarti extends StatelessWidget {
                         fit: BoxFit.cover,
                         fadeInDuration: Duration.zero,
                         memCacheWidth: 176,
-                        placeholder: (_, __) => _ResimPlaceholder(ilan: ilan),
-                        errorWidget: (_, __, ___) =>
+                        placeholder: (_, _) => _ResimPlaceholder(ilan: ilan),
+                        errorWidget: (_, _, _) =>
                             _ResimPlaceholder(ilan: ilan),
                       )
                     : _ResimPlaceholder(ilan: ilan),

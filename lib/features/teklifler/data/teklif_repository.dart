@@ -244,13 +244,15 @@ class TeklifRepository {
 
   // ── İsteyen onay ─────────────────────────────────────────────────────────────
   Future<void> isteyenTeslimAldi({required String teklifId}) async {
+    final simdi = DateTime.now();
     await _col.doc(teklifId).update({
       'isteyenTeslimOnay': 'aldi',
       'teslimDurumu':      'teslim_edildi',
       'teslimOnayTarihi':  FieldValue.serverTimestamp(),
-      // Değerlendirme 24 saat sonra açılır
-      'degerlendirmeAcilmaTarihi': Timestamp.fromDate(
-        DateTime.now().add(const Duration(hours: 24)),
+      // Değerlendirme hemen açılır, 24 saat içinde yapılmalı
+      'degerlendirmeAcilmaTarihi': Timestamp.fromDate(simdi),
+      'degerlendirmeSonTarihi':    Timestamp.fromDate(
+        simdi.add(const Duration(hours: 24)),
       ),
     });
   }

@@ -139,7 +139,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                                   color: AppColors.textHint));
                         },
                         loading: () => const SizedBox.shrink(),
-                        error: (_, __) => const SizedBox.shrink(),
+                        error: (_, _) => const SizedBox.shrink(),
                       ),
                     ],
                   ),

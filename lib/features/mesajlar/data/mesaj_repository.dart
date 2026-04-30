@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../shared/constants/app_constants.dart';
 
@@ -25,6 +26,10 @@ class MesajRepository {
   CollectionReference _mesajlar(String sohbetId) =>
       _sohbetler.doc(sohbetId).collection(Collections.mesajlar);
 
+  // Sadece bildirim için kullanılıyor
+  static FirebaseFunctions get _functions =>
+      FirebaseFunctions.instanceFor(region: 'europe-west1');
+
   Future<void> mesajGonder({
     required String sohbetId,
     required String gondereId,
@@ -36,12 +41,12 @@ class MesajRepository {
     required String metin,
     String ilanResimUrl = '',
     String tip = 'mesaj',
+    double? tutar,
   }) async {
     final sohbetRef = _sohbetler.doc(sohbetId);
-    final mesajRef = _mesajlar(sohbetId).doc();
-    final batch = firestore.batch();
+    final mesajRef  = _mesajlar(sohbetId).doc();
+    final batch     = firestore.batch();
 
-    // ✅ okunmamis batch içine alındı — ayrı update yok
     batch.set(sohbetRef, {
       'kullanicilar':         [gondereId, karsiId],
       'kullaniciAdlari':      {gondereId: gondereAd, karsiId: karsiAd},
@@ -63,6 +68,9 @@ class MesajRepository {
       'tip':       tip,
       'zaman':     FieldValue.serverTimestamp(),
       'okundu':    false,
+      if (tutar != null) 'tutar': tutar,
+      if (tip == 'anlasma') 'anlasmaEvet': false,
+      if (tip == 'anlasma') 'anlasmaRed': false,
     });
 
     await batch.commit();
@@ -187,5 +195,44 @@ class MesajRepository {
       }
       return toplam;
     });
+  }
+
+  // ── Direkt Firestore — anlık ──────────────────────────────────────────────
+
+  Future<void> anlasmaKabul({
+    required String sohbetId,
+    required String mesajId,
+  }) async {
+    await _mesajlar(sohbetId).doc(mesajId).update({
+      'anlasmaEvet': true,
+    });
+  }
+
+  Future<void> anlasmaRed({
+    required String sohbetId,
+    required String mesajId,
+  }) async {
+    await _mesajlar(sohbetId).doc(mesajId).update({
+      'anlasmaRed': true,
+    });
+  }
+
+  // ── Cloud Functions — sadece bildirim için ────────────────────────────────
+
+  Future<void> mesajBildirimiGonder({
+    required String aliciId,
+    required String gondereId,
+    required String gondereAd,
+    required String ilanBaslik,
+    required String sohbetId,
+  }) async {
+    try {
+      await _functions.httpsCallable('mesajBildirimiGonder').call({
+        'aliciId':    aliciId,
+        'gondereAd':  gondereAd,
+        'ilanBaslik': ilanBaslik,
+        'sohbetId':   sohbetId,
+      });
+    } catch (_) {}
   }
 }

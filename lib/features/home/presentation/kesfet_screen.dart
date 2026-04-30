@@ -154,12 +154,14 @@ class _HaritaTabState extends ConsumerState<_HaritaTab> {
     }
     final maxSayi = ulkeSayisi.values.fold(1, (a, b) => a > b ? a : b);
 
-    // Seçili ülke ilanları
+    // Seçili ülke ilanları — nereden veya nereye içinde ülke adı geçiyorsa
     final seciliIlanlar = _seciliUlke == null
         ? <IlanModel>[]
-        : tasiyiciState.filtrelenmis
-            .where((i) => i.nereden.toLowerCase().contains(_seciliUlke!.toLowerCase()))
-            .toList();
+        : tasiyiciState.filtrelenmis.where((i) {
+            final q = _seciliUlke!.toLowerCase();
+            return i.nereden.toLowerCase().contains(q) ||
+                i.nereye.toLowerCase().contains(q);
+          }).toList();
 
     return CustomScrollView(
       slivers: [
@@ -389,6 +391,17 @@ class _CanliTab extends ConsumerWidget {
             i.olusturmaTarihi!.isAfter(haftaOnce))
         .length;
 
+    // Şu an havada — geliş tarihi bugün veya yakın olan tasıyıcılar
+    final suAnHavada = (tasiyiciState.filtrelenmis
+          .where((i) =>
+              i.tarih != null &&
+              i.tarih!.isAfter(DateTime.now()) &&
+              i.tarih!.difference(DateTime.now()).inDays <= 7)
+          .toList()
+          ..sort((a, b) => a.tarih!.compareTo(b.tarih!)))
+        .take(5)
+        .toList();
+
     return CustomScrollView(
       slivers: [
         // İstatistik kartları
@@ -418,6 +431,15 @@ class _CanliTab extends ConsumerWidget {
             ),
           ),
         ),
+
+        // ── Şu an havada ───────────────────────────────────────
+        if (suAnHavada.isNotEmpty)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 14, 12, 0),
+              child: _SuAnHavadaKart(ilanlar: suAnHavada),
+            ),
+          ),
 
         // Trend istekler
         if (trendIstekler.isNotEmpty) ...[
@@ -711,17 +733,14 @@ class _KesfetTabState extends ConsumerState<_KesfetTab> {
                     margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                        colors: [Color(0xFF90CAF9), Color(0xFFF5FBFF)],
-                      ),
+                      color: const Color(0xFFF5F5F5),
                       borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFE0E0E0)),
                     ),
                     child: Row(
                       children: [
                         const Icon(Icons.flight_takeoff_outlined,
-                            size: 18, color: Color(0xFF1565C0)),
+                            size: 18, color: Color(0xFF9E9E9E)),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Column(
@@ -746,17 +765,17 @@ class _KesfetTabState extends ConsumerState<_KesfetTab> {
                               horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: fark == 0
-                                ? AppColors.red
-                                : fark <= 2
-                                    ? const Color(0xFFFF8C42)
-                                    : const Color(0xFF388E3C),
+                                ? AppColors.red.withValues(alpha: 0.1)
+                                : const Color(0xFFEEEEEE),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(yazi,
                               style: GoogleFonts.dmSans(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,
-                                  color: Colors.white)),
+                                  color: fark == 0
+                                      ? AppColors.red
+                                      : const Color(0xFF666666))),
                         ),
                       ],
                     ),
@@ -989,8 +1008,8 @@ class _HeroKart extends StatelessWidget {
                             imageUrl: resimler.first,
                             fit: BoxFit.cover,
                             fadeInDuration: Duration.zero,
-                            placeholder: (_, __) => _ResimPH(ilan: ilan),
-                            errorWidget: (_, __, ___) => _ResimPH(ilan: ilan),
+                            placeholder: (_, _) => _ResimPH(ilan: ilan),
+                            errorWidget: (_, _, _) => _ResimPH(ilan: ilan),
                           )
                         : _ResimPH(ilan: ilan),
                   ),
@@ -1085,8 +1104,8 @@ class _KesfetKarti extends StatelessWidget {
                         imageUrl: resimler.first,
                         fit: BoxFit.cover,
                         fadeInDuration: Duration.zero,
-                        placeholder: (_, __) => _ResimPH(ilan: ilan),
-                        errorWidget: (_, __, ___) => _ResimPH(ilan: ilan),
+                        placeholder: (_, _) => _ResimPH(ilan: ilan),
+                        errorWidget: (_, _, _) => _ResimPH(ilan: ilan),
                       )
                     : _ResimPH(ilan: ilan),
               ),
@@ -1174,6 +1193,148 @@ class _ResimPH extends StatelessWidget {
           color: AppColors.red.withValues(alpha: 0.25),
           size: 24,
         ),
+      ),
+    );
+  }
+}
+
+// ── Şu An Havada Kartı ────────────────────────────────────────────────────────
+
+class _SuAnHavadaKart extends StatelessWidget {
+  final List<IlanModel> ilanlar;
+  const _SuAnHavadaKart({required this.ilanlar});
+
+  String _etaYazisi(IlanModel ilan) {
+    if (ilan.tarih == null) return '';
+    final fark = ilan.tarih!.difference(DateTime.now());
+    if (fark.inDays == 0) return 'Bugün iniyor';
+    if (fark.inDays == 1) return 'Yarın';
+    return '${fark.inDays} gün sonra';
+  }
+
+  IconData _ikonSec(int index, int total) {
+    if (index == total - 1) return Icons.flight_land_rounded;
+    if (index == 0) return Icons.flight_takeoff_rounded;
+    return Icons.flight_rounded;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D1B2A),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Başlık
+          Row(
+            children: [
+              const Icon(Icons.radar_rounded,
+                  size: 16, color: Colors.white70),
+              const SizedBox(width: 6),
+              Text('Şu an havada',
+                  style: GoogleFonts.dmSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white)),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4CAF50).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 5,
+                      height: 5,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF4CAF50),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text('CANLI',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF4CAF50))),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Uçuş listesi
+          ...ilanlar.asMap().entries.map((entry) {
+            final i    = entry.key;
+            final ilan = entry.value;
+            final eta  = _etaYazisi(ilan);
+
+            return Container(
+              margin: EdgeInsets.only(bottom: i < ilanlar.length - 1 ? 6 : 0),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    _ikonSec(i, ilanlar.length),
+                    size: 16,
+                    color: const Color(0xFF64B5F6),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${ilan.nereden} → ${ilan.nereye}',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white),
+                        ),
+                        if (ilan.kullaniciAd.isNotEmpty)
+                          Text(
+                            ilan.kullaniciAd,
+                            style: GoogleFonts.dmSans(
+                                fontSize: 10,
+                                color: Colors.white54),
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (eta.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF64B5F6)
+                            .withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(eta,
+                          style: GoogleFonts.dmSans(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF64B5F6))),
+                    ),
+                ],
+              ),
+            );
+          }),
+        ],
       ),
     );
   }

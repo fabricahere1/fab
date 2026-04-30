@@ -13,7 +13,6 @@ import '../../profil/presentation/kullanici_profil_screen.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/widgets/avatar_widget.dart';
 import 'teslim_beyan_popup.dart';
-import 'kargo_bilgi_sheet.dart';
 
 class TeklifDetayScreen extends ConsumerWidget {
   final String teklifId;
@@ -489,7 +488,7 @@ class _AnlasmaDialogState extends State<_AnlasmaDialog> with SingleTickerProvide
               const SizedBox(height: 20),
               Text('Anlaşma Sağlandı!', style: GoogleFonts.dmSans(fontSize: 20, fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
-              Text('Teklif detayından\nmesajlaşmaya başlayabilirsiniz.',
+              Text('Şimdi mesajlaşmaya devam edebilirsiniz.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.dmSans(fontSize: 13, color: AppColors.textSecondary, height: 1.5)),
             ],

@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/mesaj_provider.dart';
-import '../data/mesaj_repository.dart';
-import '../../auth/providers/auth_provider.dart';
+import '../data/mesaj_repository.dart';import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
+import 'anlasma_oneri_sheet.dart';
  
 class SohbetScreen extends ConsumerStatefulWidget {
   final String karsiKullaniciId;
@@ -314,19 +314,63 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
  
                               final mesaj = sohbetState.siraliMesajlar[index];
                               final tip = mesaj['tip'] ?? 'mesaj';
- 
+
                               if (tip == 'sistem') {
                                 return _SistemMesaji(metin: mesaj['metin'] ?? '');
                               }
- 
+
                               final benimMesajim = mesaj['gondereId'] == benimUid;
                               final zaman = (mesaj['zaman'] as Timestamp?)?.toDate();
                               final zamanYazi = zaman != null
                                   ? '${zaman.hour.toString().padLeft(2, '0')}:${zaman.minute.toString().padLeft(2, '0')}'
                                   : '';
-                              final metin = mesaj['metin'] ?? '';
+                              final metin  = mesaj['metin'] ?? '';
                               final okundu = mesaj['okundu'] as bool? ?? false;
- 
+
+                              // Anlaşma mesajı — özel balon
+                              if (tip == 'anlasma') {
+                                final tutar        = (mesaj['tutar'] as num?)?.toDouble() ?? 0;
+                                final anlasmaEvet  = mesaj['anlasmaEvet'] as bool? ?? false;
+                                final anlasmaRed   = mesaj['anlasmaRed']  as bool? ?? false;
+                                final mesajId      = mesaj['id'] as String? ?? '';
+
+                                return RepaintBoundary(
+                                  key: ValueKey(mesajId),
+                                  child: _AnlasmaBalonu(
+                                    tutar: tutar,
+                                    benimMesajim: benimMesajim,
+                                    zaman: zamanYazi,
+                                    anlasmaEvet: anlasmaEvet,
+                                    anlasmaRed: anlasmaRed,
+                                    ilanBaslik: widget.ilanBaslik,
+                                    onKabul: benimMesajim ? null : () async {
+                                      if (mesajId.isEmpty) return;
+                                      await ref.read(sohbetProvider(
+                                        karsiKullaniciId: widget.karsiKullaniciId,
+                                        ilanId: widget.ilanId,
+                                      ).notifier).anlasmaKabul(
+                                        mesajId: mesajId,
+                                        gondereId: mesaj['gondereId'] as String? ?? '',
+                                        gondereAd: widget.karsiKullaniciAd,
+                                      );
+                                    },
+                                    onRed: benimMesajim ? null : () async {
+                                      if (mesajId.isEmpty) return;
+                                      final sohbetId = sohbetIdUret(
+                                        benimUid,
+                                        widget.karsiKullaniciId,
+                                        widget.ilanId,
+                                      );
+                                      await ref.read(mesajRepositoryProvider)
+                                          .anlasmaRed(
+                                            sohbetId: sohbetId,
+                                            mesajId: mesajId,
+                                          );
+                                    },
+                                  ),
+                                );
+                              }
+
                               return RepaintBoundary(
                                 key: ValueKey(mesaj['id']),
                                 child: _MesajBalonu(
@@ -358,6 +402,22 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
+                // ── Ek butonu ─────────────────────────────────
+                GestureDetector(
+                  onTap: () => _ekMenuAc(benimUid),
+                  child: Container(
+                    width: 42,
+                    height: 42,
+                    margin: const EdgeInsets.only(right: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.divider),
+                    ),
+                    child: const Icon(Icons.add_rounded,
+                        color: AppColors.textSecondary, size: 22),
+                  ),
+                ),
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
@@ -415,6 +475,77 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
     );
   }
  
+  Future<void> _ekMenuAc(String benimUid) async {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  width: 36, height: 4,
+                  decoration: BoxDecoration(
+                      color: AppColors.divider,
+                      borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              _EkMenuItem(
+                ikon: Icons.handshake_outlined,
+                baslik: 'Hızlı Anlaş',
+                aciklama: 'Fiyat belirle, karşı taraf onaylasın',
+                renk: AppColors.green,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _anlasmaOner(benimUid);
+                },
+              ),
+              const SizedBox(height: 10),
+              _EkMenuItem(
+                ikon: Icons.local_offer_outlined,
+                baslik: 'Teklif Ver',
+                aciklama: 'Resmi teklif akışını başlat',
+                renk: AppColors.red,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  // TeklifVerSheet entegre edilince buraya eklenir
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _anlasmaOner(String benimUid) async {
+    final tutar = await AnlasmaOneriSheet.goster(
+      context,
+      karsiKullaniciAd: widget.karsiKullaniciAd,
+      ilanBaslik: widget.ilanBaslik,
+    );
+    if (tutar == null || !mounted) return;
+
+    await ref.read(sohbetProvider(
+      karsiKullaniciId: widget.karsiKullaniciId,
+      ilanId: widget.ilanId,
+    ).notifier).mesajGonder(
+      metin: '🤝 Anlaşma önerisi: ${tutar.toStringAsFixed(0)} ₺',
+      karsiKullaniciId: widget.karsiKullaniciId,
+      karsiAd: widget.karsiKullaniciAd,
+      ilanId: widget.ilanId,
+      ilanBaslik: widget.ilanBaslik,
+      tip: 'anlasma',
+      tutar: tutar,
+    );
+  }
+
   Future<void> _gonder(String benimUid) async {
     final metin = _mesajCtrl.text.trim();
     if (metin.isEmpty) return;
@@ -663,6 +794,276 @@ class _SistemMesaji extends StatelessWidget {
                   fontSize: 12,
                   color: const Color(0xFF2E7D32),
                   fontWeight: FontWeight.w500)),
+        ),
+      ),
+    );
+  }
+}
+// ── Ek menü item widget ───────────────────────────────────────────────────────
+
+class _EkMenuItem extends StatelessWidget {
+  final IconData ikon;
+  final String baslik, aciklama;
+  final Color renk;
+  final VoidCallback onTap;
+
+  const _EkMenuItem({
+    required this.ikon,
+    required this.baslik,
+    required this.aciklama,
+    required this.renk,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: renk.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: renk.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44, height: 44,
+              decoration: BoxDecoration(
+                color: renk.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(ikon, color: renk, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(baslik,
+                      style: GoogleFonts.dmSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary)),
+                  const SizedBox(height: 2),
+                  Text(aciklama,
+                      style: GoogleFonts.dmSans(
+                          fontSize: 12,
+                          color: AppColors.textSecondary)),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: AppColors.textHint, size: 18),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Anlaşma Balonu ────────────────────────────────────────────────────────────
+
+class _AnlasmaBalonu extends StatelessWidget {
+  final double tutar;
+  final bool benimMesajim;
+  final String zaman, ilanBaslik;
+  final bool anlasmaEvet, anlasmaRed;
+  final VoidCallback? onKabul, onRed;
+
+  const _AnlasmaBalonu({
+    required this.tutar,
+    required this.benimMesajim,
+    required this.zaman,
+    required this.ilanBaslik,
+    required this.anlasmaEvet,
+    required this.anlasmaRed,
+    this.onKabul,
+    this.onRed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tamamlandi = anlasmaEvet || anlasmaRed;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: benimMesajim ? 60 : 12,
+        right: benimMesajim ? 12 : 60,
+        top: 4,
+        bottom: 4,
+      ),
+      child: Align(
+        alignment: benimMesajim
+            ? Alignment.centerRight
+            : Alignment.centerLeft,
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.75,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: anlasmaEvet
+                  ? AppColors.green
+                  : anlasmaRed
+                      ? AppColors.divider
+                      : AppColors.red.withValues(alpha: 0.3),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Başlık
+              Container(
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
+                decoration: BoxDecoration(
+                  color: anlasmaEvet
+                      ? AppColors.green.withValues(alpha: 0.08)
+                      : anlasmaRed
+                          ? AppColors.surface
+                          : AppColors.red.withValues(alpha: 0.05),
+                  borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(14)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      anlasmaEvet
+                          ? Icons.handshake_rounded
+                          : anlasmaRed
+                              ? Icons.cancel_outlined
+                              : Icons.handshake_outlined,
+                      size: 18,
+                      color: anlasmaEvet
+                          ? AppColors.green
+                          : anlasmaRed
+                              ? AppColors.textSecondary
+                              : AppColors.red,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        anlasmaEvet
+                            ? 'Anlaşma Sağlandı!'
+                            : anlasmaRed
+                                ? 'Anlaşma Reddedildi'
+                                : 'Anlaşma Önerisi',
+                        style: GoogleFonts.dmSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: anlasmaEvet
+                              ? AppColors.green
+                              : anlasmaRed
+                                  ? AppColors.textSecondary
+                                  : AppColors.red,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Tutar ve ilan
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${tutar.toStringAsFixed(0)} ₺',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      ilanBaslik,
+                      style: GoogleFonts.dmSans(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+
+              // Kabul/Red butonları — sadece alıcıya, tamamlanmamışsa
+              if (!benimMesajim && !tamamlandi) ...[
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: onRed,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.textSecondary,
+                            side: const BorderSide(
+                                color: AppColors.divider),
+                            shape: RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 10),
+                          ),
+                          child: Text('Reddet',
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: onKabul,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.green,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 10),
+                          ),
+                          child: Text('Kabul Et',
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              // Saat
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+                child: Text(
+                  zaman,
+                  style: GoogleFonts.dmSans(
+                      fontSize: 10, color: AppColors.textHint),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

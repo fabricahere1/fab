@@ -48,6 +48,8 @@ dependencies:
   flutter_native_splash: ^2.4.3
  
   cupertino_icons: ^1.0.8
+  flutter_cache_manager: ^3.4.1
+  cloud_functions: ^6.2.0
  
 dev_dependencies:
   flutter_test:

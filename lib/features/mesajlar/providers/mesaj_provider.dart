@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/mesaj_repository.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/data/kullanici_repository.dart';
 import '../../bildirimler/data/bildirim_repository.dart';
+import '../../bildirimler/domain/bildirim_model.dart';
 import '../../../shared/constants/app_constants.dart';
 
 part 'mesaj_provider.g.dart';
@@ -212,12 +214,12 @@ class SohbetNotifier extends _$SohbetNotifier {
     required String ilanId,
     required String ilanBaslik,
     String ilanResimUrl = '',
+    String tip = 'mesaj',
+    double? tutar,
   }) async {
     if (metin.trim().isEmpty || state.gonderiyor) return;
 
-    // ✅ Önce adı al — timeout ile takılmayı önle
     final benimAd = await _getBenimAd();
-
     state = state.copyWith(gonderiyor: true);
     try {
       await _repo.mesajGonder(
@@ -230,8 +232,9 @@ class SohbetNotifier extends _$SohbetNotifier {
         ilanBaslik: ilanBaslik,
         ilanResimUrl: ilanResimUrl,
         metin: metin.trim(),
+        tip: tip,
+        tutar: tutar,
       );
-      // Bildirim gönder — hata olsa da mesaj gönderimini etkilemesin
       try {
         await ref.read(bildirimRepositoryProvider).mesajBildirimiGonder(
               aliciId: karsiKullaniciId,
@@ -242,8 +245,37 @@ class SohbetNotifier extends _$SohbetNotifier {
             );
       } catch (_) {}
     } finally {
-      // ✅ Her durumda gonderiyor false yap
       if (ref.mounted) state = state.copyWith(gonderiyor: false);
+    }
+  }
+
+  Future<void> anlasmaKabul({
+    required String mesajId,
+    required String gondereId,
+    required String gondereAd,
+  }) async {
+    try {
+      await _repo.anlasmaKabul(sohbetId: _sohbetId, mesajId: mesajId);
+      // Anlaşmayı teklif edene bildirim gönder
+      await ref.read(bildirimRepositoryProvider).bildirimOlustur(
+        kullaniciId: gondereId,
+        tip: BildirimTip.teklif,
+        baslik: gondereAd.isNotEmpty ? gondereAd : 'Anlaşma',
+        icerik: '✅ Anlaşma teklifiniz kabul edildi!',
+        hedefId: _sohbetId,
+        gondereId: _benimId,
+        gondereAd: '',
+      );
+    } catch (e) {
+      if (kDebugMode) print('anlasmaKabul hata: $e');
+    }
+  }
+
+  Future<void> anlasmaRed({required String mesajId}) async {
+    try {
+      await _repo.anlasmaRed(sohbetId: _sohbetId, mesajId: mesajId);
+    } catch (e) {
+      if (kDebugMode) print('anlasmaRed hata: $e');
     }
   }
 

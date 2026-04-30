@@ -1,6 +1,5 @@
 // lib/features/teklifler/providers/teklif_provider.dart
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/teklif_model.dart';
 import '../data/teklif_repository.dart';
