@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/teklif_model.dart';
 import '../../bildirimler/data/bildirim_repository.dart';
 import '../../bildirimler/domain/bildirim_model.dart';
+import '../../mesajlar/data/mesaj_repository.dart';
 import '../../../shared/constants/app_constants.dart';
 
 part 'teklif_repository.g.dart';
@@ -14,14 +15,20 @@ TeklifRepository teklifRepository(Ref ref) {
   return TeklifRepository(
     firestore: FirebaseFirestore.instance,
     bildirimRepo: ref.read(bildirimRepositoryProvider),
+    mesajRepo: ref.read(mesajRepositoryProvider),
   );
 }
 
 class TeklifRepository {
   final FirebaseFirestore firestore;
   final BildirimRepository bildirimRepo;
+  final MesajRepository mesajRepo;
 
-  TeklifRepository({required this.firestore, required this.bildirimRepo});
+  TeklifRepository({
+    required this.firestore,
+    required this.bildirimRepo,
+    required this.mesajRepo,
+  });
 
   CollectionReference get _col => firestore.collection(Collections.teklifler);
 
@@ -101,13 +108,35 @@ class TeklifRepository {
       gondereAd: kabulEdenAd,
     );
 
-    final digerler = await _col
+    // Kabul anında sohbete otomatik sistem mesajı at — chat boş açılmasın
+    final sohbetId = sohbetIdUret(
+      teklif.ilanSahibiId,
+      teklif.teklifVerenId,
+      teklif.ilanId,
+    );
+    await mesajRepo.mesajGonder(
+      sohbetId:    sohbetId,
+      gondereId:   kabulEdenId,
+      karsiId:     bildirimHedefi,
+      ilanId:      teklif.ilanId,
+      ilanBaslik:  teklif.ilanBaslik,
+      ilanResimUrl: '',
+      metin:       '🤝 Anlaşma sağlandı! ${teklif.miktar.toStringAsFixed(0)} ₺ üzerinden uzlaştınız.',
+      tip:         'sistem',
+    );
+
+    // Bekliyor ve karşıTeklif durumundaki diğer tüm teklifleri reddet
+    final bekleyenler = await _col
         .where('ilanId', isEqualTo: teklif.ilanId)
         .where('durum', isEqualTo: TeklifDurum.bekliyor.firestoreKey)
         .get();
+    final karsiTeklifler = await _col
+        .where('ilanId', isEqualTo: teklif.ilanId)
+        .where('durum', isEqualTo: TeklifDurum.karsiTeklif.firestoreKey)
+        .get();
 
     final batch = firestore.batch();
-    for (final doc in digerler.docs) {
+    for (final doc in [...bekleyenler.docs, ...karsiTeklifler.docs]) {
       if (doc.id != teklif.id) {
         batch.update(doc.reference, {
           'durum': TeklifDurum.reddedildi.firestoreKey,
@@ -159,7 +188,7 @@ class TeklifRepository {
   Stream<TeklifModel?> teklifDetayStream(String teklifId) {
     return _col.doc(teklifId).snapshots().map((doc) {
       if (!doc.exists) return null;
-      return TeklifModel.fromFirestore(doc);
+      return _teklifModelCevir(doc);
     });
   }
 
@@ -169,7 +198,7 @@ class TeklifRepository {
         .where('durum', isEqualTo: TeklifDurum.bekliyor.firestoreKey)
         .orderBy('olusturmaTarihi', descending: true)
         .snapshots()
-        .map((s) => s.docs.map(TeklifModel.fromFirestore).toList());
+        .map((s) => s.docs.map((doc) => _teklifModelCevir(doc)).toList());
   }
 
   // ✅ Düzeltildi: hem ilanId hem teklifVerenId kontrolü
@@ -180,19 +209,19 @@ class TeklifRepository {
         .where('durum', isEqualTo: TeklifDurum.kabul.firestoreKey)
         .limit(1)
         .snapshots()
-        .map((s) => s.docs.isEmpty ? null : TeklifModel.fromFirestore(s.docs.first));
+        .map((s) => s.docs.isEmpty ? null : _teklifModelCevir(s.docs.first));
   }
 
-  Stream<_TeklifOzet> ilanTeklifOzetStream(String ilanId) {
+  Stream<TeklifOzet> ilanTeklifOzetStream(String ilanId) {
     return _col
         .where('ilanId', isEqualTo: ilanId)
         .where('durum', isEqualTo: TeklifDurum.bekliyor.firestoreKey)
         .snapshots()
         .map((s) {
-      final teklifler = s.docs.map(TeklifModel.fromFirestore).toList();
-      if (teklifler.isEmpty) return const _TeklifOzet(sayi: 0, enYuksek: null);
+      final teklifler = s.docs.map((doc) => _teklifModelCevir(doc)).toList();
+      if (teklifler.isEmpty) return const TeklifOzet(sayi: 0, enYuksek: null);
       final enYuksek = teklifler.map((t) => t.miktar).reduce((a, b) => a > b ? a : b);
-      return _TeklifOzet(sayi: teklifler.length, enYuksek: enYuksek);
+      return TeklifOzet(sayi: teklifler.length, enYuksek: enYuksek);
     });
   }
 
@@ -201,7 +230,7 @@ class TeklifRepository {
         .where('teklifVerenId', isEqualTo: kullaniciId)
         .orderBy('olusturmaTarihi', descending: true)
         .snapshots()
-        .map((s) => s.docs.map(TeklifModel.fromFirestore).toList());
+        .map((s) => s.docs.map((doc) => _teklifModelCevir(doc)).toList());
   }
 
   Stream<List<TeklifModel>> ilanSahibiTeklifleriStream(String kullaniciId) {
@@ -209,7 +238,7 @@ class TeklifRepository {
         .where('ilanSahibiId', isEqualTo: kullaniciId)
         .orderBy('olusturmaTarihi', descending: true)
         .snapshots()
-        .map((s) => s.docs.map(TeklifModel.fromFirestore).toList());
+        .map((s) => s.docs.map((doc) => _teklifModelCevir(doc)).toList());
   }
 
   // ── Teslim metodları ─────────────────────────────────────────────────────────
@@ -275,10 +304,81 @@ class TeklifRepository {
       'getirenDegerlendirdiMi': true,
     });
   }
+
+  // ── Değerlendirme — puan kaydet ───────────────────────────────────────────────
+  Future<void> puanEkle({
+    required String hedefUid,
+    required double puan,
+  }) async {
+    // Firestore transaction ile ortalama puan güncelle
+    final kullaniciRef = firestore.collection('kullanicilar').doc(hedefUid);
+    await firestore.runTransaction((tx) async {
+      final snap = await tx.get(kullaniciRef);
+      final eskiPuan   = (snap.data()?['ortalamaPuan']      as num?)?.toDouble() ?? 0.0;
+      final eskiSayi   = (snap.data()?['degerlendirmeSayisi'] as num?)?.toInt()   ?? 0;
+      final yeniSayi   = eskiSayi + 1;
+      final yeniOrtalama = ((eskiPuan * eskiSayi) + puan) / yeniSayi;
+      tx.update(kullaniciRef, {
+        'ortalamaPuan':        yeniOrtalama,
+        'degerlendirmeSayisi': yeniSayi,
+      });
+    });
+  }
+
+  Future<void> isteyenDegerlendirdiKaydet({
+    required String teklifId,
+    required String getirenUid,
+    required double puan,
+  }) async {
+    await _col.doc(teklifId).update({'isteyenDegerlendirdiMi': true});
+    await puanEkle(hedefUid: getirenUid, puan: puan);
+  }
+
+  Future<void> getirenDegerlendirdiKaydet({
+    required String teklifId,
+    required String isteyenUid,
+    required double puan,
+  }) async {
+    await _col.doc(teklifId).update({'getirenDegerlendirdiMi': true});
+    await puanEkle(hedefUid: isteyenUid, puan: puan);
+  }
+
+  // Timestamp → DateTime dönüşümü data katmanında yapılır — domain Firebase'i tanımaz
+  TeklifModel _teklifModelCevir(DocumentSnapshot doc) {
+    final d = doc.data() as Map<String, dynamic>;
+    return TeklifModel(
+      id:               doc.id,
+      ilanId:           d['ilanId']            as String? ?? '',
+      ilanBaslik:       d['ilanBaslik']         as String? ?? '',
+      ilanSahibiId:     d['ilanSahibiId']       as String? ?? '',
+      ilanSahibiAd:     d['ilanSahibiAd']       as String? ?? '',
+      teklifVerenId:    d['teklifVerenId']      as String? ?? '',
+      teklifVerenAd:    d['teklifVerenAd']      as String? ?? '',
+      miktar:           (d['miktar']            as num?)?.toDouble() ?? 0,
+      ilanMiktar:       (d['ilanMiktar']        as num?)?.toDouble() ?? 0,
+      durum:            TeklifDurumX.fromString(d['durum'] as String? ?? ''),
+      karsiTeklifMiktar:(d['karsiTeklifMiktar'] as num?)?.toDouble(),
+      olusturmaTarihi:  (d['olusturmaTarihi']   as Timestamp?)?.toDate(),
+      guncellemeTarihi: (d['guncellemeTarihi']  as Timestamp?)?.toDate(),
+      olusumTipi:       d['olusumTipi']         as String? ?? OlusumTipi.teklif,
+      teslimDurumu:        d['teslimDurumu']        as String? ?? 'beklemede',
+      teslimatTipi:        d['teslimatTipi']         as String? ?? 'beklemede',
+      getirenTeslimBeyan:  d['getirenTeslimBeyan']   as String? ?? 'yok',
+      isteyenTeslimOnay:   d['isteyenTeslimOnay']    as String? ?? 'yok',
+      kargoSirketi:        d['kargoSirketi']          as String? ?? '',
+      kargoTakipNo:        d['kargoTakipNo']          as String? ?? '',
+      teslimOnayTarihi:   (d['teslimOnayTarihi']     as Timestamp?)?.toDate(),
+      isteyenDegerlendirdiMi: d['isteyenDegerlendirdiMi'] as bool? ?? false,
+      getirenDegerlendirdiMi: d['getirenDegerlendirdiMi'] as bool? ?? false,
+      degerlendirmeAcilmaTarihi:
+          (d['degerlendirmeAcilmaTarihi'] as Timestamp?)?.toDate(),
+    );
+  }
 }
 
-class _TeklifOzet {
+
+class TeklifOzet {
   final int sayi;
   final double? enYuksek;
-  const _TeklifOzet({required this.sayi, required this.enYuksek});
+  const TeklifOzet({required this.sayi, required this.enYuksek});
 }

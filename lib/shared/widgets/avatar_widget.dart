@@ -63,7 +63,7 @@ class _HarfAvatar extends StatelessWidget {
       radius: radius,
       backgroundColor: AppColors.avatarColor(isim),
       child: Text(
-        isim.isNotEmpty ? isim[0].toUpperCase() : '?',
+        isim.isNotEmpty ? isim[0].toUpperCase() : 'K',
         style: GoogleFonts.dmSans(
           color: Colors.white,
           fontWeight: FontWeight.w600,

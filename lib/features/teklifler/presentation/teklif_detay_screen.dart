@@ -36,6 +36,7 @@ class TeklifDetayScreen extends ConsumerWidget {
         ),
       ),
       body: tekliflerAsync.when(
+        skipLoadingOnReload: true,
         loading: () => const Center(
             child: CircularProgressIndicator(color: AppColors.red, strokeWidth: 2)),
         error: (e, _) => Center(
@@ -169,6 +170,10 @@ class _TeklifDetayIcerik extends ConsumerWidget {
                             karsiKullaniciAd: karsiKullaniciAd,
                             ilanId: teklif.ilanId,
                             ilanBaslik: teklif.ilanBaslik,
+                            ilanSahibiId: teklif.ilanSahibiId,
+                            ilanSahibiAd: teklif.ilanSahibiAd,
+                            ilanFiyat: teklif.ilanMiktar,
+                            anlasmaVar: true,
                           ),
                           transitionsBuilder: (ctx, anim, secAnim, child) => SlideTransition(
                             position: Tween(begin: const Offset(1, 0), end: Offset.zero)
@@ -223,12 +228,12 @@ class _TeklifDetayIcerik extends ConsumerWidget {
                     teklif: teklif, kabulEdenId: benimUid, kabulEdenAd: benimAd,
                   );
                   if (basarili && context.mounted) {
-                    await showDialog(
+                    // Popup göster, kapanınca sayfada kal — stream otomatik günceller
+                    showDialog(
                       context: context,
                       barrierDismissible: false,
                       builder: (_) => const _AnlasmaDialog(),
                     );
-                    if (context.mounted) Navigator.pop(context);
                   } else if (context.mounted) {
                     _snack(context, 'Hata oluştu.', AppColors.red);
                   }
@@ -296,12 +301,11 @@ class _TeklifDetayIcerik extends ConsumerWidget {
                     teklif: teklif, kabulEdenId: benimUid, kabulEdenAd: benimAd,
                   );
                   if (basarili && context.mounted) {
-                    await showDialog(
+                    showDialog(
                       context: context,
                       barrierDismissible: false,
                       builder: (_) => const _AnlasmaDialog(),
                     );
-                    if (context.mounted) Navigator.pop(context);
                   } else if (context.mounted) {
                     _snack(context, 'Hata oluştu.', AppColors.red);
                   }
@@ -841,25 +845,25 @@ class _TeslimBolumu extends ConsumerWidget {
   }
 }
 
-// ── Değerlendirme Bölümü (Timer'lı) ──────────────────────────────────────────
+// ── Değerlendirme Bölümü ─────────────────────────────────────────────────────
 
-class _DegerlendirmeBolumu extends StatefulWidget {
+class _DegerlendirmeBolumu extends ConsumerStatefulWidget {
   final TeklifModel teklif;
   final bool benIsteyen;
   const _DegerlendirmeBolumu(
       {required this.teklif, required this.benIsteyen});
 
   @override
-  State<_DegerlendirmeBolumu> createState() => _DegerlendirmeBolumuState();
+  ConsumerState<_DegerlendirmeBolumu> createState() => _DegerlendirmeBolumuState();
 }
 
-class _DegerlendirmeBolumuState extends State<_DegerlendirmeBolumu> {
+class _DegerlendirmeBolumuState extends ConsumerState<_DegerlendirmeBolumu> {
   Timer? _timer;
+  double _seciliPuan = 5;
 
   @override
   void initState() {
     super.initState();
-    // Her dakika rebuild — geri sayım güncel kalsın
     _timer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) setState(() {});
     });
@@ -873,8 +877,8 @@ class _DegerlendirmeBolumuState extends State<_DegerlendirmeBolumu> {
 
   String _formatSure(Duration sure) {
     if (sure.inHours >= 24) {
-      final gun   = sure.inDays;
-      final saat  = sure.inHours % 24;
+      final gun  = sure.inDays;
+      final saat = sure.inHours % 24;
       return '$gun gün $saat saat';
     }
     final saat   = sure.inHours;
@@ -884,12 +888,40 @@ class _DegerlendirmeBolumuState extends State<_DegerlendirmeBolumu> {
     return '$saat saat $dakika dakika';
   }
 
+  Future<void> _puanGonder() async {
+    final teklif    = widget.teklif;
+    final benIsteyen = widget.benIsteyen;
+    bool basarili;
+    if (benIsteyen) {
+      basarili = await ref.read(teslimProvider.notifier).isteyenDegerlendirdi(
+        teklifId:   teklif.id,
+        getirenUid: teklif.ilanSahibiId,
+        puan:       _seciliPuan,
+      );
+    } else {
+      basarili = await ref.read(teslimProvider.notifier).getirenDegerlendirdi(
+        teklifId:   teklif.id,
+        isteyenUid: teklif.teklifVerenId,
+        puan:       _seciliPuan,
+      );
+    }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(basarili ? 'Değerlendirmen kaydedildi!' : 'Hata oluştu.',
+            style: GoogleFonts.dmSans()),
+        backgroundColor: basarili ? AppColors.green : AppColors.red,
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final teklif          = widget.teklif;
+    final teklif = widget.teklif;
     final benDegerlendirdim = widget.benIsteyen
         ? teklif.isteyenDegerlendirdiMi
         : teklif.getirenDegerlendirdiMi;
+    final yukleniyor = ref.watch(teslimProvider).isLoading;
 
     // Zaten değerlendirdi
     if (benDegerlendirdim) {
@@ -900,12 +932,12 @@ class _DegerlendirmeBolumuState extends State<_DegerlendirmeBolumu> {
       );
     }
 
-    // Değerlendirme açılma tarihi henüz set edilmemiş
+    // Henüz teslim onaylanmadı
     final acilmaTarihi = teklif.degerlendirmeAcilmaTarihi;
     if (acilmaTarihi == null) {
       return _BilgiSatiri(
         ikon: Icons.info_outline,
-        icerik: 'Teslim onaylandıktan 24 saat sonra değerlendirme açılacak',
+        icerik: 'Teslim onaylandıktan sonra değerlendirme açılacak',
         renk: AppColors.textSecondary,
       );
     }
@@ -913,7 +945,7 @@ class _DegerlendirmeBolumuState extends State<_DegerlendirmeBolumu> {
     final simdi    = DateTime.now();
     final acildiMi = simdi.isAfter(acilmaTarihi);
 
-    // Geri sayım — henüz açılmadı
+    // Geri sayım
     if (!acildiMi) {
       final kalanSure = acilmaTarihi.difference(simdi);
       return Container(
@@ -925,26 +957,16 @@ class _DegerlendirmeBolumuState extends State<_DegerlendirmeBolumu> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.timer_outlined,
-                size: 18, color: AppColors.orange),
+            const Icon(Icons.timer_outlined, size: 18, color: AppColors.orange),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Değerlendirme başlamasına:',
-                    style: GoogleFonts.dmSans(
-                        fontSize: 11, color: AppColors.textSecondary),
-                  ),
-                  Text(
-                    _formatSure(kalanSure),
-                    style: GoogleFonts.dmSans(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.orange,
-                    ),
-                  ),
+                  Text('Değerlendirme başlamasına:',
+                      style: GoogleFonts.dmSans(fontSize: 11, color: AppColors.textSecondary)),
+                  Text(_formatSure(kalanSure),
+                      style: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.orange)),
                 ],
               ),
             ),
@@ -953,24 +975,72 @@ class _DegerlendirmeBolumuState extends State<_DegerlendirmeBolumu> {
       );
     }
 
-    // Değerlendirme açık
+    // Değerlendirme açık — yıldız seçimi + gönder butonu
+    final karsiAd = widget.benIsteyen ? teklif.ilanSahibiAd : teklif.teklifVerenAd;
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.yellow.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.yellow.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.yellow.withValues(alpha: 0.3)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.star_outline_rounded,
-              color: AppColors.yellow, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
+          Row(
+            children: [
+              const Icon(Icons.star_outline_rounded, color: AppColors.yellow, size: 20),
+              const SizedBox(width: 8),
+              Text("$karsiAd'ı değerlendir",
+                  style: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w700)),
+            ],
+          ),
+          const SizedBox(height: 14),
+          // Yıldız seçimi
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(5, (i) {
+              final puan = (i + 1).toDouble();
+              return GestureDetector(
+                onTap: () => setState(() => _seciliPuan = puan),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Icon(
+                    puan <= _seciliPuan ? Icons.star_rounded : Icons.star_outline_rounded,
+                    color: AppColors.yellow,
+                    size: 36,
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 6),
+          Center(
             child: Text(
-              'Değerlendirme açık — karşı tarafı değerlendir',
-              style: GoogleFonts.dmSans(
-                  fontSize: 13, color: AppColors.textPrimary),
+              _seciliPuan == 1 ? 'Çok Kötü' :
+              _seciliPuan == 2 ? 'Kötü' :
+              _seciliPuan == 3 ? 'Orta' :
+              _seciliPuan == 4 ? 'İyi' : 'Mükemmel',
+              style: GoogleFonts.dmSans(fontSize: 13, color: AppColors.textSecondary),
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: yukleniyor ? null : _puanGonder,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.yellow,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: yukleniyor
+                  ? const SizedBox(width: 20, height: 20,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : Text('Değerlendirmeyi Gönder',
+                      style: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w700)),
             ),
           ),
         ],

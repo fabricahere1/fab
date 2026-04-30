@@ -1,6 +1,9 @@
 import 'dart:math';
+import 'dart:io';
+import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../teklifler/providers/teklif_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,8 +19,12 @@ class SohbetScreen extends ConsumerStatefulWidget {
   final String ilanId;
   final String ilanBaslik;
   final String? ilanResimUrl;
+  final String? ilanSahibiId;
+  final String? ilanSahibiAd;
+  final double? ilanFiyat;
   final String? sohbetId;
- 
+  final bool anlasmaVar;
+
   const SohbetScreen({
     super.key,
     required this.karsiKullaniciId,
@@ -26,6 +33,10 @@ class SohbetScreen extends ConsumerStatefulWidget {
     required this.ilanBaslik,
     this.ilanResimUrl,
     this.sohbetId,
+    this.ilanSahibiId,
+    this.ilanSahibiAd,
+    this.ilanFiyat,
+    this.anlasmaVar = false,
   });
  
   @override
@@ -252,6 +263,63 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
       ),
       body: Column(
         children: [
+          // ── Anlaşma Barı ─────────────────────────────────
+          if (widget.anlasmaVar)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+              decoration: BoxDecoration(
+                color: AppColors.green.withValues(alpha: 0.10),
+                border: Border(
+                  bottom: BorderSide(
+                    color: AppColors.green.withValues(alpha: 0.25),
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.green.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.handshake_rounded,
+                        color: AppColors.green, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.ilanBaslik.isNotEmpty
+                              ? widget.ilanBaslik
+                              : 'İlan',
+                          style: GoogleFonts.dmSans(
+                            color: AppColors.green,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          'Kabul edilmiş teklif',
+                          style: GoogleFonts.dmSans(
+                            color: AppColors.green.withValues(alpha: 0.8),
+                            fontWeight: FontWeight.w500,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Expanded(
             child: Stack(
               children: [
@@ -320,7 +388,12 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                               }
 
                               final benimMesajim = mesaj['gondereId'] == benimUid;
-                              final zaman = (mesaj['zaman'] as Timestamp?)?.toDate();
+                              // Zaman değeri her zaman DateTime olarak alınır
+                              // Timestamp dönüşümü mesaj_provider._sirala'da yapılıyor
+                              final zamanRaw = mesaj['zaman'];
+                              final zaman = zamanRaw is DateTime
+                                  ? zamanRaw
+                                  : (zamanRaw as dynamic)?.toDate() as DateTime?;
                               final zamanYazi = zaman != null
                                   ? '${zaman.hour.toString().padLeft(2, '0')}:${zaman.minute.toString().padLeft(2, '0')}'
                                   : '';
@@ -351,7 +424,8 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                                       ).notifier).anlasmaKabul(
                                         mesajId: mesajId,
                                         gondereId: mesaj['gondereId'] as String? ?? '',
-                                        gondereAd: widget.karsiKullaniciAd,
+                                        ilanBaslik: widget.ilanBaslik,
+                                        ilanSahibiAd: widget.ilanSahibiAd ?? '',
                                       );
                                     },
                                     onRed: benimMesajim ? null : () async {
@@ -367,6 +441,20 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                                             mesajId: mesajId,
                                           );
                                     },
+                                  ),
+                                );
+                              }
+
+                              // Resim mesajı
+                              if (tip == 'resim') {
+                                final resimUrl = mesaj['resimUrl'] as String? ?? '';
+                                return RepaintBoundary(
+                                  key: ValueKey(mesaj['id']),
+                                  child: _ResimBalonu(
+                                    resimUrl: resimUrl,
+                                    benimMesajim: benimMesajim,
+                                    zaman: zamanYazi,
+                                    karsiOkudu: benimMesajim && okundu,
                                   ),
                                 );
                               }
@@ -497,9 +585,20 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
               ),
               const SizedBox(height: 16),
               _EkMenuItem(
+                ikon: Icons.photo_library_outlined,
+                baslik: 'Resim Gönder',
+                aciklama: 'Galeriden fotoğraf seç',
+                renk: AppColors.primary,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _resimSec(benimUid);
+                },
+              ),
+              const SizedBox(height: 10),
+              _EkMenuItem(
                 ikon: Icons.handshake_outlined,
                 baslik: 'Hızlı Anlaş',
-                aciklama: 'Fiyat belirle, karşı taraf onaylasın',
+                aciklama: 'İstekçinin fiyatından getirebilirsin',
                 renk: AppColors.green,
                 onTap: () {
                   Navigator.pop(ctx);
@@ -514,7 +613,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                 renk: AppColors.red,
                 onTap: () {
                   Navigator.pop(ctx);
-                  // TeklifVerSheet entegre edilince buraya eklenir
+                  _teklifVerAc();
                 },
               ),
             ],
@@ -524,25 +623,80 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
     );
   }
 
-  Future<void> _anlasmaOner(String benimUid) async {
-    final tutar = await AnlasmaOneriSheet.goster(
-      context,
-      karsiKullaniciAd: widget.karsiKullaniciAd,
-      ilanBaslik: widget.ilanBaslik,
+  Future<void> _resimSec(String benimUid) async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 72,
+      maxWidth: 1080,
+      maxHeight: 1080,
     );
-    if (tutar == null || !mounted) return;
+    if (picked == null || !mounted) return;
 
     await ref.read(sohbetProvider(
       karsiKullaniciId: widget.karsiKullaniciId,
       ilanId: widget.ilanId,
-    ).notifier).mesajGonder(
-      metin: '🤝 Anlaşma önerisi: ${tutar.toStringAsFixed(0)} ₺',
+    ).notifier).resimGonder(
+      dosya: File(picked.path),
       karsiKullaniciId: widget.karsiKullaniciId,
-      karsiAd: widget.karsiKullaniciAd,
       ilanId: widget.ilanId,
       ilanBaslik: widget.ilanBaslik,
-      tip: 'anlasma',
-      tutar: tutar,
+      ilanResimUrl: widget.ilanResimUrl ?? '',
+    );
+  }
+
+  void _teklifVerAc() {
+    final ilanSahibiId = widget.ilanSahibiId;
+    final ilanSahibiAd = widget.ilanSahibiAd;
+    if (ilanSahibiId == null || ilanSahibiId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Teklif verebilmek için ilan detayına git.',
+              style: GoogleFonts.dmSans()),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => _SohbetTeklifSheet(
+        ilanId: widget.ilanId,
+        ilanBaslik: widget.ilanBaslik,
+        ilanSahibiId: ilanSahibiId,
+        ilanSahibiAd: ilanSahibiAd ?? 'İlan Sahibi',
+        ilanFiyat: widget.ilanFiyat ?? 0,
+      ),
+    );
+  }
+
+  Future<void> _anlasmaOner(String benimUid) async {
+    final onaylandi = await AnlasmaOneriSheet.goster(
+      context,
+      karsiKullaniciAd: widget.karsiKullaniciAd,
+      ilanBaslik: widget.ilanBaslik,
+      onerilenfiyat: widget.ilanFiyat,
+    );
+    if (onaylandi != true || !mounted) return;
+
+    final fiyat = widget.ilanFiyat ?? 0;
+    await ref.read(sohbetProvider(
+      karsiKullaniciId: widget.karsiKullaniciId,
+      ilanId: widget.ilanId,
+    ).notifier).mesajGonder(
+      metin: fiyat > 0
+          ? '🤝 İstekçinin fiyatından getirebilirim: ${fiyat.toStringAsFixed(0)} ₺'
+          : '💬 İlanınızla ilgileniyorum, hadi konuşalım!',
+      karsiKullaniciId: widget.karsiKullaniciId,
+      ilanId: widget.ilanId,
+      ilanBaslik: widget.ilanBaslik,
+      tip: fiyat > 0 ? 'anlasma' : 'mesaj',
+      tutar: fiyat > 0 ? fiyat : null,
     );
   }
 
@@ -558,7 +712,6 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
         .mesajGonder(
           metin: metin,
           karsiKullaniciId: widget.karsiKullaniciId,
-          karsiAd: widget.karsiKullaniciAd,
           ilanId: widget.ilanId,
           ilanBaslik: widget.ilanBaslik,
           ilanResimUrl: widget.ilanResimUrl ?? '',
@@ -1067,5 +1220,360 @@ class _AnlasmaBalonu extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+// ── Resim Balonu ──────────────────────────────────────────────────────────────
+
+class _ResimBalonu extends StatelessWidget {
+  final String resimUrl;
+  final bool benimMesajim;
+  final String zaman;
+  final bool karsiOkudu;
+
+  const _ResimBalonu({
+    required this.resimUrl,
+    required this.benimMesajim,
+    required this.zaman,
+    this.karsiOkudu = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const double w = 200;
+    const double h = 200;
+    final radius = BorderRadius.only(
+      topLeft: const Radius.circular(16),
+      topRight: const Radius.circular(16),
+      bottomLeft: Radius.circular(benimMesajim ? 16 : 4),
+      bottomRight: Radius.circular(benimMesajim ? 4 : 16),
+    );
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: benimMesajim ? 60 : 12,
+        right: benimMesajim ? 12 : 60,
+        top: 3,
+        bottom: 3,
+      ),
+      child: Align(
+        alignment: benimMesajim ? Alignment.centerRight : Alignment.centerLeft,
+        child: GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => _FullscreenResim(resimUrl: resimUrl),
+            ),
+          ),
+          child: Container(
+            width: w,
+            height: h,
+            decoration: BoxDecoration(
+              borderRadius: radius,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: radius,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  CachedNetworkImage(
+                    imageUrl: resimUrl,
+                    width: w,
+                    height: h,
+                    fit: BoxFit.cover,
+                    placeholder: (_, _) => Container(
+                      color: AppColors.surface,
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.textHint,
+                        ),
+                      ),
+                    ),
+                    errorWidget: (_, _, _) => Container(
+                      color: AppColors.surface,
+                      child: const Icon(Icons.broken_image_outlined,
+                          color: AppColors.textHint, size: 32),
+                    ),
+                  ),
+                  // Zaman + okundu overlay
+                  Positioned(
+                    bottom: 6,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.45),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(zaman,
+                              style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500)),
+                          if (benimMesajim) ...[
+                            const SizedBox(width: 3),
+                            Icon(
+                              karsiOkudu
+                                  ? Icons.done_all_rounded
+                                  : Icons.done_rounded,
+                              size: 13,
+                              color: karsiOkudu
+                                  ? Colors.lightBlueAccent
+                                  : Colors.white70,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Fullscreen Resim Görüntüleyici ────────────────────────────────────────────
+
+class _FullscreenResim extends StatelessWidget {
+  final String resimUrl;
+  const _FullscreenResim({required this.resimUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Colors.white),
+        elevation: 0,
+      ),
+      body: Center(
+        child: InteractiveViewer(
+          minScale: 0.5,
+          maxScale: 4.0,
+          child: CachedNetworkImage(
+            imageUrl: resimUrl,
+            fit: BoxFit.contain,
+            placeholder: (_, _) => const CircularProgressIndicator(
+                color: Colors.white, strokeWidth: 2),
+            errorWidget: (_, _, _) => const Icon(Icons.broken_image_outlined,
+                color: Colors.white54, size: 48),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Sohbet İçi Teklif Sheet ───────────────────────────────────────────────────
+
+class _SohbetTeklifSheet extends ConsumerStatefulWidget {
+  final String ilanId;
+  final String ilanBaslik;
+  final String ilanSahibiId;
+  final String ilanSahibiAd;
+  final double ilanFiyat;
+
+  const _SohbetTeklifSheet({
+    required this.ilanId,
+    required this.ilanBaslik,
+    required this.ilanSahibiId,
+    required this.ilanSahibiAd,
+    required this.ilanFiyat,
+  });
+
+  @override
+  ConsumerState<_SohbetTeklifSheet> createState() => _SohbetTeklifSheetState();
+}
+
+class _SohbetTeklifSheetState extends ConsumerState<_SohbetTeklifSheet> {
+  final _ctrl    = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final yukleniyor = ref.watch(teklifProvider).isLoading;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36, height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.divider,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  const Icon(Icons.local_offer_outlined,
+                      color: AppColors.red, size: 20),
+                  const SizedBox(width: 8),
+                  Text('Teklif Ver',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 18, fontWeight: FontWeight.w700)),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(widget.ilanBaslik,
+                  style: GoogleFonts.dmSans(
+                      fontSize: 12, color: AppColors.textSecondary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+              if (widget.ilanFiyat > 0) ...[
+                const SizedBox(height: 2),
+                Text('İlan fiyatı: ${widget.ilanFiyat.toStringAsFixed(0)} ₺',
+                    style: GoogleFonts.dmSans(
+                        fontSize: 12, color: AppColors.textSecondary)),
+              ],
+              const SizedBox(height: 20),
+              TextFormField(
+                controller: _ctrl,
+                autofocus: true,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                ],
+                style: GoogleFonts.dmSans(fontSize: 22, fontWeight: FontWeight.w700),
+                decoration: InputDecoration(
+                  hintText: '0',
+                  hintStyle: GoogleFonts.dmSans(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textHint),
+                  suffixText: '₺',
+                  suffixStyle: GoogleFonts.dmSans(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary),
+                  filled: true,
+                  fillColor: AppColors.surface,
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.divider)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.divider)),
+                  focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Lütfen bir tutar girin';
+                  final m = double.tryParse(v);
+                  if (m == null || m <= 0) return 'Geçerli bir tutar girin';
+                  return null;
+                },
+              ),
+              if (widget.ilanFiyat > 0) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  children: [0.9, 0.8, 0.7].map((oran) {
+                    final deger = (widget.ilanFiyat * oran).round();
+                    return ActionChip(
+                      label: Text('$deger ₺',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 13, fontWeight: FontWeight.w500)),
+                      backgroundColor: AppColors.surface,
+                      side: const BorderSide(color: AppColors.divider),
+                      onPressed: () =>
+                          setState(() => _ctrl.text = deger.toString()),
+                    );
+                  }).toList(),
+                ),
+              ],
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: yukleniyor ? null : _gonder,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.red,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: yukleniyor
+                      ? const SizedBox(
+                          width: 20, height: 20,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2))
+                      : Text('Teklifi Gönder',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 16, fontWeight: FontWeight.w600)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _gonder() async {
+    if (!_formKey.currentState!.validate()) return;
+    final miktar   = double.parse(_ctrl.text.trim());
+    final kullanici = ref.read(currentUserProvider);
+    if (kullanici == null) return;
+
+    final profil  = ref.read(benimKullaniciProfilProvider).value;
+    final adSoyad = profil?.adSoyad ?? kullanici.displayName ?? 'Kullanıcı';
+
+    final basarili = await ref.read(teklifProvider.notifier).teklifVer(
+      ilanId:        widget.ilanId,
+      ilanBaslik:    widget.ilanBaslik,
+      ilanSahibiId:  widget.ilanSahibiId,
+      ilanSahibiAd:  widget.ilanSahibiAd,
+      teklifVerenId: kullanici.uid,
+      teklifVerenAd: adSoyad,
+      miktar:        miktar,
+      ilanMiktar:    widget.ilanFiyat,
+    );
+
+    if (!mounted) return;
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+        basarili ? 'Teklifiniz gönderildi! 🎉' : 'Bir hata oluştu, tekrar deneyin.',
+        style: GoogleFonts.dmSans(),
+      ),
+      backgroundColor: basarili ? AppColors.green : AppColors.red,
+      behavior: SnackBarBehavior.floating,
+    ));
   }
 }

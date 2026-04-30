@@ -8,12 +8,12 @@
 // - Adım header tekrarı → ProfilAdimHeader (profil_tamamla_widgets.dart)
 // - _buildAdim1..4  → private metodlar bu dosyada kalıyor ama kısa
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../profil/providers/profil_provider.dart';
+import '../providers/auth_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../router/app_router.dart';
 import 'profil_tamamla_widgets.dart';
@@ -106,7 +106,9 @@ class _ProfilTamamlaScreenState
       _yukleniyor = true;
       _hata       = '';
     });
-    final uid = FirebaseAuth.instance.currentUser?.uid;
+    // currentUserProvider üzerinden — FirebaseAuth direkt erişim yok
+    final user = ref.read(currentUserProvider);
+    final uid  = user?.uid;
     if (uid == null) {
       setState(() {
         _yukleniyor = false;
@@ -115,7 +117,6 @@ class _ProfilTamamlaScreenState
       return;
     }
     try {
-      final user = FirebaseAuth.instance.currentUser;
       final data = {
         'kullaniciTipi':   _kullaniciTipi,
         'yasadigiUlke':    _tasiyiciMi ? _yasadigiUlke.trim() : '',

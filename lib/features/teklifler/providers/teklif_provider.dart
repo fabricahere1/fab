@@ -133,6 +133,42 @@ class TeslimNotifier extends _$TeslimNotifier {
       return false;
     }
   }
+
+  Future<bool> isteyenDegerlendirdi({
+    required String teklifId,
+    required String getirenUid,
+    required double puan,
+  }) async {
+    state = const AsyncLoading();
+    try {
+      await _repo.isteyenDegerlendirdiKaydet(
+        teklifId: teklifId, getirenUid: getirenUid, puan: puan,
+      );
+      if (ref.mounted) state = const AsyncData(null);
+      return true;
+    } catch (e) {
+      if (ref.mounted) state = AsyncError(e, StackTrace.current);
+      return false;
+    }
+  }
+
+  Future<bool> getirenDegerlendirdi({
+    required String teklifId,
+    required String isteyenUid,
+    required double puan,
+  }) async {
+    state = const AsyncLoading();
+    try {
+      await _repo.getirenDegerlendirdiKaydet(
+        teklifId: teklifId, isteyenUid: isteyenUid, puan: puan,
+      );
+      if (ref.mounted) state = const AsyncData(null);
+      return true;
+    } catch (e) {
+      if (ref.mounted) state = AsyncError(e, StackTrace.current);
+      return false;
+    }
+  }
 }
 
 @riverpod

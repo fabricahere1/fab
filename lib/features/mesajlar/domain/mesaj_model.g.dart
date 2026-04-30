@@ -10,7 +10,6 @@ _MesajModel _$MesajModelFromJson(Map<String, dynamic> json) => _MesajModel(
   id: json['id'] as String,
   metin: json['metin'] as String,
   gondereId: json['gondereId'] as String,
-  gondereAd: json['gondereAd'] as String? ?? '',
   tip: $enumDecodeNullable(_$MesajTipEnumMap, json['tip']) ?? MesajTip.mesaj,
   zaman: const TimestampConverter().fromJson(json['zaman']),
   okundu: json['okundu'] as bool? ?? false,
@@ -21,7 +20,6 @@ Map<String, dynamic> _$MesajModelToJson(_MesajModel instance) =>
       'id': instance.id,
       'metin': instance.metin,
       'gondereId': instance.gondereId,
-      'gondereAd': instance.gondereAd,
       'tip': _$MesajTipEnumMap[instance.tip]!,
       'zaman': const TimestampConverter().toJson(instance.zaman),
       'okundu': instance.okundu,
@@ -34,11 +32,6 @@ _SohbetModel _$SohbetModelFromJson(Map<String, dynamic> json) => _SohbetModel(
   kullanicilar: (json['kullanicilar'] as List<dynamic>)
       .map((e) => e as String)
       .toList(),
-  kullaniciAdlari:
-      (json['kullaniciAdlari'] as Map<String, dynamic>?)?.map(
-        (k, e) => MapEntry(k, e as String),
-      ) ??
-      const {},
   ilanId: json['ilanId'] as String,
   ilanBaslik: json['ilanBaslik'] as String? ?? '',
   ilanResimUrl: json['ilanResimUrl'] as String? ?? '',
@@ -64,7 +57,6 @@ Map<String, dynamic> _$SohbetModelToJson(
 ) => <String, dynamic>{
   'id': instance.id,
   'kullanicilar': instance.kullanicilar,
-  'kullaniciAdlari': instance.kullaniciAdlari,
   'ilanId': instance.ilanId,
   'ilanBaslik': instance.ilanBaslik,
   'ilanResimUrl': instance.ilanResimUrl,

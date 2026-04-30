@@ -15,13 +15,13 @@ final sohbetlerProvider = SohbetlerProvider._();
 final class SohbetlerProvider
     extends
         $FunctionalProvider<
-          AsyncValue<List<Map<String, dynamic>>>,
-          List<Map<String, dynamic>>,
-          Stream<List<Map<String, dynamic>>>
+          AsyncValue<List<SohbetModel>>,
+          List<SohbetModel>,
+          Stream<List<SohbetModel>>
         >
     with
-        $FutureModifier<List<Map<String, dynamic>>>,
-        $StreamProvider<List<Map<String, dynamic>>> {
+        $FutureModifier<List<SohbetModel>>,
+        $StreamProvider<List<SohbetModel>> {
   SohbetlerProvider._()
     : super(
         from: null,
@@ -38,17 +38,17 @@ final class SohbetlerProvider
 
   @$internal
   @override
-  $StreamProviderElement<List<Map<String, dynamic>>> $createElement(
+  $StreamProviderElement<List<SohbetModel>> $createElement(
     $ProviderPointer pointer,
   ) => $StreamProviderElement(pointer);
 
   @override
-  Stream<List<Map<String, dynamic>>> create(Ref ref) {
+  Stream<List<SohbetModel>> create(Ref ref) {
     return sohbetler(ref);
   }
 }
 
-String _$sohbetlerHash() => r'aa4f0ea77d3f6cdc5458a9234961d536bae61851';
+String _$sohbetlerHash() => r'dfb5057bee78bc0e6caa5ccd3cc69e19ab60d26c';
 
 @ProviderFor(okunmamisSayi)
 final okunmamisSayiProvider = OkunmamisSayiProvider._();
@@ -88,7 +88,76 @@ final class OkunmamisSayiProvider extends $FunctionalProvider<int, int, int>
   }
 }
 
-String _$okunmamisSayiHash() => r'2cda818c930452765954cd7b8db3ba36d31f98f6';
+String _$okunmamisSayiHash() => r'2e7df4de9216004e8724351c2c00662402e0ee1b';
+
+@ProviderFor(karsiKullaniciAd)
+final karsiKullaniciAdProvider = KarsiKullaniciAdFamily._();
+
+final class KarsiKullaniciAdProvider
+    extends $FunctionalProvider<AsyncValue<String>, String, Stream<String>>
+    with $FutureModifier<String>, $StreamProvider<String> {
+  KarsiKullaniciAdProvider._({
+    required KarsiKullaniciAdFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'karsiKullaniciAdProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$karsiKullaniciAdHash();
+
+  @override
+  String toString() {
+    return r'karsiKullaniciAdProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<String> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<String> create(Ref ref) {
+    final argument = this.argument as String;
+    return karsiKullaniciAd(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is KarsiKullaniciAdProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$karsiKullaniciAdHash() => r'3d27a2edbe1c028f4e7a05011c0801e6bb6bcd3f';
+
+final class KarsiKullaniciAdFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<String>, String> {
+  KarsiKullaniciAdFamily._()
+    : super(
+        retry: null,
+        name: r'karsiKullaniciAdProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  KarsiKullaniciAdProvider call(String uid) =>
+      KarsiKullaniciAdProvider._(argument: uid, from: this);
+
+  @override
+  String toString() => r'karsiKullaniciAdProvider';
+}
 
 @ProviderFor(SohbetNotifier)
 final sohbetProvider = SohbetNotifierFamily._();
@@ -139,7 +208,7 @@ final class SohbetNotifierProvider
   }
 }
 
-String _$sohbetNotifierHash() => r'af575c67bf58bf54e2f33e42bce3465ffa978f31';
+String _$sohbetNotifierHash() => r'5373a98b1475d82b79d926a97b4e2cbcd0f63db7';
 
 final class SohbetNotifierFamily extends $Family
     with

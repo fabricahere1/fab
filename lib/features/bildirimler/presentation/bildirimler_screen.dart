@@ -123,16 +123,24 @@ class _BildirimSatiri extends ConsumerWidget {
     // Mesaj bildirimi → SohbetScreen
     if (bildirim.tip != BildirimTip.mesaj || bildirim.hedefId.isEmpty) return;
 
+    // hedefId = sohbetId formatı: uid1_uid2_ilanId
     final parts = bildirim.hedefId.split('_');
     if (parts.length < 3) return;
 
-    final benimUid = ref.read(currentUserProvider)?.uid ?? '';
     final ilanId   = parts.last;
-    final karsiUid = parts
-        .sublist(0, parts.length - 1)
-        .firstWhere((p) => p != benimUid, orElse: () => '');
+    // gondereId direkt kullan — parse hatası olmaz
+    final karsiUid = bildirim.gondereId.isNotEmpty
+        ? bildirim.gondereId
+        : (() {
+            final benimUid = ref.read(currentUserProvider)?.uid ?? '';
+            return parts
+                .sublist(0, parts.length - 1)
+                .firstWhere((p) => p != benimUid, orElse: () => '');
+          })();
 
     if (karsiUid.isEmpty) return;
+
+    final anlasmaKabul = bildirim.icerik.contains('Anlaşma teklifiniz kabul edildi');
 
     Navigator.push(
       context,
@@ -141,7 +149,8 @@ class _BildirimSatiri extends ConsumerWidget {
           karsiKullaniciId: karsiUid,
           karsiKullaniciAd: bildirim.gondereAd,
           ilanId:           ilanId,
-          ilanBaslik:       bildirim.icerik,
+          ilanBaslik:       bildirim.baslik,
+          anlasmaVar:       anlasmaKabul,
         ),
       ),
     );

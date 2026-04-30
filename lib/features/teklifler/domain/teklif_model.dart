@@ -1,6 +1,4 @@
-// lib/features/teklifler/domain/teklif_model.dart
-
-import 'package:cloud_firestore/cloud_firestore.dart';
+// cloud_firestore import YOK — domain katmanı Firebase'i tanımaz
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'teklif_model.freezed.dart';
@@ -90,36 +88,7 @@ abstract class TeklifModel with _$TeklifModel {
     return kalan.isNegative ? Duration.zero : kalan;
   }
 
-  factory TeklifModel.fromFirestore(DocumentSnapshot doc) {
-    final d = doc.data() as Map<String, dynamic>;
-    return TeklifModel(
-      id:               doc.id,
-      ilanId:           d['ilanId']            as String? ?? '',
-      ilanBaslik:       d['ilanBaslik']         as String? ?? '',
-      ilanSahibiId:     d['ilanSahibiId']       as String? ?? '',
-      ilanSahibiAd:     d['ilanSahibiAd']       as String? ?? '',
-      teklifVerenId:    d['teklifVerenId']      as String? ?? '',
-      teklifVerenAd:    d['teklifVerenAd']      as String? ?? '',
-      miktar:           (d['miktar']            as num?)?.toDouble() ?? 0,
-      ilanMiktar:       (d['ilanMiktar']        as num?)?.toDouble() ?? 0,
-      durum:            TeklifDurumX.fromString(d['durum'] as String? ?? ''),
-      karsiTeklifMiktar:(d['karsiTeklifMiktar'] as num?)?.toDouble(),
-      olusturmaTarihi:  (d['olusturmaTarihi']   as Timestamp?)?.toDate(),
-      guncellemeTarihi: (d['guncellemeTarihi']  as Timestamp?)?.toDate(),
-      olusumTipi:       d['olusumTipi']         as String? ?? OlusumTipi.teklif,
-      teslimDurumu:        d['teslimDurumu']        as String? ?? 'beklemede',
-      teslimatTipi:        d['teslimatTipi']         as String? ?? 'beklemede',
-      getirenTeslimBeyan:  d['getirenTeslimBeyan']   as String? ?? 'yok',
-      isteyenTeslimOnay:   d['isteyenTeslimOnay']    as String? ?? 'yok',
-      kargoSirketi:        d['kargoSirketi']          as String? ?? '',
-      kargoTakipNo:        d['kargoTakipNo']          as String? ?? '',
-      teslimOnayTarihi:   (d['teslimOnayTarihi']     as Timestamp?)?.toDate(),
-      isteyenDegerlendirdiMi: d['isteyenDegerlendirdiMi'] as bool? ?? false,
-      getirenDegerlendirdiMi: d['getirenDegerlendirdiMi'] as bool? ?? false,
-      degerlendirmeAcilmaTarihi:
-          (d['degerlendirmeAcilmaTarihi'] as Timestamp?)?.toDate(),
-    );
-  }
+  // fromFirestore teklif_repository.dart'ta _teklifModelCevir — domain Firebase'i tanımaz
 
   factory TeklifModel.fromJson(Map<String, dynamic> json) =>
       _$TeklifModelFromJson(json);

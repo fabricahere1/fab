@@ -1,36 +1,36 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../mesajlar/providers/mesaj_provider.dart';
 import '../../mesajlar/data/mesaj_repository.dart';
+import '../../mesajlar/domain/mesaj_model.dart';
 import '../../mesajlar/presentation/sohbet_screen.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/widgets/avatar_widget.dart';
- 
+
 class MesajlarScreen extends ConsumerStatefulWidget {
   const MesajlarScreen({super.key});
- 
+
   @override
   ConsumerState<MesajlarScreen> createState() => _MesajlarScreenState();
 }
- 
+
 class _MesajlarScreenState extends ConsumerState<MesajlarScreen>
     with AutomaticKeepAliveClientMixin {
- 
+
   @override
   bool get wantKeepAlive => true;
- 
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     final uid = ref.watch(currentUserProvider)?.uid;
     final sohbetlerAsync = ref.watch(sohbetlerProvider);
     final engellenenlerAsync = ref.watch(engellenenlerProvider);
- 
+
     if (uid == null) {
       return Scaffold(
         backgroundColor: AppColors.surface,
@@ -55,7 +55,7 @@ class _MesajlarScreenState extends ConsumerState<MesajlarScreen>
         ),
       );
     }
- 
+
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
@@ -77,27 +77,14 @@ class _MesajlarScreenState extends ConsumerState<MesajlarScreen>
         ),
         data: (sohbetler) {
           final engellenenUidler = (engellenenlerAsync.value ?? []).toSet();
- 
+
+          // SohbetModel extension'dan gizliMi() kullan — raw map yok
           final gorunenler = sohbetler.where((s) {
-            final kullanicilar =
-                List<String>.from(s['kullanicilar'] ?? []);
-            final karsiUid = kullanicilar
-                .firstWhere((id) => id != uid, orElse: () => '');
- 
+            final karsiUid = s.karsiKullaniciId(uid);
             if (engellenenUidler.contains(karsiUid)) return false;
- 
-            final gizli = (s['gizli'] as Map<String, dynamic>?) ?? {};
-            final gizliDeger = gizli[uid];
-            if (gizliDeger == null) return true;
-            if (gizliDeger is bool && gizliDeger == true) return false;
-            if (gizliDeger is Timestamp) {
-              final sonMesajZamani = s['sonMesajZamani'] as Timestamp?;
-              if (sonMesajZamani == null) return false;
-              return sonMesajZamani.toDate().isAfter(gizliDeger.toDate());
-            }
-            return true;
+            return !s.gizliMi(uid);
           }).toList();
- 
+
           if (gorunenler.isEmpty) {
             return Center(
               child: Column(
@@ -117,7 +104,7 @@ class _MesajlarScreenState extends ConsumerState<MesajlarScreen>
               ),
             );
           }
- 
+
           return ListView.separated(
             itemCount: gorunenler.length,
             separatorBuilder: (_, _) =>
@@ -125,10 +112,7 @@ class _MesajlarScreenState extends ConsumerState<MesajlarScreen>
             itemBuilder: (context, index) {
               final sohbet = gorunenler[index];
               return RepaintBoundary(
-                child: _SohbetKarti(
-                  sohbet: sohbet,
-                  benimUid: uid,
-                ),
+                child: _SohbetKarti(sohbet: sohbet, benimUid: uid),
               );
             },
           );
@@ -137,25 +121,20 @@ class _MesajlarScreenState extends ConsumerState<MesajlarScreen>
     );
   }
 }
- 
-// ── Sohbet Kartı ──────────────────────────────────────────
- 
+
+// ── Sohbet Kartı ──────────────────────────────────────────────────────────────
+
 class _SohbetKarti extends ConsumerWidget {
-  final Map<String, dynamic> sohbet;
+  final SohbetModel sohbet;
   final String benimUid;
- 
-  const _SohbetKarti({
-    required this.sohbet,
-    required this.benimUid,
-  });
- 
-  Future<void> _silDialog(
-      BuildContext context, WidgetRef ref, String sohbetId) async {
+
+  const _SohbetKarti({required this.sohbet, required this.benimUid});
+
+  Future<void> _silDialog(BuildContext context, WidgetRef ref) async {
     final onay = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text('Sohbeti Sil',
             style: GoogleFonts.dmSans(
                 fontSize: 16, fontWeight: FontWeight.w600)),
@@ -177,55 +156,44 @@ class _SohbetKarti extends ConsumerWidget {
         ],
       ),
     );
- 
+
     if (onay == true && context.mounted) {
       await ref.read(mesajRepositoryProvider).sohbetiGizle(
-            sohbetId: sohbetId,
+            sohbetId: sohbet.id,
             kullaniciId: benimUid,
           );
     }
   }
- 
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final kullanicilar = List<String>.from(sohbet['kullanicilar'] ?? []);
-    final karsiUid = kullanicilar
-        .firstWhere((id) => id != benimUid, orElse: () => '');
- 
-    final kullaniciAdlari =
-        Map<String, String>.from(sohbet['kullaniciAdlari'] ?? {});
-    final karsiAd = kullaniciAdlari[karsiUid] ?? 'Kullanıcı';
- 
-    final sonMesaj = sohbet['sonMesaj'] as String? ?? '';
-    final sonMesajZamani = sohbet['sonMesajZamani'] as Timestamp?;
-    final ilanBaslik = sohbet['ilanBaslik'] as String? ?? '';
-    final ilanId = sohbet['ilanId'] as String? ?? '';
-    final ilanResimUrl = sohbet['ilanResimUrl'] as String? ?? '';
-    final sohbetId = sohbet['id'] as String? ?? '';
- 
-    final okunmamis = (sohbet['okunmamis'] as Map<String, dynamic>?) ?? {};
-    final okunmamisSayi = ((okunmamis[benimUid] as num?)?.toInt() ?? 0);
- 
-    final zamanYazi = sonMesajZamani != null
-        ? _zamanFormat(sonMesajZamani.toDate())
+    // Karşı kullanıcı UID'i — SohbetModel extension'dan
+    final karsiUid = sohbet.karsiKullaniciId(benimUid);
+
+    // Karşı kullanıcı adı — profil koleksiyonundan, tek kaynak
+    final karsiAdAsync = ref.watch(karsiKullaniciAdProvider(karsiUid));
+    final karsiAd = karsiAdAsync.value ?? 'Yükleniyor...';
+
+    final okunmamisSayi = sohbet.okunmamisSayisi(benimUid);
+    final zamanYazi = sohbet.sonMesajZamani != null
+        ? _zamanFormat(sohbet.sonMesajZamani!)
         : '';
- 
-    final sabitlenmis =
-        (sohbet['sabitlenmis'] as Map<String, dynamic>?)?[benimUid]
-            as bool? ?? false;
- 
+    final sabitlenmis = sohbet.sabitMi(benimUid);
+
     return GestureDetector(
-      onLongPress: () => _silDialog(context, ref, sohbetId),
+      onLongPress: () => _silDialog(context, ref),
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => SohbetScreen(
             karsiKullaniciId: karsiUid,
             karsiKullaniciAd: karsiAd,
-            ilanId: ilanId,
-            ilanBaslik: ilanBaslik,
-            ilanResimUrl: ilanResimUrl.isNotEmpty ? ilanResimUrl : null,
-            sohbetId: sohbetId,
+            ilanId: sohbet.ilanId,
+            ilanBaslik: sohbet.ilanBaslik,
+            ilanResimUrl: sohbet.ilanResimUrl.isNotEmpty
+                ? sohbet.ilanResimUrl
+                : null,
+            sohbetId: sohbet.id,
           ),
         ),
       ),
@@ -236,11 +204,11 @@ class _SohbetKarti extends ConsumerWidget {
           children: [
             Stack(
               children: [
-                ilanResimUrl.isNotEmpty
+                sohbet.ilanResimUrl.isNotEmpty
                     ? ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(8),
                         child: CachedNetworkImage(
-                          imageUrl: ilanResimUrl,
+                          imageUrl: sohbet.ilanResimUrl,
                           width: 48,
                           height: 48,
                           fit: BoxFit.cover,
@@ -250,18 +218,23 @@ class _SohbetKarti extends ConsumerWidget {
                         ),
                       )
                     : AvatarWidget(isim: karsiAd, radius: 24),
-                if (sabitlenmis)
+                if (okunmamisSayi > 0)
                   Positioned(
                     right: 0,
-                    bottom: 0,
+                    top: 0,
                     child: Container(
-                      padding: const EdgeInsets.all(2),
+                      padding: const EdgeInsets.all(4),
                       decoration: const BoxDecoration(
-                        color: AppColors.primary,
+                        color: AppColors.red,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.push_pin,
-                          size: 10, color: Colors.white),
+                      child: Text(
+                        okunmamisSayi > 9 ? '9+' : '$okunmamisSayi',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700),
+                      ),
                     ),
                   ),
               ],
@@ -271,80 +244,55 @@ class _SohbetKarti extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          ilanBaslik.isNotEmpty ? ilanBaslik : karsiAd,
-                          style: GoogleFonts.dmSans(
-                            fontSize: 15,
-                            fontWeight: okunmamisSayi > 0
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                            color: AppColors.textPrimary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Text(
-                        zamanYazi,
-                        style: GoogleFonts.dmSans(
-                          fontSize: 12,
-                          color: okunmamisSayi > 0
-                              ? AppColors.red
-                              : AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
+                  // Üstte ilan adı
+                  Text(
+                    sohbet.ilanBaslik.isNotEmpty ? sohbet.ilanBaslik : 'İlan',
+                    style: GoogleFonts.dmSans(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        color: AppColors.textPrimary),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  // Altta karşı kullanıcı adı
+                  Text(
+                    karsiAd,
+                    style: GoogleFonts.dmSans(
+                        fontSize: 12,
+                        color: AppColors.textSecondary),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
-                  if (ilanBaslik.isNotEmpty)
-                    Text(
-                      karsiAd,
-                      style: GoogleFonts.dmSans(
-                          fontSize: 11, color: AppColors.textSecondary),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  // Son mesaj
+                  Text(
+                    sohbet.sonMesaj ?? '',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 13,
+                      color: okunmamisSayi > 0
+                          ? AppColors.textPrimary
+                          : AppColors.textSecondary,
+                      fontWeight: okunmamisSayi > 0
+                          ? FontWeight.w600
+                          : FontWeight.normal,
                     ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          sonMesaj,
-                          style: GoogleFonts.dmSans(
-                            fontSize: 13,
-                            color: okunmamisSayi > 0
-                                ? AppColors.textPrimary
-                                : AppColors.textSecondary,
-                            fontWeight: okunmamisSayi > 0
-                                ? FontWeight.w500
-                                : FontWeight.w400,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (okunmamisSayi > 0)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppColors.red,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            '$okunmamisSayi',
-                            style: GoogleFonts.dmSans(
-                                fontSize: 11,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                    ],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              zamanYazi,
+              style: GoogleFonts.dmSans(
+                fontSize: 11,
+                color: okunmamisSayi > 0
+                    ? AppColors.red
+                    : AppColors.textHint,
+                fontWeight: okunmamisSayi > 0
+                    ? FontWeight.w600
+                    : FontWeight.normal,
               ),
             ),
           ],
@@ -352,19 +300,13 @@ class _SohbetKarti extends ConsumerWidget {
       ),
     );
   }
- 
+
   String _zamanFormat(DateTime zaman) {
-    final simdi = DateTime.now();
-    final fark = simdi.difference(zaman);
-    if (fark.inDays == 0) {
-      return '${zaman.hour.toString().padLeft(2, '0')}:${zaman.minute.toString().padLeft(2, '0')}';
-    } else if (fark.inDays == 1) {
-      return 'Dün';
-    } else if (fark.inDays < 7) {
-      const gunler = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
-      return gunler[zaman.weekday - 1];
-    } else {
-      return '${zaman.day}.${zaman.month}.${zaman.year}';
-    }
+    final fark = DateTime.now().difference(zaman);
+    if (fark.inMinutes < 1) return 'Az önce';
+    if (fark.inMinutes < 60) return '${fark.inMinutes} dk';
+    if (fark.inHours < 24) return '${fark.inHours} saat';
+    if (fark.inDays < 7) return '${fark.inDays} gün';
+    return '${zaman.day}.${zaman.month}.${zaman.year}';
   }
 }

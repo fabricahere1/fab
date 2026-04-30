@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$MesajModel {
 
- String get id; String get metin; String get gondereId; String get gondereAd; MesajTip get tip;@TimestampConverter() DateTime? get zaman; bool get okundu;
+ String get id; String get metin; String get gondereId; MesajTip get tip;@TimestampConverter() DateTime? get zaman; bool get okundu;
 /// Create a copy of MesajModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $MesajModelCopyWith<MesajModel> get copyWith => _$MesajModelCopyWithImpl<MesajMo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MesajModel&&(identical(other.id, id) || other.id == id)&&(identical(other.metin, metin) || other.metin == metin)&&(identical(other.gondereId, gondereId) || other.gondereId == gondereId)&&(identical(other.gondereAd, gondereAd) || other.gondereAd == gondereAd)&&(identical(other.tip, tip) || other.tip == tip)&&(identical(other.zaman, zaman) || other.zaman == zaman)&&(identical(other.okundu, okundu) || other.okundu == okundu));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MesajModel&&(identical(other.id, id) || other.id == id)&&(identical(other.metin, metin) || other.metin == metin)&&(identical(other.gondereId, gondereId) || other.gondereId == gondereId)&&(identical(other.tip, tip) || other.tip == tip)&&(identical(other.zaman, zaman) || other.zaman == zaman)&&(identical(other.okundu, okundu) || other.okundu == okundu));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,metin,gondereId,gondereAd,tip,zaman,okundu);
+int get hashCode => Object.hash(runtimeType,id,metin,gondereId,tip,zaman,okundu);
 
 @override
 String toString() {
-  return 'MesajModel(id: $id, metin: $metin, gondereId: $gondereId, gondereAd: $gondereAd, tip: $tip, zaman: $zaman, okundu: $okundu)';
+  return 'MesajModel(id: $id, metin: $metin, gondereId: $gondereId, tip: $tip, zaman: $zaman, okundu: $okundu)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $MesajModelCopyWith<$Res>  {
   factory $MesajModelCopyWith(MesajModel value, $Res Function(MesajModel) _then) = _$MesajModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String metin, String gondereId, String gondereAd, MesajTip tip,@TimestampConverter() DateTime? zaman, bool okundu
+ String id, String metin, String gondereId, MesajTip tip,@TimestampConverter() DateTime? zaman, bool okundu
 });
 
 
@@ -65,12 +65,11 @@ class _$MesajModelCopyWithImpl<$Res>
 
 /// Create a copy of MesajModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? metin = null,Object? gondereId = null,Object? gondereAd = null,Object? tip = null,Object? zaman = freezed,Object? okundu = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? metin = null,Object? gondereId = null,Object? tip = null,Object? zaman = freezed,Object? okundu = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,metin: null == metin ? _self.metin : metin // ignore: cast_nullable_to_non_nullable
 as String,gondereId: null == gondereId ? _self.gondereId : gondereId // ignore: cast_nullable_to_non_nullable
-as String,gondereAd: null == gondereAd ? _self.gondereAd : gondereAd // ignore: cast_nullable_to_non_nullable
 as String,tip: null == tip ? _self.tip : tip // ignore: cast_nullable_to_non_nullable
 as MesajTip,zaman: freezed == zaman ? _self.zaman : zaman // ignore: cast_nullable_to_non_nullable
 as DateTime?,okundu: null == okundu ? _self.okundu : okundu // ignore: cast_nullable_to_non_nullable
@@ -159,10 +158,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String metin,  String gondereId,  String gondereAd,  MesajTip tip, @TimestampConverter()  DateTime? zaman,  bool okundu)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String metin,  String gondereId,  MesajTip tip, @TimestampConverter()  DateTime? zaman,  bool okundu)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MesajModel() when $default != null:
-return $default(_that.id,_that.metin,_that.gondereId,_that.gondereAd,_that.tip,_that.zaman,_that.okundu);case _:
+return $default(_that.id,_that.metin,_that.gondereId,_that.tip,_that.zaman,_that.okundu);case _:
   return orElse();
 
 }
@@ -180,10 +179,10 @@ return $default(_that.id,_that.metin,_that.gondereId,_that.gondereAd,_that.tip,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String metin,  String gondereId,  String gondereAd,  MesajTip tip, @TimestampConverter()  DateTime? zaman,  bool okundu)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String metin,  String gondereId,  MesajTip tip, @TimestampConverter()  DateTime? zaman,  bool okundu)  $default,) {final _that = this;
 switch (_that) {
 case _MesajModel():
-return $default(_that.id,_that.metin,_that.gondereId,_that.gondereAd,_that.tip,_that.zaman,_that.okundu);case _:
+return $default(_that.id,_that.metin,_that.gondereId,_that.tip,_that.zaman,_that.okundu);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -200,10 +199,10 @@ return $default(_that.id,_that.metin,_that.gondereId,_that.gondereAd,_that.tip,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String metin,  String gondereId,  String gondereAd,  MesajTip tip, @TimestampConverter()  DateTime? zaman,  bool okundu)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String metin,  String gondereId,  MesajTip tip, @TimestampConverter()  DateTime? zaman,  bool okundu)?  $default,) {final _that = this;
 switch (_that) {
 case _MesajModel() when $default != null:
-return $default(_that.id,_that.metin,_that.gondereId,_that.gondereAd,_that.tip,_that.zaman,_that.okundu);case _:
+return $default(_that.id,_that.metin,_that.gondereId,_that.tip,_that.zaman,_that.okundu);case _:
   return null;
 
 }
@@ -215,13 +214,12 @@ return $default(_that.id,_that.metin,_that.gondereId,_that.gondereAd,_that.tip,_
 @JsonSerializable()
 
 class _MesajModel implements MesajModel {
-  const _MesajModel({required this.id, required this.metin, required this.gondereId, this.gondereAd = '', this.tip = MesajTip.mesaj, @TimestampConverter() this.zaman, this.okundu = false});
+  const _MesajModel({required this.id, required this.metin, required this.gondereId, this.tip = MesajTip.mesaj, @TimestampConverter() this.zaman, this.okundu = false});
   factory _MesajModel.fromJson(Map<String, dynamic> json) => _$MesajModelFromJson(json);
 
 @override final  String id;
 @override final  String metin;
 @override final  String gondereId;
-@override@JsonKey() final  String gondereAd;
 @override@JsonKey() final  MesajTip tip;
 @override@TimestampConverter() final  DateTime? zaman;
 @override@JsonKey() final  bool okundu;
@@ -239,16 +237,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MesajModel&&(identical(other.id, id) || other.id == id)&&(identical(other.metin, metin) || other.metin == metin)&&(identical(other.gondereId, gondereId) || other.gondereId == gondereId)&&(identical(other.gondereAd, gondereAd) || other.gondereAd == gondereAd)&&(identical(other.tip, tip) || other.tip == tip)&&(identical(other.zaman, zaman) || other.zaman == zaman)&&(identical(other.okundu, okundu) || other.okundu == okundu));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MesajModel&&(identical(other.id, id) || other.id == id)&&(identical(other.metin, metin) || other.metin == metin)&&(identical(other.gondereId, gondereId) || other.gondereId == gondereId)&&(identical(other.tip, tip) || other.tip == tip)&&(identical(other.zaman, zaman) || other.zaman == zaman)&&(identical(other.okundu, okundu) || other.okundu == okundu));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,metin,gondereId,gondereAd,tip,zaman,okundu);
+int get hashCode => Object.hash(runtimeType,id,metin,gondereId,tip,zaman,okundu);
 
 @override
 String toString() {
-  return 'MesajModel(id: $id, metin: $metin, gondereId: $gondereId, gondereAd: $gondereAd, tip: $tip, zaman: $zaman, okundu: $okundu)';
+  return 'MesajModel(id: $id, metin: $metin, gondereId: $gondereId, tip: $tip, zaman: $zaman, okundu: $okundu)';
 }
 
 
@@ -259,7 +257,7 @@ abstract mixin class _$MesajModelCopyWith<$Res> implements $MesajModelCopyWith<$
   factory _$MesajModelCopyWith(_MesajModel value, $Res Function(_MesajModel) _then) = __$MesajModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String metin, String gondereId, String gondereAd, MesajTip tip,@TimestampConverter() DateTime? zaman, bool okundu
+ String id, String metin, String gondereId, MesajTip tip,@TimestampConverter() DateTime? zaman, bool okundu
 });
 
 
@@ -276,12 +274,11 @@ class __$MesajModelCopyWithImpl<$Res>
 
 /// Create a copy of MesajModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? metin = null,Object? gondereId = null,Object? gondereAd = null,Object? tip = null,Object? zaman = freezed,Object? okundu = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? metin = null,Object? gondereId = null,Object? tip = null,Object? zaman = freezed,Object? okundu = null,}) {
   return _then(_MesajModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,metin: null == metin ? _self.metin : metin // ignore: cast_nullable_to_non_nullable
 as String,gondereId: null == gondereId ? _self.gondereId : gondereId // ignore: cast_nullable_to_non_nullable
-as String,gondereAd: null == gondereAd ? _self.gondereAd : gondereAd // ignore: cast_nullable_to_non_nullable
 as String,tip: null == tip ? _self.tip : tip // ignore: cast_nullable_to_non_nullable
 as MesajTip,zaman: freezed == zaman ? _self.zaman : zaman // ignore: cast_nullable_to_non_nullable
 as DateTime?,okundu: null == okundu ? _self.okundu : okundu // ignore: cast_nullable_to_non_nullable
@@ -296,7 +293,7 @@ as bool,
 /// @nodoc
 mixin _$SohbetModel {
 
- String get id; List<String> get kullanicilar; Map<String, String> get kullaniciAdlari; String get ilanId; String get ilanBaslik; String get ilanResimUrl; String? get sonMesaj;@TimestampConverter() DateTime? get sonMesajZamani; String get sonGondereId; Map<String, int> get okunmamis; Map<String, dynamic> get gizli; Map<String, bool> get sabitlenmis; bool get degerlendirmeYapildi;
+ String get id; List<String> get kullanicilar; String get ilanId; String get ilanBaslik; String get ilanResimUrl; String? get sonMesaj;@TimestampConverter() DateTime? get sonMesajZamani; String get sonGondereId; Map<String, int> get okunmamis; Map<String, dynamic> get gizli; Map<String, bool> get sabitlenmis; bool get degerlendirmeYapildi;
 /// Create a copy of SohbetModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -309,16 +306,16 @@ $SohbetModelCopyWith<SohbetModel> get copyWith => _$SohbetModelCopyWithImpl<Sohb
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SohbetModel&&(identical(other.id, id) || other.id == id)&&const DeepCollectionEquality().equals(other.kullanicilar, kullanicilar)&&const DeepCollectionEquality().equals(other.kullaniciAdlari, kullaniciAdlari)&&(identical(other.ilanId, ilanId) || other.ilanId == ilanId)&&(identical(other.ilanBaslik, ilanBaslik) || other.ilanBaslik == ilanBaslik)&&(identical(other.ilanResimUrl, ilanResimUrl) || other.ilanResimUrl == ilanResimUrl)&&(identical(other.sonMesaj, sonMesaj) || other.sonMesaj == sonMesaj)&&(identical(other.sonMesajZamani, sonMesajZamani) || other.sonMesajZamani == sonMesajZamani)&&(identical(other.sonGondereId, sonGondereId) || other.sonGondereId == sonGondereId)&&const DeepCollectionEquality().equals(other.okunmamis, okunmamis)&&const DeepCollectionEquality().equals(other.gizli, gizli)&&const DeepCollectionEquality().equals(other.sabitlenmis, sabitlenmis)&&(identical(other.degerlendirmeYapildi, degerlendirmeYapildi) || other.degerlendirmeYapildi == degerlendirmeYapildi));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SohbetModel&&(identical(other.id, id) || other.id == id)&&const DeepCollectionEquality().equals(other.kullanicilar, kullanicilar)&&(identical(other.ilanId, ilanId) || other.ilanId == ilanId)&&(identical(other.ilanBaslik, ilanBaslik) || other.ilanBaslik == ilanBaslik)&&(identical(other.ilanResimUrl, ilanResimUrl) || other.ilanResimUrl == ilanResimUrl)&&(identical(other.sonMesaj, sonMesaj) || other.sonMesaj == sonMesaj)&&(identical(other.sonMesajZamani, sonMesajZamani) || other.sonMesajZamani == sonMesajZamani)&&(identical(other.sonGondereId, sonGondereId) || other.sonGondereId == sonGondereId)&&const DeepCollectionEquality().equals(other.okunmamis, okunmamis)&&const DeepCollectionEquality().equals(other.gizli, gizli)&&const DeepCollectionEquality().equals(other.sabitlenmis, sabitlenmis)&&(identical(other.degerlendirmeYapildi, degerlendirmeYapildi) || other.degerlendirmeYapildi == degerlendirmeYapildi));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,const DeepCollectionEquality().hash(kullanicilar),const DeepCollectionEquality().hash(kullaniciAdlari),ilanId,ilanBaslik,ilanResimUrl,sonMesaj,sonMesajZamani,sonGondereId,const DeepCollectionEquality().hash(okunmamis),const DeepCollectionEquality().hash(gizli),const DeepCollectionEquality().hash(sabitlenmis),degerlendirmeYapildi);
+int get hashCode => Object.hash(runtimeType,id,const DeepCollectionEquality().hash(kullanicilar),ilanId,ilanBaslik,ilanResimUrl,sonMesaj,sonMesajZamani,sonGondereId,const DeepCollectionEquality().hash(okunmamis),const DeepCollectionEquality().hash(gizli),const DeepCollectionEquality().hash(sabitlenmis),degerlendirmeYapildi);
 
 @override
 String toString() {
-  return 'SohbetModel(id: $id, kullanicilar: $kullanicilar, kullaniciAdlari: $kullaniciAdlari, ilanId: $ilanId, ilanBaslik: $ilanBaslik, ilanResimUrl: $ilanResimUrl, sonMesaj: $sonMesaj, sonMesajZamani: $sonMesajZamani, sonGondereId: $sonGondereId, okunmamis: $okunmamis, gizli: $gizli, sabitlenmis: $sabitlenmis, degerlendirmeYapildi: $degerlendirmeYapildi)';
+  return 'SohbetModel(id: $id, kullanicilar: $kullanicilar, ilanId: $ilanId, ilanBaslik: $ilanBaslik, ilanResimUrl: $ilanResimUrl, sonMesaj: $sonMesaj, sonMesajZamani: $sonMesajZamani, sonGondereId: $sonGondereId, okunmamis: $okunmamis, gizli: $gizli, sabitlenmis: $sabitlenmis, degerlendirmeYapildi: $degerlendirmeYapildi)';
 }
 
 
@@ -329,7 +326,7 @@ abstract mixin class $SohbetModelCopyWith<$Res>  {
   factory $SohbetModelCopyWith(SohbetModel value, $Res Function(SohbetModel) _then) = _$SohbetModelCopyWithImpl;
 @useResult
 $Res call({
- String id, List<String> kullanicilar, Map<String, String> kullaniciAdlari, String ilanId, String ilanBaslik, String ilanResimUrl, String? sonMesaj,@TimestampConverter() DateTime? sonMesajZamani, String sonGondereId, Map<String, int> okunmamis, Map<String, dynamic> gizli, Map<String, bool> sabitlenmis, bool degerlendirmeYapildi
+ String id, List<String> kullanicilar, String ilanId, String ilanBaslik, String ilanResimUrl, String? sonMesaj,@TimestampConverter() DateTime? sonMesajZamani, String sonGondereId, Map<String, int> okunmamis, Map<String, dynamic> gizli, Map<String, bool> sabitlenmis, bool degerlendirmeYapildi
 });
 
 
@@ -346,12 +343,11 @@ class _$SohbetModelCopyWithImpl<$Res>
 
 /// Create a copy of SohbetModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? kullanicilar = null,Object? kullaniciAdlari = null,Object? ilanId = null,Object? ilanBaslik = null,Object? ilanResimUrl = null,Object? sonMesaj = freezed,Object? sonMesajZamani = freezed,Object? sonGondereId = null,Object? okunmamis = null,Object? gizli = null,Object? sabitlenmis = null,Object? degerlendirmeYapildi = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? kullanicilar = null,Object? ilanId = null,Object? ilanBaslik = null,Object? ilanResimUrl = null,Object? sonMesaj = freezed,Object? sonMesajZamani = freezed,Object? sonGondereId = null,Object? okunmamis = null,Object? gizli = null,Object? sabitlenmis = null,Object? degerlendirmeYapildi = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,kullanicilar: null == kullanicilar ? _self.kullanicilar : kullanicilar // ignore: cast_nullable_to_non_nullable
-as List<String>,kullaniciAdlari: null == kullaniciAdlari ? _self.kullaniciAdlari : kullaniciAdlari // ignore: cast_nullable_to_non_nullable
-as Map<String, String>,ilanId: null == ilanId ? _self.ilanId : ilanId // ignore: cast_nullable_to_non_nullable
+as List<String>,ilanId: null == ilanId ? _self.ilanId : ilanId // ignore: cast_nullable_to_non_nullable
 as String,ilanBaslik: null == ilanBaslik ? _self.ilanBaslik : ilanBaslik // ignore: cast_nullable_to_non_nullable
 as String,ilanResimUrl: null == ilanResimUrl ? _self.ilanResimUrl : ilanResimUrl // ignore: cast_nullable_to_non_nullable
 as String,sonMesaj: freezed == sonMesaj ? _self.sonMesaj : sonMesaj // ignore: cast_nullable_to_non_nullable
@@ -446,10 +442,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  List<String> kullanicilar,  Map<String, String> kullaniciAdlari,  String ilanId,  String ilanBaslik,  String ilanResimUrl,  String? sonMesaj, @TimestampConverter()  DateTime? sonMesajZamani,  String sonGondereId,  Map<String, int> okunmamis,  Map<String, dynamic> gizli,  Map<String, bool> sabitlenmis,  bool degerlendirmeYapildi)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  List<String> kullanicilar,  String ilanId,  String ilanBaslik,  String ilanResimUrl,  String? sonMesaj, @TimestampConverter()  DateTime? sonMesajZamani,  String sonGondereId,  Map<String, int> okunmamis,  Map<String, dynamic> gizli,  Map<String, bool> sabitlenmis,  bool degerlendirmeYapildi)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SohbetModel() when $default != null:
-return $default(_that.id,_that.kullanicilar,_that.kullaniciAdlari,_that.ilanId,_that.ilanBaslik,_that.ilanResimUrl,_that.sonMesaj,_that.sonMesajZamani,_that.sonGondereId,_that.okunmamis,_that.gizli,_that.sabitlenmis,_that.degerlendirmeYapildi);case _:
+return $default(_that.id,_that.kullanicilar,_that.ilanId,_that.ilanBaslik,_that.ilanResimUrl,_that.sonMesaj,_that.sonMesajZamani,_that.sonGondereId,_that.okunmamis,_that.gizli,_that.sabitlenmis,_that.degerlendirmeYapildi);case _:
   return orElse();
 
 }
@@ -467,10 +463,10 @@ return $default(_that.id,_that.kullanicilar,_that.kullaniciAdlari,_that.ilanId,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  List<String> kullanicilar,  Map<String, String> kullaniciAdlari,  String ilanId,  String ilanBaslik,  String ilanResimUrl,  String? sonMesaj, @TimestampConverter()  DateTime? sonMesajZamani,  String sonGondereId,  Map<String, int> okunmamis,  Map<String, dynamic> gizli,  Map<String, bool> sabitlenmis,  bool degerlendirmeYapildi)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  List<String> kullanicilar,  String ilanId,  String ilanBaslik,  String ilanResimUrl,  String? sonMesaj, @TimestampConverter()  DateTime? sonMesajZamani,  String sonGondereId,  Map<String, int> okunmamis,  Map<String, dynamic> gizli,  Map<String, bool> sabitlenmis,  bool degerlendirmeYapildi)  $default,) {final _that = this;
 switch (_that) {
 case _SohbetModel():
-return $default(_that.id,_that.kullanicilar,_that.kullaniciAdlari,_that.ilanId,_that.ilanBaslik,_that.ilanResimUrl,_that.sonMesaj,_that.sonMesajZamani,_that.sonGondereId,_that.okunmamis,_that.gizli,_that.sabitlenmis,_that.degerlendirmeYapildi);case _:
+return $default(_that.id,_that.kullanicilar,_that.ilanId,_that.ilanBaslik,_that.ilanResimUrl,_that.sonMesaj,_that.sonMesajZamani,_that.sonGondereId,_that.okunmamis,_that.gizli,_that.sabitlenmis,_that.degerlendirmeYapildi);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -487,10 +483,10 @@ return $default(_that.id,_that.kullanicilar,_that.kullaniciAdlari,_that.ilanId,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  List<String> kullanicilar,  Map<String, String> kullaniciAdlari,  String ilanId,  String ilanBaslik,  String ilanResimUrl,  String? sonMesaj, @TimestampConverter()  DateTime? sonMesajZamani,  String sonGondereId,  Map<String, int> okunmamis,  Map<String, dynamic> gizli,  Map<String, bool> sabitlenmis,  bool degerlendirmeYapildi)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  List<String> kullanicilar,  String ilanId,  String ilanBaslik,  String ilanResimUrl,  String? sonMesaj, @TimestampConverter()  DateTime? sonMesajZamani,  String sonGondereId,  Map<String, int> okunmamis,  Map<String, dynamic> gizli,  Map<String, bool> sabitlenmis,  bool degerlendirmeYapildi)?  $default,) {final _that = this;
 switch (_that) {
 case _SohbetModel() when $default != null:
-return $default(_that.id,_that.kullanicilar,_that.kullaniciAdlari,_that.ilanId,_that.ilanBaslik,_that.ilanResimUrl,_that.sonMesaj,_that.sonMesajZamani,_that.sonGondereId,_that.okunmamis,_that.gizli,_that.sabitlenmis,_that.degerlendirmeYapildi);case _:
+return $default(_that.id,_that.kullanicilar,_that.ilanId,_that.ilanBaslik,_that.ilanResimUrl,_that.sonMesaj,_that.sonMesajZamani,_that.sonGondereId,_that.okunmamis,_that.gizli,_that.sabitlenmis,_that.degerlendirmeYapildi);case _:
   return null;
 
 }
@@ -502,7 +498,7 @@ return $default(_that.id,_that.kullanicilar,_that.kullaniciAdlari,_that.ilanId,_
 @JsonSerializable()
 
 class _SohbetModel implements SohbetModel {
-  const _SohbetModel({required this.id, required final  List<String> kullanicilar, final  Map<String, String> kullaniciAdlari = const {}, required this.ilanId, this.ilanBaslik = '', this.ilanResimUrl = '', this.sonMesaj, @TimestampConverter() this.sonMesajZamani, this.sonGondereId = '', final  Map<String, int> okunmamis = const {}, final  Map<String, dynamic> gizli = const {}, final  Map<String, bool> sabitlenmis = const {}, this.degerlendirmeYapildi = false}): _kullanicilar = kullanicilar,_kullaniciAdlari = kullaniciAdlari,_okunmamis = okunmamis,_gizli = gizli,_sabitlenmis = sabitlenmis;
+  const _SohbetModel({required this.id, required final  List<String> kullanicilar, required this.ilanId, this.ilanBaslik = '', this.ilanResimUrl = '', this.sonMesaj, @TimestampConverter() this.sonMesajZamani, this.sonGondereId = '', final  Map<String, int> okunmamis = const {}, final  Map<String, dynamic> gizli = const {}, final  Map<String, bool> sabitlenmis = const {}, this.degerlendirmeYapildi = false}): _kullanicilar = kullanicilar,_okunmamis = okunmamis,_gizli = gizli,_sabitlenmis = sabitlenmis;
   factory _SohbetModel.fromJson(Map<String, dynamic> json) => _$SohbetModelFromJson(json);
 
 @override final  String id;
@@ -511,13 +507,6 @@ class _SohbetModel implements SohbetModel {
   if (_kullanicilar is EqualUnmodifiableListView) return _kullanicilar;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_kullanicilar);
-}
-
- final  Map<String, String> _kullaniciAdlari;
-@override@JsonKey() Map<String, String> get kullaniciAdlari {
-  if (_kullaniciAdlari is EqualUnmodifiableMapView) return _kullaniciAdlari;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableMapView(_kullaniciAdlari);
 }
 
 @override final  String ilanId;
@@ -562,16 +551,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SohbetModel&&(identical(other.id, id) || other.id == id)&&const DeepCollectionEquality().equals(other._kullanicilar, _kullanicilar)&&const DeepCollectionEquality().equals(other._kullaniciAdlari, _kullaniciAdlari)&&(identical(other.ilanId, ilanId) || other.ilanId == ilanId)&&(identical(other.ilanBaslik, ilanBaslik) || other.ilanBaslik == ilanBaslik)&&(identical(other.ilanResimUrl, ilanResimUrl) || other.ilanResimUrl == ilanResimUrl)&&(identical(other.sonMesaj, sonMesaj) || other.sonMesaj == sonMesaj)&&(identical(other.sonMesajZamani, sonMesajZamani) || other.sonMesajZamani == sonMesajZamani)&&(identical(other.sonGondereId, sonGondereId) || other.sonGondereId == sonGondereId)&&const DeepCollectionEquality().equals(other._okunmamis, _okunmamis)&&const DeepCollectionEquality().equals(other._gizli, _gizli)&&const DeepCollectionEquality().equals(other._sabitlenmis, _sabitlenmis)&&(identical(other.degerlendirmeYapildi, degerlendirmeYapildi) || other.degerlendirmeYapildi == degerlendirmeYapildi));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SohbetModel&&(identical(other.id, id) || other.id == id)&&const DeepCollectionEquality().equals(other._kullanicilar, _kullanicilar)&&(identical(other.ilanId, ilanId) || other.ilanId == ilanId)&&(identical(other.ilanBaslik, ilanBaslik) || other.ilanBaslik == ilanBaslik)&&(identical(other.ilanResimUrl, ilanResimUrl) || other.ilanResimUrl == ilanResimUrl)&&(identical(other.sonMesaj, sonMesaj) || other.sonMesaj == sonMesaj)&&(identical(other.sonMesajZamani, sonMesajZamani) || other.sonMesajZamani == sonMesajZamani)&&(identical(other.sonGondereId, sonGondereId) || other.sonGondereId == sonGondereId)&&const DeepCollectionEquality().equals(other._okunmamis, _okunmamis)&&const DeepCollectionEquality().equals(other._gizli, _gizli)&&const DeepCollectionEquality().equals(other._sabitlenmis, _sabitlenmis)&&(identical(other.degerlendirmeYapildi, degerlendirmeYapildi) || other.degerlendirmeYapildi == degerlendirmeYapildi));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,const DeepCollectionEquality().hash(_kullanicilar),const DeepCollectionEquality().hash(_kullaniciAdlari),ilanId,ilanBaslik,ilanResimUrl,sonMesaj,sonMesajZamani,sonGondereId,const DeepCollectionEquality().hash(_okunmamis),const DeepCollectionEquality().hash(_gizli),const DeepCollectionEquality().hash(_sabitlenmis),degerlendirmeYapildi);
+int get hashCode => Object.hash(runtimeType,id,const DeepCollectionEquality().hash(_kullanicilar),ilanId,ilanBaslik,ilanResimUrl,sonMesaj,sonMesajZamani,sonGondereId,const DeepCollectionEquality().hash(_okunmamis),const DeepCollectionEquality().hash(_gizli),const DeepCollectionEquality().hash(_sabitlenmis),degerlendirmeYapildi);
 
 @override
 String toString() {
-  return 'SohbetModel(id: $id, kullanicilar: $kullanicilar, kullaniciAdlari: $kullaniciAdlari, ilanId: $ilanId, ilanBaslik: $ilanBaslik, ilanResimUrl: $ilanResimUrl, sonMesaj: $sonMesaj, sonMesajZamani: $sonMesajZamani, sonGondereId: $sonGondereId, okunmamis: $okunmamis, gizli: $gizli, sabitlenmis: $sabitlenmis, degerlendirmeYapildi: $degerlendirmeYapildi)';
+  return 'SohbetModel(id: $id, kullanicilar: $kullanicilar, ilanId: $ilanId, ilanBaslik: $ilanBaslik, ilanResimUrl: $ilanResimUrl, sonMesaj: $sonMesaj, sonMesajZamani: $sonMesajZamani, sonGondereId: $sonGondereId, okunmamis: $okunmamis, gizli: $gizli, sabitlenmis: $sabitlenmis, degerlendirmeYapildi: $degerlendirmeYapildi)';
 }
 
 
@@ -582,7 +571,7 @@ abstract mixin class _$SohbetModelCopyWith<$Res> implements $SohbetModelCopyWith
   factory _$SohbetModelCopyWith(_SohbetModel value, $Res Function(_SohbetModel) _then) = __$SohbetModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, List<String> kullanicilar, Map<String, String> kullaniciAdlari, String ilanId, String ilanBaslik, String ilanResimUrl, String? sonMesaj,@TimestampConverter() DateTime? sonMesajZamani, String sonGondereId, Map<String, int> okunmamis, Map<String, dynamic> gizli, Map<String, bool> sabitlenmis, bool degerlendirmeYapildi
+ String id, List<String> kullanicilar, String ilanId, String ilanBaslik, String ilanResimUrl, String? sonMesaj,@TimestampConverter() DateTime? sonMesajZamani, String sonGondereId, Map<String, int> okunmamis, Map<String, dynamic> gizli, Map<String, bool> sabitlenmis, bool degerlendirmeYapildi
 });
 
 
@@ -599,12 +588,11 @@ class __$SohbetModelCopyWithImpl<$Res>
 
 /// Create a copy of SohbetModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? kullanicilar = null,Object? kullaniciAdlari = null,Object? ilanId = null,Object? ilanBaslik = null,Object? ilanResimUrl = null,Object? sonMesaj = freezed,Object? sonMesajZamani = freezed,Object? sonGondereId = null,Object? okunmamis = null,Object? gizli = null,Object? sabitlenmis = null,Object? degerlendirmeYapildi = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? kullanicilar = null,Object? ilanId = null,Object? ilanBaslik = null,Object? ilanResimUrl = null,Object? sonMesaj = freezed,Object? sonMesajZamani = freezed,Object? sonGondereId = null,Object? okunmamis = null,Object? gizli = null,Object? sabitlenmis = null,Object? degerlendirmeYapildi = null,}) {
   return _then(_SohbetModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,kullanicilar: null == kullanicilar ? _self._kullanicilar : kullanicilar // ignore: cast_nullable_to_non_nullable
-as List<String>,kullaniciAdlari: null == kullaniciAdlari ? _self._kullaniciAdlari : kullaniciAdlari // ignore: cast_nullable_to_non_nullable
-as Map<String, String>,ilanId: null == ilanId ? _self.ilanId : ilanId // ignore: cast_nullable_to_non_nullable
+as List<String>,ilanId: null == ilanId ? _self.ilanId : ilanId // ignore: cast_nullable_to_non_nullable
 as String,ilanBaslik: null == ilanBaslik ? _self.ilanBaslik : ilanBaslik // ignore: cast_nullable_to_non_nullable
 as String,ilanResimUrl: null == ilanResimUrl ? _self.ilanResimUrl : ilanResimUrl // ignore: cast_nullable_to_non_nullable
 as String,sonMesaj: freezed == sonMesaj ? _self.sonMesaj : sonMesaj // ignore: cast_nullable_to_non_nullable

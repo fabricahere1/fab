@@ -72,6 +72,9 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
           ilanId: ilan.id,
           ilanBaslik: ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
           ilanResimUrl: resimler.isNotEmpty ? resimler.first : null,
+          ilanSahibiId: ilan.kullaniciId,
+          ilanSahibiAd: ilan.kullaniciAd,
+          ilanFiyat: double.tryParse(ilan.ucret),
         ),
         transitionsBuilder: (ctx, anim, secAnim, child) => SlideTransition(
           position: Tween(
@@ -449,50 +452,53 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppColors.red.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(6),
+                            color: const Color(0xFF2E7D32).withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(kategoriAdiStr,
                               style: GoogleFonts.dmSans(
-                                  fontSize: 12, color: AppColors.red, fontWeight: FontWeight.w500)),
+                                  fontSize: 11,
+                                  color: const Color(0xFF2E7D32),
+                                  fontWeight: FontWeight.w500,
+                                  letterSpacing: 0.2)),
                         ),
                         const SizedBox(height: 10),
                       ],
                       Text(
                         ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
                         style: GoogleFonts.dmSans(
-                            fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                            height: 1.3),
                       ),
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: ilan.ucret.isNotEmpty
-                                  ? AppColors.red.withValues(alpha: 0.08)
-                                  : AppColors.surface,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.attach_money_outlined,
-                                    size: 18,
-                                    color: ilan.ucret.isNotEmpty
-                                        ? AppColors.red : AppColors.textSecondary),
-                                const SizedBox(width: 4),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                ilan.ucret.isNotEmpty ? '${ilan.ucret} ₺' : 'Ücret belirtilmemiş',
+                                style: GoogleFonts.dmSans(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w700,
+                                  color: ilan.ucret.isNotEmpty
+                                      ? AppColors.textPrimary
+                                      : AppColors.textHint,
+                                  height: 1.1,
+                                ),
+                              ),
+                              if (ilan.ucret.isNotEmpty)
                                 Text(
-                                  ilan.ucret.isNotEmpty ? '${ilan.ucret} ₺' : 'Ücret belirtilmemiş',
+                                  'taşıma ücreti',
                                   style: GoogleFonts.dmSans(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w700,
-                                    color: ilan.ucret.isNotEmpty
-                                        ? AppColors.red : AppColors.textSecondary,
+                                    fontSize: 11,
+                                    color: AppColors.textSecondary,
+                                    fontWeight: FontWeight.w400,
                                   ),
                                 ),
-                              ],
-                            ),
+                            ],
                           ),
                           // İlan sahibine teklif badge
                           if (benimIlan && teklifOzet != null && teklifOzet.sayi > 0) ...[
@@ -567,17 +573,37 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                     children: [
                       Text('Güzergah',
                           style: GoogleFonts.dmSans(
-                              fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
-                      const SizedBox(height: 14),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                              letterSpacing: 0.3)),
+                      const SizedBox(height: 16),
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Güzergah çizgisi: kırmızı başlangıç, siyah bitiş
                           Column(
                             children: [
-                              Container(width: 10, height: 10,
-                                  decoration: const BoxDecoration(color: AppColors.red, shape: BoxShape.circle)),
-                              Container(width: 2, height: 30, color: AppColors.divider),
-                              Container(width: 10, height: 10,
-                                  decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle)),
+                              const SizedBox(height: 3),
+                              Container(
+                                width: 10, height: 10,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              Container(
+                                width: 1.5,
+                                height: 32,
+                                color: AppColors.divider,
+                              ),
+                              Container(
+                                width: 10, height: 10,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.textPrimary,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(width: 14),
@@ -585,13 +611,23 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(ilan.nereden,
-                                    style: GoogleFonts.dmSans(
-                                        fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                                const SizedBox(height: 20),
-                                Text(ilan.nereye,
-                                    style: GoogleFonts.dmSans(
-                                        fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                                Text(
+                                  ilan.nereden,
+                                  style: GoogleFonts.dmSans(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 28),
+                                Text(
+                                  ilan.nereye,
+                                  style: GoogleFonts.dmSans(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -631,7 +667,10 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                       children: [
                         Text('Notlar',
                             style: GoogleFonts.dmSans(
-                                fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                                letterSpacing: 0.3)),
                         const SizedBox(height: 10),
                         Text(ilan.notlar,
                             style: GoogleFonts.dmSans(
@@ -666,7 +705,10 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                     children: [
                       Text('İlan Sahibi',
                           style: GoogleFonts.dmSans(
-                              fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                              letterSpacing: 0.3)),
                       const SizedBox(height: 14),
                       GestureDetector(
                         onTap: () => Navigator.push(context, MaterialPageRoute(
@@ -693,8 +735,8 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                                     Text(ilan.kullaniciAd,
                                         style: GoogleFonts.dmSans(
                                             fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                                    Text('Profili görüntüle →',
-                                        style: GoogleFonts.dmSans(fontSize: 12, color: AppColors.red)),
+                                    Text('Profili görüntüle',
+                                        style: GoogleFonts.dmSans(fontSize: 12, color: AppColors.textSecondary)),
                                   ],
                                 ),
                               ),
@@ -718,7 +760,10 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                       children: [
                         Text('Benzer İlanlar',
                             style: GoogleFonts.dmSans(
-                                fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                                letterSpacing: 0.3)),
                         const SizedBox(height: 14),
                         SizedBox(
                           height: 160,
@@ -747,16 +792,9 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
           ? Container(
               padding: EdgeInsets.fromLTRB(
                   16, 10, 16, MediaQuery.of(context).padding.bottom + 10),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Colors.white,
-                border: const Border(top: BorderSide(color: AppColors.divider)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
+                border: Border(top: BorderSide(color: AppColors.divider, width: 0.5)),
               ),
               child: Row(
                 children: [
@@ -821,16 +859,16 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                             : OutlinedButton.icon(
                                 onPressed: _teklifVerSheet,
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: const Color(0xFFFF9800),
+                                  foregroundColor: AppColors.textPrimary,
                                   side: const BorderSide(
-                                      color: Color(0xFFFF9800), width: 1.5),
+                                      color: AppColors.divider, width: 1),
                                   shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12)),
+                                      borderRadius: BorderRadius.circular(14)),
                                 ),
                                 icon: const Icon(Icons.local_offer_outlined, size: 18),
                                 label: Text('Teklif Ver',
                                     style: GoogleFonts.dmSans(
-                                        fontSize: 14, fontWeight: FontWeight.w600)),
+                                        fontSize: 14, fontWeight: FontWeight.w500)),
                               ),
                       ),
                     ),
@@ -842,16 +880,16 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                       child: ElevatedButton.icon(
                         onPressed: _mesajGonder,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.red,
+                          backgroundColor: AppColors.textPrimary,
                           foregroundColor: Colors.white,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                              borderRadius: BorderRadius.circular(14)),
                         ),
                         icon: const Icon(Icons.chat_bubble_outline, size: 18),
                         label: Text('Mesaj Gönder',
                             style: GoogleFonts.dmSans(
-                                fontSize: 14, fontWeight: FontWeight.w600)),
+                                fontSize: 14, fontWeight: FontWeight.w500)),
                       ),
                     ),
                   ),
@@ -1510,8 +1548,8 @@ class _ResimBuyukEkranState extends State<_ResimBuyukEkran> {
     } else {
       final p = details.localPosition;
       _transformController.value = Matrix4.identity()
-        ..translateByDouble(-p.dx * 1.5, -p.dy * 1.5, 0, 1)
-        ..scaleByDouble(2.5, 2.5, 1, 1);
+        ..translate(-p.dx * 1.5, -p.dy * 1.5)
+        ..scale(2.5, 2.5, 1.0);
     }
   }
 

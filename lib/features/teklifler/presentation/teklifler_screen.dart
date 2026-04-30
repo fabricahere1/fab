@@ -68,29 +68,47 @@ class _TekliflerScreenState extends ConsumerState<TekliflerScreen>
 
 enum _TeklifTip { verilen, alinan }
 
-class _TeklifListesi extends ConsumerWidget {
+class _TeklifListesi extends ConsumerStatefulWidget {
   final _TeklifTip tip;
   const _TeklifListesi({required this.tip});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_TeklifListesi> createState() => _TeklifListesiState();
+}
+
+class _TeklifListesiState extends ConsumerState<_TeklifListesi>
+    with AutomaticKeepAliveClientMixin {
+  // Tab değişince state korunur — yeniden yüklenme olmaz
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+
     final uid = ref.watch(currentUserProvider)?.uid;
     if (uid == null) return const SizedBox.shrink();
 
-    final tekliflerAsync = tip == _TeklifTip.verilen
+    final tekliflerAsync = widget.tip == _TeklifTip.verilen
         ? ref.watch(benimTekliflerimProvider(uid))
         : ref.watch(ilanSahibiTeklifleriProvider(uid));
 
+    // skipLoadingOnReload: true → yeniden yüklenirken eski veri gösterilir, yanıp sönmez
     return tekliflerAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator(color: AppColors.red, strokeWidth: 2)),
-      error: (e, _) => Center(child: Text('Hata oluştu', style: GoogleFonts.dmSans(color: AppColors.textSecondary))),
+      skipLoadingOnReload: true,
+      loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.red, strokeWidth: 2)),
+      error: (e, _) => Center(
+          child: Text('Hata oluştu',
+              style: GoogleFonts.dmSans(color: AppColors.textSecondary))),
       data: (teklifler) {
-        if (teklifler.isEmpty) return _BosEkran(tip: tip);
+        if (teklifler.isEmpty) return _BosEkran(tip: widget.tip);
         return ListView.separated(
           padding: const EdgeInsets.all(12),
           itemCount: teklifler.length,
           separatorBuilder: (_, _) => const SizedBox(height: 8),
-          itemBuilder: (context, index) => _TeklifKarti(teklif: teklifler[index]),
+          itemBuilder: (context, index) =>
+              _TeklifKarti(teklif: teklifler[index]),
         );
       },
     );

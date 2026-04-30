@@ -1,6 +1,5 @@
-import 'dart:async';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -8,6 +7,7 @@ import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
 import '../features/auth/presentation/profil_tamamla_screen.dart';
 import '../features/home/presentation/home_screen.dart';
+import '../features/auth/providers/auth_provider.dart';
 import '../features/profil/providers/profil_provider.dart';
 
 part 'app_router.g.dart';
@@ -20,32 +20,24 @@ abstract class AppRoutes {
   static const home          = '/home';
 }
 
-// ── Auth + profil değişikliklerini dinleyen notifier ─────────────────────────
-// Async redirect KALDIRILDI. GoRouter, redirect()'i senkron çalıştırır;
-// async kullanmak race condition ve çift yönlendirme sorunlarına yol açar.
-// Bunun yerine: benimKullaniciProfilProvider zaten Firestore'u stream ile
-// dinliyor. Profil değişince notifier tetikleniyor → GoRouter yeniden
-// redirect çalıştırıyor. Firestore'a direkt erişim YOK.
-
+// FirebaseAuth.instance YOK — currentUserProvider üzerinden auth durumu izlenir
 class _AppStateNotifier extends ChangeNotifier {
   _AppStateNotifier(this._ref) {
-    // Auth durumu değişince yenile
-    _authSub = FirebaseAuth.instance
-        .authStateChanges()
-        .listen((_) => notifyListeners());
+    // Auth stream'i currentUserProvider üzerinden dinle
+    _sub = _ref.listen(authStateProvider, (prev, next) => notifyListeners());
 
-    // Profil değişince yenile (profilTamamlandi alanı dahil)
-    _ref.listen(benimKullaniciProfilProvider, (_, _) {
+    // Profil değişince yenile
+    _ref.listen(benimKullaniciProfilProvider, (prev, next) {
       notifyListeners();
     });
   }
 
   final Ref _ref;
-  late final StreamSubscription<User?> _authSub;
+  late final ProviderSubscription<AsyncValue<dynamic>> _sub;
 
   @override
   void dispose() {
-    _authSub.cancel();
+    _sub.close();
     super.dispose();
   }
 }
@@ -59,24 +51,22 @@ GoRouter router(Ref ref) {
     initialLocation: AppRoutes.splash,
     refreshListenable: notifier,
     redirect: (context, state) {
-      final user      = FirebaseAuth.instance.currentUser;
+      // currentUserProvider — Firebase direkt erişim yok
+      final user = ref.read(currentUserProvider);
       final girisYapildi = user != null;
-      final loc       = state.matchedLocation;
+      final loc = state.matchedLocation;
 
-      // Giriş yapılmamış → sadece login/register'a izin ver
       if (!girisYapildi) {
         if (loc == AppRoutes.login || loc == AppRoutes.register) return null;
         return AppRoutes.login;
       }
 
-      // Splash veya login/register → nereye gidecek?
       if (loc == AppRoutes.splash ||
           loc == AppRoutes.login  ||
           loc == AppRoutes.register) {
         return _hedefBelirle(ref, user);
       }
 
-      // Onboarding sayfasındayken profil tamamlandıysa → home
       if (loc == AppRoutes.profilTamamla) {
         final profil = ref.read(benimKullaniciProfilProvider).value;
         if (profil?.profilTamamlandi == true) return AppRoutes.home;
@@ -88,49 +78,41 @@ GoRouter router(Ref ref) {
     routes: [
       GoRoute(
         path: AppRoutes.splash,
-        builder: (_, _) => const _SplashPage(),
+        builder: (ctx, st) => const _SplashPage(),
       ),
       GoRoute(
         path: AppRoutes.login,
-        builder: (_, _) => const LoginScreen(),
+        builder: (ctx, st) => const LoginScreen(),
       ),
       GoRoute(
         path: AppRoutes.register,
-        builder: (_, _) => const RegisterScreen(),
+        builder: (ctx, st) => const RegisterScreen(),
       ),
       GoRoute(
         path: AppRoutes.profilTamamla,
-        builder: (_, _) => const ProfilTamamlaScreen(ilkGiris: true),
+        builder: (ctx, st) => const ProfilTamamlaScreen(ilkGiris: true),
       ),
       GoRoute(
         path: AppRoutes.home,
-        builder: (_, _) => const HomeScreen(),
+        builder: (ctx, st) => const HomeScreen(),
       ),
     ],
   );
 }
 
-/// Giriş yapılmış kullanıcı splash/login/register'daysa nereye gitmeli?
-/// benimKullaniciProfilProvider zaten yüklü olduğundan async'e gerek yok.
-String _hedefBelirle(Ref ref, User user) {
+String _hedefBelirle(Ref ref, dynamic user) {
   final profilAsync = ref.read(benimKullaniciProfilProvider);
-
-  // Profil henüz yüklenmemişse splash'te bekle
   if (profilAsync.isLoading) return AppRoutes.splash;
 
-  // Email ile kayıt olan kullanıcılar onboarding'e gitmez
-  final emailKullanicisi = user.providerData
-      .any((p) => p.providerId == 'password');
-  final googleKullanicisi = user.providerData
-      .any((p) => p.providerId == 'google.com');
-  final telefonKullanicisi = user.providerData
-      .any((p) => p.providerId == 'phone');
+  final providerData = user.providerData as List;
+  final emailKullanicisi = providerData.any((p) => p.providerId == 'password');
+  final googleKullanicisi = providerData.any((p) => p.providerId == 'google.com');
+  final telefonKullanicisi = providerData.any((p) => p.providerId == 'phone');
 
   if (emailKullanicisi && !googleKullanicisi && !telefonKullanicisi) {
     return AppRoutes.home;
   }
 
-  // Google / telefon kullanıcısı → profilTamamlandi kontrolü
   final tamamlandi = profilAsync.value?.profilTamamlandi ?? false;
   return tamamlandi ? AppRoutes.home : AppRoutes.profilTamamla;
 }

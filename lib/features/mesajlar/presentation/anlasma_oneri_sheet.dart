@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../shared/constants/app_colors.dart';
 
-class AnlasmaOneriSheet extends StatefulWidget {
+class AnlasmaOneriSheet extends StatelessWidget {
   final String karsiKullaniciAd;
   final String ilanBaslik;
   final double? onerilenfiyat;
@@ -15,13 +14,13 @@ class AnlasmaOneriSheet extends StatefulWidget {
     this.onerilenfiyat,
   });
 
-  static Future<double?> goster(
+  static Future<bool?> goster(
     BuildContext context, {
     required String karsiKullaniciAd,
     required String ilanBaslik,
     double? onerilenfiyat,
   }) {
-    return showModalBottomSheet<double>(
+    return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -34,59 +33,13 @@ class AnlasmaOneriSheet extends StatefulWidget {
   }
 
   @override
-  State<AnlasmaOneriSheet> createState() => _AnlasmaOneriSheetState();
-}
-
-class _AnlasmaOneriSheetState extends State<AnlasmaOneriSheet> {
-  final _ctrl = TextEditingController();
-  // true = yazan fiyat, false = kendi fiyatı
-  bool _yazanFiyatSecili = false;
-  String _hata = '';
-
-  bool get _varFiyat => widget.onerilenfiyat != null && widget.onerilenfiyat! > 0;
-
-  @override
-  void initState() {
-    super.initState();
-    if (_varFiyat) {
-      _yazanFiyatSecili = true;
-    }
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  void _gonder() {
-    if (_yazanFiyatSecili && _varFiyat) {
-      Navigator.pop(context, widget.onerilenfiyat);
-      return;
-    }
-    final metin = _ctrl.text.trim();
-    if (metin.isEmpty) {
-      setState(() => _hata = 'Tutar girin');
-      return;
-    }
-    final tutar = double.tryParse(metin);
-    if (tutar == null || tutar <= 0) {
-      setState(() => _hata = 'Geçerli bir tutar girin');
-      return;
-    }
-    Navigator.pop(context, tutar);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      padding: EdgeInsets.fromLTRB(20, 0, 20, 20 + bottomInset),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,7 +58,7 @@ class _AnlasmaOneriSheetState extends State<AnlasmaOneriSheet> {
           // Başlık
           Row(
             children: [
-              const Icon(Icons.handshake_outlined, color: AppColors.red, size: 22),
+              const Icon(Icons.handshake_outlined, color: AppColors.green, size: 22),
               const SizedBox(width: 8),
               Text('Hızlı Anlaş',
                   style: GoogleFonts.dmSans(
@@ -114,7 +67,7 @@ class _AnlasmaOneriSheetState extends State<AnlasmaOneriSheet> {
           ),
           const SizedBox(height: 4),
           Text(
-            '${widget.karsiKullaniciAd} · "${widget.ilanBaslik}"',
+            '$karsiKullaniciAd · "$ilanBaslik"',
             style: GoogleFonts.dmSans(
                 fontSize: 12, color: AppColors.textSecondary),
             maxLines: 1,
@@ -122,176 +75,54 @@ class _AnlasmaOneriSheetState extends State<AnlasmaOneriSheet> {
           ),
           const SizedBox(height: 20),
 
-          // Seçenek 1: Yazan fiyattan (sadece fiyat varsa göster)
-          if (_varFiyat) ...[
-            GestureDetector(
-              onTap: () => setState(() {
-                _yazanFiyatSecili = true;
-                _ctrl.clear();
-                _hata = '';
-              }),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: _yazanFiyatSecili
-                      ? AppColors.green.withValues(alpha: 0.08)
-                      : AppColors.surface,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: _yazanFiyatSecili ? AppColors.green : AppColors.divider,
-                    width: _yazanFiyatSecili ? 1.5 : 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      _yazanFiyatSecili
-                          ? Icons.check_circle_rounded
-                          : Icons.radio_button_unchecked,
-                      color: _yazanFiyatSecili ? AppColors.green : AppColors.textHint,
-                      size: 22,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Yazan Fiyattan Anlaş',
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: _yazanFiyatSecili
-                                      ? AppColors.green
-                                      : AppColors.textPrimary)),
-                          Text(
-                            '${widget.onerilenfiyat!.toStringAsFixed(0)} ₺',
-                            style: GoogleFonts.dmSans(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textSecondary),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-          ],
-
-          // Seçenek 2: Kendin belirle
-          GestureDetector(
-            onTap: () => setState(() {
-              _yazanFiyatSecili = false;
-              _hata = '';
-            }),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
+          // Tek seçenek kartı
+          Builder(builder: (context) {
+            final varFiyat = onerilenfiyat != null && onerilenfiyat! > 0;
+            return Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: !_yazanFiyatSecili
-                    ? AppColors.red.withValues(alpha: 0.05)
-                    : AppColors.surface,
+                color: AppColors.green.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: !_yazanFiyatSecili ? AppColors.red.withValues(alpha: 0.4) : AppColors.divider,
-                  width: !_yazanFiyatSecili ? 1.5 : 1,
-                ),
+                border: Border.all(color: AppColors.green, width: 1.5),
               ),
-              child: Column(
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Icon(
-                        !_yazanFiyatSecili
-                            ? Icons.check_circle_rounded
-                            : Icons.radio_button_unchecked,
-                        color: !_yazanFiyatSecili ? AppColors.red : AppColors.textHint,
-                        size: 22,
-                      ),
-                      const SizedBox(width: 12),
-                      Text('Kendin Belirle',
+                  Icon(
+                    varFiyat ? Icons.check_circle_rounded : Icons.chat_bubble_outline_rounded,
+                    color: AppColors.green, size: 22,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          varFiyat
+                              ? 'İstekçinin belirlediği fiyattan getirebilirim'
+                              : 'İlanınızla ilgileniyorum, hadi konuşalım!',
                           style: GoogleFonts.dmSans(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
-                              color: !_yazanFiyatSecili
-                                  ? AppColors.red
-                                  : AppColors.textPrimary)),
-                    ],
-                  ),
-                  if (!_yazanFiyatSecili) ...[
-                    const SizedBox(height: 10),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: _hata.isNotEmpty ? AppColors.red : AppColors.divider,
+                              color: AppColors.green),
                         ),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      child: Row(
-                        children: [
-                          Text('₺',
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textSecondary)),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextField(
-                              controller: _ctrl,
-                              autofocus: !_varFiyat,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                              ],
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.w900,
-                                  color: AppColors.textPrimary),
-                              decoration: InputDecoration(
-                                hintText: '0',
-                                hintStyle: GoogleFonts.dmSans(
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.w900,
-                                    color: AppColors.divider),
-                                border: InputBorder.none,
-                                isDense: true,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                              onChanged: (_) => setState(() => _hata = ''),
-                            ),
-                          ),
-                          Text('TL',
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textSecondary)),
-                        ],
-                      ),
+                        const SizedBox(height: 4),
+                        Text(
+                          varFiyat
+                              ? '${onerilenfiyat!.toStringAsFixed(0)} ₺'
+                              : 'Fiyat belirtilmemiş — sohbet başlatır',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 12,
+                              color: AppColors.textSecondary),
+                        ),
+                      ],
                     ),
-                    if (_hata.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          const Icon(Icons.error_outline, size: 13, color: AppColors.red),
-                          const SizedBox(width: 4),
-                          Text(_hata,
-                              style: GoogleFonts.dmSans(fontSize: 12, color: AppColors.red)),
-                        ],
-                      ),
-                    ],
-                  ],
+                  ),
                 ],
               ),
-            ),
-          ),
+            );
+          }),
 
           const SizedBox(height: 14),
 
@@ -322,30 +153,38 @@ class _AnlasmaOneriSheetState extends State<AnlasmaOneriSheet> {
 
           const SizedBox(height: 16),
 
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              onPressed: _gonder,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.red,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Anlaşmayı Öner',
+          Builder(builder: (context) {
+            final varFiyat = onerilenfiyat != null && onerilenfiyat! > 0;
+            return SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.green,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      varFiyat ? 'Anlaşmayı Öner' : 'Mesaj Gönder',
                       style: GoogleFonts.dmSans(
-                          fontSize: 15, fontWeight: FontWeight.w700)),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.handshake_outlined, size: 18),
-                ],
+                          fontSize: 15, fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(varFiyat
+                        ? Icons.handshake_outlined
+                        : Icons.send_rounded,
+                        size: 18),
+                  ],
+                ),
               ),
-            ),
-          ),
+            );
+          }),
         ],
       ),
     );

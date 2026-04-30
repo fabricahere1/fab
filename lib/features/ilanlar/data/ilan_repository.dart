@@ -8,15 +8,19 @@ import '../../../shared/constants/app_constants.dart';
 
 part 'ilan_repository.g.dart';
 
+// Pagination cursor — DocumentSnapshot yerine DateTime kullanılır
+// Böylece data katmanı dışına Firestore tipi sızmaz
 class IlanSayfasi {
   final List<IlanModel> ilanlar;
-  final DocumentSnapshot? sonDoc;
+  final DateTime? sonTarih;   // startAfter cursor
+  final String? sonId;        // tiebreaker
   final bool bitti;
 
   const IlanSayfasi({
     required this.ilanlar,
-    required this.sonDoc,
     required this.bitti,
+    this.sonTarih,
+    this.sonId,
   });
 }
 
@@ -53,9 +57,11 @@ class IlanRepository {
         .limit(limit);
     if (kategori != null) q = q.where('kategori', isEqualTo: kategori);
     final snap = await q.get();
+    final ilanlar = snap.docs.map(_ilanModelCevir).toList();
     return IlanSayfasi(
-      ilanlar: snap.docs.map(IlanModel.fromFirestore).toList(),
-      sonDoc: snap.docs.isNotEmpty ? snap.docs.last : null,
+      ilanlar: ilanlar,
+      sonTarih: ilanlar.isNotEmpty ? ilanlar.last.olusturmaTarihi : null,
+      sonId: ilanlar.isNotEmpty ? ilanlar.last.id : null,
       bitti: snap.docs.length < limit,
     );
   }
@@ -65,29 +71,32 @@ class IlanRepository {
     int limit = Pagination.ilanSayfaBoyutu,
   }) async {
     if (tariheGore) {
-      final bugun = Timestamp.fromDate(
-        DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
+      final bugun = DateTime.now();
+      final bugunTimestamp = Timestamp.fromDate(
+        DateTime(bugun.year, bugun.month, bugun.day),
       );
       final gelecek = await _col
           .where('tip', isEqualTo: IlanTip.tasiyici)
           .where('aktif', isEqualTo: true)
-          .where('tarih', isGreaterThanOrEqualTo: bugun)
+          .where('tarih', isGreaterThanOrEqualTo: bugunTimestamp)
           .orderBy('tarih', descending: false)
           .limit(limit)
           .get();
       final gecmis = await _col
           .where('tip', isEqualTo: IlanTip.tasiyici)
           .where('aktif', isEqualTo: true)
-          .where('tarih', isLessThan: bugun)
+          .where('tarih', isLessThan: bugunTimestamp)
           .orderBy('tarih', descending: true)
           .limit(10)
           .get();
+      final ilanlar = [
+        ...gelecek.docs.map(_ilanModelCevir),
+        ...gecmis.docs.map(_ilanModelCevir),
+      ];
       return IlanSayfasi(
-        ilanlar: [
-          ...gelecek.docs.map(IlanModel.fromFirestore),
-          ...gecmis.docs.map(IlanModel.fromFirestore),
-        ],
-        sonDoc: gelecek.docs.isNotEmpty ? gelecek.docs.last : null,
+        ilanlar: ilanlar,
+        sonTarih: ilanlar.isNotEmpty ? ilanlar.last.tarih : null,
+        sonId: ilanlar.isNotEmpty ? ilanlar.last.id : null,
         bitti: gelecek.docs.length < limit,
       );
     }
@@ -97,32 +106,38 @@ class IlanRepository {
         .orderBy('olusturmaTarihi', descending: true)
         .limit(limit)
         .get();
+    final ilanlar = snap.docs.map(_ilanModelCevir).toList();
     return IlanSayfasi(
-      ilanlar: snap.docs.map(IlanModel.fromFirestore).toList(),
-      sonDoc: snap.docs.isNotEmpty ? snap.docs.last : null,
+      ilanlar: ilanlar,
+      sonTarih: ilanlar.isNotEmpty ? ilanlar.last.olusturmaTarihi : null,
+      sonId: ilanlar.isNotEmpty ? ilanlar.last.id : null,
       bitti: snap.docs.length < limit,
     );
   }
 
+  // DocumentSnapshot yerine DateTime cursor kullanır
   Future<IlanSayfasi> sonrakiSayfayiGetir({
     required String tip,
-    required DocumentSnapshot sonDoc,
+    required DateTime sonTarih,
     required String siralama,
     int limit = Pagination.ilanSayfaBoyutu,
   }) async {
     final orderField = (tip == IlanTip.tasiyici && siralama == 'tarih')
         ? 'tarih'
         : 'olusturmaTarihi';
+    final cursor = Timestamp.fromDate(sonTarih);
     final snap = await _col
         .where('tip', isEqualTo: tip)
         .where('aktif', isEqualTo: true)
         .orderBy(orderField, descending: orderField == 'olusturmaTarihi')
-        .startAfterDocument(sonDoc)
+        .startAfter([cursor])
         .limit(limit)
         .get();
+    final ilanlar = snap.docs.map(_ilanModelCevir).toList();
     return IlanSayfasi(
-      ilanlar: snap.docs.map(IlanModel.fromFirestore).toList(),
-      sonDoc: snap.docs.isNotEmpty ? snap.docs.last : sonDoc,
+      ilanlar: ilanlar,
+      sonTarih: ilanlar.isNotEmpty ? ilanlar.last.olusturmaTarihi : sonTarih,
+      sonId: ilanlar.isNotEmpty ? ilanlar.last.id : null,
       bitti: snap.docs.length < limit,
     );
   }
@@ -132,7 +147,7 @@ class IlanRepository {
         .where('kullaniciId', isEqualTo: kullaniciId)
         .orderBy('olusturmaTarihi', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map(IlanModel.fromFirestore).toList());
+        .map((snap) => snap.docs.map(_ilanModelCevir).toList());
   }
 
   Future<String> ilanOlustur({
@@ -156,7 +171,7 @@ class IlanRepository {
       await task;
       resimUrller.add(await ref.getDownloadURL());
     }
-    final ilanData = ilan.toFirestore();
+    final ilanData = _ilanToMap(ilan);
     if (resimUrller.isNotEmpty) {
       ilanData['resimUrl'] = resimUrller.first;
       ilanData['resimUrller'] = resimUrller;
@@ -196,17 +211,14 @@ class IlanRepository {
     required String kullaniciId,
     required IlanModel ilan,
   }) async {
-    // ✅ Zaten favoride mi kontrol et — spam önleme
     final mevcutSnap = await firestore
         .collection(Collections.favoriler)
         .where('kullaniciId', isEqualTo: kullaniciId)
         .where('ilanId', isEqualTo: ilan.id)
         .get();
-
     if (mevcutSnap.docs.isNotEmpty) return;
 
     final batch = firestore.batch();
-
     final favoriRef = firestore.collection(Collections.favoriler).doc();
     batch.set(favoriRef, {
       'kullaniciId':  kullaniciId,
@@ -221,11 +233,9 @@ class IlanRepository {
       if (ilan.resimUrl.isNotEmpty) 'resimUrl': ilan.resimUrl,
       'eklemeTarihi': FieldValue.serverTimestamp(),
     });
-
     batch.update(_col.doc(ilan.id), {
       'favoriSayisi': FieldValue.increment(1),
     });
-
     await batch.commit();
   }
 
@@ -238,9 +248,7 @@ class IlanRepository {
         .where('kullaniciId', isEqualTo: kullaniciId)
         .where('ilanId', isEqualTo: ilanId)
         .get();
-
     if (snap.docs.isEmpty) return;
-
     final batch = firestore.batch();
     for (final doc in snap.docs) {
       batch.delete(doc.reference);
@@ -248,7 +256,6 @@ class IlanRepository {
     batch.update(_col.doc(ilanId), {
       'favoriSayisi': FieldValue.increment(-1),
     });
-
     await batch.commit();
   }
 
@@ -262,4 +269,49 @@ class IlanRepository {
             .map((doc) => {'id': doc.id, ...doc.data()})
             .toList());
   }
+  // ── Firestore ↔ Model dönüşümleri (data katmanında kalır) ────────────────────
+
+  IlanModel _ilanModelCevir(QueryDocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return IlanModel(
+      id:              doc.id,
+      tip:             data['tip']              as String? ?? '',
+      nereden:         data['nereden']          as String? ?? '',
+      nereye:          data['nereye']           as String? ?? '',
+      ucret:           data['ucret']            as String? ?? '',
+      urun:            data['urun']             as String? ?? '',
+      notlar:          data['notlar']           as String? ?? '',
+      kategori:        data['kategori']         as String? ?? 'diger',
+      kullaniciId:     data['kullaniciId']      as String? ?? '',
+      kullaniciAd:     data['kullaniciAd']      as String? ?? 'Kullanıcı',
+      aktif:           data['aktif']            as bool?   ?? true,
+      tarih:           (data['tarih']           as Timestamp?)?.toDate(),
+      olusturmaTarihi: (data['olusturmaTarihi'] as Timestamp?)?.toDate(),
+      resimUrl:        data['resimUrl']         as String? ?? '',
+      resimUrller:     List<String>.from(data['resimUrller'] ?? []),
+      urunLinki:       data['urunLinki']        as String? ?? '',
+      favoriSayisi:    (data['favoriSayisi']    as num?)?.toInt() ?? 0,
+      tasimaTercihi:   data['tasimaTercihi']    as String? ?? 'hepsi',
+    );
+  }
+
+  Map<String, dynamic> _ilanToMap(IlanModel ilan) => {
+    'tip':             ilan.tip,
+    'nereden':         ilan.nereden,
+    'nereye':          ilan.nereye,
+    'ucret':           ilan.ucret,
+    'urun':            ilan.urun,
+    'notlar':          ilan.notlar,
+    'urunLinki':       ilan.urunLinki,
+    'kategori':        ilan.kategori,
+    'kullaniciId':     ilan.kullaniciId,
+    'kullaniciAd':     ilan.kullaniciAd,
+    'aktif':           ilan.aktif,
+    'tasimaTercihi':   ilan.tasimaTercihi,
+    if (ilan.tarih != null) 'tarih': Timestamp.fromDate(ilan.tarih!),
+    'olusturmaTarihi': FieldValue.serverTimestamp(),
+    if (ilan.resimUrl.isNotEmpty) 'resimUrl': ilan.resimUrl,
+    if (ilan.resimUrller.isNotEmpty) 'resimUrller': ilan.resimUrller,
+  };
+
 }

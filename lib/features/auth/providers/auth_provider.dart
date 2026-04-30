@@ -11,12 +11,8 @@ Stream<User?> authState(Ref ref) {
 
 @riverpod
 User? currentUser(Ref ref) {
-  final asyncUser = ref.watch(authStateProvider);
-  return asyncUser.when(
-    data: (user) => user ?? FirebaseAuth.instance.currentUser,
-    loading: () => FirebaseAuth.instance.currentUser,
-    error: (_, _) => FirebaseAuth.instance.currentUser,
-  );
+  // authStateProvider stream'inden gelir — FirebaseAuth direkt erişim yok
+  return ref.watch(authStateProvider).value;
 }
 
 @riverpod

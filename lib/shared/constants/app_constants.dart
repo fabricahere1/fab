@@ -175,6 +175,7 @@ class StoragePaths {
   StoragePaths._();
   static const String ilanResimleri  = 'ilan_resimleri';
   static const String profilFotolari = 'profil_fotograflari';
+  static const String mesajResimleri = 'mesaj_resimleri';
 }
 
 /// Sayfalama sabitleri.

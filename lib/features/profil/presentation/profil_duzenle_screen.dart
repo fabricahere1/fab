@@ -6,7 +6,7 @@ import '../../profil/providers/profil_provider.dart';
 import '../../profil/data/kullanici_repository.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../ilanlar/presentation/ilan_form_screen.dart'
-    show kDunyaUlkeleri, kDunyaSehirleri;
+    show kDunyaUlkeleri;
  
 const List<String> _turkiyeSehirleri = [
   'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Aksaray', 'Amasya',

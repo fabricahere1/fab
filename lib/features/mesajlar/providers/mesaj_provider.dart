@@ -1,8 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/mesaj_repository.dart';
+import '../domain/mesaj_model.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/data/kullanici_repository.dart';
 import '../../bildirimler/data/bildirim_repository.dart';
@@ -11,12 +12,18 @@ import '../../../shared/constants/app_constants.dart';
 
 part 'mesaj_provider.g.dart';
 
+// ── Sohbet listesi ────────────────────────────────────────────────────────────
+// SohbetModel döndürür — raw map yok
+
 @riverpod
-Stream<List<Map<String, dynamic>>> sohbetler(Ref ref) {
+Stream<List<SohbetModel>> sohbetler(Ref ref) {
   final uid = ref.watch(currentUserProvider)?.uid;
   if (uid == null) return const Stream.empty();
   return ref.watch(mesajRepositoryProvider).sohbetlerStream(uid);
 }
+
+// ── Okunmamış sayısı ──────────────────────────────────────────────────────────
+// SohbetModel'den hesaplanır
 
 @riverpod
 int okunmamisSayi(Ref ref) {
@@ -25,29 +32,40 @@ int okunmamisSayi(Ref ref) {
   final sohbetListesi = ref.watch(sohbetlerProvider).value ?? [];
   int toplam = 0;
   for (final s in sohbetListesi) {
-    final gizli = (s['gizli'] as Map<String, dynamic>?) ?? {};
-    final gizliDeger = gizli[uid];
-    if (gizliDeger != null) {
-      if (gizliDeger is bool && gizliDeger == true) continue;
-      if (gizliDeger is Timestamp) {
-        final sonMesajZamani = s['sonMesajZamani'] as Timestamp?;
-        if (sonMesajZamani == null) continue;
-        if (!sonMesajZamani.toDate().isAfter(gizliDeger.toDate())) continue;
-      }
-    }
-    final okunmamis = (s['okunmamis'] as Map<String, dynamic>?) ?? {};
-    toplam += ((okunmamis[uid] as num?)?.toInt() ?? 0);
+    if (s.gizliMi(uid)) continue;
+    toplam += s.okunmamisSayisi(uid);
   }
   return toplam;
 }
 
+// ── Karşı kullanıcı adı provider ─────────────────────────────────────────────
+// Presentation'da doğrudan çağrılır — tek kaynak profil koleksiyonu
+
+@riverpod
+Stream<String> karsiKullaniciAd(Ref ref, String uid) {
+  if (uid.isEmpty) return Stream.value('Kullanıcı');
+  return ref
+      .watch(kullaniciRepositoryProvider)
+      .kullaniciDataStream(uid)
+      .map((data) {
+    if (data == null) return 'Kullanıcı';
+    final adSoyad = data['adSoyad'] as String? ?? '';
+    if (adSoyad.isNotEmpty) return adSoyad;
+    final displayName = data['displayName'] as String? ?? '';
+    return displayName.isNotEmpty ? displayName : 'Kullanıcı';
+  });
+}
+
+// ── Sohbet ekranı state ───────────────────────────────────────────────────────
+
+// DocumentSnapshot YOK — cursor olarak DateTime kullanılır
 class SohbetEkraniState {
   final Map<String, Map<String, dynamic>> mesajMap;
   final List<Map<String, dynamic>> siraliMesajlar;
   final bool yukleniyor;
   final bool gonderiyor;
   final bool dahaFazlaVar;
-  final DocumentSnapshot? enEskiDoc;
+  final DateTime? enEskiZaman;
 
   const SohbetEkraniState({
     this.mesajMap = const {},
@@ -55,7 +73,7 @@ class SohbetEkraniState {
     this.yukleniyor = true,
     this.gonderiyor = false,
     this.dahaFazlaVar = true,
-    this.enEskiDoc,
+    this.enEskiZaman,
   });
 
   SohbetEkraniState copyWith({
@@ -64,7 +82,7 @@ class SohbetEkraniState {
     bool? yukleniyor,
     bool? gonderiyor,
     bool? dahaFazlaVar,
-    DocumentSnapshot? enEskiDoc,
+    DateTime? enEskiZaman,
   }) =>
       SohbetEkraniState(
         mesajMap: mesajMap ?? this.mesajMap,
@@ -72,7 +90,7 @@ class SohbetEkraniState {
         yukleniyor: yukleniyor ?? this.yukleniyor,
         gonderiyor: gonderiyor ?? this.gonderiyor,
         dahaFazlaVar: dahaFazlaVar ?? this.dahaFazlaVar,
-        enEskiDoc: enEskiDoc ?? this.enEskiDoc,
+        enEskiZaman: enEskiZaman ?? this.enEskiZaman,
       );
 }
 
@@ -81,7 +99,6 @@ class SohbetNotifier extends _$SohbetNotifier {
   late String _sohbetId;
   late String _benimId;
   StreamSubscription? _mesajSub;
-
   Timer? _okunduTimer;
   String? _sonOkunduMesajId;
 
@@ -101,9 +118,7 @@ class SohbetNotifier extends _$SohbetNotifier {
 
     ref.onDispose(() {
       _mesajSub?.cancel();
-      _mesajSub = null;
       _okunduTimer?.cancel();
-      _okunduTimer = null;
     });
 
     return const SohbetEkraniState();
@@ -113,39 +128,35 @@ class SohbetNotifier extends _$SohbetNotifier {
 
   void _mesajlariDinle() {
     _mesajSub?.cancel();
-
-    final stream = _repo.mesajlarStream(sohbetId: _sohbetId);
-    _mesajSub = stream.listen((snap) {
-      final yeniMap =
-          Map<String, Map<String, dynamic>>.from(state.mesajMap);
-      for (final doc in snap.docs) {
-        final data = doc.data() as Map<String, dynamic>;
-        if (data['zaman'] == null) continue;
-        yeniMap[doc.id] = {...data, 'id': doc.id};
+    // repository Timestamp → DateTime dönüşümünü yaptı — burada ham tip yok
+    _mesajSub = _repo.mesajlarStream(sohbetId: _sohbetId).listen((mesajlar) {
+      final yeniMap = Map<String, Map<String, dynamic>>.from(state.mesajMap);
+      final gelenIds = <String>{};
+      for (final mesaj in mesajlar) {
+        final id = mesaj['id'] as String?;
+        if (id == null || mesaj['zaman'] == null) continue;
+        yeniMap[id] = mesaj;
+        gelenIds.add(id);
       }
-      final snapIds = snap.docs.map((d) => d.id).toSet();
-      yeniMap.removeWhere((id, _) => !snapIds.contains(id));
+      yeniMap.removeWhere((id, _) => !gelenIds.contains(id));
 
-      if (snap.docs.isNotEmpty) {
-        state = state.copyWith(
-          mesajMap: yeniMap,
-          siraliMesajlar: _sirala(yeniMap),
-          yukleniyor: false,
-          dahaFazlaVar: snap.docs.length >= Pagination.mesajSayfaBoyutu,
-          enEskiDoc: snap.docs.last,
-        );
-      } else {
-        state = state.copyWith(
-          mesajMap: yeniMap,
-          siraliMesajlar: _sirala(yeniMap),
-          yukleniyor: false,
-          dahaFazlaVar: false,
-        );
+      // zaman artık DateTime — Timestamp yok
+      DateTime? enEskiZaman = state.enEskiZaman;
+      if (mesajlar.isNotEmpty) {
+        final sonZaman = mesajlar.last['zaman'];
+        if (sonZaman is DateTime) enEskiZaman = sonZaman;
       }
+      state = state.copyWith(
+        mesajMap: yeniMap,
+        siraliMesajlar: _sirala(yeniMap),
+        yukleniyor: false,
+        dahaFazlaVar: mesajlar.length >= Pagination.mesajSayfaBoyutu,
+        enEskiZaman: enEskiZaman,
+      );
 
-      if (snap.docs.isNotEmpty) {
-        final sonMesajId = snap.docs.first.id;
-        if (_sonOkunduMesajId != sonMesajId) {
+      if (mesajlar.isNotEmpty) {
+        final sonMesajId = mesajlar.first['id'] as String?;
+        if (sonMesajId != null && _sonOkunduMesajId != sonMesajId) {
           _sonOkunduMesajId = sonMesajId;
           _okunduDebounce();
         }
@@ -155,62 +166,60 @@ class SohbetNotifier extends _$SohbetNotifier {
 
   void _okunduDebounce() {
     _okunduTimer?.cancel();
-    _okunduTimer = Timer(const Duration(milliseconds: 500), () {
-      _okunduIsaretle();
-    });
+    _okunduTimer = Timer(const Duration(milliseconds: 500), _okunduIsaretle);
   }
 
   Future<void> _okunduIsaretle() async {
     try {
-      await _repo.okunduIsaretle(
-        sohbetId: _sohbetId,
-        kullaniciId: _benimId,
-      );
+      await _repo.okunduIsaretle(sohbetId: _sohbetId, kullaniciId: _benimId);
     } catch (_) {}
   }
 
-  List<Map<String, dynamic>> _sirala(
-      Map<String, Map<String, dynamic>> map) {
+  List<Map<String, dynamic>> _sirala(Map<String, Map<String, dynamic>> map) {
     final liste = map.values.toList();
     liste.sort((a, b) {
-      final zamanA = (a['zaman'] as Timestamp).millisecondsSinceEpoch;
-      final zamanB = (b['zaman'] as Timestamp).millisecondsSinceEpoch;
-      return zamanB.compareTo(zamanA);
+      // repository'den DateTime geliyor — Timestamp yok
+      final zA = a['zaman'] as DateTime?;
+      final zB = b['zaman'] as DateTime?;
+      final msA = zA?.millisecondsSinceEpoch ?? 0;
+      final msB = zB?.millisecondsSinceEpoch ?? 0;
+      return msB.compareTo(msA);
     });
     return liste;
   }
 
   Future<void> dahaFazlaYukle() async {
-    if (state.yukleniyor ||
-        !state.dahaFazlaVar ||
-        state.enEskiDoc == null) {
-      return;
-    }
-    final snap = await _repo.eskiMesajlariGetir(
+    if (state.yukleniyor || !state.dahaFazlaVar || state.enEskiZaman == null) return;
+    // repository DateTime cursor kullanıyor — Timestamp yok
+    final mesajlar = await _repo.eskiMesajlariGetir(
       sohbetId: _sohbetId,
-      sonDoc: state.enEskiDoc!,
+      sonZaman: state.enEskiZaman!,
     );
-    final yeniMap =
-        Map<String, Map<String, dynamic>>.from(state.mesajMap);
-    for (final doc in snap.docs) {
-      final data = doc.data() as Map<String, dynamic>;
-      if (data['zaman'] == null) continue;
-      if (!yeniMap.containsKey(doc.id)) {
-        yeniMap[doc.id] = {...data, 'id': doc.id};
+    final yeniMap = Map<String, Map<String, dynamic>>.from(state.mesajMap);
+    DateTime? enEskiZaman = state.enEskiZaman;
+    for (final mesaj in mesajlar) {
+      final id = mesaj['id'] as String?;
+      if (id == null || mesaj['zaman'] == null) continue;
+      if (!yeniMap.containsKey(id)) {
+        yeniMap[id] = mesaj;
       }
+    }
+    if (mesajlar.isNotEmpty) {
+      final sonZaman = mesajlar.last['zaman'];
+      if (sonZaman is DateTime) enEskiZaman = sonZaman;
     }
     state = state.copyWith(
       mesajMap: yeniMap,
       siraliMesajlar: _sirala(yeniMap),
-      dahaFazlaVar: snap.docs.length >= Pagination.mesajSayfaBoyutu,
-      enEskiDoc: snap.docs.isNotEmpty ? snap.docs.last : state.enEskiDoc,
+      dahaFazlaVar: mesajlar.length >= Pagination.mesajSayfaBoyutu,
+      enEskiZaman: enEskiZaman,
     );
   }
 
+  // gondereAd ve karsiAd artık YOK — profil koleksiyonundan gelir
   Future<void> mesajGonder({
     required String metin,
     required String karsiKullaniciId,
-    required String karsiAd,
     required String ilanId,
     required String ilanBaslik,
     String ilanResimUrl = '',
@@ -218,16 +227,13 @@ class SohbetNotifier extends _$SohbetNotifier {
     double? tutar,
   }) async {
     if (metin.trim().isEmpty || state.gonderiyor) return;
-
     final benimAd = await _getBenimAd();
     state = state.copyWith(gonderiyor: true);
     try {
       await _repo.mesajGonder(
         sohbetId: _sohbetId,
         gondereId: _benimId,
-        gondereAd: benimAd,
         karsiId: karsiKullaniciId,
-        karsiAd: karsiAd,
         ilanId: ilanId,
         ilanBaslik: ilanBaslik,
         ilanResimUrl: ilanResimUrl,
@@ -249,22 +255,61 @@ class SohbetNotifier extends _$SohbetNotifier {
     }
   }
 
+  Future<void> resimGonder({
+    required File dosya,
+    required String karsiKullaniciId,
+    required String ilanId,
+    required String ilanBaslik,
+    String ilanResimUrl = '',
+  }) async {
+    if (state.gonderiyor) return;
+    final benimAd = await _getBenimAd();
+    state = state.copyWith(gonderiyor: true);
+    try {
+      final url = await _repo.resimYukle(dosya: dosya, gondereId: _benimId);
+      await _repo.mesajGonder(
+        sohbetId: _sohbetId,
+        gondereId: _benimId,
+        karsiId: karsiKullaniciId,
+        ilanId: ilanId,
+        ilanBaslik: ilanBaslik,
+        ilanResimUrl: ilanResimUrl,
+        metin: '📷 Fotoğraf',
+        tip: 'resim',
+        resimUrl: url,
+      );
+      try {
+        await ref.read(bildirimRepositoryProvider).mesajBildirimiGonder(
+              aliciId: karsiKullaniciId,
+              gondereId: _benimId,
+              gondereAd: benimAd,
+              ilanBaslik: ilanBaslik,
+              sohbetId: _sohbetId,
+            );
+      } catch (_) {}
+    } catch (e) {
+      if (kDebugMode) print('resimGonder hata: $e');
+    } finally {
+      if (ref.mounted) state = state.copyWith(gonderiyor: false);
+    }
+  }
+
   Future<void> anlasmaKabul({
     required String mesajId,
     required String gondereId,
-    required String gondereAd,
+    String ilanBaslik = '',
+    String ilanSahibiAd = '',
   }) async {
     try {
       await _repo.anlasmaKabul(sohbetId: _sohbetId, mesajId: mesajId);
-      // Anlaşmayı teklif edene bildirim gönder
       await ref.read(bildirimRepositoryProvider).bildirimOlustur(
         kullaniciId: gondereId,
-        tip: BildirimTip.teklif,
-        baslik: gondereAd.isNotEmpty ? gondereAd : 'Anlaşma',
+        tip: BildirimTip.mesaj,
+        baslik: ilanBaslik.isNotEmpty ? ilanBaslik : 'Anlaşma',
         icerik: '✅ Anlaşma teklifiniz kabul edildi!',
         hedefId: _sohbetId,
         gondereId: _benimId,
-        gondereAd: '',
+        gondereAd: ilanSahibiAd,
       );
     } catch (e) {
       if (kDebugMode) print('anlasmaKabul hata: $e');
@@ -288,25 +333,26 @@ class SohbetNotifier extends _$SohbetNotifier {
       mesajId: mesajId,
       metin: metin,
     );
-    final yeniMap =
-        Map<String, Map<String, dynamic>>.from(state.mesajMap)
-          ..remove(mesajId);
+    final yeniMap = Map<String, Map<String, dynamic>>.from(state.mesajMap)
+      ..remove(mesajId);
     state = state.copyWith(
       mesajMap: yeniMap,
       siraliMesajlar: _sirala(yeniMap),
     );
   }
 
-  // ✅ Timeout eklendi — takılmayı önle
   Future<String> _getBenimAd() async {
     try {
       final doc = await ref
           .read(kullaniciRepositoryProvider)
           .kullaniciGetir(_benimId)
           .timeout(const Duration(seconds: 5));
-      return doc?.adSoyad ?? '';
+      final adSoyad = doc?.adSoyad ?? '';
+      if (adSoyad.isNotEmpty) return adSoyad;
+      // currentUserProvider — Firebase direkt erişim yok
+      return ref.read(currentUserProvider)?.displayName ?? '';
     } catch (_) {
-      return '';
+      return ref.read(currentUserProvider)?.displayName ?? '';
     }
   }
 
@@ -315,16 +361,12 @@ class SohbetNotifier extends _$SohbetNotifier {
 
 @riverpod
 Stream<Map<String, dynamic>?> kullaniciProfil(Ref ref, String uid) {
-  return ref
-      .watch(kullaniciRepositoryProvider)
-      .kullaniciDataStream(uid);
+  return ref.watch(kullaniciRepositoryProvider).kullaniciDataStream(uid);
 }
 
 @riverpod
 Stream<Map<String, dynamic>?> benimProfil(Ref ref) {
   final uid = ref.watch(currentUserProvider)?.uid;
   if (uid == null) return const Stream.empty();
-  return ref
-      .watch(kullaniciRepositoryProvider)
-      .kullaniciDataStream(uid);
+  return ref.watch(kullaniciRepositoryProvider).kullaniciDataStream(uid);
 }

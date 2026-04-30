@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../domain/mesaj_model.dart';
 import '../../../shared/constants/app_constants.dart';
 
 part 'mesaj_repository.g.dart';
@@ -12,13 +15,17 @@ String sohbetIdUret(String uid1, String uid2, String ilanId) {
 
 @riverpod
 MesajRepository mesajRepository(Ref ref) {
-  return MesajRepository(firestore: FirebaseFirestore.instance);
+  return MesajRepository(
+    firestore: FirebaseFirestore.instance,
+    storage: FirebaseStorage.instance,
+  );
 }
 
 class MesajRepository {
   final FirebaseFirestore firestore;
+  final FirebaseStorage storage;
 
-  MesajRepository({required this.firestore});
+  MesajRepository({required this.firestore, required this.storage});
 
   CollectionReference get _sohbetler =>
       firestore.collection(Collections.sohbetler);
@@ -26,22 +33,33 @@ class MesajRepository {
   CollectionReference _mesajlar(String sohbetId) =>
       _sohbetler.doc(sohbetId).collection(Collections.mesajlar);
 
-  // Sadece bildirim için kullanılıyor
   static FirebaseFunctions get _functions =>
       FirebaseFunctions.instanceFor(region: 'europe-west1');
 
+  Future<String> resimYukle({
+    required File dosya,
+    required String gondereId,
+  }) async {
+    final ref = storage
+        .ref()
+        .child(StoragePaths.mesajResimleri)
+        .child('${gondereId}_${DateTime.now().millisecondsSinceEpoch}.jpg');
+    await ref.putFile(dosya);
+    return await ref.getDownloadURL();
+  }
+
+  // kullaniciAdlari artık YOK — karşı kullanıcı adı profil koleksiyonundan alınır
   Future<void> mesajGonder({
     required String sohbetId,
     required String gondereId,
-    required String gondereAd,
     required String karsiId,
-    required String karsiAd,
     required String ilanId,
     required String ilanBaslik,
     required String metin,
     String ilanResimUrl = '',
     String tip = 'mesaj',
     double? tutar,
+    String? resimUrl,
   }) async {
     final sohbetRef = _sohbetler.doc(sohbetId);
     final mesajRef  = _mesajlar(sohbetId).doc();
@@ -49,11 +67,10 @@ class MesajRepository {
 
     batch.set(sohbetRef, {
       'kullanicilar':         [gondereId, karsiId],
-      'kullaniciAdlari':      {gondereId: gondereAd, karsiId: karsiAd},
       'ilanId':               ilanId,
       'ilanBaslik':           ilanBaslik,
       'ilanResimUrl':         ilanResimUrl,
-      'sonMesaj':             metin,
+      'sonMesaj':             tip == 'resim' ? '📷 Fotoğraf' : metin,
       'sonMesajZamani':       FieldValue.serverTimestamp(),
       'sonGondereId':         gondereId,
       'degerlendirmeYapildi': false,
@@ -64,38 +81,92 @@ class MesajRepository {
     batch.set(mesajRef, {
       'metin':     metin,
       'gondereId': gondereId,
-      'gondereAd': gondereAd,
       'tip':       tip,
       'zaman':     FieldValue.serverTimestamp(),
       'okundu':    false,
-      if (tutar != null) 'tutar': tutar,
+      'tutar': ?tutar,
       if (tip == 'anlasma') 'anlasmaEvet': false,
       if (tip == 'anlasma') 'anlasmaRed': false,
+      'resimUrl': ?resimUrl,
     });
 
     await batch.commit();
   }
 
-  Stream<QuerySnapshot> mesajlarStream({
-    required String sohbetId,
-    int limit = Pagination.mesajSayfaBoyutu,
-  }) {
-    return _mesajlar(sohbetId)
-        .orderBy('zaman', descending: true)
-        .limit(limit)
-        .snapshots();
+  // SohbetModel döndürür — Timestamp → DateTime dönüşümü burada yapılır
+  Stream<List<SohbetModel>> sohbetlerStream(String kullaniciId) {
+    return _sohbetler
+        .where('kullanicilar', arrayContains: kullaniciId)
+        .orderBy('sonMesajZamani', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs.map(_sohbetModelCevir).toList());
   }
 
-  Future<QuerySnapshot> eskiMesajlariGetir({
+  SohbetModel _sohbetModelCevir(QueryDocumentSnapshot doc) {
+    final d = doc.data() as Map<String, dynamic>;
+    return SohbetModel(
+      id:           doc.id,
+      kullanicilar: List<String>.from(d['kullanicilar'] ?? []),
+      ilanId:       d['ilanId']      as String? ?? '',
+      ilanBaslik:   d['ilanBaslik']  as String? ?? '',
+      ilanResimUrl: d['ilanResimUrl'] as String? ?? '',
+      sonMesaj:     d['sonMesaj']    as String?,
+      sonMesajZamani: (d['sonMesajZamani'] as Timestamp?)?.toDate(),
+      sonGondereId: d['sonGondereId'] as String? ?? '',
+      okunmamis: Map<String, int>.from(
+        (d['okunmamis'] as Map?)?.map(
+          (k, v) => MapEntry(k.toString(), (v as num).toInt()),
+        ) ?? {},
+      ),
+      gizli: Map<String, dynamic>.from(
+        (d['gizli'] as Map?)?.map((k, v) {
+          if (v is Timestamp) return MapEntry(k.toString(), v.toDate());
+          return MapEntry(k.toString(), v);
+        }) ?? {},
+      ),
+      sabitlenmis: Map<String, bool>.from(
+        (d['sabitlenmis'] as Map?)?.map(
+          (k, v) => MapEntry(k.toString(), v as bool),
+        ) ?? {},
+      ),
+      degerlendirmeYapildi: d['degerlendirmeYapildi'] as bool? ?? false,
+    );
+  }
+
+  // Timestamp → DateTime dönüşümü burada yapılır — provider Timestamp görmez
+  Stream<List<Map<String, dynamic>>> mesajlarStream({
     required String sohbetId,
-    required DocumentSnapshot sonDoc,
     int limit = Pagination.mesajSayfaBoyutu,
   }) {
     return _mesajlar(sohbetId)
         .orderBy('zaman', descending: true)
-        .startAfterDocument(sonDoc)
+        .limit(limit)
+        .snapshots()
+        .map((snap) => snap.docs.map((doc) => _mesajMapCevir(doc)).toList());
+  }
+
+  Future<List<Map<String, dynamic>>> eskiMesajlariGetir({
+    required String sohbetId,
+    required DateTime sonZaman,
+    int limit = Pagination.mesajSayfaBoyutu,
+  }) async {
+    final snap = await _mesajlar(sohbetId)
+        .orderBy('zaman', descending: true)
+        .startAfter([Timestamp.fromDate(sonZaman)])
         .limit(limit)
         .get();
+    return snap.docs.map((doc) => _mesajMapCevir(doc)).toList();
+  }
+
+  // Timestamp'ları DateTime'a çevirir — Firestore tipi data katmanının dışına çıkmaz
+  Map<String, dynamic> _mesajMapCevir(QueryDocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return {
+      ...data,
+      'id': doc.id,
+      'zaman': (data['zaman'] as Timestamp?)?.toDate(),
+      'okundu': data['okundu'] as bool? ?? false,
+    };
   }
 
   Future<void> okunduIsaretle({
@@ -106,13 +177,10 @@ class MesajRepository {
       await _sohbetler.doc(sohbetId).update({
         'okunmamis.$kullaniciId': 0,
       });
-
       final mesajlar = await _mesajlar(sohbetId)
           .where('okundu', isEqualTo: false)
           .get();
-
       if (mesajlar.docs.isEmpty) return;
-
       final batch = firestore.batch();
       for (final doc in mesajlar.docs) {
         final data = doc.data() as Map<String, dynamic>;
@@ -143,16 +211,6 @@ class MesajRepository {
             : '',
       });
     }
-  }
-
-  Stream<List<Map<String, dynamic>>> sohbetlerStream(String kullaniciId) {
-    return _sohbetler
-        .where('kullanicilar', arrayContains: kullaniciId)
-        .orderBy('sonMesajZamani', descending: true)
-        .snapshots()
-        .map((snap) => snap.docs
-            .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
-            .toList());
   }
 
   Future<void> sohbetiGizle({
@@ -197,27 +255,19 @@ class MesajRepository {
     });
   }
 
-  // ── Direkt Firestore — anlık ──────────────────────────────────────────────
-
   Future<void> anlasmaKabul({
     required String sohbetId,
     required String mesajId,
   }) async {
-    await _mesajlar(sohbetId).doc(mesajId).update({
-      'anlasmaEvet': true,
-    });
+    await _mesajlar(sohbetId).doc(mesajId).update({'anlasmaEvet': true});
   }
 
   Future<void> anlasmaRed({
     required String sohbetId,
     required String mesajId,
   }) async {
-    await _mesajlar(sohbetId).doc(mesajId).update({
-      'anlasmaRed': true,
-    });
+    await _mesajlar(sohbetId).doc(mesajId).update({'anlasmaRed': true});
   }
-
-  // ── Cloud Functions — sadece bildirim için ────────────────────────────────
 
   Future<void> mesajBildirimiGonder({
     required String aliciId,

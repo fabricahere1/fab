@@ -41,7 +41,7 @@ final class IstekIlanlarProvider
   }
 }
 
-String _$istekIlanlarHash() => r'06ed1b291abc746c480751e65f71b5a319b68f87';
+String _$istekIlanlarHash() => r'8d5ac178bb07d5a3b13d0b32ffd9e3dab02a7e2b';
 
 abstract class _$IstekIlanlar extends $Notifier<IlanListeState> {
   IlanListeState build();
@@ -93,7 +93,7 @@ final class TasiyiciIlanlarProvider
   }
 }
 
-String _$tasiyiciIlanlarHash() => r'948287d2642cc46df59619b22c43240cd274d4e4';
+String _$tasiyiciIlanlarHash() => r'6997248c77caf1538c79e3824c96a395122aed39';
 
 abstract class _$TasiyiciIlanlar extends $Notifier<IlanListeState> {
   IlanListeState build();
@@ -460,4 +460,4 @@ final class FavoriliIlanIdlerProvider
   }
 }
 
-String _$favoriliIlanIdlerHash() => r'fc468fcd53b05f08cffd9d13cc540ff7f373e2c5';
+String _$favoriliIlanIdlerHash() => r'a18c9f8fac3da1192de2351098dcbea327a3aaaf';

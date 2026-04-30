@@ -80,7 +80,7 @@ final class CurrentUserProvider extends $FunctionalProvider<User?, User?, User?>
   }
 }
 
-String _$currentUserHash() => r'acfad4763adee544ca456c8e8803ace9233c071f';
+String _$currentUserHash() => r'ab87a355dd423d79a81ba656f9396a458ad8ed84';
 
 @ProviderFor(AuthNotifier)
 final authProvider = AuthNotifierProvider._();
