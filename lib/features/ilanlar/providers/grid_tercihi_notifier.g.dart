@@ -12,7 +12,8 @@ part of 'grid_tercihi_notifier.dart';
 @ProviderFor(GridTercihi)
 final gridTercihiProvider = GridTercihiProvider._();
 
-final class GridTercihiProvider extends $NotifierProvider<GridTercihi, int> {
+final class GridTercihiProvider
+    extends $NotifierProvider<GridTercihi, GoruntulemeModeli> {
   GridTercihiProvider._()
     : super(
         from: null,
@@ -32,27 +33,27 @@ final class GridTercihiProvider extends $NotifierProvider<GridTercihi, int> {
   GridTercihi create() => GridTercihi();
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(int value) {
+  Override overrideWithValue(GoruntulemeModeli value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<int>(value),
+      providerOverride: $SyncValueProvider<GoruntulemeModeli>(value),
     );
   }
 }
 
-String _$gridTercihiHash() => r'a8395c30c4ddefcf192b5ba2d299202887c67a6e';
+String _$gridTercihiHash() => r'9568f17310e632e8e90e6224cd13df19399e0e2b';
 
-abstract class _$GridTercihi extends $Notifier<int> {
-  int build();
+abstract class _$GridTercihi extends $Notifier<GoruntulemeModeli> {
+  GoruntulemeModeli build();
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref = this.ref as $Ref<int, int>;
+    final ref = this.ref as $Ref<GoruntulemeModeli, GoruntulemeModeli>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<int, int>,
-              int,
+              AnyNotifier<GoruntulemeModeli, GoruntulemeModeli>,
+              GoruntulemeModeli,
               Object?,
               Object?
             >;

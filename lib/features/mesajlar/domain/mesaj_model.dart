@@ -5,7 +5,7 @@ import '../../ilanlar/domain/ilan_model.dart' show TimestampConverter;
 part 'mesaj_model.freezed.dart';
 part 'mesaj_model.g.dart';
 
-enum MesajTip { mesaj, sistem }
+enum MesajTip { mesaj, resim, sistem }
 
 @freezed
 abstract class MesajModel with _$MesajModel {
@@ -16,17 +16,24 @@ abstract class MesajModel with _$MesajModel {
     @Default(MesajTip.mesaj) MesajTip tip,
     @TimestampConverter() DateTime? zaman,
     @Default(false) bool okundu,
+    String? resimUrl,
   }) = _MesajModel;
 
   factory MesajModel.fromFirestore(DocumentSnapshot doc) {
     final d = doc.data() as Map<String, dynamic>;
+    final tipStr = d['tip'] as String? ?? 'mesaj';
     return MesajModel(
       id:        doc.id,
       metin:     d['metin']     as String? ?? '',
       gondereId: d['gondereId'] as String? ?? '',
-      tip:       d['tip'] == 'sistem' ? MesajTip.sistem : MesajTip.mesaj,
+      tip:       tipStr == 'sistem'
+          ? MesajTip.sistem
+          : tipStr == 'resim'
+              ? MesajTip.resim
+              : MesajTip.mesaj,
       zaman:     (d['zaman'] as Timestamp?)?.toDate(),
       okundu:    d['okundu']    as bool?   ?? false,
+      resimUrl:  d['resimUrl']  as String?,
     );
   }
 
@@ -39,7 +46,6 @@ extension MesajModelX on MesajModel {
 }
 
 // ── Sohbet Modeli ─────────────────────────────────────────
-// kullaniciAdlari KALDIRILDI — karşı kullanıcı adı profil koleksiyonundan alınır
 
 @freezed
 abstract class SohbetModel with _$SohbetModel {
@@ -92,7 +98,6 @@ extension SohbetModelX on SohbetModel {
   int okunmamisSayisi(String kullaniciId) =>
       okunmamis[kullaniciId] ?? 0;
 
-  // Karşı kullanıcı UID'ini döndürür — asla map'e bakmaz
   String karsiKullaniciId(String benimId) =>
       kullanicilar.firstWhere((id) => id != benimId, orElse: () => '');
 

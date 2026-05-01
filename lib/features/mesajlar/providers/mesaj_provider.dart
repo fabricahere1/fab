@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/mesaj_repository.dart';
 import '../domain/mesaj_model.dart';
@@ -54,10 +53,11 @@ Stream<String> karsiKullaniciAd(Ref ref, String uid) {
 }
 
 // ── Sohbet ekranı state ───────────────────────────────────────────────────────
+// ✅ raw Map<String, dynamic> yerine typed MesajModel kullanıyor
 
 class SohbetEkraniState {
-  final Map<String, Map<String, dynamic>> mesajMap;
-  final List<Map<String, dynamic>> siraliMesajlar;
+  final Map<String, MesajModel> mesajMap;
+  final List<MesajModel> siraliMesajlar;
   final bool yukleniyor;
   final bool gonderiyor;
   final bool dahaFazlaVar;
@@ -73,8 +73,8 @@ class SohbetEkraniState {
   });
 
   SohbetEkraniState copyWith({
-    Map<String, Map<String, dynamic>>? mesajMap,
-    List<Map<String, dynamic>>? siraliMesajlar,
+    Map<String, MesajModel>? mesajMap,
+    List<MesajModel>? siraliMesajlar,
     bool? yukleniyor,
     bool? gonderiyor,
     bool? dahaFazlaVar,
@@ -124,32 +124,32 @@ class SohbetNotifier extends _$SohbetNotifier {
 
   void _mesajlariDinle() {
     _mesajSub?.cancel();
-    _mesajSub = _repo.mesajlarStream(sohbetId: _sohbetId).listen((snap) {
-      final yeniMap = Map<String, Map<String, dynamic>>.from(state.mesajMap);
-      for (final doc in snap.docs) {
-        final data = doc.data() as Map<String, dynamic>;
-        if (data['zaman'] == null) continue;
-        yeniMap[doc.id] = {...data, 'id': doc.id};
+    _mesajSub = _repo.mesajlarStream(sohbetId: _sohbetId).listen((mesajlar) {
+      // ✅ Artık List<MesajModel> geliyor — Firestore tipi yok
+      final yeniMap = Map<String, MesajModel>.from(state.mesajMap);
+
+      // Gelen snapshot'taki mesajları güncelle
+      for (final mesaj in mesajlar) {
+        yeniMap[mesaj.id] = mesaj;
       }
-      final snapIds = snap.docs.map((d) => d.id).toSet();
+
+      // Snapshot'ta olmayan (silinen) mesajları kaldır
+      final snapIds = mesajlar.map((m) => m.id).toSet();
       yeniMap.removeWhere((id, _) => !snapIds.contains(id));
 
-      DateTime? enEskiZaman = state.enEskiZaman;
-      if (snap.docs.isNotEmpty) {
-        final sonData = snap.docs.last.data() as Map<String, dynamic>;
-        final ts = sonData['zaman'];
-        if (ts is Timestamp) enEskiZaman = ts.toDate();
-      }
+      // En eski zamanı cursor olarak sakla
+      final enEskiZaman = mesajlar.isNotEmpty ? mesajlar.last.zaman : state.enEskiZaman;
+
       state = state.copyWith(
         mesajMap: yeniMap,
         siraliMesajlar: _sirala(yeniMap),
         yukleniyor: false,
-        dahaFazlaVar: snap.docs.length >= Pagination.mesajSayfaBoyutu,
+        dahaFazlaVar: mesajlar.length >= Pagination.mesajSayfaBoyutu,
         enEskiZaman: enEskiZaman,
       );
 
-      if (snap.docs.isNotEmpty) {
-        final sonMesajId = snap.docs.first.id;
+      if (mesajlar.isNotEmpty) {
+        final sonMesajId = mesajlar.first.id;
         if (_sonOkunduMesajId != sonMesajId) {
           _sonOkunduMesajId = sonMesajId;
           _okunduDebounce();
@@ -169,18 +169,12 @@ class SohbetNotifier extends _$SohbetNotifier {
     } catch (_) {}
   }
 
-  List<Map<String, dynamic>> _sirala(Map<String, Map<String, dynamic>> map) {
+  // ✅ Timestamp yok — MesajModel.zaman zaten DateTime
+  List<MesajModel> _sirala(Map<String, MesajModel> map) {
     final liste = map.values.toList();
     liste.sort((a, b) {
-      int msA = 0, msB = 0;
-      final zA = a['zaman'];
-      final zB = b['zaman'];
-      if (zA is Timestamp) {
-        msA = zA.millisecondsSinceEpoch;
-      } else if (zA is DateTime) msA = zA.millisecondsSinceEpoch;
-      if (zB is Timestamp) {
-        msB = zB.millisecondsSinceEpoch;
-      } else if (zB is DateTime) msB = zB.millisecondsSinceEpoch;
+      final msA = a.zaman?.millisecondsSinceEpoch ?? 0;
+      final msB = b.zaman?.millisecondsSinceEpoch ?? 0;
       return msB.compareTo(msA);
     });
     return liste;
@@ -188,28 +182,26 @@ class SohbetNotifier extends _$SohbetNotifier {
 
   Future<void> dahaFazlaYukle() async {
     if (state.yukleniyor || !state.dahaFazlaVar || state.enEskiZaman == null) return;
-    final snap = await _repo.eskiMesajlariGetir(
+
+    // ✅ Artık List<MesajModel> geliyor
+    final mesajlar = await _repo.eskiMesajlariGetir(
       sohbetId: _sohbetId,
       sonZaman: state.enEskiZaman!,
     );
-    final yeniMap = Map<String, Map<String, dynamic>>.from(state.mesajMap);
-    DateTime? enEskiZaman = state.enEskiZaman;
-    for (final doc in snap.docs) {
-      final data = doc.data() as Map<String, dynamic>;
-      if (data['zaman'] == null) continue;
-      if (!yeniMap.containsKey(doc.id)) {
-        yeniMap[doc.id] = {...data, 'id': doc.id};
+
+    final yeniMap = Map<String, MesajModel>.from(state.mesajMap);
+    for (final mesaj in mesajlar) {
+      if (!yeniMap.containsKey(mesaj.id)) {
+        yeniMap[mesaj.id] = mesaj;
       }
     }
-    if (snap.docs.isNotEmpty) {
-      final sonData = snap.docs.last.data() as Map<String, dynamic>;
-      final ts = sonData['zaman'];
-      if (ts is Timestamp) enEskiZaman = ts.toDate();
-    }
+
+    final enEskiZaman = mesajlar.isNotEmpty ? mesajlar.last.zaman : state.enEskiZaman;
+
     state = state.copyWith(
       mesajMap: yeniMap,
       siraliMesajlar: _sirala(yeniMap),
-      dahaFazlaVar: snap.docs.length >= Pagination.mesajSayfaBoyutu,
+      dahaFazlaVar: mesajlar.length >= Pagination.mesajSayfaBoyutu,
       enEskiZaman: enEskiZaman,
     );
   }
@@ -298,7 +290,7 @@ class SohbetNotifier extends _$SohbetNotifier {
       mesajId: mesajId,
       metin: metin,
     );
-    final yeniMap = Map<String, Map<String, dynamic>>.from(state.mesajMap)
+    final yeniMap = Map<String, MesajModel>.from(state.mesajMap)
       ..remove(mesajId);
     state = state.copyWith(
       mesajMap: yeniMap,

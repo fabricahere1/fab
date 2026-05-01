@@ -98,26 +98,36 @@ class MesajRepository {
             .toList());
   }
 
-  Stream<QuerySnapshot> mesajlarStream({
+  // ✅ Artık Stream<List<MesajModel>> — Firestore tipi dışarı sızmıyor
+  Stream<List<MesajModel>> mesajlarStream({
     required String sohbetId,
     int limit = Pagination.mesajSayfaBoyutu,
   }) {
     return _mesajlar(sohbetId)
         .orderBy('zaman', descending: true)
         .limit(limit)
-        .snapshots();
+        .snapshots()
+        .map((snap) => snap.docs
+            .map((doc) => MesajModel.fromFirestore(doc))
+            .where((m) => m.zaman != null)
+            .toList());
   }
 
-  Future<QuerySnapshot> eskiMesajlariGetir({
+  // ✅ Artık Future<List<MesajModel>> — Firestore tipi dışarı sızmıyor
+  Future<List<MesajModel>> eskiMesajlariGetir({
     required String sohbetId,
     required DateTime sonZaman,
     int limit = Pagination.mesajSayfaBoyutu,
-  }) {
-    return _mesajlar(sohbetId)
+  }) async {
+    final snap = await _mesajlar(sohbetId)
         .orderBy('zaman', descending: true)
         .startAfter([Timestamp.fromDate(sonZaman)])
         .limit(limit)
         .get();
+    return snap.docs
+        .map((doc) => MesajModel.fromFirestore(doc))
+        .where((m) => m.zaman != null)
+        .toList();
   }
 
   Future<void> okunduIsaretle({

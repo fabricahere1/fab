@@ -13,6 +13,7 @@ _MesajModel _$MesajModelFromJson(Map<String, dynamic> json) => _MesajModel(
   tip: $enumDecodeNullable(_$MesajTipEnumMap, json['tip']) ?? MesajTip.mesaj,
   zaman: const TimestampConverter().fromJson(json['zaman']),
   okundu: json['okundu'] as bool? ?? false,
+  resimUrl: json['resimUrl'] as String?,
 );
 
 Map<String, dynamic> _$MesajModelToJson(_MesajModel instance) =>
@@ -23,9 +24,14 @@ Map<String, dynamic> _$MesajModelToJson(_MesajModel instance) =>
       'tip': _$MesajTipEnumMap[instance.tip]!,
       'zaman': const TimestampConverter().toJson(instance.zaman),
       'okundu': instance.okundu,
+      'resimUrl': instance.resimUrl,
     };
 
-const _$MesajTipEnumMap = {MesajTip.mesaj: 'mesaj', MesajTip.sistem: 'sistem'};
+const _$MesajTipEnumMap = {
+  MesajTip.mesaj: 'mesaj',
+  MesajTip.resim: 'resim',
+  MesajTip.sistem: 'sistem',
+};
 
 _SohbetModel _$SohbetModelFromJson(Map<String, dynamic> json) => _SohbetModel(
   id: json['id'] as String,

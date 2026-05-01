@@ -16,7 +16,7 @@ import '../../../../core/cache/app_cache_manager.dart';
 import '../../../../shared/constants/app_colors.dart';
 import '../../../../shared/constants/app_constants.dart';
 
-// ── İlan Kartı ────────────────────────────────────────────────────────────────
+// ── Grid Kartı (2 veya 3 kolon) ───────────────────────────────────────────────
 
 class IlanKarti extends ConsumerWidget {
   final IlanModel ilan;
@@ -107,18 +107,14 @@ class IlanKarti extends ConsumerWidget {
                 ),
                 if (gosterFavori)
                   Positioned(
-                    top: 6,
-                    right: 6,
+                    top: 6, right: 6,
                     child: GestureDetector(
                       onTap: () async {
                         if (favorideMi) {
-                          await ref
-                              .read(ilanRepositoryProvider)
-                              .favoridanCikar(
-                                  kullaniciId: uid, ilanId: ilan.id);
+                          await ref.read(ilanRepositoryProvider)
+                              .favoridanCikar(kullaniciId: uid, ilanId: ilan.id);
                         } else {
-                          await ref
-                              .read(ilanRepositoryProvider)
+                          await ref.read(ilanRepositoryProvider)
                               .favoriyeEkle(kullaniciId: uid, ilan: ilan);
                         }
                       },
@@ -129,11 +125,8 @@ class IlanKarti extends ConsumerWidget {
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
-                          favorideMi
-                              ? Icons.favorite
-                              : Icons.favorite_border,
-                          color:
-                              favorideMi ? AppColors.red : Colors.white,
+                          favorideMi ? Icons.favorite : Icons.favorite_border,
+                          color: favorideMi ? AppColors.red : Colors.white,
                           size: 16,
                         ),
                       ),
@@ -228,6 +221,184 @@ class IlanKarti extends ConsumerWidget {
   }
 }
 
+// ── Liste Kartı (Dolap/Trendyol stili) ───────────────────────────────────────
+
+class IlanListeKarti extends ConsumerWidget {
+  final IlanModel ilan;
+
+  const IlanListeKarti({super.key, required this.ilan});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final resimler     = ilan.tumResimler;
+    final uid          = ref.watch(currentUserProvider)?.uid;
+    final gosterFavori = uid != null && uid != ilan.kullaniciId;
+    final favoriliIdler = ref.watch(favoriliIlanIdlerProvider);
+    final favorideMi   = gosterFavori && favoriliIdler.contains(ilan.id);
+
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (_, _, _) => IlanDetayScreen(ilan: ilan),
+          transitionsBuilder: (_, anim, _, child) => SlideTransition(
+            position: Tween(begin: const Offset(1, 0), end: Offset.zero)
+                .animate(CurvedAnimation(
+                    parent: anim, curve: Curves.easeOutCubic)),
+            child: child,
+          ),
+          transitionDuration: const Duration(milliseconds: 280),
+        ),
+      ),
+      child: Container(
+        color: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // ── Sol: Kare resim ─────────────────────────────────────────
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: SizedBox(
+                width: 72,
+                height: 72,
+                child: resimler.isNotEmpty
+                    ? CachedNetworkImage(
+                        cacheManager: AppCacheManager.instance,
+                        imageUrl: resimler.first,
+                        fit: BoxFit.cover,
+                        fadeInDuration: Duration.zero,
+                        memCacheWidth: 200,
+                        placeholder: (_, _) =>
+                            Container(color: AppColors.surface),
+                        errorWidget: (_, _, _) => Container(
+                          color: AppColors.surface,
+                          child: const Center(
+                            child: Icon(Icons.image_outlined,
+                                color: AppColors.textHint, size: 24),
+                          ),
+                        ),
+                      )
+                    : Container(
+                        color: AppColors.surface,
+                        child: const Center(
+                          child: Icon(Icons.image_outlined,
+                              color: AppColors.textHint, size: 24),
+                        ),
+                      ),
+              ),
+            ),
+
+            const SizedBox(width: 12),
+
+            // ── Sağ: Bilgiler ───────────────────────────────────────────
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Başlık — Dolap stili ince font
+                  Text(
+                    ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                      letterSpacing: -0.1,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 3),
+
+                  // Güzergah
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on_outlined,
+                          size: 11, color: AppColors.textSecondary),
+                      const SizedBox(width: 3),
+                      Expanded(
+                        child: Text(
+                          '${ilan.nereden} → ${ilan.nereye}',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+
+                  // Notlar (varsa, 1 satır)
+                  if (ilan.notlar.isNotEmpty) ...[
+                    Text(
+                      ilan.notlar,
+                      style: GoogleFonts.dmSans(
+                        fontSize: 11,
+                        color: AppColors.textHint,
+                        height: 1.3,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                  ],
+
+                  // Fiyat + değerlendirme
+                  Row(
+                    children: [
+                      Text(
+                        ilan.ucret.isNotEmpty
+                            ? '${ilan.ucret} ₺'
+                            : 'Ücret belirtilmemiş',
+                        style: GoogleFonts.dmSans(
+                          fontSize: 13,
+                          fontWeight: ilan.ucret.isNotEmpty
+                              ? FontWeight.w700
+                              : FontWeight.w400,
+                          color: ilan.ucret.isNotEmpty
+                              ? AppColors.red
+                              : AppColors.textHint,
+                        ),
+                      ),
+                      const Spacer(),
+                      _DegerlendirmeSatiri(ilan: ilan),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(width: 8),
+
+            // ── Favori butonu ───────────────────────────────────────────
+            if (gosterFavori)
+              GestureDetector(
+                onTap: () async {
+                  if (favorideMi) {
+                    await ref.read(ilanRepositoryProvider)
+                        .favoridanCikar(kullaniciId: uid, ilanId: ilan.id);
+                  } else {
+                    await ref.read(ilanRepositoryProvider)
+                        .favoriyeEkle(kullaniciId: uid, ilan: ilan);
+                  }
+                },
+                child: Icon(
+                  favorideMi ? Icons.favorite : Icons.favorite_border,
+                  color: favorideMi ? AppColors.red : AppColors.textHint,
+                  size: 20,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ── Değerlendirme Satırı ──────────────────────────────────────────────────────
 
 class _DegerlendirmeSatiri extends ConsumerWidget {
@@ -283,6 +454,8 @@ class ShimmerGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (kolonSayisi == 1) return const ShimmerListe();
+
     return Shimmer.fromColors(
       baseColor: Colors.grey[200]!,
       highlightColor: Colors.grey[50]!,
@@ -291,6 +464,8 @@ class ShimmerGrid extends StatelessWidget {
         mainAxisSpacing: 6,
         crossAxisSpacing: 6,
         padding: const EdgeInsets.all(6),
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
         itemCount: 6,
         itemBuilder: (context, index) {
           final h = _yukseklikler[index % _yukseklikler.length];
@@ -313,8 +488,6 @@ class ShimmerGrid extends StatelessWidget {
                       Container(height: 9, width: 80, color: Colors.white),
                       const SizedBox(height: 5),
                       Container(height: 11, width: 60, color: Colors.white),
-                      const SizedBox(height: 5),
-                      Container(height: 10, width: 50, color: Colors.white),
                     ],
                   ),
                 ),
@@ -322,6 +495,51 @@ class ShimmerGrid extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+// ── Shimmer Liste ─────────────────────────────────────────────────────────────
+
+class ShimmerListe extends StatelessWidget {
+  const ShimmerListe({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[200]!,
+      highlightColor: Colors.grey[50]!,
+      child: Column(
+        children: List.generate(6, (i) => Container(
+          color: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          margin: const EdgeInsets.only(bottom: 1),
+          child: Row(
+            children: [
+              Container(
+                width: 72, height: 72,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(height: 13, width: double.infinity, color: Colors.white),
+                    const SizedBox(height: 6),
+                    Container(height: 10, width: 140, color: Colors.white),
+                    const SizedBox(height: 6),
+                    Container(height: 13, width: 80, color: Colors.white),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        )),
       ),
     );
   }
