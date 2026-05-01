@@ -574,6 +574,19 @@ class _NedenIsteBarState extends State<_NedenIsteBar>
     super.dispose();
   }
 
+  // İçerik genişliğini ölç
+  Widget _buildRow() {
+    final items = <Widget>[];
+    // İçeriği 3 kez tekrarla — sonsuz döngü hissi için
+    for (var r = 0; r < 3; r++) {
+      for (final m in _maddeler) {
+        items.add(_NedenItem(metin: m));
+        items.add(const _NedenAyrac());
+      }
+    }
+    return Row(mainAxisSize: MainAxisSize.min, children: items);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(

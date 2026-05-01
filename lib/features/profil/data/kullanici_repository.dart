@@ -35,13 +35,13 @@ class KullaniciRepository {
   Future<KullaniciModel?> kullaniciGetir(String uid) async {
     final doc = await _col.doc(uid).get();
     if (!doc.exists) return null;
-    return _kullaniciModelCevir(doc);
+    return KullaniciModel.fromFirestore(doc);
   }
  
   Stream<KullaniciModel?> kullaniciStream(String uid) {
     return _col.doc(uid).snapshots().map((doc) {
       if (!doc.exists) return null;
-      return _kullaniciModelCevir(doc);
+      return KullaniciModel.fromFirestore(doc);
     });
   }
  
@@ -150,28 +150,4 @@ class KullaniciRepository {
       'tarih':         FieldValue.serverTimestamp(),
     });
   }
-  // Timestamp → DateTime dönüşümü data katmanında yapılır — domain Firebase'i tanımaz
-  KullaniciModel _kullaniciModelCevir(DocumentSnapshot doc) {
-    final d = doc.data() as Map<String, dynamic>;
-    return KullaniciModel(
-      id:                   doc.id,
-      adSoyad:              d['adSoyad']              as String? ?? '',
-      fotoUrl:              d['fotoUrl']              as String?,
-      telefon:              d['telefon']              as String?,
-      email:                d['email']                as String?,
-      fcmToken:             d['fcmToken']             as String?,
-      profilTamamlandi:     d['profilTamamlandi']     as bool?   ?? false,
-      ortalamaPuan:         ((d['ortalamaPuan']       as num?)?.toDouble()) ?? 0.0,
-      degerlendirmeSayisi:  ((d['degerlendirmeSayisi'] as num?)?.toInt()) ?? 0,
-      kullaniciTipi:        d['kullaniciTipi']        as String? ?? '',
-      yasadigiUlke:         d['yasadigiUlke']         as String? ?? '',
-      bulunduguSehir:       d['bulunduguSehir']       as String? ?? '',
-      geldigiSehirler:      List<String>.from(d['geldigiSehirler'] ?? []),
-      hakkinda:             d['hakkinda']             as String? ?? '',
-      sehir:                d['sehir']                as String? ?? '',
-      telefonGizli:         d['telefonGizli']         as bool?   ?? false,
-      engellenenler:        List<String>.from(d['engellenenler'] ?? []),
-    );
-  }
-
 }

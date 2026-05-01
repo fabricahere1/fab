@@ -42,5 +42,4 @@ const _$BildirimTipEnumMap = {
   BildirimTip.mesaj: 'mesaj',
   BildirimTip.ilan: 'ilan',
   BildirimTip.sistem: 'sistem',
-  BildirimTip.teklif: 'teklif',
 };

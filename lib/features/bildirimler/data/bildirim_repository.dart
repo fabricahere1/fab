@@ -25,7 +25,7 @@ class BildirimRepository {
         .limit(50)
         .snapshots()
         .map((snap) => snap.docs
-            .map((doc) => _bildirimModelCevir(doc))
+            .map((doc) => BildirimModel.fromFirestore(doc))
             .toList());
   }
  
@@ -103,21 +103,4 @@ class BildirimRepository {
       gondereAd: gondereAd,
     );
   }
-  // Timestamp → DateTime dönüşümü data katmanında yapılır — domain Firebase'i tanımaz
-  BildirimModel _bildirimModelCevir(QueryDocumentSnapshot doc) {
-    final d = doc.data() as Map<String, dynamic>;
-    return BildirimModel(
-      id:         doc.id,
-      kullaniciId: d['kullaniciId'] as String? ?? '',
-      tip:        bildirimTipFromString(d['tip'] as String? ?? 'sistem'),
-      baslik:     d['baslik']     as String? ?? '',
-      icerik:     d['icerik']     as String? ?? '',
-      okundu:     d['okundu']     as bool?   ?? false,
-      tarih:      (d['tarih']     as Timestamp?)?.toDate(),
-      hedefId:    d['hedefId']    as String? ?? '',
-      gondereId:  d['gondereId']  as String? ?? '',
-      gondereAd:  d['gondereAd']  as String? ?? '',
-    );
-  }
-
 }

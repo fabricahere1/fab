@@ -5,7 +5,6 @@ import '../domain/bildirim_model.dart';
 import '../providers/bildirim_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../mesajlar/presentation/sohbet_screen.dart';
-import '../../teklifler/presentation/teklif_detay_screen.dart';
 import '../../../shared/constants/app_colors.dart';
 
 class BildirimlerScreen extends ConsumerStatefulWidget {
@@ -109,26 +108,12 @@ class _BildirimSatiri extends ConsumerWidget {
   const _BildirimSatiri({required this.bildirim});
 
   void _navigate(BuildContext context, WidgetRef ref) {
-    // Teklif bildirimi → TeklifDetayScreen
-    if (bildirim.tip == BildirimTip.teklif && bildirim.hedefId.isNotEmpty) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => TeklifDetayScreen(teklifId: bildirim.hedefId),
-        ),
-      );
-      return;
-    }
-
-    // Mesaj bildirimi → SohbetScreen
     if (bildirim.tip != BildirimTip.mesaj || bildirim.hedefId.isEmpty) return;
 
-    // hedefId = sohbetId formatı: uid1_uid2_ilanId
     final parts = bildirim.hedefId.split('_');
     if (parts.length < 3) return;
 
     final ilanId   = parts.last;
-    // gondereId direkt kullan — parse hatası olmaz
     final karsiUid = bildirim.gondereId.isNotEmpty
         ? bildirim.gondereId
         : (() {
@@ -140,8 +125,6 @@ class _BildirimSatiri extends ConsumerWidget {
 
     if (karsiUid.isEmpty) return;
 
-    final anlasmaKabul = bildirim.icerik.contains('Anlaşma teklifiniz kabul edildi');
-
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -150,24 +133,21 @@ class _BildirimSatiri extends ConsumerWidget {
           karsiKullaniciAd: bildirim.gondereAd,
           ilanId:           ilanId,
           ilanBaslik:       bildirim.baslik,
-          anlasmaVar:       anlasmaKabul,
         ),
       ),
     );
   }
 
   IconData get _ikon => switch (bildirim.tip) {
-        BildirimTip.mesaj   => Icons.chat_bubble_outline,
-        BildirimTip.ilan    => Icons.list_alt_outlined,
-        BildirimTip.sistem  => Icons.notifications_outlined,
-        BildirimTip.teklif  => Icons.local_offer_outlined, // ← eklendi
+        BildirimTip.mesaj  => Icons.chat_bubble_outline,
+        BildirimTip.ilan   => Icons.list_alt_outlined,
+        BildirimTip.sistem => Icons.notifications_outlined,
       };
 
   Color get _ikonRenk => switch (bildirim.tip) {
-        BildirimTip.mesaj   => AppColors.primary,
-        BildirimTip.ilan    => AppColors.red,
-        BildirimTip.sistem  => Colors.amber,
-        BildirimTip.teklif  => const Color(0xFFFF9800), // turuncu ← eklendi
+        BildirimTip.mesaj  => AppColors.primary,
+        BildirimTip.ilan   => AppColors.red,
+        BildirimTip.sistem => Colors.amber,
       };
 
   String _zamanYazi(DateTime? tarih) {

@@ -57,7 +57,7 @@ class IlanRepository {
         .limit(limit);
     if (kategori != null) q = q.where('kategori', isEqualTo: kategori);
     final snap = await q.get();
-    final ilanlar = snap.docs.map(_ilanModelCevir).toList();
+    final ilanlar = snap.docs.map(IlanModel.fromFirestore).toList();
     return IlanSayfasi(
       ilanlar: ilanlar,
       sonTarih: ilanlar.isNotEmpty ? ilanlar.last.olusturmaTarihi : null,
@@ -90,8 +90,8 @@ class IlanRepository {
           .limit(10)
           .get();
       final ilanlar = [
-        ...gelecek.docs.map(_ilanModelCevir),
-        ...gecmis.docs.map(_ilanModelCevir),
+        ...gelecek.docs.map(IlanModel.fromFirestore),
+        ...gecmis.docs.map(IlanModel.fromFirestore),
       ];
       return IlanSayfasi(
         ilanlar: ilanlar,
@@ -106,7 +106,7 @@ class IlanRepository {
         .orderBy('olusturmaTarihi', descending: true)
         .limit(limit)
         .get();
-    final ilanlar = snap.docs.map(_ilanModelCevir).toList();
+    final ilanlar = snap.docs.map(IlanModel.fromFirestore).toList();
     return IlanSayfasi(
       ilanlar: ilanlar,
       sonTarih: ilanlar.isNotEmpty ? ilanlar.last.olusturmaTarihi : null,
@@ -133,7 +133,7 @@ class IlanRepository {
         .startAfter([cursor])
         .limit(limit)
         .get();
-    final ilanlar = snap.docs.map(_ilanModelCevir).toList();
+    final ilanlar = snap.docs.map(IlanModel.fromFirestore).toList();
     return IlanSayfasi(
       ilanlar: ilanlar,
       sonTarih: ilanlar.isNotEmpty ? ilanlar.last.olusturmaTarihi : sonTarih,
@@ -147,7 +147,7 @@ class IlanRepository {
         .where('kullaniciId', isEqualTo: kullaniciId)
         .orderBy('olusturmaTarihi', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map(_ilanModelCevir).toList());
+        .map((snap) => snap.docs.map(IlanModel.fromFirestore).toList());
   }
 
   Future<String> ilanOlustur({
@@ -171,7 +171,7 @@ class IlanRepository {
       await task;
       resimUrller.add(await ref.getDownloadURL());
     }
-    final ilanData = _ilanToMap(ilan);
+    final ilanData = ilan.toFirestore();
     if (resimUrller.isNotEmpty) {
       ilanData['resimUrl'] = resimUrller.first;
       ilanData['resimUrller'] = resimUrller;
@@ -269,49 +269,4 @@ class IlanRepository {
             .map((doc) => {'id': doc.id, ...doc.data()})
             .toList());
   }
-  // ── Firestore ↔ Model dönüşümleri (data katmanında kalır) ────────────────────
-
-  IlanModel _ilanModelCevir(QueryDocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    return IlanModel(
-      id:              doc.id,
-      tip:             data['tip']              as String? ?? '',
-      nereden:         data['nereden']          as String? ?? '',
-      nereye:          data['nereye']           as String? ?? '',
-      ucret:           data['ucret']            as String? ?? '',
-      urun:            data['urun']             as String? ?? '',
-      notlar:          data['notlar']           as String? ?? '',
-      kategori:        data['kategori']         as String? ?? 'diger',
-      kullaniciId:     data['kullaniciId']      as String? ?? '',
-      kullaniciAd:     data['kullaniciAd']      as String? ?? 'Kullanıcı',
-      aktif:           data['aktif']            as bool?   ?? true,
-      tarih:           (data['tarih']           as Timestamp?)?.toDate(),
-      olusturmaTarihi: (data['olusturmaTarihi'] as Timestamp?)?.toDate(),
-      resimUrl:        data['resimUrl']         as String? ?? '',
-      resimUrller:     List<String>.from(data['resimUrller'] ?? []),
-      urunLinki:       data['urunLinki']        as String? ?? '',
-      favoriSayisi:    (data['favoriSayisi']    as num?)?.toInt() ?? 0,
-      tasimaTercihi:   data['tasimaTercihi']    as String? ?? 'hepsi',
-    );
-  }
-
-  Map<String, dynamic> _ilanToMap(IlanModel ilan) => {
-    'tip':             ilan.tip,
-    'nereden':         ilan.nereden,
-    'nereye':          ilan.nereye,
-    'ucret':           ilan.ucret,
-    'urun':            ilan.urun,
-    'notlar':          ilan.notlar,
-    'urunLinki':       ilan.urunLinki,
-    'kategori':        ilan.kategori,
-    'kullaniciId':     ilan.kullaniciId,
-    'kullaniciAd':     ilan.kullaniciAd,
-    'aktif':           ilan.aktif,
-    'tasimaTercihi':   ilan.tasimaTercihi,
-    if (ilan.tarih != null) 'tarih': Timestamp.fromDate(ilan.tarih!),
-    'olusturmaTarihi': FieldValue.serverTimestamp(),
-    if (ilan.resimUrl.isNotEmpty) 'resimUrl': ilan.resimUrl,
-    if (ilan.resimUrller.isNotEmpty) 'resimUrller': ilan.resimUrller,
-  };
-
 }

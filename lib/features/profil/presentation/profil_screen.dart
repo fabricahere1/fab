@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../favoriler/presentation/favoriler_screen.dart';
-import '../../teklifler/presentation/teklifler_screen.dart';
 import 'ilanlarim_screen.dart';
 import 'ayarlar_screen.dart';
 import 'profil_duzenle_screen.dart';
@@ -168,16 +167,6 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                   context,
                   MaterialPageRoute(
                       builder: (_) => const IlanlarimScreen()),
-                ),
-              ),
-              _Ayrac(),
-              _SatirOge(
-                icon: Icons.handshake_outlined,
-                label: 'Tekliflerim',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const TekliflerScreen()),
                 ),
               ),
               _Ayrac(),

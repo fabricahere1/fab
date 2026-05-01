@@ -1,6 +1,5 @@
 // lib/features/home/presentation/kesfet_screen.dart
 
-import 'dart:math' as dart_math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -140,6 +139,10 @@ class _HaritaTabState extends ConsumerState<_HaritaTab> {
   @override
   Widget build(BuildContext context) {
     final tasiyiciState = ref.watch(tasiyiciIlanlarProvider);
+    final tumIlanlar    = [
+      ...ref.watch(istekIlanlarProvider).filtrelenmis,
+      ...tasiyiciState.filtrelenmis,
+    ];
 
     // Ülke bazlı ilan sayıları
     final Map<String, int> ulkeSayisi = {};
@@ -165,61 +168,55 @@ class _HaritaTabState extends ConsumerState<_HaritaTab> {
         // Harita placeholder — gerçek harita için flutter_map entegre edilebilir
         SliverToBoxAdapter(
           child: Container(
-            height: 220,
-            margin: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+            height: 180,
+            margin: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              color: const Color(0xFFD6E8F5),
+              color: const Color(0xFFE8F4FD),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFBBDEFB)),
             ),
-            clipBehavior: Clip.hardEdge,
             child: Stack(
               children: [
-                // Dünya haritası
+                // Grid çizgileri
                 CustomPaint(
-                  size: const Size(double.infinity, 220),
-                  painter: _DunyaHaritasiPainter(
-                    aktifSehirler: _aktifSehirleriCikar(tasiyiciState.filtrelenmis),
-                  ),
+                  size: const Size(double.infinity, 180),
+                  painter: _HaritaGridPainter(),
                 ),
-                // Sağ üst: güzergah sayısı
+                // Pin'ler
+                const _HaritaPin(left: 0.18, top: 0.30, renk: Color(0xFFE53935)),
+                const _HaritaPin(left: 0.42, top: 0.22, renk: Color(0xFFFF8C42)),
+                const _HaritaPin(left: 0.68, top: 0.38, renk: Color(0xFF4CAF50)),
+                const _HaritaPin(left: 0.55, top: 0.55, renk: Color(0xFFE53935)),
+                const _HaritaPin(left: 0.30, top: 0.65, renk: Color(0xFFFF8C42)),
+                const _HaritaPin(left: 0.78, top: 0.25, renk: Color(0xFF4CAF50)),
+                // Overlay bilgi
                 Positioned(
-                  top: 12,
-                  right: 12,
+                  bottom: 10,
+                  left: 10,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.92),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${tasiyiciState.filtrelenmis.length} güzergah',
-                      style: GoogleFonts.dmSans(
-                          fontSize: 11, fontWeight: FontWeight.w700, color: const Color(0xFF1a1a1a)),
-                    ),
-                  ),
-                ),
-                // Sol alt: legend
-                Positioned(
-                  bottom: 12,
-                  left: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.88),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 4,
+                        ),
+                      ],
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Container(width: 8, height: 8,
-                            decoration: const BoxDecoration(color: Color(0xFFE53935), shape: BoxShape.circle)),
+                        const Icon(Icons.flight_takeoff_rounded,
+                            size: 12, color: AppColors.red),
                         const SizedBox(width: 5),
-                        Text('Aktif rota', style: GoogleFonts.dmSans(fontSize: 10, color: const Color(0xFF555555))),
-                        const SizedBox(width: 10),
-                        Container(width: 8, height: 8,
-                            decoration: const BoxDecoration(color: Color(0xFF1976D2), shape: BoxShape.circle)),
-                        const SizedBox(width: 5),
-                        Text('Diğer', style: GoogleFonts.dmSans(fontSize: 10, color: const Color(0xFF555555))),
+                        Text(
+                          '${tasiyiciState.filtrelenmis.length} aktif güzergah',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 11, fontWeight: FontWeight.w700),
+                        ),
                       ],
                     ),
                   ),
@@ -446,7 +443,7 @@ class _CanliTab extends ConsumerWidget {
 
         // Trend istekler
         if (trendIstekler.isNotEmpty) ...[
-          _bolumBasligi('🔥 Trend istekler'),
+          _BolumBasligi('🔥 Trend istekler'),
           SliverToBoxAdapter(
             child: SizedBox(
               height: 38,
@@ -510,7 +507,7 @@ class _CanliTab extends ConsumerWidget {
         ],
 
         // Son aktiviteler
-        _bolumBasligi('⚡ Son aktiviteler'),
+        _BolumBasligi('⚡ Son aktiviteler'),
         SliverList(
           delegate: SliverChildBuilderDelegate(
             (context, index) {
@@ -699,7 +696,7 @@ class _KesfetTabState extends ConsumerState<_KesfetTab> {
 
         // Öne çıkanlar (kategori seçili değilken)
         if (_seciliKategori == null && oneCikan.isNotEmpty) ...[
-          _bolumBasligi('⭐ Öne çıkanlar'),
+          _BolumBasligi('⭐ Öne çıkanlar'),
           SliverToBoxAdapter(
             child: SizedBox(
               height: 150,
@@ -719,7 +716,7 @@ class _KesfetTabState extends ConsumerState<_KesfetTab> {
 
         // Yakında gelenler
         if (_seciliKategori == null && yakinGelenler.isNotEmpty) ...[
-          _bolumBasligi('✈ Bir kaç güne oradayım'),
+          _BolumBasligi('✈ Bir kaç güne oradayım'),
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
@@ -793,7 +790,7 @@ class _KesfetTabState extends ConsumerState<_KesfetTab> {
 
         // Popüler güzergahlar
         if (_seciliKategori == null && topGuzergah.isNotEmpty) ...[
-          _bolumBasligi('🗺 Popüler güzergahlar'),
+          _BolumBasligi('🗺 Popüler güzergahlar'),
           SliverToBoxAdapter(
             child: SizedBox(
               height: 68,
@@ -857,7 +854,7 @@ class _KesfetTabState extends ConsumerState<_KesfetTab> {
         ],
 
         // İlan grid
-        _bolumBasligi(_seciliKategori == null
+        _BolumBasligi(_seciliKategori == null
             ? '🆕 Tüm ilanlar'
             : app_constants.kategoriAdi(_seciliKategori!)),
 
@@ -892,7 +889,7 @@ class _KesfetTabState extends ConsumerState<_KesfetTab> {
 // YARDIMCI WİDGETLAR
 // ══════════════════════════════════════════════════════════════════════════════
 
-SliverWidget _bolumBasligi(String baslik) => SliverToBoxAdapter(
+SliverWidget _BolumBasligi(String baslik) => SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
         child: Text(baslik,
@@ -1344,326 +1341,101 @@ class _SuAnHavadaKart extends StatelessWidget {
 }
 
 // Harita grid painter
-// ── Şehir → koordinat (Mercator projeksiyon için lon/lat) ───────────────────
-// Mercator: x = (lon+180)/360 * W,  y = (1 - (lat+90)/180) * H (basit)
-const _kSehirKoordinatlari = <String, List<double>>{
-  'amsterdam':   [4.89,  52.37],
-  'istanbul':    [28.98, 41.01],
-  'berlin':      [13.40, 52.52],
-  'londra':      [-0.12, 51.51],
-  'london':      [-0.12, 51.51],
-  'paris':       [2.35,  48.85],
-  'dubai':       [55.27, 25.20],
-  'new york':    [-74.01,40.71],
-  'newyork':     [-74.01,40.71],
-  'tokyo':       [139.69,35.69],
-  'singapur':    [103.82, 1.35],
-  'singapore':   [103.82, 1.35],
-  'moskova':     [37.62, 55.75],
-  'moscow':      [37.62, 55.75],
-  'roma':        [12.50, 41.90],
-  'rome':        [12.50, 41.90],
-  'madrid':      [-3.70, 40.42],
-  'bangkok':     [100.52,13.75],
-  'sydney':      [151.21,-33.87],
-  'toronto':     [-79.38,43.65],
-  
-  'beijing':     [116.40,39.90],
-  'pekin':       [116.40,39.90],
-  'mumbai':      [72.88, 19.08],
-  'bangalore':   [77.59, 12.97],
-  'frankfurt':   [8.68,  50.11],
-  'zürih':       [8.54,  47.37],
-  'viyana':      [16.37, 48.21],
-  'prag':        [14.42, 50.08],
-  'varşova':     [21.01, 52.23],
-  'kopenhag':    [12.57, 55.68],
-  'stockholm':   [18.07, 59.33],
-  'oslo':        [10.75, 59.91],
-  'milano':      [9.19,  45.47],
-  'barselona':   [2.17,  41.39],
-  'atina':       [23.73, 37.98],
-  'kahire':      [31.24, 30.06],
-  'lagos':       [3.39,   6.45],
-  'nairobi':     [36.82, -1.29],
-  'johannesburg':[28.04,-26.20],
-  'buenos aires':[-58.38,-34.61],
-  'sao paulo':   [-46.63,-23.55],
-  'rio de janeiro':[-43.17,-22.91],
-  'lima':        [-77.03,-12.04],
-  'bogota':      [-74.08,  4.71],
-  'mexico city': [-99.13, 19.43],
-  'los angeles': [-118.24,34.05],
-  'chicago':     [-87.63, 41.85],
-  'miami':       [-80.19, 25.77],
-  'vancouver':   [-123.12,49.28],
-  'münchen':     [11.58, 48.14],
-  'brussels':    [4.35,  50.85],
-  'lahey':       [4.30,  52.07],
-  'helsinki':    [24.94, 60.17],
-  'kyiv':        [30.52, 50.45],
-  'budapeşte':   [19.04, 47.50],
-  'bükreş':      [26.10, 44.43],
-  'sofya':       [23.32, 42.70],
-  'belgrad':     [20.46, 44.80],
-  'zagreb':      [15.98, 45.81],
-  'seul':        [126.98,37.57],
-  'seoul':       [126.98,37.57],
-  'shanghai':    [121.47,31.23],
-  'hong kong':   [114.17,22.32],
-  'taipei':      [121.56,25.04],
-  'jakarta':     [106.84,-6.21],
-  'kuala lumpur':[101.69, 3.14],
-  'karachi':     [67.01, 24.86],
-  'lahor':       [74.34, 31.55],
-  'delhi':       [77.21, 28.66],
-  'new delhi':   [77.21, 28.66],
-  'islamabad':   [73.04, 33.73],
-  'tahran':      [51.42, 35.69],
-  'bağdat':      [44.44, 33.34],
-  'riyad':       [46.72, 24.69],
-  'abu dhabi':   [54.37, 24.47],
-  'doha':        [51.53, 25.29],
-  'amman':       [35.94, 31.96],
-  'beyrut':      [35.50, 33.89],
-  'tel aviv':    [34.78, 32.08],
-};
+class _HaritaGridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF1565C0).withValues(alpha: 0.12)
+      ..strokeWidth = 0.5;
 
-// İlanlardan aktif şehirleri çıkar
-List<String> _aktifSehirleriCikar(List<IlanModel> ilanlar) {
-  final sehirler = <String>{};
-  for (final ilan in ilanlar) {
-    sehirler.add(ilan.nereden.toLowerCase().trim());
-    sehirler.add(ilan.nereye.toLowerCase().trim());
+    // Yatay çizgiler
+    for (var i = 0; i <= 4; i++) {
+      final y = size.height * i / 4;
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+    // Dikey çizgiler
+    for (var i = 0; i <= 6; i++) {
+      final x = size.width * i / 6;
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    // Meridyen eğrisi
+    final curvePaint = Paint()
+      ..color = const Color(0xFF1565C0).withValues(alpha: 0.18)
+      ..strokeWidth = 0.8
+      ..style = PaintingStyle.stroke;
+    final path = Path()
+      ..moveTo(size.width * 0.1, 0)
+      ..quadraticBezierTo(size.width * 0.5, size.height * 0.3, size.width * 0.9, 0);
+    canvas.drawPath(path, curvePaint);
+    final path2 = Path()
+      ..moveTo(size.width * 0.05, size.height)
+      ..quadraticBezierTo(size.width * 0.5, size.height * 0.7, size.width * 0.95, size.height);
+    canvas.drawPath(path2, curvePaint);
   }
-  return sehirler.where((s) => _kSehirKoordinatlari.containsKey(s)).toList();
+
+  @override
+  bool shouldRepaint(_) => false;
 }
 
-// ── Dünya Haritası Painter ───────────────────────────────────────────────────
-class _DunyaHaritasiPainter extends CustomPainter {
-  final List<String> aktifSehirler;
+// Harita pin
+class _HaritaPin extends StatelessWidget {
+  final double left, top;
+  final Color renk;
+  const _HaritaPin({required this.left, required this.top, required this.renk});
 
-  const _DunyaHaritasiPainter({this.aktifSehirler = const []});
-
-  // Mercator dönüşümü
-  Offset _project(double lon, double lat, Size size) {
-    final x = (lon + 180) / 360 * size.width;
-    // Mercator y dönüşümü — kutupları sıkıştırır
-    final latRad = lat * 3.14159 / 180;
-    final mercN  = dart_math.log(dart_math.tan((3.14159 / 4) + (latRad / 2)));
-    final y      = size.height / 2 - size.width * mercN / (2 * 3.14159);
-    return Offset(x, y);
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: Align(
+        alignment: Alignment(left * 2 - 1, top * 2 - 1),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: renk,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: renk.withValues(alpha: 0.4),
+                    blurRadius: 4,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+            ),
+            CustomPaint(
+              size: const Size(6, 4),
+              painter: _PinTailPainter(renk),
+            ),
+          ],
+        ),
+      ),
+    );
   }
+}
+
+class _PinTailPainter extends CustomPainter {
+  final Color renk;
+  const _PinTailPainter(this.renk);
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Okyanus arka planı
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      Paint()..color = const Color(0xFFCFE2F0),
-    );
-
-    // Graticule (ızgara çizgileri) — ince ve zarif
-    final gridPaint = Paint()
-      ..color = const Color(0xFFB8D4E8)
-      ..strokeWidth = 0.4
-      ..style = PaintingStyle.stroke;
-
-    for (var lat = -60.0; lat <= 80; lat += 30) {
-      final p1 = _project(-180, lat, size);
-      final p2 = _project(180, lat, size);
-      canvas.drawLine(p1, p2, gridPaint);
-    }
-    for (var lon = -180.0; lon <= 180; lon += 60) {
-      final p1 = _project(lon, 80, size);
-      final p2 = _project(lon, -60, size);
-      canvas.drawLine(p1, p2, gridPaint);
-    }
-
-    // Kıtalar
-    final landPaint = Paint()
-      ..color = const Color(0xFFE0D8CE)
-      ..style = PaintingStyle.fill;
-    final borderPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.8)
-      ..strokeWidth = 0.5
-      ..style = PaintingStyle.stroke;
-
-    for (final shape in _kKitaVerileri) {
-      final path = Path();
-      bool first = true;
-      for (final pt in shape) {
-        final o = _project(pt[0], pt[1], size);
-        if (first) { path.moveTo(o.dx, o.dy); first = false; }
-        else { path.lineTo(o.dx, o.dy); }
-      }
-      path.close();
-      canvas.drawPath(path, landPaint);
-      canvas.drawPath(path, borderPaint);
-    }
-
-    // Rota çizgileri — ilanlardan
-    // (ileride gerçek ilanlarla bağlanabilir, şimdilik fixed sabit güzergahlar)
-    final routePaint = Paint()
-      ..color = const Color(0xFFE53935).withValues(alpha: 0.35)
-      ..strokeWidth = 1.0
-      ..style = PaintingStyle.stroke;
-    final routePathEffect = [4.0, 3.0]; // dashed
-
-    // Sabit örnek rotalar (en yaygın güzergahlar)
-    final routes = [
-      ['amsterdam', 'istanbul'],
-      ['berlin', 'istanbul'],
-      ['londra', 'istanbul'],
-      ['dubai', 'istanbul'],
-      ['new york', 'londra'],
-      ['tokyo', 'singapur'],
-    ];
-
-    for (final route in routes) {
-      final c1 = _kSehirKoordinatlari[route[0]];
-      final c2 = _kSehirKoordinatlari[route[1]];
-      if (c1 == null || c2 == null) continue;
-      final p1 = _project(c1[0], c1[1], size);
-      final p2 = _project(c2[0], c2[1], size);
-      final mid = Offset((p1.dx + p2.dx) / 2, (p1.dy + p2.dy) / 2 - 20);
-      final routePath = Path()
-        ..moveTo(p1.dx, p1.dy)
-        ..quadraticBezierTo(mid.dx, mid.dy, p2.dx, p2.dy);
-      // Dashed path
-      _drawDashed(canvas, routePath, routePaint, routePathEffect);
-    }
-
-    // Şehir noktaları — sabit liste
-    final sabitSehirler = <String, Color>{
-      'istanbul':  const Color(0xFFE53935),
-      'amsterdam': const Color(0xFFE53935),
-      'berlin':    const Color(0xFF1976D2),
-      'londra':    const Color(0xFF1976D2),
-      'paris':     const Color(0xFF2E7D32),
-      'dubai':     const Color(0xFFE53935),
-      'new york':  const Color(0xFF1976D2),
-      'tokyo':     const Color(0xFF2E7D32),
-      'singapur':  const Color(0xFFF57F17),
-      'moskova':   const Color(0xFF2E7D32),
-      'sydney':    const Color(0xFF1976D2),
-    };
-
-    // Aktif şehirleri üste yaz, önce kırmızı göster
-    final tumSehirler = <String, Color>{
-      ...sabitSehirler,
-      for (final s in aktifSehirler)
-        s: const Color(0xFFE53935),
-    };
-
-    final pulseR = Paint()..style = PaintingStyle.fill;
-    final dotPaint = Paint()
-      ..style = PaintingStyle.fill;
-    final borderWhite = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-
-    tumSehirler.forEach((sehir, renk) {
-      final coords = _kSehirKoordinatlari[sehir];
-      if (coords == null) return;
-      final pt = _project(coords[0], coords[1], size);
-
-      // Pulse halkası
-      pulseR.color = renk.withValues(alpha: 0.18);
-      canvas.drawCircle(pt, 8, pulseR);
-
-      // Ana nokta
-      dotPaint.color = renk;
-      canvas.drawCircle(pt, 4.5, dotPaint);
-      canvas.drawCircle(pt, 4.5, borderWhite);
-    });
-  }
-
-  void _drawDashed(Canvas canvas, Path path, Paint paint, List<double> pattern) {
-    final metrics = path.computeMetrics();
-    for (final metric in metrics) {
-      double dist = 0;
-      bool draw = true;
-      int i = 0;
-      while (dist < metric.length) {
-        final len = pattern[i % pattern.length];
-        if (draw) {
-          canvas.drawPath(
-            metric.extractPath(dist, dart_math.min(dist + len, metric.length)),
-            paint,
-          );
-        }
-        dist += len;
-        draw = !draw;
-        i++;
-      }
-    }
+    final paint = Paint()..color = renk;
+    final path  = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(size.width / 2, size.height)
+      ..close();
+    canvas.drawPath(path, paint);
   }
 
   @override
-  bool shouldRepaint(covariant _DunyaHaritasiPainter old) =>
-      old.aktifSehirler != aktifSehirler;
+  bool shouldRepaint(_) => false;
 }
-
-// ── Kıta verileri (basitleştirilmiş polygon koordinatları) ──────────────────
-// Her liste: [[lon, lat], ...] — gerçek kıta sınırlarından sadeleştirilmiş
-const _kKitaVerileri = <List<List<double>>>[
-  // Kuzey Amerika
-  [[-168,71],[-140,70],[-120,55],[-95,49],[-82,45],[-76,44],[-67,47],[-60,47],
-   [-64,44],[-66,40],[-75,35],[-80,25],[-87,16],[-83,9],[-78,8],[-77,7],
-   [-80,10],[-85,11],[-89,15],[-90,18],[-88,23],[-95,22],[-97,26],[-97,33],
-   [-105,42],[-110,49],[-124,49],[-140,60],[-153,61],[-162,65],[-168,71]],
-
-  // Güney Amerika
-  [[-68,-55],[-65,-45],[-62,-38],[-57,-30],[-48,-28],[-40,-20],[-35,-8],
-   [-34,-4],[-36,2],[-52,4],[-60,6],[-68,8],[-73,10],[-78,8],[-75,0],
-   [-78,-5],[-78,-15],[-70,-22],[-65,-35],[-68,-45],[-68,-55]],
-
-  // Avrupa
-  [[-8,36],[0,36],[5,36],[10,38],[15,38],[20,37],[25,37],[28,38],[30,40],
-   [32,42],[30,46],[25,47],[20,55],[15,58],[10,58],[5,58],[0,52],
-   [-5,48],[-5,44],[-8,42],[-8,36]],
-
-  // İskandinavya
-  [[5,58],[10,58],[15,58],[20,65],[25,70],[28,72],[22,70],[15,70],[10,63],[5,58]],
-
-  // Büyük Britanya (basit)
-  [[-5,50],[0,52],[2,52],[1,58],[-4,58],[-5,56],[-5,50]],
-
-  // Afrika
-  [[-6,36],[0,36],[5,36],[10,38],[25,37],[30,30],[32,28],[36,22],[40,12],
-   [45,12],[45,5],[40,-1],[35,-5],[35,-10],[36,-18],[34,-25],[28,-32],[18,-34],
-   [15,-28],[10,-20],[5,-15],[2,-5],[0,5],[-5,5],[-8,5],[-15,10],[-15,15],
-   [-15,25],[-8,28],[-6,36]],
-
-  // Asya (büyük blok)
-  [[25,37],[30,40],[36,42],[40,42],[45,42],[50,45],[55,50],[60,55],[65,55],
-   [70,60],[75,65],[80,72],[90,75],[100,72],[110,70],[120,65],[130,60],
-   [140,55],[145,48],[142,40],[135,35],[130,32],[125,25],[120,20],[110,20],
-   [105,15],[100,5],[100,1],[105,-5],[110,-8],[115,-8],[120,-5],[125,0],
-   [130,5],[135,5],[130,10],[125,15],[120,22],[115,25],[110,30],[105,35],
-   [100,38],[95,40],[90,42],[85,40],[80,37],[75,35],[70,37],[65,38],
-   [60,38],[55,38],[50,40],[45,40],[40,40],[36,42],[32,42],[28,42],[25,37]],
-
-  // Japonya (basit)
-  [[130,33],[133,35],[136,38],[140,42],[142,44],[140,42],[136,38],[131,34],[130,33]],
-
-  // Avustralya
-  [[115,-35],[120,-32],[125,-30],[130,-28],[135,-24],[140,-18],[145,-15],
-   [150,-22],[155,-28],[152,-32],[148,-38],[145,-42],[140,-38],[135,-35],
-   [130,-38],[125,-35],[120,-35],[115,-35]],
-
-  // Yeni Zelanda (ufak)
-  [[170,-45],[172,-44],[174,-41],[175,-38],[173,-38],[170,-40],[170,-45]],
-
-  // Grönland
-  [[-50,60],[-40,62],[-24,70],[-20,76],[-25,80],[-40,82],[-50,83],
-   [-60,80],[-68,75],[-58,68],[-50,60]],
-
-  // İzlanda
-  [[-24,63],[-18,65],[-14,66],[-20,65],[-24,65],[-24,63]],
-];
 
 // SliverWidget typedef
 typedef SliverWidget = SliverToBoxAdapter;

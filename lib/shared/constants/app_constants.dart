@@ -11,7 +11,6 @@ class Collections {
   static const String sikayetler       = 'sikayetler';
   static const String bildirimler      = 'bildirimler';
   static const String mail             = 'mail';
-  static const String teklifler        = 'teklifler'; // ← eklendi
 }
 
 /// İlan tipleri.

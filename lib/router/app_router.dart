@@ -24,16 +24,16 @@ abstract class AppRoutes {
 class _AppStateNotifier extends ChangeNotifier {
   _AppStateNotifier(this._ref) {
     // Auth stream'i currentUserProvider üzerinden dinle
-    _sub = _ref.listen(authStateProvider, (prev, next) => notifyListeners());
+    _sub = _ref.listen(authStateProvider, (_, _) => notifyListeners());
 
     // Profil değişince yenile
-    _ref.listen(benimKullaniciProfilProvider, (prev, next) {
+    _ref.listen(benimKullaniciProfilProvider, (_, _) {
       notifyListeners();
     });
   }
 
   final Ref _ref;
-  late final ProviderSubscription<AsyncValue<dynamic>> _sub;
+  late final ProviderSubscription _sub;
 
   @override
   void dispose() {
@@ -78,23 +78,23 @@ GoRouter router(Ref ref) {
     routes: [
       GoRoute(
         path: AppRoutes.splash,
-        builder: (ctx, st) => const _SplashPage(),
+        builder: (_, _) => const _SplashPage(),
       ),
       GoRoute(
         path: AppRoutes.login,
-        builder: (ctx, st) => const LoginScreen(),
+        builder: (_, _) => const LoginScreen(),
       ),
       GoRoute(
         path: AppRoutes.register,
-        builder: (ctx, st) => const RegisterScreen(),
+        builder: (_, _) => const RegisterScreen(),
       ),
       GoRoute(
         path: AppRoutes.profilTamamla,
-        builder: (ctx, st) => const ProfilTamamlaScreen(ilkGiris: true),
+        builder: (_, _) => const ProfilTamamlaScreen(ilkGiris: true),
       ),
       GoRoute(
         path: AppRoutes.home,
-        builder: (ctx, st) => const HomeScreen(),
+        builder: (_, _) => const HomeScreen(),
       ),
     ],
   );
