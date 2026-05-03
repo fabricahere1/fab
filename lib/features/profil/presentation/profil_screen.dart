@@ -7,6 +7,7 @@ import '../../favoriler/presentation/favoriler_screen.dart';
 import 'ilanlarim_screen.dart';
 import 'ayarlar_screen.dart';
 import 'profil_duzenle_screen.dart';
+import '../../degerlendirme/presentation/degerlendirmeler_liste_screen.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/widgets/avatar_widget.dart';
 
@@ -118,24 +119,63 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                       benimProfilAsync.when(
                         data: (profil) {
                           final sehir = profil?.sehir ?? '';
-                          if (sehir.isNotEmpty) {
-                            return Row(
-                              children: [
-                                const Icon(Icons.location_on_outlined,
-                                    size: 13,
-                                    color: AppColors.textSecondary),
-                                const SizedBox(width: 3),
-                                Text(sehir,
+                          final puan = profil?.ortalamaPuan ?? 0.0;
+                          final sayi = profil?.degerlendirmeSayisi ?? 0;
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (sehir.isNotEmpty)
+                                Row(children: [
+                                  const Icon(Icons.location_on_outlined,
+                                      size: 13, color: AppColors.textSecondary),
+                                  const SizedBox(width: 3),
+                                  Text(sehir,
+                                      style: GoogleFonts.dmSans(
+                                          fontSize: 12,
+                                          color: AppColors.textSecondary)),
+                                ])
+                              else
+                                Text('Profil tamamlanmamış',
                                     style: GoogleFonts.dmSans(
                                         fontSize: 12,
-                                        color: AppColors.textSecondary)),
+                                        color: AppColors.textHint)),
+                              if (sayi > 0) ...[
+                                const SizedBox(height: 4),
+                                GestureDetector(
+                                  onTap: () {
+                                    final uid = ref.read(currentUserProvider)?.uid ?? '';
+                                    final ad = profil?.adSoyad ?? '';
+                                    if (uid.isEmpty) return;
+                                    Navigator.push(context, MaterialPageRoute(
+                                      builder: (_) => DegerlendirmelerListeScreen(
+                                        kullaniciId: uid,
+                                        kullaniciAd: ad,
+                                      ),
+                                    ));
+                                  },
+                                  child: Row(children: [
+                                    ...List.generate(5, (i) => Icon(
+                                      i < puan.floor()
+                                          ? Icons.star_rounded
+                                          : (i < puan
+                                              ? Icons.star_half_rounded
+                                              : Icons.star_outline_rounded),
+                                      color: const Color(0xFFFFA726),
+                                      size: 14,
+                                    )),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${puan.toStringAsFixed(1)} ($sayi)',
+                                      style: GoogleFonts.dmSans(
+                                          fontSize: 11,
+                                          color: AppColors.textSecondary,
+                                          decoration: TextDecoration.underline),
+                                    ),
+                                  ]),
+                                ),
                               ],
-                            );
-                          }
-                          return Text('Profil tamamlanmamış',
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 12,
-                                  color: AppColors.textHint));
+                            ],
+                          );
                         },
                         loading: () => const SizedBox.shrink(),
                         error: (_, _) => const SizedBox.shrink(),
@@ -183,7 +223,20 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
               _SatirOge(
                 icon: Icons.star_border,
                 label: 'Değerlendirmelerim',
-                onTap: () {},
+                onTap: () {
+                  final uid = ref.read(currentUserProvider)?.uid ?? '';
+                  final ad = ref.read(benimKullaniciProfilProvider).value?.adSoyad ?? '';
+                  if (uid.isEmpty) return;
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DegerlendirmelerListeScreen(
+                        kullaniciId: uid,
+                        kullaniciAd: ad,
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),

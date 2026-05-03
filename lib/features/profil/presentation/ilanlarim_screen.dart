@@ -3,14 +3,15 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../ilanlar/domain/ilan_model.dart';
-import '../../ilanlar/presentation/ilan_detay_screen.dart';
 import '../providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../../../core/cache/app_cache_manager.dart';
+import '../../../router/app_router.dart';
 
 // Ana akıştaki yükseklikler: [160, 200, 140, 180, 220, 150] → ortalama ~175
 // Bunun yarısı → sabit 88px
@@ -173,22 +174,7 @@ class _IstekKarti extends StatelessWidget {
   const _IstekKarti({required this.ilan});
 
   void _detayaGit(BuildContext context) {
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (_, _, _) => IlanDetayScreen(ilan: ilan),
-        transitionsBuilder: (_, anim, _, child) => SlideTransition(
-          position: Tween(
-            begin: const Offset(1, 0),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(
-            parent: anim,
-            curve: Curves.easeOutCubic,
-          )),
-          child: child,
-        ),
-      ),
-    );
+    context.push(AppRoutes.ilanDetayPath(ilan.id));
   }
 
   @override
@@ -332,22 +318,7 @@ class _GelenKarti extends StatelessWidget {
   const _GelenKarti({required this.ilan});
 
   void _detayaGit(BuildContext context) {
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (_, _, _) => IlanDetayScreen(ilan: ilan),
-        transitionsBuilder: (_, anim, _, child) => SlideTransition(
-          position: Tween(
-            begin: const Offset(1, 0),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(
-            parent: anim,
-            curve: Curves.easeOutCubic,
-          )),
-          child: child,
-        ),
-      ),
-    );
+    context.push(AppRoutes.ilanDetayPath(ilan.id));
   }
 
   @override

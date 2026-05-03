@@ -45,8 +45,6 @@ extension MesajModelX on MesajModel {
   bool get sistemMesaji => tip == MesajTip.sistem;
 }
 
-// ── Sohbet Modeli ─────────────────────────────────────────
-
 @freezed
 abstract class SohbetModel with _$SohbetModel {
   const factory SohbetModel({
@@ -55,6 +53,8 @@ abstract class SohbetModel with _$SohbetModel {
     required String ilanId,
     @Default('') String ilanBaslik,
     @Default('') String ilanResimUrl,
+    @Default('') String ilanSahibiId,
+    @Default('istek') String ilanTip,
     String? sonMesaj,
     @TimestampConverter() DateTime? sonMesajZamani,
     @Default('') String sonGondereId,
@@ -67,14 +67,16 @@ abstract class SohbetModel with _$SohbetModel {
   factory SohbetModel.fromFirestore(DocumentSnapshot doc) {
     final d = doc.data() as Map<String, dynamic>;
     return SohbetModel(
-      id:           doc.id,
-      kullanicilar: List<String>.from(d['kullanicilar'] ?? []),
-      ilanId:       d['ilanId']      as String? ?? '',
-      ilanBaslik:   d['ilanBaslik']  as String? ?? '',
-      ilanResimUrl: d['ilanResimUrl'] as String? ?? '',
-      sonMesaj:     d['sonMesaj']    as String?,
+      id:            doc.id,
+      kullanicilar:  List<String>.from(d['kullanicilar'] ?? []),
+      ilanId:        d['ilanId']       as String? ?? '',
+      ilanBaslik:    d['ilanBaslik']   as String? ?? '',
+      ilanResimUrl:  d['ilanResimUrl'] as String? ?? '',
+      ilanSahibiId:  d['ilanSahibiId'] as String? ?? '',
+      ilanTip:       d['ilanTip']       as String? ?? 'istek',
+      sonMesaj:      d['sonMesaj']     as String?,
       sonMesajZamani: (d['sonMesajZamani'] as Timestamp?)?.toDate(),
-      sonGondereId: d['sonGondereId'] as String? ?? '',
+      sonGondereId:  d['sonGondereId'] as String? ?? '',
       okunmamis: Map<String, int>.from(
         (d['okunmamis'] as Map?)?.map(
           (k, v) => MapEntry(k.toString(), (v as num).toInt()),

@@ -4,15 +4,16 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../domain/ilan_model.dart';
 import '../providers/ilan_provider.dart';
 import '../presentation/gelenler_form_screen.dart';
-import '../presentation/ilan_detay_screen.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart' as app_constants;
 import '../../../core/cache/app_cache_manager.dart';
 import '../../../shared/widgets/bildirim_cani_widget.dart';
+import '../../../router/app_router.dart';
 
 class GelenlerScreen extends ConsumerStatefulWidget {
   final bool embedded;
@@ -322,19 +323,7 @@ class _GelenKarti extends StatelessWidget {
     final kategori     = app_constants.kategoriAdi(ilan.kategori);
 
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (_, _, _) => IlanDetayScreen(ilan: ilan),
-          transitionsBuilder: (_, anim, _, child) => SlideTransition(
-            position: Tween(
-              begin: const Offset(1, 0), end: Offset.zero,
-            ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
-            child: child,
-          ),
-          transitionDuration: const Duration(milliseconds: 280),
-        ),
-      ),
+      onTap: () => context.push(AppRoutes.ilanDetayPath(ilan.id)),
       child: Container(
         height: 88,
         decoration: BoxDecoration(
@@ -456,15 +445,6 @@ class _GelenKarti extends StatelessWidget {
 
                         const SizedBox(width: 6),
 
-                        // Fiyat
-                        Text(
-                          '${ilan.ucret} ₺',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.red,
-                          ),
-                        ),
                       ],
                     ),
                   ],

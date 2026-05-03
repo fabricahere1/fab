@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
 import '../../ilanlar/domain/ilan_model.dart';
-import '../../ilanlar/presentation/ilan_detay_screen.dart';
 import '../../mesajlar/presentation/sohbet_screen.dart';
 import '../../../shared/constants/app_colors.dart';
+import '../../degerlendirme/presentation/degerlendirmeler_liste_screen.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../../../shared/widgets/avatar_widget.dart';
+import '../../../router/app_router.dart';
 
 class KullaniciProfilScreen extends ConsumerWidget {
   final String kullaniciId;
@@ -20,6 +22,19 @@ class KullaniciProfilScreen extends ConsumerWidget {
     required this.kullaniciId,
     required this.kullaniciAd,
   });
+
+  void _degerlendirmeleriGoster(
+      BuildContext context, String kullaniciId, String kullaniciAd) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DegerlendirmelerListeScreen(
+          kullaniciId: kullaniciId,
+          kullaniciAd: kullaniciAd,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -103,25 +118,33 @@ class KullaniciProfilScreen extends ConsumerWidget {
 
                           // Yıldız puanı
                           if (degerlendirmeSayisi > 0) ...[
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                ...List.generate(5, (i) {
-                                  return Icon(
-                                    i < puan.floor()
-                                        ? Icons.star
-                                        : (i < puan ? Icons.star_half : Icons.star_border),
-                                    color: Colors.amber,
-                                    size: 20,
-                                  );
-                                }),
-                                const SizedBox(width: 6),
-                                Text(
-                                  '${puan.toStringAsFixed(1)} ($degerlendirmeSayisi değerlendirme)',
-                                  style: GoogleFonts.dmSans(
-                                      fontSize: 13, color: AppColors.textSecondary),
-                                ),
-                              ],
+                            GestureDetector(
+                              onTap: () => _degerlendirmeleriGoster(
+                                  context, kullaniciId, ad),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  ...List.generate(5, (i) {
+                                    return Icon(
+                                      i < puan.floor()
+                                          ? Icons.star
+                                          : (i < puan
+                                              ? Icons.star_half
+                                              : Icons.star_border),
+                                      color: Colors.amber,
+                                      size: 20,
+                                    );
+                                  }),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    '${puan.toStringAsFixed(1)} ($degerlendirmeSayisi değerlendirme)',
+                                    style: GoogleFonts.dmSans(
+                                        fontSize: 13,
+                                        color: AppColors.textSecondary,
+                                        decoration: TextDecoration.underline),
+                                  ),
+                                ],
+                              ),
                             ),
                             const SizedBox(height: 12),
                           ],
@@ -295,19 +318,7 @@ class _IlanSatiri extends StatelessWidget {
     final kategoriAdi_ = kategoriAdi(ilan.kategori);
 
     return InkWell(
-      onTap: () => Navigator.push(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (ctx, anim, secAnim) => IlanDetayScreen(ilan: ilan),
-          transitionsBuilder: (ctx, anim, secAnim, child) => SlideTransition(
-            position: Tween(
-              begin: const Offset(1, 0),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
-            child: child,
-          ),
-        ),
-      ),
+      onTap: () => context.push(AppRoutes.ilanDetayPath(ilan.id)),
       child: Container(
         color: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

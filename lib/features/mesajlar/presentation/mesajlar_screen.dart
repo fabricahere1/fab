@@ -194,6 +194,8 @@ class _SohbetKarti extends ConsumerWidget {
                 ? sohbet.ilanResimUrl
                 : null,
             sohbetId: sohbet.id,
+            ilanSahibiId: sohbet.ilanSahibiId,
+            ilanTip: sohbet.ilanTip,
           ),
         ),
       ),

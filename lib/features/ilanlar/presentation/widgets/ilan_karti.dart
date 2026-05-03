@@ -4,15 +4,16 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../domain/ilan_model.dart';
 import '../../providers/ilan_provider.dart';
 import '../../data/ilan_repository.dart';
-import '../ilan_detay_screen.dart';
 import '../../../auth/providers/auth_provider.dart';
 import '../../../profil/providers/profil_provider.dart';
 import '../../../../core/cache/app_cache_manager.dart';
+import '../../../../router/app_router.dart';
 import '../../../../shared/constants/app_colors.dart';
 import '../../../../shared/constants/app_constants.dart';
 
@@ -43,21 +44,7 @@ class IlanKarti extends ConsumerWidget {
     final favorideMi     = gosterFavori && favoriliIdler.contains(ilan.id);
 
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (_, _, _) => IlanDetayScreen(ilan: ilan),
-          transitionsBuilder: (_, anim, _, child) => SlideTransition(
-            position: Tween(
-              begin: const Offset(1, 0),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-                parent: anim, curve: Curves.easeOutCubic)),
-            child: child,
-          ),
-          transitionDuration: const Duration(milliseconds: 280),
-        ),
-      ),
+      onTap: () => context.push(AppRoutes.ilanDetayPath(ilan.id)),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -170,24 +157,6 @@ class IlanKarti extends ConsumerWidget {
                   const SizedBox(height: 5),
                   Row(
                     children: [
-                      Expanded(
-                        child: Text(
-                          ilan.ucret.isNotEmpty
-                              ? '${ilan.ucret} ₺'
-                              : 'Belirtilmemiş',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 12,
-                            fontWeight: ilan.ucret.isNotEmpty
-                                ? FontWeight.w700
-                                : FontWeight.w400,
-                            color: ilan.ucret.isNotEmpty
-                                ? AppColors.red
-                                : AppColors.textHint,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
                       if (kategoriAdiStr.isNotEmpty)
                         Flexible(
                           child: Container(
@@ -237,19 +206,7 @@ class IlanListeKarti extends ConsumerWidget {
     final favorideMi   = gosterFavori && favoriliIdler.contains(ilan.id);
 
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (_, _, _) => IlanDetayScreen(ilan: ilan),
-          transitionsBuilder: (_, anim, _, child) => SlideTransition(
-            position: Tween(begin: const Offset(1, 0), end: Offset.zero)
-                .animate(CurvedAnimation(
-                    parent: anim, curve: Curves.easeOutCubic)),
-            child: child,
-          ),
-          transitionDuration: const Duration(milliseconds: 280),
-        ),
-      ),
+      onTap: () => context.push(AppRoutes.ilanDetayPath(ilan.id)),
       child: Container(
         color: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -297,7 +254,6 @@ class IlanListeKarti extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Başlık — Dolap stili ince font
                   Text(
                     ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
                     style: GoogleFonts.dmSans(
@@ -311,7 +267,6 @@ class IlanListeKarti extends ConsumerWidget {
                   ),
                   const SizedBox(height: 3),
 
-                  // Güzergah
                   Row(
                     children: [
                       const Icon(Icons.location_on_outlined,
@@ -332,7 +287,6 @@ class IlanListeKarti extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
 
-                  // Notlar (varsa, 1 satır)
                   if (ilan.notlar.isNotEmpty) ...[
                     Text(
                       ilan.notlar,
@@ -347,23 +301,8 @@ class IlanListeKarti extends ConsumerWidget {
                     const SizedBox(height: 4),
                   ],
 
-                  // Fiyat + değerlendirme
                   Row(
                     children: [
-                      Text(
-                        ilan.ucret.isNotEmpty
-                            ? '${ilan.ucret} ₺'
-                            : 'Ücret belirtilmemiş',
-                        style: GoogleFonts.dmSans(
-                          fontSize: 13,
-                          fontWeight: ilan.ucret.isNotEmpty
-                              ? FontWeight.w700
-                              : FontWeight.w400,
-                          color: ilan.ucret.isNotEmpty
-                              ? AppColors.red
-                              : AppColors.textHint,
-                        ),
-                      ),
                       const Spacer(),
                       _DegerlendirmeSatiri(ilan: ilan),
                     ],

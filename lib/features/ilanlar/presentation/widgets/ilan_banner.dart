@@ -254,9 +254,9 @@ class _IlanBannerState extends State<IlanBanner>
                 child: Transform(
                   alignment: Alignment.center,
                   transform: Matrix4.identity()
-                    ..translate(tx, ty)
+                    ..translateByDouble(tx, ty, 0, 1)
                     ..rotateZ(angle + sallaAngle)
-                    ..scale(scale),
+                    ..scaleByDouble(scale, scale, 1, 1),
                   child: Text(
                     ch,
                     style: GoogleFonts.dmSans(

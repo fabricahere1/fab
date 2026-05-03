@@ -212,6 +212,8 @@ class SohbetNotifier extends _$SohbetNotifier {
     required String ilanId,
     required String ilanBaslik,
     String ilanResimUrl = '',
+    String ilanSahibiId = '',
+    String ilanTip = 'istek',
     String tip = 'mesaj',
   }) async {
     if (metin.trim().isEmpty || state.gonderiyor) return;
@@ -225,6 +227,8 @@ class SohbetNotifier extends _$SohbetNotifier {
         ilanId: ilanId,
         ilanBaslik: ilanBaslik,
         ilanResimUrl: ilanResimUrl,
+        ilanSahibiId: ilanSahibiId,
+        ilanTip: ilanTip,
         metin: metin.trim(),
         tip: tip,
       );
@@ -248,6 +252,8 @@ class SohbetNotifier extends _$SohbetNotifier {
     required String ilanId,
     required String ilanBaslik,
     String ilanResimUrl = '',
+    String ilanSahibiId = '',
+    String ilanTip = 'istek',
   }) async {
     if (state.gonderiyor) return;
     final benimAd = await _getBenimAd();
@@ -261,6 +267,8 @@ class SohbetNotifier extends _$SohbetNotifier {
         ilanId: ilanId,
         ilanBaslik: ilanBaslik,
         ilanResimUrl: ilanResimUrl,
+        ilanSahibiId: ilanSahibiId,
+        ilanTip: ilanTip,
         metin: '📷 Fotoğraf',
         tip: 'resim',
         resimUrl: url,

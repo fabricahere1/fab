@@ -165,6 +165,94 @@ abstract class _$IlanOlustur extends $Notifier<IlanOlusturState> {
   }
 }
 
+/// Sadece ilanId ile Firestore'dan güncel ilan verisini izler.
+/// IlanDetayScreen bu provider'ı kullanır.
+
+@ProviderFor(ilanById)
+final ilanByIdProvider = IlanByIdFamily._();
+
+/// Sadece ilanId ile Firestore'dan güncel ilan verisini izler.
+/// IlanDetayScreen bu provider'ı kullanır.
+
+final class IlanByIdProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<IlanModel?>,
+          IlanModel?,
+          Stream<IlanModel?>
+        >
+    with $FutureModifier<IlanModel?>, $StreamProvider<IlanModel?> {
+  /// Sadece ilanId ile Firestore'dan güncel ilan verisini izler.
+  /// IlanDetayScreen bu provider'ı kullanır.
+  IlanByIdProvider._({
+    required IlanByIdFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'ilanByIdProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$ilanByIdHash();
+
+  @override
+  String toString() {
+    return r'ilanByIdProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<IlanModel?> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<IlanModel?> create(Ref ref) {
+    final argument = this.argument as String;
+    return ilanById(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is IlanByIdProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$ilanByIdHash() => r'8d240a8d24b31e8adc4a01b60f7877f170ffc24d';
+
+/// Sadece ilanId ile Firestore'dan güncel ilan verisini izler.
+/// IlanDetayScreen bu provider'ı kullanır.
+
+final class IlanByIdFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<IlanModel?>, String> {
+  IlanByIdFamily._()
+    : super(
+        retry: null,
+        name: r'ilanByIdProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Sadece ilanId ile Firestore'dan güncel ilan verisini izler.
+  /// IlanDetayScreen bu provider'ı kullanır.
+
+  IlanByIdProvider call(String ilanId) =>
+      IlanByIdProvider._(argument: ilanId, from: this);
+
+  @override
+  String toString() => r'ilanByIdProvider';
+}
+
 @ProviderFor(favoriler)
 final favorilerProvider = FavorilerProvider._();
 

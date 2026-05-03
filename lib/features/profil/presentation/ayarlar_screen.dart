@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../degerlendirme/data/degerlendirme_repository.dart';
+import '../../degerlendirme/presentation/degerlendirme_screen.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../profil/data/kullanici_repository.dart';
@@ -189,6 +192,26 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           ),
 
           // ── Destek ──────────────────────────────────
+          // ── Değerlendirmelerim ───────────────────────
+          _BolumBasligi('Değerlendirmelerim'),
+          _Kart(
+            children: [
+              _SatirOge(
+                icon: Icons.star_outline_rounded,
+                iconColor: const Color(0xFF81C784),
+                label: 'Bekleyen Değerlendirmeler',
+                onTap: () => _bekleyenDegerlendirmelerSayfasi(context, ref),
+              ),
+              _Ayrac(),
+              _SatirOge(
+                icon: Icons.rate_review_outlined,
+                iconColor: AppColors.textSecondary,
+                label: 'Tüm Değerlendirmelerim',
+                onTap: () {},
+              ),
+            ],
+          ),
+
           _BolumBasligi('Destek'),
           _Kart(
             children: [
@@ -413,6 +436,16 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       MaterialPageRoute(
         builder: (_) =>
             _EngellenenlerScreen(engellenenUidler: engellenenUidler),
+      ),
+    );
+  }
+
+  void _bekleyenDegerlendirmelerSayfasi(BuildContext ctx, WidgetRef ref) {
+    final uid = ref.read(currentUserProvider)?.uid ?? '';
+    Navigator.push(
+      ctx,
+      MaterialPageRoute(
+        builder: (_) => _BekleyenDegerlendirmelerScreen(kullaniciId: uid),
       ),
     );
   }
@@ -991,6 +1024,242 @@ class _SwitchSatir extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── Bekleyen Değerlendirmeler Sayfası ─────────────────────
+
+final _bekleyenDegerlendirmelerProvider =
+    StreamProvider.autoDispose.family<List<Map<String, dynamic>>, String>(
+        (ref, kullaniciId) => ref
+            .read(degerlendirmeRepositoryProvider)
+            .bekleyenDegerlendirmelerStream(kullaniciId));
+
+class _BekleyenDegerlendirmelerScreen extends ConsumerWidget {
+  final String kullaniciId;
+  const _BekleyenDegerlendirmelerScreen({required this.kullaniciId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bekleyenlerAsync =
+        ref.watch(_bekleyenDegerlendirmelerProvider(kullaniciId));
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
+      appBar: AppBar(
+        title: Text('Bekleyen Değerlendirmeler',
+            style: GoogleFonts.dmSans(
+                fontWeight: FontWeight.w700, fontSize: 17)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new,
+              color: AppColors.textPrimary, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: bekleyenlerAsync.when(
+        loading: () => const Center(
+            child: CircularProgressIndicator(
+                color: Color(0xFF81C784), strokeWidth: 2)),
+        error: (_, __) => Center(
+          child: Text('Bir hata oluştu.',
+              style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
+        ),
+        data: (liste) {
+          if (liste.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF81C784).withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.star_outline_rounded,
+                        size: 36, color: Color(0xFF81C784)),
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Bekleyen değerlendirme yok',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary)),
+                  const SizedBox(height: 6),
+                  Text('Teslim aldıktan sonra değerlendirme\nyapabilirsin.',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.dmSans(
+                          fontSize: 13, color: AppColors.textSecondary)),
+                ],
+              ),
+            );
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: liste.length,
+            itemBuilder: (ctx, i) {
+              final item = liste[i];
+              final sohbetId = item['sohbetId'] as String? ?? '';
+              return _BekleyenKarti(
+                sohbetId: sohbetId,
+                kullaniciId: kullaniciId,
+                index: i,
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+// ── Bekleyen Kart ─────────────────────────────────────────
+
+class _BekleyenKarti extends ConsumerWidget {
+  final String sohbetId;
+  final String kullaniciId;
+  final int index;
+  const _BekleyenKarti({
+    required this.sohbetId,
+    required this.kullaniciId,
+    required this.index,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Sohbet bilgisini Firestore'dan cek
+    final sohbetAsync = ref.watch(
+      StreamProvider((r) => FirebaseFirestore.instance
+          .collection('sohbetler')
+          .doc(sohbetId)
+          .snapshots()
+          .map((doc) => doc.exists
+              ? (doc.data() as Map<String, dynamic>)
+              : <String, dynamic>{})),
+    );
+
+    return sohbetAsync.when(
+      loading: () => const SizedBox(height: 72),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (sohbet) {
+        if (sohbet.isEmpty) return const SizedBox.shrink();
+
+        final kullanicilar =
+            List<String>.from(sohbet['kullanicilar'] ?? []);
+        final karsiId = kullanicilar
+            .where((id) => id != kullaniciId)
+            .firstOrNull ?? '';
+        final ilanBaslik =
+            sohbet['ilanBaslik'] as String? ?? 'İlan';
+
+        // Karsi kullanicinin gercek adini ve fotografini cek
+        final karsiProfilAsync = karsiId.isNotEmpty
+            ? ref.watch(kullaniciBilgiProvider(karsiId))
+            : null;
+        final karsiAd = karsiProfilAsync?.value?.adSoyad.isNotEmpty == true
+            ? karsiProfilAsync!.value!.adSoyad
+            : 'Kullanıcı';
+        final karsiFotoUrl = karsiProfilAsync?.value?.fotoUrl;
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF81C784).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.star_rounded,
+                      color: Color(0xFF81C784), size: 26),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        ilanBaslik,
+                        style: GoogleFonts.dmSans(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        karsiAd,
+                        style: GoogleFonts.dmSans(
+                            fontSize: 12,
+                            color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () async {
+                    if (karsiId.isEmpty) return;
+                    await DegerlendirmeModal.goster(
+                      context: context,
+                      sohbetId: sohbetId,
+                      hedefKullaniciId: karsiId,
+                      hedefKullaniciAd: karsiAd,
+                      hedefFotoUrl: karsiFotoUrl,
+                    );
+                    // Tamamlandi olarak isaretле
+                    if (context.mounted) {
+                      await ref
+                          .read(degerlendirmeRepositoryProvider)
+                          .bekleyenDegerlendirmeTamamla(
+                            sohbetId: sohbetId,
+                            kullaniciId: kullaniciId,
+                          );
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF81C784),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'Değerlendir',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

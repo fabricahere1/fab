@@ -2,14 +2,15 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../ilanlar/data/ilan_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../ilanlar/domain/ilan_model.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
-import '../../ilanlar/presentation/ilan_detay_screen.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart';
+import '../../../router/app_router.dart';
  
 class FavorilerScreen extends ConsumerWidget {
   const FavorilerScreen({super.key});
@@ -138,22 +139,7 @@ class _FavoriKarti extends StatelessWidget {
     final kategoriAdi_ = kategoriAdi(ilan.kategori);
  
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (_, _, _) => IlanDetayScreen(ilan: ilan),
-          transitionsBuilder: (_, anim, _, child) => SlideTransition(
-            position: Tween(
-              begin: const Offset(1, 0),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: anim,
-              curve: Curves.easeOutCubic,
-            )),
-            child: child,
-          ),
-        ),
-      ),
+      onTap: () => context.push(AppRoutes.ilanDetayPath(ilan.id)),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,

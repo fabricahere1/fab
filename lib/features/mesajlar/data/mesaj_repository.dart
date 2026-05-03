@@ -58,6 +58,8 @@ class MesajRepository {
     String ilanResimUrl = '',
     String tip = 'mesaj',
     String? resimUrl,
+    String ilanSahibiId = '',
+    String ilanTip = 'istek',
   }) async {
     final sohbetRef = _sohbetler.doc(sohbetId);
     final mesajRef  = _mesajlar(sohbetId).doc();
@@ -71,7 +73,10 @@ class MesajRepository {
       'sonMesaj':             tip == 'resim' ? '📷 Fotoğraf' : metin,
       'sonMesajZamani':       FieldValue.serverTimestamp(),
       'sonGondereId':         gondereId,
+      'ilanSahibiId':         ilanSahibiId,
+      'ilanTip':              ilanTip,
       'degerlendirmeYapildi': false,
+      'islemDurumlari':       {'iletisimBasladi': true},
       'olusturmaTarihi':      FieldValue.serverTimestamp(),
       'okunmamis':            {karsiId: FieldValue.increment(1)},
     }, SetOptions(merge: true));
@@ -82,7 +87,7 @@ class MesajRepository {
       'tip':       tip,
       'zaman':     FieldValue.serverTimestamp(),
       'okundu':    false,
-      'resimUrl': ?resimUrl,
+      if (resimUrl != null) 'resimUrl': resimUrl,
     });
 
     await batch.commit();
@@ -213,6 +218,28 @@ class MesajRepository {
         toplam += ((okunmamis[kullaniciId] as num?)?.toInt() ?? 0);
       }
       return toplam;
+    });
+  }
+
+
+  // İşlem durumu güncelle
+  Future<void> islemDurumuGuncelle({
+    required String sohbetId,
+    required String durum,
+  }) async {
+    await _sohbetler.doc(sohbetId).update({
+      'islemDurumlari.$durum': true,
+    });
+  }
+
+  // Teslim tamamlandı - değerlendirme tetikle
+  Future<void> teslimTamamla({required String sohbetId}) async {
+    await _sohbetler.doc(sohbetId).update({
+      'islemDurumlari.teslimAlindi': true,
+    });
+    // Değerlendirme için flag - her iki taraf görecek
+    await _sohbetler.doc(sohbetId).update({
+      'degerlendirmeBekliyor': true,
     });
   }
 

@@ -71,13 +71,10 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
   final _urunCtrl = TextEditingController();
   final _nereyeCtrl = TextEditingController();
   final _neredenCtrl = TextEditingController();
-  final _ucretCtrl = TextEditingController();
   final _notlarCtrl = TextEditingController();
 
   String? _seciliAnaKey;
   String? _seciliAltKey;
-
-  bool _ucretBelirtmiyorum = false;
   bool _neredenFarketmez = false;
   final List<File> _yeniResimler = [];
   List<String> _mevcutResimler = [];
@@ -116,10 +113,8 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
       _urunCtrl.text = ilan.urun;
       _neredenCtrl.text = ilan.nereden == 'Farketmez' ? '' : ilan.nereden;
       _nereyeCtrl.text = ilan.nereye;
-      _ucretCtrl.text = ilan.ucret;
       _notlarCtrl.text = ilan.notlar;
       _neredenFarketmez = ilan.nereden == 'Farketmez';
-      _ucretBelirtmiyorum = ilan.ucret.isEmpty;
       _mevcutResimler = List<String>.from(ilan.tumResimler);
 
       final key = ilan.kategori;
@@ -144,7 +139,6 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
     _urunCtrl.dispose();
     _nereyeCtrl.dispose();
     _neredenCtrl.dispose();
-    _ucretCtrl.dispose();
     _notlarCtrl.dispose();
     super.dispose();
   }
@@ -203,7 +197,7 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
       final data = {
         'nereden': _neredenFarketmez ? 'Farketmez' : _neredenCtrl.text.trim(),
         'nereye': _nereyeCtrl.text.trim(),
-        'ucret': _ucretBelirtmiyorum ? '' : _ucretCtrl.text.trim(),
+        'ucret': '',
         'notlar': _notlarCtrl.text.trim(),
         'kategori': _kayitKategoriKey,
         if (_istekMi) 'urun': _urunCtrl.text.trim(),
@@ -225,7 +219,7 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
         nereden: _neredenFarketmez ? 'Farketmez' : _neredenCtrl.text.trim(),
         nereye: _nereyeCtrl.text.trim(),
         urun: _urunCtrl.text.trim(),
-        ucret: _ucretBelirtmiyorum ? '' : _ucretCtrl.text.trim(),
+        ucret: '',
         notlar: _notlarCtrl.text.trim(),
         kategori: _kayitKategoriKey,
         kullaniciId: user.uid,
@@ -524,66 +518,7 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
                 ),
                 const SizedBox(height: 8),
               ],
-
-              // ── Ücret ─────────────────────────────────
-              _Bolum(
-                baslik: 'Ücret',
-                ikon: Icons.attach_money_outlined,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (!_ucretBelirtmiyorum) ...[
-                      _Alan(
-                        controller: _ucretCtrl,
-                        hint: 'Örn: 150',
-                        icon: Icons.attach_money_outlined,
-                        klavye: TextInputType.number,
-                        suffix: Text('₺',
-                            style: GoogleFonts.dmSans(
-                                color: AppColors.textSecondary,
-                                fontSize: 15)),
-                      ),
-                      const SizedBox(height: 10),
-                    ],
-                    GestureDetector(
-                      onTap: () => setState(() {
-                        _ucretBelirtmiyorum = !_ucretBelirtmiyorum;
-                        if (_ucretBelirtmiyorum) _ucretCtrl.clear();
-                      }),
-                      child: Row(
-                        children: [
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 150),
-                            width: 20,
-                            height: 20,
-                            decoration: BoxDecoration(
-                              color: _ucretBelirtmiyorum
-                                  ? AppColors.red
-                                  : Colors.white,
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: _ucretBelirtmiyorum
-                                    ? AppColors.red
-                                    : AppColors.divider,
-                              ),
-                            ),
-                            child: _ucretBelirtmiyorum
-                                ? const Icon(Icons.check,
-                                    size: 14, color: Colors.white)
-                                : null,
-                          ),
-                          const SizedBox(width: 8),
-                          Text('Belirtmek istemiyorum',
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 13,
-                                  color: AppColors.textSecondary)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
+              
 
               // ── Notlar ────────────────────────────────
               _Bolum(
@@ -1266,16 +1201,12 @@ class _Alan extends StatelessWidget {
   final String hint;
   final IconData icon;
   final String? etiket;
-  final TextInputType klavye;
-  final Widget? suffix;
 
   const _Alan({
     required this.controller,
     required this.hint,
     required this.icon,
     this.etiket,
-    this.klavye = TextInputType.text,
-    this.suffix,
   });
 
   @override
@@ -1289,7 +1220,7 @@ class _Alan extends StatelessWidget {
         ],
         TextField(
           controller: controller,
-          keyboardType: klavye,
+          keyboardType: TextInputType.text,
           style: GoogleFonts.dmSans(fontSize: 14),
           decoration: InputDecoration(
             hintText: hint,
@@ -1297,11 +1228,6 @@ class _Alan extends StatelessWidget {
                 color: AppColors.textHint, fontSize: 14),
             prefixIcon:
                 Icon(icon, color: AppColors.textSecondary, size: 20),
-            suffixIcon: suffix != null
-                ? Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: suffix)
-                : null,
             suffixIconConstraints:
                 const BoxConstraints(minWidth: 0, minHeight: 0),
             filled: true,

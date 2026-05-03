@@ -3,15 +3,16 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../ilanlar/domain/ilan_model.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
-import '../../ilanlar/presentation/ilan_detay_screen.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart' as app_constants;
 import '../../../shared/constants/app_constants.dart' show kKategoriAgaci, IlanTip;
 import '../../../core/cache/app_cache_manager.dart';
+import '../../../router/app_router.dart';
 
 // Son görüntülenenler
 final _sonGorutulenler = <IlanModel>[];
@@ -139,11 +140,6 @@ class _HaritaTabState extends ConsumerState<_HaritaTab> {
   @override
   Widget build(BuildContext context) {
     final tasiyiciState = ref.watch(tasiyiciIlanlarProvider);
-    final tumIlanlar    = [
-      ...ref.watch(istekIlanlarProvider).filtrelenmis,
-      ...tasiyiciState.filtrelenmis,
-    ];
-
     // Ülke bazlı ilan sayıları
     final Map<String, int> ulkeSayisi = {};
     for (final ilan in tasiyiciState.filtrelenmis) {
@@ -443,7 +439,7 @@ class _CanliTab extends ConsumerWidget {
 
         // Trend istekler
         if (trendIstekler.isNotEmpty) ...[
-          _BolumBasligi('🔥 Trend istekler'),
+          _bolumBasligi('🔥 Trend istekler'),
           SliverToBoxAdapter(
             child: SizedBox(
               height: 38,
@@ -456,11 +452,7 @@ class _CanliTab extends ConsumerWidget {
                   return GestureDetector(
                     onTap: () {
                       ilanGoruntulendiKaydet(ilan);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => IlanDetayScreen(ilan: ilan)),
-                      );
+                      context.push(AppRoutes.ilanDetayPath(ilan.id));
                     },
                     child: Container(
                       margin: const EdgeInsets.only(right: 8),
@@ -507,7 +499,7 @@ class _CanliTab extends ConsumerWidget {
         ],
 
         // Son aktiviteler
-        _BolumBasligi('⚡ Son aktiviteler'),
+        _bolumBasligi('⚡ Son aktiviteler'),
         SliverList(
           delegate: SliverChildBuilderDelegate(
             (context, index) {
@@ -520,11 +512,7 @@ class _CanliTab extends ConsumerWidget {
               return GestureDetector(
                 onTap: () {
                   ilanGoruntulendiKaydet(ilan);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => IlanDetayScreen(ilan: ilan)),
-                  );
+                  context.push(AppRoutes.ilanDetayPath(ilan.id));
                 },
                 child: Container(
                   margin: const EdgeInsets.fromLTRB(12, 0, 12, 6),
@@ -696,7 +684,7 @@ class _KesfetTabState extends ConsumerState<_KesfetTab> {
 
         // Öne çıkanlar (kategori seçili değilken)
         if (_seciliKategori == null && oneCikan.isNotEmpty) ...[
-          _BolumBasligi('⭐ Öne çıkanlar'),
+          _bolumBasligi('⭐ Öne çıkanlar'),
           SliverToBoxAdapter(
             child: SizedBox(
               height: 150,
@@ -716,7 +704,7 @@ class _KesfetTabState extends ConsumerState<_KesfetTab> {
 
         // Yakında gelenler
         if (_seciliKategori == null && yakinGelenler.isNotEmpty) ...[
-          _BolumBasligi('✈ Bir kaç güne oradayım'),
+          _bolumBasligi('✈ Bir kaç güne oradayım'),
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
@@ -726,8 +714,7 @@ class _KesfetTabState extends ConsumerState<_KesfetTab> {
                 return GestureDetector(
                   onTap: () {
                     ilanGoruntulendiKaydet(ilan);
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => IlanDetayScreen(ilan: ilan)));
+                    context.push(AppRoutes.ilanDetayPath(ilan.id));
                   },
                   child: Container(
                     margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
@@ -790,7 +777,7 @@ class _KesfetTabState extends ConsumerState<_KesfetTab> {
 
         // Popüler güzergahlar
         if (_seciliKategori == null && topGuzergah.isNotEmpty) ...[
-          _BolumBasligi('🗺 Popüler güzergahlar'),
+          _bolumBasligi('🗺 Popüler güzergahlar'),
           SliverToBoxAdapter(
             child: SizedBox(
               height: 68,
@@ -854,7 +841,7 @@ class _KesfetTabState extends ConsumerState<_KesfetTab> {
         ],
 
         // İlan grid
-        _BolumBasligi(_seciliKategori == null
+        _bolumBasligi(_seciliKategori == null
             ? '🆕 Tüm ilanlar'
             : app_constants.kategoriAdi(_seciliKategori!)),
 
@@ -889,7 +876,7 @@ class _KesfetTabState extends ConsumerState<_KesfetTab> {
 // YARDIMCI WİDGETLAR
 // ══════════════════════════════════════════════════════════════════════════════
 
-SliverWidget _BolumBasligi(String baslik) => SliverToBoxAdapter(
+SliverWidget _bolumBasligi(String baslik) => SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
         child: Text(baslik,
@@ -975,8 +962,7 @@ class _HeroKart extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         ilanGoruntulendiKaydet(ilan);
-        Navigator.push(context,
-            MaterialPageRoute(builder: (_) => IlanDetayScreen(ilan: ilan)));
+        context.push(AppRoutes.ilanDetayPath(ilan.id));
       },
       child: Container(
         width: 130,
@@ -1080,8 +1066,7 @@ class _KesfetKarti extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         ilanGoruntulendiKaydet(ilan);
-        Navigator.push(context,
-            MaterialPageRoute(builder: (_) => IlanDetayScreen(ilan: ilan)));
+        context.push(AppRoutes.ilanDetayPath(ilan.id));
       },
       child: Container(
         decoration: BoxDecoration(

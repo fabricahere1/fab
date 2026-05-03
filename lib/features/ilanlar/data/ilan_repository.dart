@@ -46,6 +46,18 @@ class IlanRepository {
 
   CollectionReference get _col => firestore.collection(Collections.ilanlar);
 
+  // ── Tekil ilan ────────────────────────────────────────────────────────────
+
+  /// Bildirimden açılırken veya deep link ile sadece ilanId bilindiğinde kullanılır.
+  Stream<IlanModel?> ilanStream(String ilanId) {
+    return _col.doc(ilanId).snapshots().map((doc) {
+      if (!doc.exists) return null;
+      return IlanModel.fromFirestore(doc);
+    });
+  }
+
+  // ── Liste ─────────────────────────────────────────────────────────────────
+
   Future<IlanSayfasi> istekIlanlariniGetir({
     String? kategori,
     int limit = Pagination.ilanSayfaBoyutu,

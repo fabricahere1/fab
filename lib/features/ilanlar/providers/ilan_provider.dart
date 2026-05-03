@@ -342,6 +342,17 @@ class IlanOlustur extends _$IlanOlustur {
   }
 }
 
+// ── Tekil ilan stream — bildirimden açılırken kullanılır ──────────────────────
+
+/// Sadece ilanId ile Firestore'dan güncel ilan verisini izler.
+/// IlanDetayScreen bu provider'ı kullanır.
+@riverpod
+Stream<IlanModel?> ilanById(Ref ref, String ilanId) {
+  return ref.watch(ilanRepositoryProvider).ilanStream(ilanId);
+}
+
+// ── Favori provider'lar ───────────────────────────────────────────────────────
+
 @riverpod
 Stream<List<Map<String, dynamic>>> favoriler(Ref ref) {
   final uid = ref.watch(currentUserProvider)?.uid;

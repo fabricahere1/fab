@@ -3,6 +3,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../domain/ilan_model.dart';
 import '../data/ilan_repository.dart';
@@ -10,16 +11,19 @@ import '../providers/ilan_provider.dart';
 import '../presentation/ilan_form_screen.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
-import '../../profil/presentation/kullanici_profil_screen.dart';
 import '../../mesajlar/presentation/sohbet_screen.dart';
+import '../../profil/presentation/kullanici_profil_screen.dart';
+import '../../../router/app_router.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart' as app_constants;
-import '../../../shared/widgets/avatar_widget.dart';
 import '../../../core/cache/app_cache_manager.dart';
 
 class IlanDetayScreen extends ConsumerStatefulWidget {
-  final IlanModel ilan;
-  const IlanDetayScreen({super.key, required this.ilan});
+  /// Sadece ilanId alır — Firestore stream ile güncel veriyi izler.
+  /// Böylece hem bildirimden deep link ile hem de kart tıklamasından açılabilir.
+  final String ilanId;
+
+  const IlanDetayScreen({super.key, required this.ilanId});
 
   @override
   ConsumerState<IlanDetayScreen> createState() => _IlanDetayScreenState();
@@ -30,35 +34,24 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
   final _pageController = PageController();
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _otuzGunKontrol();
-    });
-  }
-
-  @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
   }
 
-  Future<void> _otuzGunKontrol() async {
-    final tarih = widget.ilan.olusturmaTarihi;
+  Future<void> _otuzGunKontrol(IlanModel ilan) async {
+    final tarih = ilan.olusturmaTarihi;
     if (tarih == null) return;
     final fark = DateTime.now().difference(tarih).inDays;
-    if (fark >= 30 && widget.ilan.aktif) {
-      await ref.read(ilanRepositoryProvider).ilanPasifYap(widget.ilan.id);
+    if (fark >= 30 && ilan.aktif) {
+      await ref.read(ilanRepositoryProvider).ilanPasifYap(ilan.id);
     }
   }
 
   String get _benimUid => ref.read(currentUserProvider)?.uid ?? '';
-  bool get _benimIlanim =>
-      _benimUid.isNotEmpty && _benimUid == widget.ilan.kullaniciId;
 
-  void _mesajGonder() {
+  void _mesajGonder(IlanModel ilan) {
     if (_benimUid.isEmpty) return;
-    final ilan = widget.ilan;
     final resimler = ilan.tumResimler;
     Navigator.push(
       context,
@@ -69,6 +62,9 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
           ilanId: ilan.id,
           ilanBaslik: ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
           ilanResimUrl: resimler.isNotEmpty ? resimler.first : null,
+          ilgileniyorumMesaji: 'İlanınızla ilgileniyorum',
+          ilanSahibiId: ilan.kullaniciId,
+          ilanTip: ilan.tip,
         ),
         transitionsBuilder: (ctx, anim, secAnim, child) => SlideTransition(
           position: Tween(
@@ -82,8 +78,8 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
     );
   }
 
-  void _ucNoktaMenu() {
-    final ilan = widget.ilan;
+  void _ucNoktaMenu(IlanModel ilan) {
+    final benimIlan = _benimUid.isNotEmpty && _benimUid == ilan.kullaniciId;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -96,7 +92,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             _BottomSheetHandle(),
-            if (_benimIlanim) ...[
+            if (benimIlan) ...[
               _MenuItem(
                 icon: Icons.edit_outlined,
                 iconColor: AppColors.primary,
@@ -110,6 +106,8 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                           tip: ilan.tip, duzenlenecekIlan: ilan),
                     ),
                   ).then((_) {
+                    // ilanById stream zaten günceli izliyor, manuel yenile gerekmez.
+                    // Liste provider'larını yenile.
                     ref.read(istekIlanlarProvider.notifier).yenile();
                     ref.read(tasiyiciIlanlarProvider.notifier).yenile();
                   });
@@ -126,7 +124,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                 },
               ),
             ],
-            if (_benimUid.isNotEmpty && !_benimIlanim) ...[
+            if (_benimUid.isNotEmpty && !benimIlan) ...[
               _MenuItem(
                 icon: Icons.flag_outlined,
                 iconColor: AppColors.red,
@@ -134,7 +132,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                 labelColor: AppColors.red,
                 onTap: () {
                   Navigator.pop(ctx);
-                  _sikayetDialog(_benimUid);
+                  _sikayetDialog(_benimUid, ilan);
                 },
               ),
               _MenuItem(
@@ -163,7 +161,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
     );
     if (onay == true && mounted) {
       await ref.read(ilanRepositoryProvider).ilanSil(ilanId);
-      if (mounted) Navigator.pop(context);
+      if (mounted) context.pop();
     }
   }
 
@@ -178,7 +176,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
             benimUid: _benimUid,
             hedefUid: ilan.kullaniciId,
           );
-      if (mounted) Navigator.pop(context);
+      if (mounted) context.pop();
     }
   }
 
@@ -212,7 +210,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
     );
   }
 
-  Future<void> _sikayetDialog(String uid) async {
+  Future<void> _sikayetDialog(String uid, IlanModel ilan) async {
     String? seciliSebep;
     final sebepler = ['Sahte ilan', 'Yanıltıcı bilgi', 'Uygunsuz içerik', 'Spam', 'Diğer'];
 
@@ -230,7 +228,11 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                       value: s,
                       groupValue: seciliSebep,
                       title: Text(s, style: GoogleFonts.dmSans(fontSize: 14)),
-                      activeColor: AppColors.red,
+                      fillColor: WidgetStateProperty.resolveWith(
+                        (states) => states.contains(WidgetState.selected)
+                            ? AppColors.red
+                            : null,
+                      ),
                       contentPadding: EdgeInsets.zero,
                       onChanged: (v) => setS(() => seciliSebep = v),
                     ))
@@ -252,10 +254,10 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                           .read(sikayetProvider.notifier)
                           .sikayetGonder(
                             sikayetEdenId: uid,
-                            hedefId: widget.ilan.kullaniciId,
-                            hedefAd: widget.ilan.kullaniciAd,
+                            hedefId: ilan.kullaniciId,
+                            hedefAd: ilan.kullaniciAd,
                             sebep: seciliSebep!,
-                            ilanId: widget.ilan.id,
+                            ilanId: ilan.id,
                           );
                       if (basarili) {
                         messenger.showSnackBar(SnackBar(
@@ -278,11 +280,73 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final ilan = widget.ilan;
+    final ilanAsync = ref.watch(ilanByIdProvider(widget.ilanId));
+
+    return ilanAsync.when(
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, _) => Scaffold(
+        appBar: AppBar(),
+        body: Center(
+          child: Text('İlan yüklenemedi.',
+              style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
+        ),
+      ),
+      data: (ilan) {
+        if (ilan == null) {
+          return Scaffold(
+            appBar: AppBar(),
+            body: Center(
+              child: Text('İlan bulunamadı veya silindi.',
+                  style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
+            ),
+          );
+        }
+
+        // 30 gün kontrolü — sadece bir kere çalışsın
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _otuzGunKontrol(ilan);
+        });
+
+        return _IlanDetayIcerik(
+          ilan: ilan,
+          aktifResim: _aktifResim,
+          pageController: _pageController,
+          onResimDegis: (i) => setState(() => _aktifResim = i),
+          onMesajGonder: () => _mesajGonder(ilan),
+          onUcNokta: () => _ucNoktaMenu(ilan),
+        );
+      },
+    );
+  }
+}
+
+// ── İçerik widget'ı — IlanModel hazır olunca render edilir ───────────────────
+
+class _IlanDetayIcerik extends ConsumerWidget {
+  final IlanModel ilan;
+  final int aktifResim;
+  final PageController pageController;
+  final ValueChanged<int> onResimDegis;
+  final VoidCallback onMesajGonder;
+  final VoidCallback onUcNokta;
+
+  const _IlanDetayIcerik({
+    required this.ilan,
+    required this.aktifResim,
+    required this.pageController,
+    required this.onResimDegis,
+    required this.onMesajGonder,
+    required this.onUcNokta,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final resimler = ilan.tumResimler;
     final kategoriAdiStr = app_constants.kategoriAdi(ilan.kategori);
     final uid = ref.watch(currentUserProvider)?.uid;
-    final benimIlan = _benimIlanim;
+    final benimIlan = uid != null && uid.isNotEmpty && ilan.kullaniciId.isNotEmpty && uid == ilan.kullaniciId;
 
     final favoriAsync = uid != null && !benimIlan
         ? ref.watch(ilanFavorideMiProvider(ilan.id))
@@ -310,7 +374,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
             elevation: 0,
             leading: _CircleIconButton(
               icon: Icons.arrow_back_ios_new,
-              onTap: () => Navigator.pop(context),
+              onTap: () => context.pop(),
             ),
             actions: [
               if (uid != null && !benimIlan)
@@ -327,16 +391,16 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                     }
                   },
                 ),
-              _CircleIconButton(icon: Icons.more_vert, onTap: _ucNoktaMenu),
+              _CircleIconButton(icon: Icons.more_vert, onTap: onUcNokta),
             ],
             flexibleSpace: resimler.isNotEmpty
                 ? FlexibleSpaceBar(
                     background: Stack(
                       children: [
                         PageView.builder(
-                          controller: _pageController,
+                          controller: pageController,
                           itemCount: resimler.length,
-                          onPageChanged: (i) => setState(() => _aktifResim = i),
+                          onPageChanged: onResimDegis,
                           itemBuilder: (_, i) => _ResimWidget(
                             url: resimler[i],
                             tumResimler: resimler,
@@ -353,10 +417,10 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                                 (i) => AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
                                   margin: const EdgeInsets.symmetric(horizontal: 3),
-                                  width: _aktifResim == i ? 20 : 6,
+                                  width: aktifResim == i ? 20 : 6,
                                   height: 6,
                                   decoration: BoxDecoration(
-                                    color: _aktifResim == i
+                                    color: aktifResim == i
                                         ? Colors.white
                                         : Colors.white.withValues(alpha: 0.5),
                                     borderRadius: BorderRadius.circular(3),
@@ -375,7 +439,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                '${_aktifResim + 1}/${resimler.length}',
+                                '${aktifResim + 1}/${resimler.length}',
                                 style: const TextStyle(
                                     color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
                               ),
@@ -391,120 +455,63 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // ── Başlık + Kategori + Tip badge ───────────────────────────
                 Container(
                   color: Colors.white,
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (kategoriAdiStr.isNotEmpty) ...[
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.red.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(kategoriAdiStr,
+                      Row(
+                        children: [
+                          if (kategoriAdiStr.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.red.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(kategoriAdiStr,
+                                  style: GoogleFonts.dmSans(
+                                      fontSize: 12, color: AppColors.red, fontWeight: FontWeight.w500)),
+                            ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: ilan.tip == 'istek'
+                                  ? const Color(0xFF1976D2).withValues(alpha: 0.1)
+                                  : const Color(0xFF388E3C).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              ilan.tip == 'istek' ? '📦 İstek' : '✈️ Taşıyıcı',
                               style: GoogleFonts.dmSans(
-                                  fontSize: 12, color: AppColors.red, fontWeight: FontWeight.w500)),
-                        ),
-                        const SizedBox(height: 10),
-                      ],
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: ilan.tip == 'istek'
+                                    ? const Color(0xFF1976D2)
+                                    : const Color(0xFF388E3C),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
                       Text(
                         ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
                         style: GoogleFonts.dmSans(
                             fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                       ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: ilan.ucret.isNotEmpty
-                              ? AppColors.red.withValues(alpha: 0.08)
-                              : AppColors.surface,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.attach_money_outlined,
-                                size: 18,
-                                color: ilan.ucret.isNotEmpty
-                                    ? AppColors.red : AppColors.textSecondary),
-                            const SizedBox(width: 4),
-                            Text(
-                              ilan.ucret.isNotEmpty ? '${ilan.ucret} ₺' : 'Ücret belirtilmemiş',
-                              style: GoogleFonts.dmSans(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                color: ilan.ucret.isNotEmpty
-                                    ? AppColors.red : AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Güzergah',
+                      if (ilan.ucret.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          ilan.ucret,
                           style: GoogleFonts.dmSans(
-                              fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
-                      const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          Column(
-                            children: [
-                              Container(width: 10, height: 10,
-                                  decoration: const BoxDecoration(color: AppColors.red, shape: BoxShape.circle)),
-                              Container(width: 2, height: 30, color: AppColors.divider),
-                              Container(width: 10, height: 10,
-                                  decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle)),
-                            ],
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.red,
                           ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(ilan.nereden,
-                                    style: GoogleFonts.dmSans(
-                                        fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                                const SizedBox(height: 20),
-                                Text(ilan.nereye,
-                                    style: GoogleFonts.dmSans(
-                                        fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (ilan.tarih != null) ...[
-                        const SizedBox(height: 14),
-                        const Divider(color: AppColors.divider),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            const Icon(Icons.calendar_today_outlined,
-                                size: 16, color: AppColors.textSecondary),
-                            const SizedBox(width: 8),
-                            Text('Seyahat Tarihi: ',
-                                style: GoogleFonts.dmSans(fontSize: 13, color: AppColors.textSecondary)),
-                            Text(
-                              '${ilan.tarih!.day}.${ilan.tarih!.month}.${ilan.tarih!.year}',
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                            ),
-                          ],
                         ),
                       ],
                     ],
@@ -513,93 +520,90 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
 
                 const SizedBox(height: 8),
 
+                // ── Güzergah + Tarih ────────────────────────────────────────
+                Container(
+                  color: Colors.white,
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _BilgiSatiri(
+                        icon: Icons.flight_takeoff_outlined,
+                        label: '${ilan.nereden}  →  ${ilan.nereye}',
+                        bold: true,
+                      ),
+                      if (ilan.tarih != null) ...[
+                        const SizedBox(height: 12),
+                        _BilgiSatiri(
+                          icon: Icons.calendar_today_outlined,
+                          label: _tamTarih(ilan.tarih!),
+                        ),
+                      ],
+                      if (ilan.tasimaTercihi.isNotEmpty && ilan.tasimaTercihi != 'hepsi') ...[
+                        const SizedBox(height: 12),
+                        _BilgiSatiri(
+                          icon: Icons.inventory_2_outlined,
+                          label: ilan.tasimaTercihi == 'kargo'
+                              ? 'Kargo ile taşınabilir'
+                              : 'El bagajı tercih edilir',
+                        ),
+                      ],
+                      if (ilan.urunLinki.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        _BilgiSatiri(
+                          icon: Icons.link_outlined,
+                          label: ilan.urunLinki,
+                          color: const Color(0xFF1976D2),
+                        ),
+                      ],
+                      if (ilan.olusturmaTarihi != null) ...[
+                        const SizedBox(height: 12),
+                        _BilgiSatiri(
+                          icon: Icons.access_time_outlined,
+                          label: 'İlan tarihi: ${_tamTarih(ilan.olusturmaTarihi!)}',
+                          small: true,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                // ── Notlar ──────────────────────────────────────────────────
                 if (ilan.notlar.isNotEmpty) ...[
                   Container(
                     color: Colors.white,
-                    padding: const EdgeInsets.all(20),
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('Notlar',
                             style: GoogleFonts.dmSans(
-                                fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
-                        const SizedBox(height: 10),
-                        Text(ilan.notlar,
-                            style: GoogleFonts.dmSans(
-                                fontSize: 14, color: AppColors.textPrimary, height: 1.6)),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textSecondary)),
+                        const SizedBox(height: 8),
+                        Text(
+                          ilan.notlar,
+                          style: GoogleFonts.dmSans(
+                              fontSize: 14,
+                              color: AppColors.textPrimary,
+                              height: 1.5),
+                        ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 8),
                 ],
 
-                if (ilan.olusturmaTarihi != null)
-                  Container(
-                    color: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.access_time_outlined, size: 15, color: AppColors.textHint),
-                        const SizedBox(width: 6),
-                        Text('İlan tarihi: ${_tamTarih(ilan.olusturmaTarihi!)}',
-                            style: GoogleFonts.dmSans(fontSize: 12, color: AppColors.textHint)),
-                      ],
-                    ),
-                  ),
+                // ── İlan sahibi profil kartı ─────────────────────────────────
+                _IlanSahibiKarti(kullaniciId: ilan.kullaniciId, kullaniciAd: ilan.kullaniciAd),
 
                 const SizedBox(height: 8),
 
-                Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('İlan Sahibi',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
-                      const SizedBox(height: 14),
-                      GestureDetector(
-                        onTap: () => Navigator.push(context, MaterialPageRoute(
-                          builder: (_) => KullaniciProfilScreen(
-                            kullaniciId: ilan.kullaniciId,
-                            kullaniciAd: ilan.kullaniciAd,
-                          ),
-                        )),
-                        child: Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.divider),
-                          ),
-                          child: Row(
-                            children: [
-                              AvatarWidget(isim: ilan.kullaniciAd, radius: 24),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(ilan.kullaniciAd,
-                                        style: GoogleFonts.dmSans(
-                                            fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                                    Text('Profili görüntüle →',
-                                        style: GoogleFonts.dmSans(fontSize: 12, color: AppColors.red)),
-                                  ],
-                                ),
-                              ),
-                              const Icon(Icons.chevron_right, color: AppColors.textSecondary),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
+                // ── Benzer İlanlar ──────────────────────────────────────────
                 if (benzerIlanlar.isNotEmpty) ...[
                   Container(
                     color: Colors.white,
@@ -685,7 +689,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                     child: SizedBox(
                       height: 48,
                       child: ElevatedButton.icon(
-                        onPressed: _mesajGonder,
+                        onPressed: onMesajGonder,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.red,
                           foregroundColor: Colors.white,
@@ -693,8 +697,8 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
                         ),
-                        icon: const Icon(Icons.chat_bubble_outline, size: 18),
-                        label: Text('Mesaj Gönder',
+                        icon: const Icon(Icons.emoji_people_outlined, size: 18),
+                        label: Text('İlanınızla İlgileniyorum',
                             style: GoogleFonts.dmSans(
                                 fontSize: 14, fontWeight: FontWeight.w600)),
                       ),
@@ -707,7 +711,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
     );
   }
 
-  String _tamTarih(DateTime tarih) {
+  static String _tamTarih(DateTime tarih) {
     const ay = ['', 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
         'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
     return '${tarih.day} ${ay[tarih.month]} ${tarih.year}';
@@ -715,6 +719,200 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
 }
 
 // ── Ortak widget'lar ──────────────────────────────────────────────────────────
+
+class _BilgiSatiri extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool bold;
+  final bool small;
+  final Color? color;
+
+  const _BilgiSatiri({
+    required this.icon,
+    required this.label,
+    this.bold = false,
+    this.small = false,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = color ?? (small ? AppColors.textHint : AppColors.textPrimary);
+    final fontSize = small ? 12.0 : 14.0;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon,
+            size: small ? 14 : 16,
+            color: color ?? AppColors.textSecondary),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            label,
+            style: GoogleFonts.dmSans(
+              fontSize: fontSize,
+              fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
+              color: textColor,
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _IlanSahibiKarti extends ConsumerWidget {
+  final String kullaniciId;
+  final String kullaniciAd;
+
+  const _IlanSahibiKarti({
+    required this.kullaniciId,
+    required this.kullaniciAd,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profilAsync = ref.watch(kullaniciBilgiProvider(kullaniciId));
+
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('İlan Sahibi',
+              style: GoogleFonts.dmSans(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary)),
+          const SizedBox(height: 12),
+          profilAsync.when(
+            loading: () => const SizedBox(
+              height: 56,
+              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            ),
+            error: (_, _) => const SizedBox.shrink(),
+            data: (profil) {
+              final puan = profil?.ortalamaPuan ?? 0.0;
+              final sayi = profil?.degerlendirmeSayisi ?? 0;
+              final fotoUrl = profil?.fotoUrl;
+
+              return GestureDetector(
+                onTap: kullaniciId.isEmpty ? null : () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => KullaniciProfilScreen(
+                      kullaniciId: kullaniciId,
+                      kullaniciAd: kullaniciAd,
+                    ),
+                  ),
+                ),
+                child: Row(
+                children: [
+                  // Avatar
+                  Container(
+                    width: 48, height: 48,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.surface,
+                      border: Border.all(color: AppColors.divider),
+                    ),
+                    child: ClipOval(
+                      child: fotoUrl != null && fotoUrl.isNotEmpty
+                          ? CachedNetworkImage(
+                              imageUrl: fotoUrl,
+                              fit: BoxFit.cover,
+                              placeholder: (_, _) => Container(color: AppColors.surface),
+                              errorWidget: (_, _, _) => _AvatarHarf(ad: kullaniciAd),
+                            )
+                          : _AvatarHarf(ad: kullaniciAd),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // İsim + puan
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          kullaniciAd,
+                          style: GoogleFonts.dmSans(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        if (sayi > 0) ...[
+                          const SizedBox(height: 3),
+                          Row(
+                            children: [
+                              const Icon(Icons.star_rounded,
+                                  size: 14, color: Color(0xFFFFA726)),
+                              const SizedBox(width: 3),
+                              Text(
+                                puan.toStringAsFixed(1),
+                                style: GoogleFonts.dmSans(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '($sayi değerlendirme)',
+                                style: GoogleFonts.dmSans(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ] else ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            'Henüz değerlendirme yok',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 12,
+                              color: AppColors.textHint,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AvatarHarf extends StatelessWidget {
+  final String ad;
+  const _AvatarHarf({required this.ad});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.red.withValues(alpha: 0.12),
+      child: Center(
+        child: Text(
+          ad.isNotEmpty ? ad[0].toUpperCase() : '?',
+          style: GoogleFonts.dmSans(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: AppColors.red,
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _BenzerIlanKarti extends StatelessWidget {
   final IlanModel ilan;
@@ -724,15 +922,7 @@ class _BenzerIlanKarti extends StatelessWidget {
   Widget build(BuildContext context) {
     final resimler = ilan.tumResimler;
     return GestureDetector(
-      onTap: () => Navigator.push(context, PageRouteBuilder(
-        pageBuilder: (ctx, anim, secAnim) => IlanDetayScreen(ilan: ilan),
-        transitionsBuilder: (ctx, anim, secAnim, child) => SlideTransition(
-          position: Tween(begin: const Offset(1, 0), end: Offset.zero)
-              .animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
-          child: child,
-        ),
-        transitionDuration: const Duration(milliseconds: 280),
-      )),
+      onTap: () => context.push(AppRoutes.ilanDetayPath(ilan.id)),
       child: Container(
         width: 130,
         margin: const EdgeInsets.only(right: 10),
@@ -760,21 +950,10 @@ class _BenzerIlanKarti extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
-                      style: GoogleFonts.dmSans(
-                          fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                      maxLines: 1, overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 2),
-                  Text(ilan.ucret.isNotEmpty ? '${ilan.ucret} ₺' : 'Belirtilmemiş',
-                      style: GoogleFonts.dmSans(
-                          fontSize: 12,
-                          fontWeight: ilan.ucret.isNotEmpty ? FontWeight.w700 : FontWeight.w400,
-                          color: ilan.ucret.isNotEmpty ? AppColors.red : AppColors.textHint)),
-                ],
-              ),
+              child: Text(ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
+                  style: GoogleFonts.dmSans(
+                      fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                  maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
           ],
         ),

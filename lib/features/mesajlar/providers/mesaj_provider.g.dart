@@ -208,7 +208,7 @@ final class SohbetNotifierProvider
   }
 }
 
-String _$sohbetNotifierHash() => r'155afb992b984fdf4e6440815cc3bbebe26c58a5';
+String _$sohbetNotifierHash() => r'06085a55a5f8434beecb4ea5fdc89e815ce2aa4e';
 
 final class SohbetNotifierFamily extends $Family
     with

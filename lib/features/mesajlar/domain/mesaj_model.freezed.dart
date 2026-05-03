@@ -296,7 +296,7 @@ as String?,
 /// @nodoc
 mixin _$SohbetModel {
 
- String get id; List<String> get kullanicilar; String get ilanId; String get ilanBaslik; String get ilanResimUrl; String? get sonMesaj;@TimestampConverter() DateTime? get sonMesajZamani; String get sonGondereId; Map<String, int> get okunmamis; Map<String, dynamic> get gizli; Map<String, bool> get sabitlenmis; bool get degerlendirmeYapildi;
+ String get id; List<String> get kullanicilar; String get ilanId; String get ilanBaslik; String get ilanResimUrl; String get ilanSahibiId; String get ilanTip; String? get sonMesaj;@TimestampConverter() DateTime? get sonMesajZamani; String get sonGondereId; Map<String, int> get okunmamis; Map<String, dynamic> get gizli; Map<String, bool> get sabitlenmis; bool get degerlendirmeYapildi;
 /// Create a copy of SohbetModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -309,16 +309,16 @@ $SohbetModelCopyWith<SohbetModel> get copyWith => _$SohbetModelCopyWithImpl<Sohb
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SohbetModel&&(identical(other.id, id) || other.id == id)&&const DeepCollectionEquality().equals(other.kullanicilar, kullanicilar)&&(identical(other.ilanId, ilanId) || other.ilanId == ilanId)&&(identical(other.ilanBaslik, ilanBaslik) || other.ilanBaslik == ilanBaslik)&&(identical(other.ilanResimUrl, ilanResimUrl) || other.ilanResimUrl == ilanResimUrl)&&(identical(other.sonMesaj, sonMesaj) || other.sonMesaj == sonMesaj)&&(identical(other.sonMesajZamani, sonMesajZamani) || other.sonMesajZamani == sonMesajZamani)&&(identical(other.sonGondereId, sonGondereId) || other.sonGondereId == sonGondereId)&&const DeepCollectionEquality().equals(other.okunmamis, okunmamis)&&const DeepCollectionEquality().equals(other.gizli, gizli)&&const DeepCollectionEquality().equals(other.sabitlenmis, sabitlenmis)&&(identical(other.degerlendirmeYapildi, degerlendirmeYapildi) || other.degerlendirmeYapildi == degerlendirmeYapildi));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SohbetModel&&(identical(other.id, id) || other.id == id)&&const DeepCollectionEquality().equals(other.kullanicilar, kullanicilar)&&(identical(other.ilanId, ilanId) || other.ilanId == ilanId)&&(identical(other.ilanBaslik, ilanBaslik) || other.ilanBaslik == ilanBaslik)&&(identical(other.ilanResimUrl, ilanResimUrl) || other.ilanResimUrl == ilanResimUrl)&&(identical(other.ilanSahibiId, ilanSahibiId) || other.ilanSahibiId == ilanSahibiId)&&(identical(other.ilanTip, ilanTip) || other.ilanTip == ilanTip)&&(identical(other.sonMesaj, sonMesaj) || other.sonMesaj == sonMesaj)&&(identical(other.sonMesajZamani, sonMesajZamani) || other.sonMesajZamani == sonMesajZamani)&&(identical(other.sonGondereId, sonGondereId) || other.sonGondereId == sonGondereId)&&const DeepCollectionEquality().equals(other.okunmamis, okunmamis)&&const DeepCollectionEquality().equals(other.gizli, gizli)&&const DeepCollectionEquality().equals(other.sabitlenmis, sabitlenmis)&&(identical(other.degerlendirmeYapildi, degerlendirmeYapildi) || other.degerlendirmeYapildi == degerlendirmeYapildi));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,const DeepCollectionEquality().hash(kullanicilar),ilanId,ilanBaslik,ilanResimUrl,sonMesaj,sonMesajZamani,sonGondereId,const DeepCollectionEquality().hash(okunmamis),const DeepCollectionEquality().hash(gizli),const DeepCollectionEquality().hash(sabitlenmis),degerlendirmeYapildi);
+int get hashCode => Object.hash(runtimeType,id,const DeepCollectionEquality().hash(kullanicilar),ilanId,ilanBaslik,ilanResimUrl,ilanSahibiId,ilanTip,sonMesaj,sonMesajZamani,sonGondereId,const DeepCollectionEquality().hash(okunmamis),const DeepCollectionEquality().hash(gizli),const DeepCollectionEquality().hash(sabitlenmis),degerlendirmeYapildi);
 
 @override
 String toString() {
-  return 'SohbetModel(id: $id, kullanicilar: $kullanicilar, ilanId: $ilanId, ilanBaslik: $ilanBaslik, ilanResimUrl: $ilanResimUrl, sonMesaj: $sonMesaj, sonMesajZamani: $sonMesajZamani, sonGondereId: $sonGondereId, okunmamis: $okunmamis, gizli: $gizli, sabitlenmis: $sabitlenmis, degerlendirmeYapildi: $degerlendirmeYapildi)';
+  return 'SohbetModel(id: $id, kullanicilar: $kullanicilar, ilanId: $ilanId, ilanBaslik: $ilanBaslik, ilanResimUrl: $ilanResimUrl, ilanSahibiId: $ilanSahibiId, ilanTip: $ilanTip, sonMesaj: $sonMesaj, sonMesajZamani: $sonMesajZamani, sonGondereId: $sonGondereId, okunmamis: $okunmamis, gizli: $gizli, sabitlenmis: $sabitlenmis, degerlendirmeYapildi: $degerlendirmeYapildi)';
 }
 
 
@@ -329,7 +329,7 @@ abstract mixin class $SohbetModelCopyWith<$Res>  {
   factory $SohbetModelCopyWith(SohbetModel value, $Res Function(SohbetModel) _then) = _$SohbetModelCopyWithImpl;
 @useResult
 $Res call({
- String id, List<String> kullanicilar, String ilanId, String ilanBaslik, String ilanResimUrl, String? sonMesaj,@TimestampConverter() DateTime? sonMesajZamani, String sonGondereId, Map<String, int> okunmamis, Map<String, dynamic> gizli, Map<String, bool> sabitlenmis, bool degerlendirmeYapildi
+ String id, List<String> kullanicilar, String ilanId, String ilanBaslik, String ilanResimUrl, String ilanSahibiId, String ilanTip, String? sonMesaj,@TimestampConverter() DateTime? sonMesajZamani, String sonGondereId, Map<String, int> okunmamis, Map<String, dynamic> gizli, Map<String, bool> sabitlenmis, bool degerlendirmeYapildi
 });
 
 
@@ -346,13 +346,15 @@ class _$SohbetModelCopyWithImpl<$Res>
 
 /// Create a copy of SohbetModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? kullanicilar = null,Object? ilanId = null,Object? ilanBaslik = null,Object? ilanResimUrl = null,Object? sonMesaj = freezed,Object? sonMesajZamani = freezed,Object? sonGondereId = null,Object? okunmamis = null,Object? gizli = null,Object? sabitlenmis = null,Object? degerlendirmeYapildi = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? kullanicilar = null,Object? ilanId = null,Object? ilanBaslik = null,Object? ilanResimUrl = null,Object? ilanSahibiId = null,Object? ilanTip = null,Object? sonMesaj = freezed,Object? sonMesajZamani = freezed,Object? sonGondereId = null,Object? okunmamis = null,Object? gizli = null,Object? sabitlenmis = null,Object? degerlendirmeYapildi = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,kullanicilar: null == kullanicilar ? _self.kullanicilar : kullanicilar // ignore: cast_nullable_to_non_nullable
 as List<String>,ilanId: null == ilanId ? _self.ilanId : ilanId // ignore: cast_nullable_to_non_nullable
 as String,ilanBaslik: null == ilanBaslik ? _self.ilanBaslik : ilanBaslik // ignore: cast_nullable_to_non_nullable
 as String,ilanResimUrl: null == ilanResimUrl ? _self.ilanResimUrl : ilanResimUrl // ignore: cast_nullable_to_non_nullable
+as String,ilanSahibiId: null == ilanSahibiId ? _self.ilanSahibiId : ilanSahibiId // ignore: cast_nullable_to_non_nullable
+as String,ilanTip: null == ilanTip ? _self.ilanTip : ilanTip // ignore: cast_nullable_to_non_nullable
 as String,sonMesaj: freezed == sonMesaj ? _self.sonMesaj : sonMesaj // ignore: cast_nullable_to_non_nullable
 as String?,sonMesajZamani: freezed == sonMesajZamani ? _self.sonMesajZamani : sonMesajZamani // ignore: cast_nullable_to_non_nullable
 as DateTime?,sonGondereId: null == sonGondereId ? _self.sonGondereId : sonGondereId // ignore: cast_nullable_to_non_nullable
@@ -445,10 +447,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  List<String> kullanicilar,  String ilanId,  String ilanBaslik,  String ilanResimUrl,  String? sonMesaj, @TimestampConverter()  DateTime? sonMesajZamani,  String sonGondereId,  Map<String, int> okunmamis,  Map<String, dynamic> gizli,  Map<String, bool> sabitlenmis,  bool degerlendirmeYapildi)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  List<String> kullanicilar,  String ilanId,  String ilanBaslik,  String ilanResimUrl,  String ilanSahibiId,  String ilanTip,  String? sonMesaj, @TimestampConverter()  DateTime? sonMesajZamani,  String sonGondereId,  Map<String, int> okunmamis,  Map<String, dynamic> gizli,  Map<String, bool> sabitlenmis,  bool degerlendirmeYapildi)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SohbetModel() when $default != null:
-return $default(_that.id,_that.kullanicilar,_that.ilanId,_that.ilanBaslik,_that.ilanResimUrl,_that.sonMesaj,_that.sonMesajZamani,_that.sonGondereId,_that.okunmamis,_that.gizli,_that.sabitlenmis,_that.degerlendirmeYapildi);case _:
+return $default(_that.id,_that.kullanicilar,_that.ilanId,_that.ilanBaslik,_that.ilanResimUrl,_that.ilanSahibiId,_that.ilanTip,_that.sonMesaj,_that.sonMesajZamani,_that.sonGondereId,_that.okunmamis,_that.gizli,_that.sabitlenmis,_that.degerlendirmeYapildi);case _:
   return orElse();
 
 }
@@ -466,10 +468,10 @@ return $default(_that.id,_that.kullanicilar,_that.ilanId,_that.ilanBaslik,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  List<String> kullanicilar,  String ilanId,  String ilanBaslik,  String ilanResimUrl,  String? sonMesaj, @TimestampConverter()  DateTime? sonMesajZamani,  String sonGondereId,  Map<String, int> okunmamis,  Map<String, dynamic> gizli,  Map<String, bool> sabitlenmis,  bool degerlendirmeYapildi)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  List<String> kullanicilar,  String ilanId,  String ilanBaslik,  String ilanResimUrl,  String ilanSahibiId,  String ilanTip,  String? sonMesaj, @TimestampConverter()  DateTime? sonMesajZamani,  String sonGondereId,  Map<String, int> okunmamis,  Map<String, dynamic> gizli,  Map<String, bool> sabitlenmis,  bool degerlendirmeYapildi)  $default,) {final _that = this;
 switch (_that) {
 case _SohbetModel():
-return $default(_that.id,_that.kullanicilar,_that.ilanId,_that.ilanBaslik,_that.ilanResimUrl,_that.sonMesaj,_that.sonMesajZamani,_that.sonGondereId,_that.okunmamis,_that.gizli,_that.sabitlenmis,_that.degerlendirmeYapildi);case _:
+return $default(_that.id,_that.kullanicilar,_that.ilanId,_that.ilanBaslik,_that.ilanResimUrl,_that.ilanSahibiId,_that.ilanTip,_that.sonMesaj,_that.sonMesajZamani,_that.sonGondereId,_that.okunmamis,_that.gizli,_that.sabitlenmis,_that.degerlendirmeYapildi);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -486,10 +488,10 @@ return $default(_that.id,_that.kullanicilar,_that.ilanId,_that.ilanBaslik,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  List<String> kullanicilar,  String ilanId,  String ilanBaslik,  String ilanResimUrl,  String? sonMesaj, @TimestampConverter()  DateTime? sonMesajZamani,  String sonGondereId,  Map<String, int> okunmamis,  Map<String, dynamic> gizli,  Map<String, bool> sabitlenmis,  bool degerlendirmeYapildi)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  List<String> kullanicilar,  String ilanId,  String ilanBaslik,  String ilanResimUrl,  String ilanSahibiId,  String ilanTip,  String? sonMesaj, @TimestampConverter()  DateTime? sonMesajZamani,  String sonGondereId,  Map<String, int> okunmamis,  Map<String, dynamic> gizli,  Map<String, bool> sabitlenmis,  bool degerlendirmeYapildi)?  $default,) {final _that = this;
 switch (_that) {
 case _SohbetModel() when $default != null:
-return $default(_that.id,_that.kullanicilar,_that.ilanId,_that.ilanBaslik,_that.ilanResimUrl,_that.sonMesaj,_that.sonMesajZamani,_that.sonGondereId,_that.okunmamis,_that.gizli,_that.sabitlenmis,_that.degerlendirmeYapildi);case _:
+return $default(_that.id,_that.kullanicilar,_that.ilanId,_that.ilanBaslik,_that.ilanResimUrl,_that.ilanSahibiId,_that.ilanTip,_that.sonMesaj,_that.sonMesajZamani,_that.sonGondereId,_that.okunmamis,_that.gizli,_that.sabitlenmis,_that.degerlendirmeYapildi);case _:
   return null;
 
 }
@@ -501,7 +503,7 @@ return $default(_that.id,_that.kullanicilar,_that.ilanId,_that.ilanBaslik,_that.
 @JsonSerializable()
 
 class _SohbetModel implements SohbetModel {
-  const _SohbetModel({required this.id, required final  List<String> kullanicilar, required this.ilanId, this.ilanBaslik = '', this.ilanResimUrl = '', this.sonMesaj, @TimestampConverter() this.sonMesajZamani, this.sonGondereId = '', final  Map<String, int> okunmamis = const {}, final  Map<String, dynamic> gizli = const {}, final  Map<String, bool> sabitlenmis = const {}, this.degerlendirmeYapildi = false}): _kullanicilar = kullanicilar,_okunmamis = okunmamis,_gizli = gizli,_sabitlenmis = sabitlenmis;
+  const _SohbetModel({required this.id, required final  List<String> kullanicilar, required this.ilanId, this.ilanBaslik = '', this.ilanResimUrl = '', this.ilanSahibiId = '', this.ilanTip = 'istek', this.sonMesaj, @TimestampConverter() this.sonMesajZamani, this.sonGondereId = '', final  Map<String, int> okunmamis = const {}, final  Map<String, dynamic> gizli = const {}, final  Map<String, bool> sabitlenmis = const {}, this.degerlendirmeYapildi = false}): _kullanicilar = kullanicilar,_okunmamis = okunmamis,_gizli = gizli,_sabitlenmis = sabitlenmis;
   factory _SohbetModel.fromJson(Map<String, dynamic> json) => _$SohbetModelFromJson(json);
 
 @override final  String id;
@@ -515,6 +517,8 @@ class _SohbetModel implements SohbetModel {
 @override final  String ilanId;
 @override@JsonKey() final  String ilanBaslik;
 @override@JsonKey() final  String ilanResimUrl;
+@override@JsonKey() final  String ilanSahibiId;
+@override@JsonKey() final  String ilanTip;
 @override final  String? sonMesaj;
 @override@TimestampConverter() final  DateTime? sonMesajZamani;
 @override@JsonKey() final  String sonGondereId;
@@ -554,16 +558,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SohbetModel&&(identical(other.id, id) || other.id == id)&&const DeepCollectionEquality().equals(other._kullanicilar, _kullanicilar)&&(identical(other.ilanId, ilanId) || other.ilanId == ilanId)&&(identical(other.ilanBaslik, ilanBaslik) || other.ilanBaslik == ilanBaslik)&&(identical(other.ilanResimUrl, ilanResimUrl) || other.ilanResimUrl == ilanResimUrl)&&(identical(other.sonMesaj, sonMesaj) || other.sonMesaj == sonMesaj)&&(identical(other.sonMesajZamani, sonMesajZamani) || other.sonMesajZamani == sonMesajZamani)&&(identical(other.sonGondereId, sonGondereId) || other.sonGondereId == sonGondereId)&&const DeepCollectionEquality().equals(other._okunmamis, _okunmamis)&&const DeepCollectionEquality().equals(other._gizli, _gizli)&&const DeepCollectionEquality().equals(other._sabitlenmis, _sabitlenmis)&&(identical(other.degerlendirmeYapildi, degerlendirmeYapildi) || other.degerlendirmeYapildi == degerlendirmeYapildi));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SohbetModel&&(identical(other.id, id) || other.id == id)&&const DeepCollectionEquality().equals(other._kullanicilar, _kullanicilar)&&(identical(other.ilanId, ilanId) || other.ilanId == ilanId)&&(identical(other.ilanBaslik, ilanBaslik) || other.ilanBaslik == ilanBaslik)&&(identical(other.ilanResimUrl, ilanResimUrl) || other.ilanResimUrl == ilanResimUrl)&&(identical(other.ilanSahibiId, ilanSahibiId) || other.ilanSahibiId == ilanSahibiId)&&(identical(other.ilanTip, ilanTip) || other.ilanTip == ilanTip)&&(identical(other.sonMesaj, sonMesaj) || other.sonMesaj == sonMesaj)&&(identical(other.sonMesajZamani, sonMesajZamani) || other.sonMesajZamani == sonMesajZamani)&&(identical(other.sonGondereId, sonGondereId) || other.sonGondereId == sonGondereId)&&const DeepCollectionEquality().equals(other._okunmamis, _okunmamis)&&const DeepCollectionEquality().equals(other._gizli, _gizli)&&const DeepCollectionEquality().equals(other._sabitlenmis, _sabitlenmis)&&(identical(other.degerlendirmeYapildi, degerlendirmeYapildi) || other.degerlendirmeYapildi == degerlendirmeYapildi));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,const DeepCollectionEquality().hash(_kullanicilar),ilanId,ilanBaslik,ilanResimUrl,sonMesaj,sonMesajZamani,sonGondereId,const DeepCollectionEquality().hash(_okunmamis),const DeepCollectionEquality().hash(_gizli),const DeepCollectionEquality().hash(_sabitlenmis),degerlendirmeYapildi);
+int get hashCode => Object.hash(runtimeType,id,const DeepCollectionEquality().hash(_kullanicilar),ilanId,ilanBaslik,ilanResimUrl,ilanSahibiId,ilanTip,sonMesaj,sonMesajZamani,sonGondereId,const DeepCollectionEquality().hash(_okunmamis),const DeepCollectionEquality().hash(_gizli),const DeepCollectionEquality().hash(_sabitlenmis),degerlendirmeYapildi);
 
 @override
 String toString() {
-  return 'SohbetModel(id: $id, kullanicilar: $kullanicilar, ilanId: $ilanId, ilanBaslik: $ilanBaslik, ilanResimUrl: $ilanResimUrl, sonMesaj: $sonMesaj, sonMesajZamani: $sonMesajZamani, sonGondereId: $sonGondereId, okunmamis: $okunmamis, gizli: $gizli, sabitlenmis: $sabitlenmis, degerlendirmeYapildi: $degerlendirmeYapildi)';
+  return 'SohbetModel(id: $id, kullanicilar: $kullanicilar, ilanId: $ilanId, ilanBaslik: $ilanBaslik, ilanResimUrl: $ilanResimUrl, ilanSahibiId: $ilanSahibiId, ilanTip: $ilanTip, sonMesaj: $sonMesaj, sonMesajZamani: $sonMesajZamani, sonGondereId: $sonGondereId, okunmamis: $okunmamis, gizli: $gizli, sabitlenmis: $sabitlenmis, degerlendirmeYapildi: $degerlendirmeYapildi)';
 }
 
 
@@ -574,7 +578,7 @@ abstract mixin class _$SohbetModelCopyWith<$Res> implements $SohbetModelCopyWith
   factory _$SohbetModelCopyWith(_SohbetModel value, $Res Function(_SohbetModel) _then) = __$SohbetModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, List<String> kullanicilar, String ilanId, String ilanBaslik, String ilanResimUrl, String? sonMesaj,@TimestampConverter() DateTime? sonMesajZamani, String sonGondereId, Map<String, int> okunmamis, Map<String, dynamic> gizli, Map<String, bool> sabitlenmis, bool degerlendirmeYapildi
+ String id, List<String> kullanicilar, String ilanId, String ilanBaslik, String ilanResimUrl, String ilanSahibiId, String ilanTip, String? sonMesaj,@TimestampConverter() DateTime? sonMesajZamani, String sonGondereId, Map<String, int> okunmamis, Map<String, dynamic> gizli, Map<String, bool> sabitlenmis, bool degerlendirmeYapildi
 });
 
 
@@ -591,13 +595,15 @@ class __$SohbetModelCopyWithImpl<$Res>
 
 /// Create a copy of SohbetModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? kullanicilar = null,Object? ilanId = null,Object? ilanBaslik = null,Object? ilanResimUrl = null,Object? sonMesaj = freezed,Object? sonMesajZamani = freezed,Object? sonGondereId = null,Object? okunmamis = null,Object? gizli = null,Object? sabitlenmis = null,Object? degerlendirmeYapildi = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? kullanicilar = null,Object? ilanId = null,Object? ilanBaslik = null,Object? ilanResimUrl = null,Object? ilanSahibiId = null,Object? ilanTip = null,Object? sonMesaj = freezed,Object? sonMesajZamani = freezed,Object? sonGondereId = null,Object? okunmamis = null,Object? gizli = null,Object? sabitlenmis = null,Object? degerlendirmeYapildi = null,}) {
   return _then(_SohbetModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,kullanicilar: null == kullanicilar ? _self._kullanicilar : kullanicilar // ignore: cast_nullable_to_non_nullable
 as List<String>,ilanId: null == ilanId ? _self.ilanId : ilanId // ignore: cast_nullable_to_non_nullable
 as String,ilanBaslik: null == ilanBaslik ? _self.ilanBaslik : ilanBaslik // ignore: cast_nullable_to_non_nullable
 as String,ilanResimUrl: null == ilanResimUrl ? _self.ilanResimUrl : ilanResimUrl // ignore: cast_nullable_to_non_nullable
+as String,ilanSahibiId: null == ilanSahibiId ? _self.ilanSahibiId : ilanSahibiId // ignore: cast_nullable_to_non_nullable
+as String,ilanTip: null == ilanTip ? _self.ilanTip : ilanTip // ignore: cast_nullable_to_non_nullable
 as String,sonMesaj: freezed == sonMesaj ? _self.sonMesaj : sonMesaj // ignore: cast_nullable_to_non_nullable
 as String?,sonMesajZamani: freezed == sonMesajZamani ? _self.sonMesajZamani : sonMesajZamani // ignore: cast_nullable_to_non_nullable
 as DateTime?,sonGondereId: null == sonGondereId ? _self.sonGondereId : sonGondereId // ignore: cast_nullable_to_non_nullable

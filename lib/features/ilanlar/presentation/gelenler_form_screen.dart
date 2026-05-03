@@ -21,12 +21,10 @@ class GelenlerFormScreen extends ConsumerStatefulWidget {
 class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
   final _neredenCtrl = TextEditingController();
   final _nereyeCtrl = TextEditingController();
-  final _ucretCtrl = TextEditingController();
   final _notlarCtrl = TextEditingController();
   final _picker = ImagePicker();
 
   DateTime? _seyahatTarihi;
-  bool _ucretBelirtmiyorum = false;
 
   // Kategori
   String? _seciliAnaKey;
@@ -64,7 +62,6 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
   void dispose() {
     _neredenCtrl.dispose();
     _nereyeCtrl.dispose();
-    _ucretCtrl.dispose();
     _notlarCtrl.dispose();
     super.dispose();
   }
@@ -155,7 +152,7 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
       tip: IlanTip.tasiyici,
       nereden: _neredenCtrl.text.trim(),
       nereye: _nereyeCtrl.text.trim(),
-      ucret: _ucretBelirtmiyorum ? '' : _ucretCtrl.text.trim(),
+      ucret: '',
       notlar: _notlarCtrl.text.trim(),
       kategori: _kayitKategoriKey,
       kullaniciId: user.uid,
@@ -660,95 +657,7 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-
-              // ── Ücret ─────────────────────────────────
-              _Bolum(
-                baslik: 'Ücret',
-                ikon: Icons.attach_money_outlined,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (!_ucretBelirtmiyorum) ...[
-                      TextField(
-                        controller: _ucretCtrl,
-                        keyboardType: TextInputType.number,
-                        style: GoogleFonts.dmSans(fontSize: 14),
-                        decoration: InputDecoration(
-                          hintText: 'Örn: 150',
-                          hintStyle: GoogleFonts.dmSans(
-                              color: AppColors.textHint, fontSize: 14),
-                          prefixIcon: const Icon(
-                              Icons.attach_money_outlined,
-                              color: AppColors.textSecondary,
-                              size: 20),
-                          suffixIcon: const Padding(
-                            padding: EdgeInsets.only(right: 12),
-                            child: Text('₺'),
-                          ),
-                          suffixIconConstraints: const BoxConstraints(
-                              minWidth: 0, minHeight: 0),
-                          filled: true,
-                          fillColor: AppColors.surface,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(
-                                color: AppColors.divider),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(
-                                color: AppColors.divider),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(
-                                color: AppColors.primary, width: 1.5),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 14),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                    ],
-                    GestureDetector(
-                      onTap: () => setState(() {
-                        _ucretBelirtmiyorum = !_ucretBelirtmiyorum;
-                        if (_ucretBelirtmiyorum) _ucretCtrl.clear();
-                      }),
-                      child: Row(
-                        children: [
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 150),
-                            width: 20,
-                            height: 20,
-                            decoration: BoxDecoration(
-                              color: _ucretBelirtmiyorum
-                                  ? AppColors.red
-                                  : Colors.white,
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: _ucretBelirtmiyorum
-                                    ? AppColors.red
-                                    : AppColors.divider,
-                              ),
-                            ),
-                            child: _ucretBelirtmiyorum
-                                ? const Icon(Icons.check,
-                                    size: 14, color: Colors.white)
-                                : null,
-                          ),
-                          const SizedBox(width: 8),
-                          Text('Belirtmek istemiyorum',
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 13,
-                                  color: AppColors.textSecondary)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
+              
 
               // ── Notlar ────────────────────────────────
               _Bolum(

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,7 @@ import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
 import '../features/auth/presentation/profil_tamamla_screen.dart';
 import '../features/home/presentation/home_screen.dart';
+import '../features/ilanlar/presentation/ilan_detay_screen.dart';
 import '../features/auth/providers/auth_provider.dart';
 import '../features/profil/providers/profil_provider.dart';
 
@@ -18,15 +20,16 @@ abstract class AppRoutes {
   static const register      = '/register';
   static const profilTamamla = '/profil-tamamla';
   static const home          = '/home';
+  static const ilanDetay     = '/ilan/:ilanId';
+
+  /// Programatik kullanım için: context.push(AppRoutes.ilanDetayPath('abc123'))
+  static String ilanDetayPath(String ilanId) => '/ilan/$ilanId';
 }
 
 // FirebaseAuth.instance YOK — currentUserProvider üzerinden auth durumu izlenir
 class _AppStateNotifier extends ChangeNotifier {
   _AppStateNotifier(this._ref) {
-    // Auth stream'i currentUserProvider üzerinden dinle
-    _sub = _ref.listen(authStateProvider, (_, _) => notifyListeners());
-
-    // Profil değişince yenile
+    _sub = _ref.listen(authStateProvider, (_, __) => notifyListeners());
     _ref.listen(benimKullaniciProfilProvider, (_, _) {
       notifyListeners();
     });
@@ -51,10 +54,18 @@ GoRouter router(Ref ref) {
     initialLocation: AppRoutes.splash,
     refreshListenable: notifier,
     redirect: (context, state) {
-      // currentUserProvider — Firebase direkt erişim yok
       final user = ref.read(currentUserProvider);
       final girisYapildi = user != null;
       final loc = state.matchedLocation;
+
+      // /ilan/:ilanId — giriş yapılmamışsa login'e yönlendir,
+      // döndükten sonra aynı ilana geri gelsin diye redirect parametresi ekle
+      if (loc.startsWith('/ilan/')) {
+        if (!girisYapildi) {
+          return '${AppRoutes.login}?redirect=${state.uri}';
+        }
+        return null;
+      }
 
       if (!girisYapildi) {
         if (loc == AppRoutes.login || loc == AppRoutes.register) return null;
@@ -95,6 +106,14 @@ GoRouter router(Ref ref) {
       GoRoute(
         path: AppRoutes.home,
         builder: (_, _) => const HomeScreen(),
+      ),
+      // ── İlan detay — bildirim / deep link desteği ─────────────────────────
+      GoRoute(
+        path: AppRoutes.ilanDetay,
+        builder: (_, state) {
+          final ilanId = state.pathParameters['ilanId']!;
+          return IlanDetayScreen(ilanId: ilanId);
+        },
       ),
     ],
   );
