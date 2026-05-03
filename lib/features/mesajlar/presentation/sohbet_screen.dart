@@ -44,7 +44,7 @@ class SohbetScreen extends ConsumerStatefulWidget {
 }
 
 class _SohbetScreenState extends ConsumerState<SohbetScreen> {
-  final _mesajCtrl = TextEditingController();
+  final _mesajCtrl  = TextEditingController();
   final _scrollCtrl = ScrollController();
   bool _degerlendirmeAcik = false;
 
@@ -60,18 +60,13 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
     });
   }
 
-  // Sohbet ekrani acilinca iletisimBasladi otomatik isaretlenir.
-  // mesajGonder zaten merge ile yazdigindan bu sadece mevcut sohbetlerde
-  // field eksikse tamamlar; yeni sohbetlerde mesajGonder zaten set ediyor.
   Future<void> _iletisimBasladiIsaretle() async {
     try {
       await ref.read(mesajRepositoryProvider).islemDurumuGuncelle(
         sohbetId: _sohbetId,
         durum: 'iletisimBasladi',
       );
-    } catch (_) {
-      // Sohbet henuz yoksa (hic mesaj gonderilmemisse) sessizce gecir
-    }
+    } catch (_) {}
   }
 
   void _degerlendirmeyiDinle() {
@@ -104,8 +99,10 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
           barrierLabel: '',
           barrierColor: Colors.black.withValues(alpha: 0.5),
           transitionDuration: const Duration(milliseconds: 350),
-          pageBuilder: (ctx, anim, _) =>
-              _TeslimAlindiOnayDialog(sohbetId: _sohbetId),
+          pageBuilder: (ctx, anim, _) => _TeslimAlindiOnayDialog(
+            sohbetId: _sohbetId,
+            karsiKullaniciAd: widget.karsiKullaniciAd, // ← eklendi
+          ),
           transitionBuilder: (ctx, anim, _, child) {
             final curved =
                 CurvedAnimation(parent: anim, curve: Curves.easeOutBack);
@@ -129,11 +126,18 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
             hedefKullaniciAd: widget.karsiKullaniciAd,
           );
         } else if (sonuc == false) {
-          await ref.read(degerlendirmeRepositoryProvider)
-              .bekleyenDegerlendirmeKaydet(
-                sohbetId: _sohbetId,
-                kullaniciId: benimUid,
-              );
+          // ── Düzeltme: "Şimdi Değil" → hem bekleyene kaydet
+          //    hem de degerlendirmeYapildi işaretle ki
+          //    sohbete tekrar girilince popup çıkmasın ──────
+          final repo = ref.read(degerlendirmeRepositoryProvider);
+          await repo.bekleyenDegerlendirmeKaydet(
+            sohbetId: _sohbetId,
+            kullaniciId: benimUid,
+          );
+          await repo.sohbetDegerlendirmeyiIsaretle(
+            sohbetId: _sohbetId,
+            kullaniciId: benimUid,
+          );
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text(
@@ -194,32 +198,40 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
               width: 36, height: 4,
               margin: const EdgeInsets.only(top: 12, bottom: 8),
               decoration: BoxDecoration(
-                  color: AppColors.divider, borderRadius: BorderRadius.circular(2)),
+                  color: AppColors.divider,
+                  borderRadius: BorderRadius.circular(2)),
             ),
             ListTile(
-              leading: const Icon(Icons.delete_outline, color: AppColors.textSecondary),
+              leading: const Icon(Icons.delete_outline,
+                  color: AppColors.textSecondary),
               title: Text('Sohbeti Sil',
-                  style: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w500)),
+                  style: GoogleFonts.dmSans(
+                      fontSize: 14, fontWeight: FontWeight.w500)),
               onTap: () async {
                 Navigator.pop(ctx);
                 final onay = await showDialog<bool>(
                   context: context,
                   builder: (c) => AlertDialog(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     title: Text('Sohbeti Sil',
-                        style: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w600)),
+                        style: GoogleFonts.dmSans(
+                            fontSize: 16, fontWeight: FontWeight.w600)),
                     content: Text('Bu sohbet sadece senin için silinecek.',
-                        style: GoogleFonts.dmSans(fontSize: 14, color: AppColors.textSecondary)),
+                        style: GoogleFonts.dmSans(
+                            fontSize: 14, color: AppColors.textSecondary)),
                     actions: [
                       TextButton(
                           onPressed: () => Navigator.pop(c, false),
                           child: Text('İptal',
-                              style: GoogleFonts.dmSans(color: AppColors.textSecondary))),
+                              style: GoogleFonts.dmSans(
+                                  color: AppColors.textSecondary))),
                       TextButton(
                           onPressed: () => Navigator.pop(c, true),
                           child: Text('Sil',
                               style: GoogleFonts.dmSans(
-                                  color: AppColors.red, fontWeight: FontWeight.w700))),
+                                  color: AppColors.red,
+                                  fontWeight: FontWeight.w700))),
                     ],
                   ),
                 );
@@ -235,37 +247,46 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
               leading: const Icon(Icons.block_outlined, color: AppColors.red),
               title: Text('${widget.karsiKullaniciAd} Engelle',
                   style: GoogleFonts.dmSans(
-                      fontSize: 14, color: AppColors.red, fontWeight: FontWeight.w500)),
+                      fontSize: 14,
+                      color: AppColors.red,
+                      fontWeight: FontWeight.w500)),
               onTap: () async {
                 Navigator.pop(ctx);
                 final onay = await showDialog<bool>(
                   context: context,
                   builder: (c) => AlertDialog(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     title: Text('Kullanıcıyı Engelle',
-                        style: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w600)),
+                        style: GoogleFonts.dmSans(
+                            fontSize: 16, fontWeight: FontWeight.w600)),
                     content: Text(
                         '${widget.karsiKullaniciAd} adlı kullanıcıyı engellemek istiyor musun?',
-                        style: GoogleFonts.dmSans(fontSize: 14, color: AppColors.textSecondary)),
+                        style: GoogleFonts.dmSans(
+                            fontSize: 14, color: AppColors.textSecondary)),
                     actions: [
                       TextButton(
                           onPressed: () => Navigator.pop(c, false),
                           child: Text('İptal',
-                              style: GoogleFonts.dmSans(color: AppColors.textSecondary))),
+                              style: GoogleFonts.dmSans(
+                                  color: AppColors.textSecondary))),
                       TextButton(
                           onPressed: () => Navigator.pop(c, true),
                           child: Text('Engelle',
                               style: GoogleFonts.dmSans(
-                                  color: AppColors.red, fontWeight: FontWeight.w700))),
+                                  color: AppColors.red,
+                                  fontWeight: FontWeight.w700))),
                     ],
                   ),
                 );
                 if (onay == true && mounted) {
                   await ref.read(engellemeProvider.notifier).engelle(
-                      benimUid: benimUid, hedefUid: widget.karsiKullaniciId);
+                      benimUid: benimUid,
+                      hedefUid: widget.karsiKullaniciId);
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('${widget.karsiKullaniciAd} engellendi.',
+                      content: Text(
+                          '${widget.karsiKullaniciAd} engellendi.',
                           style: GoogleFonts.dmSans()),
                       backgroundColor: AppColors.textSecondary,
                       behavior: SnackBarBehavior.floating,
@@ -291,20 +312,22 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
     ));
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA), // Google gri arka plan
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         titleSpacing: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new,
+              color: Colors.black87, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Row(
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
-              child: widget.ilanResimUrl != null && widget.ilanResimUrl!.isNotEmpty
+              child: widget.ilanResimUrl != null &&
+                      widget.ilanResimUrl!.isNotEmpty
                   ? CachedNetworkImage(
                       imageUrl: widget.ilanResimUrl!,
                       width: 40, height: 40, fit: BoxFit.cover,
@@ -320,11 +343,16 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                 children: [
                   Text(widget.ilanBaslik,
                       style: GoogleFonts.dmSans(
-                          color: Colors.black87, fontWeight: FontWeight.w700, fontSize: 15),
-                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
                   Text(widget.karsiKullaniciAd,
-                      style: GoogleFonts.dmSans(color: AppColors.textSecondary, fontSize: 11),
-                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                      style: GoogleFonts.dmSans(
+                          color: AppColors.textSecondary, fontSize: 11),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
                 ],
               ),
             ),
@@ -341,14 +369,16 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
         children: [
           Column(
             children: [
-              Expanded(child: _MesajListesi(
-                sohbetState: sohbetState,
-                benimUid: benimUid,
-                karsiAd: widget.karsiKullaniciAd,
-                karsiId: widget.karsiKullaniciId,
-                ilanId: widget.ilanId,
-                scrollCtrl: _scrollCtrl,
-              )),
+              Expanded(
+                child: _MesajListesi(
+                  sohbetState: sohbetState,
+                  benimUid: benimUid,
+                  karsiAd: widget.karsiKullaniciAd,
+                  karsiId: widget.karsiKullaniciId,
+                  ilanId: widget.ilanId,
+                  scrollCtrl: _scrollCtrl,
+                ),
+              ),
               _InputBar(
                 mesajCtrl: _mesajCtrl,
                 gonderiyor: sohbetState.gonderiyor,
@@ -359,7 +389,8 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
           ),
           Positioned(
             right: 0, top: 0, bottom: 0,
-            child: Center(child: IslemDurumuTetikleyici(sohbetId: _sohbetId)),
+            child: Center(
+                child: IslemDurumuTetikleyici(sohbetId: _sohbetId)),
           ),
         ],
       ),
@@ -369,7 +400,10 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
   Future<void> _resimSec(String benimUid) async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(
-        source: ImageSource.gallery, imageQuality: 72, maxWidth: 1080, maxHeight: 1080);
+        source: ImageSource.gallery,
+        imageQuality: 72,
+        maxWidth: 1080,
+        maxHeight: 1080);
     if (picked == null || !mounted) return;
     await ref.read(sohbetProvider(
       karsiKullaniciId: widget.karsiKullaniciId,
@@ -427,20 +461,24 @@ class _MesajListesi extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     if (sohbetState.yukleniyor && sohbetState.siraliMesajlar.isEmpty) {
       return const Center(
-          child: CircularProgressIndicator(color: AppColors.red, strokeWidth: 2));
+          child: CircularProgressIndicator(
+              color: AppColors.red, strokeWidth: 2));
     }
     if (sohbetState.siraliMesajlar.isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.chat_bubble_outline, size: 50, color: AppColors.divider),
+            const Icon(Icons.chat_bubble_outline,
+                size: 50, color: AppColors.divider),
             const SizedBox(height: 12),
             Text('Henüz mesaj yok.',
-                style: GoogleFonts.dmSans(color: AppColors.textSecondary, fontSize: 14)),
+                style: GoogleFonts.dmSans(
+                    color: AppColors.textSecondary, fontSize: 14)),
             const SizedBox(height: 4),
             Text('İlk mesajı sen gönder!',
-                style: GoogleFonts.dmSans(color: AppColors.textHint, fontSize: 12)),
+                style: GoogleFonts.dmSans(
+                    color: AppColors.textHint, fontSize: 12)),
           ],
         ),
       );
@@ -449,7 +487,8 @@ class _MesajListesi extends ConsumerWidget {
       reverse: true,
       controller: scrollCtrl,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-      itemCount: sohbetState.siraliMesajlar.length + (sohbetState.dahaFazlaVar ? 1 : 0),
+      itemCount: sohbetState.siraliMesajlar.length +
+          (sohbetState.dahaFazlaVar ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == sohbetState.siraliMesajlar.length) {
           return Padding(
@@ -458,7 +497,8 @@ class _MesajListesi extends ConsumerWidget {
               child: TextButton(
                 onPressed: () => ref
                     .read(sohbetProvider(
-                        karsiKullaniciId: karsiId, ilanId: ilanId).notifier)
+                            karsiKullaniciId: karsiId, ilanId: ilanId)
+                        .notifier)
                     .dahaFazlaYukle(),
                 child: Text('Daha fazla mesaj yükle',
                     style: GoogleFonts.dmSans(
@@ -521,7 +561,9 @@ class _InputBar extends StatelessWidget {
     return Container(
       color: Colors.white,
       padding: EdgeInsets.only(
-          left: 8, right: 8, top: 8,
+          left: 8,
+          right: 8,
+          top: 8,
           bottom: MediaQuery.of(context).padding.bottom + 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -542,7 +584,7 @@ class _InputBar extends StatelessWidget {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                  color: const Color(0xFFF1F3F4), // Google gri input
+                  color: const Color(0xFFF1F3F4),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(color: AppColors.divider)),
               child: TextField(
@@ -550,12 +592,15 @@ class _InputBar extends StatelessWidget {
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => onGonder(),
                 maxLines: 5, minLines: 1,
-                style: GoogleFonts.dmSans(fontSize: 15, color: AppColors.textPrimary),
+                style: GoogleFonts.dmSans(
+                    fontSize: 15, color: AppColors.textPrimary),
                 decoration: InputDecoration(
                   hintText: 'Mesaj yaz...',
-                  hintStyle: GoogleFonts.dmSans(color: AppColors.textHint),
+                  hintStyle:
+                      GoogleFonts.dmSans(color: AppColors.textHint),
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 10),
                 ),
               ),
             ),
@@ -572,9 +617,11 @@ class _InputBar extends StatelessWidget {
                   ? const Padding(
                       padding: EdgeInsets.all(12),
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: AppColors.textSecondary),
+                          strokeWidth: 2,
+                          color: AppColors.textSecondary),
                     )
-                  : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                  : const Icon(Icons.send_rounded,
+                      color: Colors.white, size: 20),
             ),
           ),
         ],
@@ -590,8 +637,10 @@ class _IlanResimPlaceholder extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         width: 40, height: 40,
         decoration: BoxDecoration(
-            color: AppColors.surface, borderRadius: BorderRadius.circular(6)),
-        child: const Icon(Icons.image_outlined, color: AppColors.textHint, size: 20),
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(6)),
+        child: const Icon(Icons.image_outlined,
+            color: AppColors.textHint, size: 20),
       );
 }
 
@@ -616,12 +665,11 @@ class _MesajBalonu extends StatelessWidget {
   Widget build(BuildContext context) {
     final maxWidth = MediaQuery.of(context).size.width * 0.75;
 
-    // ── Google Messages renk paleti ───────────────────────
-    const Color gidanBalon     = Color(0xFFD2E3FC); // açık mavi
-    const Color gelenBalon     = Color(0xFFFFFFFF); // beyaz
-    const Color ilgilirenBalon = Color(0xFFFFF3E0); // açık turuncu
-    const Color metin202124    = Color(0xFF202124); // Google koyu gri
-    const Color metinYesil     = Color(0xFFE65100); // turuncu metin
+    const Color gidanBalon     = Color(0xFFD2E3FC);
+    const Color gelenBalon     = Color(0xFFFFFFFF);
+    const Color ilgilirenBalon = Color(0xFFFFF3E0);
+    const Color metin202124    = Color(0xFF202124);
+    const Color metinYesil     = Color(0xFFE65100);
 
     final balonRenk = ilgileniyorum
         ? ilgilirenBalon
@@ -639,9 +687,12 @@ class _MesajBalonu extends StatelessWidget {
           bottomLeft: Radius.circular(benimMesajim ? 16 : 4),
           bottomRight: Radius.circular(benimMesajim ? 4 : 16),
         ),
-        boxShadow: [BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 2, offset: const Offset(0, 1))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 2,
+              offset: const Offset(0, 1))
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
@@ -672,12 +723,13 @@ class _MesajBalonu extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(zaman, style: TextStyle(color: zamanRenk, fontSize: 11)),
+                  Text(zaman,
+                      style: TextStyle(color: zamanRenk, fontSize: 11)),
                   if (benimMesajim) ...[
                     const SizedBox(width: 3),
                     Icon(Icons.done_all, size: 14,
                         color: karsiOkudu
-                            ? const Color(0xFF1A73E8) // Google mavi — okundu
+                            ? const Color(0xFF1A73E8)
                             : metin202124.withValues(alpha: 0.35)),
                   ],
                 ],
@@ -691,7 +743,8 @@ class _MesajBalonu extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       child: Align(
-        alignment: benimMesajim ? Alignment.centerRight : Alignment.centerLeft,
+        alignment:
+            benimMesajim ? Alignment.centerRight : Alignment.centerLeft,
         child: benimMesajim
             ? balon
             : Row(
@@ -702,7 +755,9 @@ class _MesajBalonu extends StatelessWidget {
                     radius: 16,
                     backgroundColor: const Color(0xFFF1F3F4),
                     child: Text(
-                      gondereAd?.isNotEmpty == true ? gondereAd![0].toUpperCase() : '?',
+                      gondereAd?.isNotEmpty == true
+                          ? gondereAd![0].toUpperCase()
+                          : '?',
                       style: const TextStyle(
                           color: Color(0xFF5F6368),
                           fontWeight: FontWeight.bold,
@@ -721,12 +776,14 @@ class _MesajBalonu extends StatelessWidget {
 class _SistemMesaji extends StatelessWidget {
   final String metin;
   const _SistemMesaji({required this.metin});
+
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Center(
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
                 color: const Color(0xFFF1F3F4),
                 borderRadius: BorderRadius.circular(12)),
@@ -769,17 +826,24 @@ class _ResimBalonu extends StatelessWidget {
           right: benimMesajim ? 12 : 60,
           top: 3, bottom: 3),
       child: Align(
-        alignment: benimMesajim ? Alignment.centerRight : Alignment.centerLeft,
+        alignment:
+            benimMesajim ? Alignment.centerRight : Alignment.centerLeft,
         child: GestureDetector(
-          onTap: () => Navigator.push(context,
-              MaterialPageRoute(builder: (_) => _FullscreenResim(resimUrl: resimUrl))),
+          onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) =>
+                      _FullscreenResim(resimUrl: resimUrl))),
           child: Container(
             width: w, height: h,
             decoration: BoxDecoration(
               borderRadius: radius,
-              boxShadow: [BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.12),
-                  blurRadius: 4, offset: const Offset(0, 2))],
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2))
+              ],
             ),
             child: ClipRRect(
               borderRadius: radius,
@@ -787,12 +851,14 @@ class _ResimBalonu extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   CachedNetworkImage(
-                    imageUrl: resimUrl, width: w, height: h, fit: BoxFit.cover,
+                    imageUrl: resimUrl,
+                    width: w, height: h, fit: BoxFit.cover,
                     placeholder: (_, _) => Container(
                         color: AppColors.surface,
                         child: const Center(
                             child: CircularProgressIndicator(
-                                strokeWidth: 2, color: AppColors.textHint))),
+                                strokeWidth: 2,
+                                color: AppColors.textHint))),
                     errorWidget: (_, _, _) => Container(
                         color: AppColors.surface,
                         child: const Icon(Icons.broken_image_outlined,
@@ -801,7 +867,8 @@ class _ResimBalonu extends StatelessWidget {
                   Positioned(
                     bottom: 6, right: 8,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: 0.45),
                           borderRadius: BorderRadius.circular(10)),
@@ -810,12 +877,15 @@ class _ResimBalonu extends StatelessWidget {
                         children: [
                           Text(zaman,
                               style: const TextStyle(
-                                  fontSize: 10, color: Colors.white,
+                                  fontSize: 10,
+                                  color: Colors.white,
                                   fontWeight: FontWeight.w500)),
                           if (benimMesajim) ...[
                             const SizedBox(width: 3),
                             Icon(
-                              karsiOkudu ? Icons.done_all_rounded : Icons.done_rounded,
+                              karsiOkudu
+                                  ? Icons.done_all_rounded
+                                  : Icons.done_rounded,
                               size: 13,
                               color: karsiOkudu
                                   ? const Color(0xFF1A73E8)
@@ -839,6 +909,7 @@ class _ResimBalonu extends StatelessWidget {
 class _FullscreenResim extends StatelessWidget {
   final String resimUrl;
   const _FullscreenResim({required this.resimUrl});
+
   @override
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: Colors.black,
@@ -851,20 +922,26 @@ class _FullscreenResim extends StatelessWidget {
             minScale: 0.5, maxScale: 4.0,
             child: CachedNetworkImage(
               imageUrl: resimUrl, fit: BoxFit.contain,
-              placeholder: (_, _) =>
-                  const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-              errorWidget: (_, _, _) =>
-                  const Icon(Icons.broken_image_outlined, color: Colors.white54, size: 48),
+              placeholder: (_, _) => const CircularProgressIndicator(
+                  color: Colors.white, strokeWidth: 2),
+              errorWidget: (_, _, _) => const Icon(
+                  Icons.broken_image_outlined,
+                  color: Colors.white54, size: 48),
             ),
           ),
         ),
       );
 }
+
 // ── Teslim Alındı Onay Dialogu ────────────────────────────
 
 class _TeslimAlindiOnayDialog extends StatefulWidget {
   final String sohbetId;
-  const _TeslimAlindiOnayDialog({required this.sohbetId});
+  final String karsiKullaniciAd; // ← eklendi
+  const _TeslimAlindiOnayDialog({
+    required this.sohbetId,
+    required this.karsiKullaniciAd, // ← eklendi
+  });
 
   @override
   State<_TeslimAlindiOnayDialog> createState() =>
@@ -934,8 +1011,7 @@ class _TeslimAlindiOnayDialogState extends State<_TeslimAlindiOnayDialog>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 64,
-                    height: 64,
+                    width: 64, height: 64,
                     decoration: BoxDecoration(
                       color: const Color(0xFF81C784).withValues(alpha: 0.15),
                       shape: BoxShape.circle,
@@ -944,8 +1020,9 @@ class _TeslimAlindiOnayDialogState extends State<_TeslimAlindiOnayDialog>
                         color: Color(0xFF81C784), size: 36),
                   ),
                   const SizedBox(height: 16),
+                  // ── Düzeltme: kişi adı dinamik ──────────
                   Text(
-                    'Taşıyıcıyı Değerlendirmek\nİster Misiniz?',
+                    '${widget.karsiKullaniciAd} için\nDeğerlendirme Yapmak İster Misiniz?',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.dmSans(
                       fontSize: 17,
@@ -966,8 +1043,7 @@ class _TeslimAlindiOnayDialogState extends State<_TeslimAlindiOnayDialog>
                   ),
                   const SizedBox(height: 24),
                   SizedBox(
-                    width: double.infinity,
-                    height: 48,
+                    width: double.infinity, height: 48,
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(context, true),
                       style: ElevatedButton.styleFrom(
@@ -979,13 +1055,13 @@ class _TeslimAlindiOnayDialogState extends State<_TeslimAlindiOnayDialog>
                       ),
                       child: Text('Evet, Değerlendir',
                           style: GoogleFonts.dmSans(
-                              fontSize: 15, fontWeight: FontWeight.w600)),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600)),
                     ),
                   ),
                   const SizedBox(height: 10),
                   SizedBox(
-                    width: double.infinity,
-                    height: 44,
+                    width: double.infinity, height: 44,
                     child: TextButton(
                       onPressed: () => Navigator.pop(context, false),
                       style: TextButton.styleFrom(

@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -12,54 +11,22 @@ import '../../degerlendirme/data/degerlendirme_repository.dart';
 
 final islemDurumuProvider =
     StreamProvider.family<Map<String, dynamic>, String>((ref, sohbetId) {
-  return FirebaseFirestore.instance
-      .collection('sohbetler')
-      .doc(sohbetId)
-      .snapshots()
-      .map((doc) {
-    if (!doc.exists) return {};
-    final d = doc.data() as Map<String, dynamic>;
-    return Map<String, dynamic>.from(d['islemDurumlari'] ?? {});
-  });
+  return ref.read(mesajRepositoryProvider).islemDurumuStream(sohbetId);
 });
 
 final _ilanSahibiIdProvider =
     StreamProvider.family<String, String>((ref, sohbetId) {
-  return FirebaseFirestore.instance
-      .collection('sohbetler')
-      .doc(sohbetId)
-      .snapshots()
-      .map((doc) {
-    if (!doc.exists) return '';
-    final d = doc.data() as Map<String, dynamic>;
-    return d['ilanSahibiId'] as String? ?? '';
-  });
+  return ref.read(mesajRepositoryProvider).ilanSahibiIdStream(sohbetId);
 });
 
 final _ilanTipProvider =
     StreamProvider.family<String, String>((ref, sohbetId) {
-  return FirebaseFirestore.instance
-      .collection('sohbetler')
-      .doc(sohbetId)
-      .snapshots()
-      .map((doc) {
-    if (!doc.exists) return 'istek';
-    final d = doc.data() as Map<String, dynamic>;
-    return d['ilanTip'] as String? ?? 'istek';
-  });
+  return ref.read(mesajRepositoryProvider).ilanTipStream(sohbetId);
 });
 
 final _sohbetKullanicilarProvider =
     StreamProvider.family<List<String>, String>((ref, sohbetId) {
-  return FirebaseFirestore.instance
-      .collection('sohbetler')
-      .doc(sohbetId)
-      .snapshots()
-      .map((doc) {
-    if (!doc.exists) return <String>[];
-    final d = doc.data() as Map<String, dynamic>;
-    return List<String>.from(d['kullanicilar'] ?? []);
-  });
+  return ref.read(mesajRepositoryProvider).sohbetKullanicilarStream(sohbetId);
 });
 
 // ── Panel ─────────────────────────────────────────────────
@@ -70,11 +37,10 @@ class IslemDurumuPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final benimUid    = ref.watch(currentUserProvider)?.uid ?? '';
-    final durumlari   = ref.watch(islemDurumuProvider(sohbetId)).value ?? {};
+    final benimUid     = ref.watch(currentUserProvider)?.uid ?? '';
+    final durumlari    = ref.watch(islemDurumuProvider(sohbetId)).value ?? {};
     final ilanSahibiId = ref.watch(_ilanSahibiIdProvider(sohbetId)).value ?? '';
     final kullanicilar = ref.watch(_sohbetKullanicilarProvider(sohbetId)).value ?? [];
-
     final ilanTip      = ref.watch(_ilanTipProvider(sohbetId)).value ?? 'istek';
     final adimlar      = IlanTipiAdimlar.forTip(ilanTip);
     final benimIlanSahibi = benimUid == ilanSahibiId;
@@ -150,12 +116,12 @@ class IslemDurumuPanel extends ConsumerWidget {
                     final oncekiTamamlandi = idx == 0 ||
                         durumlari[adimlar[idx - 1].firestoreKey] == true;
                     final aktif = !tamamlandi && oncekiTamamlandi;
-                    // iletisimBasladi otomatik — buton gosterme
                     final iletisimAdimi = durum == IslemDurumu.iletisimBasladi;
                     bool isaretleyebilir = false;
                     if (aktif && !iletisimAdimi) {
                       final kim = durum.ilanSahibiMiForTip(ilanTip);
-                      isaretleyebilir = kim == null ? true : kim == benimIlanSahibi;
+                      isaretleyebilir =
+                          kim == null ? true : kim == benimIlanSahibi;
                     }
                     return _AdimSatiri(
                       durum: durum,
@@ -164,7 +130,9 @@ class IslemDurumuPanel extends ConsumerWidget {
                       isaretleyebilir: isaretleyebilir,
                       sonMu: idx == adimlar.length - 1,
                       ilanTip: ilanTip,
-                      onTap: isaretleyebilir ? () => _adimIsaretle(ref, durum) : null,
+                      onTap: isaretleyebilir
+                          ? () => _adimIsaretle(ref, durum)
+                          : null,
                     );
                   }).toList(),
                 ),
@@ -203,14 +171,14 @@ class IslemDurumuPanel extends ConsumerWidget {
 
   Future<void> _adimIsaretle(WidgetRef ref, IslemDurumu durum) async {
     if (durum == IslemDurumu.teslimAlindi) {
-      // Sadece teslimi yaz. Degerlendirme sorusu sohbet ekranindaki
-      // stream listener tarafindan her iki tarafa gosterilir.
-      await ref.read(mesajRepositoryProvider).teslimTamamla(sohbetId: sohbetId);
+      await ref
+          .read(mesajRepositoryProvider)
+          .teslimTamamla(sohbetId: sohbetId);
     } else {
       await ref.read(mesajRepositoryProvider).islemDurumuGuncelle(
-        sohbetId: sohbetId,
-        durum: durum.firestoreKey,
-      );
+            sohbetId: sohbetId,
+            durum: durum.firestoreKey,
+          );
     }
   }
 }
@@ -243,7 +211,9 @@ class _AdimSatiri extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color renk = tamamlandi
         ? const Color(0xFF43A047)
-        : aktif ? AppColors.primary : AppColors.textHint;
+        : aktif
+            ? AppColors.primary
+            : AppColors.textHint;
 
     return IntrinsicHeight(
       child: Row(
@@ -280,7 +250,8 @@ class _AdimSatiri extends StatelessWidget {
           ),
           Expanded(
             child: Padding(
-              padding: EdgeInsets.only(left: 4, bottom: sonMu ? 0 : 20, top: 8),
+              padding:
+                  EdgeInsets.only(left: 4, bottom: sonMu ? 0 : 20, top: 8),
               child: Row(
                 children: [
                   Expanded(
@@ -333,7 +304,8 @@ class _AdimSatiri extends StatelessWidget {
                       height: 22,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.divider, width: 2),
+                        border:
+                            Border.all(color: AppColors.divider, width: 2),
                       ),
                     ),
                 ],
@@ -414,7 +386,8 @@ class _IslemDurumuTetikleyiciState
         ),
         transitionsBuilder: (ctx, anim, _, child) => SlideTransition(
           position: Tween(begin: const Offset(1, 0), end: Offset.zero)
-              .animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
+              .animate(
+                  CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
           child: child,
         ),
       ),
@@ -423,7 +396,7 @@ class _IslemDurumuTetikleyiciState
 
   @override
   Widget build(BuildContext context) {
-    final durumlari  = ref.watch(islemDurumuProvider(widget.sohbetId)).value ?? {};
+    final durumlari = ref.watch(islemDurumuProvider(widget.sohbetId)).value ?? {};
     final tamamlanan = IslemDurumu.values
         .where((d) => durumlari[d.firestoreKey] == true)
         .length;

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,6 +8,7 @@ import '../../degerlendirme/presentation/degerlendirme_screen.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../profil/data/kullanici_repository.dart';
+import '../../mesajlar/data/mesaj_repository.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/widgets/avatar_widget.dart';
 
@@ -191,7 +191,6 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
             ],
           ),
 
-          // ── Destek ──────────────────────────────────
           // ── Değerlendirmelerim ───────────────────────
           _BolumBasligi('Değerlendirmelerim'),
           _Kart(
@@ -212,6 +211,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
             ],
           ),
 
+          // ── Destek ──────────────────────────────────
           _BolumBasligi('Destek'),
           _Kart(
             children: [
@@ -313,7 +313,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
 
   Future<void> _telefonGuncelleDialog(String mevcutTelefon) async {
     final ctrl = TextEditingController(text: mevcutTelefon);
-    bool gizli = ref.read(benimKullaniciProfilProvider).value?.telefonGizli ?? false;
+    bool gizli =
+        ref.read(benimKullaniciProfilProvider).value?.telefonGizli ?? false;
 
     await showDialog(
       context: context,
@@ -375,7 +376,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                             ? Alignment.centerRight
                             : Alignment.centerLeft,
                         child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          margin:
+                              const EdgeInsets.symmetric(horizontal: 3),
                           width: 18,
                           height: 18,
                           decoration: const BoxDecoration(
@@ -399,7 +401,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: Text('İptal',
-                  style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
+                  style:
+                      GoogleFonts.dmSans(color: AppColors.textSecondary)),
             ),
             TextButton(
               onPressed: () async {
@@ -408,7 +411,10 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 if (uid == null) return;
                 await ref.read(kullaniciRepositoryProvider).profilGuncelle(
                   uid: uid,
-                  data: {'telefon': ctrl.text.trim(), 'telefonGizli': gizli},
+                  data: {
+                    'telefon': ctrl.text.trim(),
+                    'telefonGizli': gizli
+                  },
                 );
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -476,10 +482,12 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 fillColor: AppColors.surface,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.divider)),
+                    borderSide:
+                        const BorderSide(color: AppColors.divider)),
                 enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.divider)),
+                    borderSide:
+                        const BorderSide(color: AppColors.divider)),
                 focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(
@@ -501,10 +509,12 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 fillColor: AppColors.surface,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.divider)),
+                    borderSide:
+                        const BorderSide(color: AppColors.divider)),
                 enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.divider)),
+                    borderSide:
+                        const BorderSide(color: AppColors.divider)),
                 focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(
@@ -518,7 +528,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text('İptal',
-                style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
+                style:
+                    GoogleFonts.dmSans(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () {
@@ -549,8 +560,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     final user = ref.read(currentUserProvider);
     if (user == null) return;
 
-    final googleGiris = user.providerData
-        .any((p) => p.providerId == 'google.com');
+    final googleGiris =
+        user.providerData.any((p) => p.providerId == 'google.com');
 
     final onay = await showDialog<bool>(
       context: context,
@@ -569,7 +580,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text('İptal',
-                style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
+                style:
+                    GoogleFonts.dmSans(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -624,10 +636,12 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 fillColor: AppColors.surface,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.divider)),
+                    borderSide:
+                        const BorderSide(color: AppColors.divider)),
                 enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.divider)),
+                    borderSide:
+                        const BorderSide(color: AppColors.divider)),
                 focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(
@@ -642,7 +656,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text('İptal',
-                style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
+                style:
+                    GoogleFonts.dmSans(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -667,7 +682,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       await ref.read(authRepositoryProvider).hesapSil();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Hesabın silindi.', style: GoogleFonts.dmSans()),
+          content:
+              Text('Hesabın silindi.', style: GoogleFonts.dmSans()),
           behavior: SnackBarBehavior.floating,
         ));
       }
@@ -702,7 +718,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text('İptal',
-                style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
+                style:
+                    GoogleFonts.dmSans(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -721,7 +738,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       await ref.read(authRepositoryProvider).hesapSil();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Hesabın silindi.', style: GoogleFonts.dmSans()),
+          content:
+              Text('Hesabın silindi.', style: GoogleFonts.dmSans()),
           behavior: SnackBarBehavior.floating,
         ));
       }
@@ -813,7 +831,8 @@ class _EngellenenlerScreen extends ConsumerWidget {
                             context: context,
                             builder: (c) => AlertDialog(
                               shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
+                                  borderRadius:
+                                      BorderRadius.circular(12)),
                               title: Text('Engeli Kaldır',
                                   style: GoogleFonts.dmSans(
                                       fontSize: 16,
@@ -825,17 +844,21 @@ class _EngellenenlerScreen extends ConsumerWidget {
                                       color: AppColors.textSecondary)),
                               actions: [
                                 TextButton(
-                                  onPressed: () => Navigator.pop(c, false),
+                                  onPressed: () =>
+                                      Navigator.pop(c, false),
                                   child: Text('İptal',
                                       style: GoogleFonts.dmSans(
-                                          color: AppColors.textSecondary)),
+                                          color: AppColors
+                                              .textSecondary)),
                                 ),
                                 TextButton(
-                                  onPressed: () => Navigator.pop(c, true),
+                                  onPressed: () =>
+                                      Navigator.pop(c, true),
                                   child: Text('Kaldır',
                                       style: GoogleFonts.dmSans(
                                           color: AppColors.red,
-                                          fontWeight: FontWeight.w700)),
+                                          fontWeight:
+                                              FontWeight.w700)),
                                 ),
                               ],
                             ),
@@ -850,7 +873,8 @@ class _EngellenenlerScreen extends ConsumerWidget {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context)
                                   .showSnackBar(SnackBar(
-                                content: Text('$ad engeli kaldırıldı.',
+                                content: Text(
+                                    '$ad engeli kaldırıldı.',
                                     style: GoogleFonts.dmSans()),
                                 behavior: SnackBarBehavior.floating,
                               ));
@@ -970,7 +994,7 @@ class _SatirOge extends StatelessWidget {
                       color: labelColor,
                       fontWeight: FontWeight.w500)),
             ),
-            ?trailing,
+            if (trailing != null) trailing!,
             if (trailing == null && showArrow)
               const Icon(Icons.chevron_right,
                   color: AppColors.textSecondary, size: 20),
@@ -1090,10 +1114,12 @@ class _BekleyenDegerlendirmelerScreen extends ConsumerWidget {
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary)),
                   const SizedBox(height: 6),
-                  Text('Teslim aldıktan sonra değerlendirme\nyapabilirsin.',
+                  Text(
+                      'Teslim aldıktan sonra değerlendirme\nyapabilirsin.',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.dmSans(
-                          fontSize: 13, color: AppColors.textSecondary)),
+                          fontSize: 13,
+                          color: AppColors.textSecondary)),
                 ],
               ),
             );
@@ -1132,15 +1158,9 @@ class _BekleyenKarti extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Sohbet bilgisini Firestore'dan cek
     final sohbetAsync = ref.watch(
-      StreamProvider((r) => FirebaseFirestore.instance
-          .collection('sohbetler')
-          .doc(sohbetId)
-          .snapshots()
-          .map((doc) => doc.exists
-              ? (doc.data() as Map<String, dynamic>)
-              : <String, dynamic>{})),
+      StreamProvider((r) =>
+          r.read(mesajRepositoryProvider).sohbetDurumuStream(sohbetId)),
     );
 
     return sohbetAsync.when(
@@ -1152,18 +1172,18 @@ class _BekleyenKarti extends ConsumerWidget {
         final kullanicilar =
             List<String>.from(sohbet['kullanicilar'] ?? []);
         final karsiId = kullanicilar
-            .where((id) => id != kullaniciId)
-            .firstOrNull ?? '';
-        final ilanBaslik =
-            sohbet['ilanBaslik'] as String? ?? 'İlan';
+                .where((id) => id != kullaniciId)
+                .firstOrNull ??
+            '';
+        final ilanBaslik = sohbet['ilanBaslik'] as String? ?? 'İlan';
 
-        // Karsi kullanicinin gercek adini ve fotografini cek
         final karsiProfilAsync = karsiId.isNotEmpty
             ? ref.watch(kullaniciBilgiProvider(karsiId))
             : null;
-        final karsiAd = karsiProfilAsync?.value?.adSoyad.isNotEmpty == true
-            ? karsiProfilAsync!.value!.adSoyad
-            : 'Kullanıcı';
+        final karsiAd =
+            karsiProfilAsync?.value?.adSoyad.isNotEmpty == true
+                ? karsiProfilAsync!.value!.adSoyad
+                : 'Kullanıcı';
         final karsiFotoUrl = karsiProfilAsync?.value?.fotoUrl;
 
         return Container(
@@ -1187,7 +1207,8 @@ class _BekleyenKarti extends ConsumerWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF81C784).withValues(alpha: 0.12),
+                    color:
+                        const Color(0xFF81C784).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.star_rounded,
@@ -1228,7 +1249,6 @@ class _BekleyenKarti extends ConsumerWidget {
                       hedefKullaniciAd: karsiAd,
                       hedefFotoUrl: karsiFotoUrl,
                     );
-                    // Tamamlandi olarak isaretле
                     if (context.mounted) {
                       await ref
                           .read(degerlendirmeRepositoryProvider)

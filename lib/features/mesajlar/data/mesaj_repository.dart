@@ -103,7 +103,6 @@ class MesajRepository {
             .toList());
   }
 
-  // ✅ Artık Stream<List<MesajModel>> — Firestore tipi dışarı sızmıyor
   Stream<List<MesajModel>> mesajlarStream({
     required String sohbetId,
     int limit = Pagination.mesajSayfaBoyutu,
@@ -118,7 +117,6 @@ class MesajRepository {
             .toList());
   }
 
-  // ✅ Artık Future<List<MesajModel>> — Firestore tipi dışarı sızmıyor
   Future<List<MesajModel>> eskiMesajlariGetir({
     required String sohbetId,
     required DateTime sonZaman,
@@ -221,8 +219,6 @@ class MesajRepository {
     });
   }
 
-
-  // İşlem durumu güncelle
   Future<void> islemDurumuGuncelle({
     required String sohbetId,
     required String durum,
@@ -232,12 +228,10 @@ class MesajRepository {
     });
   }
 
-  // Teslim tamamlandı - değerlendirme tetikle
   Future<void> teslimTamamla({required String sohbetId}) async {
     await _sohbetler.doc(sohbetId).update({
       'islemDurumlari.teslimAlindi': true,
     });
-    // Değerlendirme için flag - her iki taraf görecek
     await _sohbetler.doc(sohbetId).update({
       'degerlendirmeBekliyor': true,
     });
@@ -258,5 +252,47 @@ class MesajRepository {
         'sohbetId':   sohbetId,
       });
     } catch (_) {}
+  }
+
+  // ── Sohbet dökümanı stream'leri ──────────────────────────
+
+  Stream<Map<String, dynamic>> sohbetDurumuStream(String sohbetId) {
+    return _sohbetler.doc(sohbetId).snapshots().map((doc) {
+      if (!doc.exists) return <String, dynamic>{};
+      return Map<String, dynamic>.from(
+          doc.data() as Map<String, dynamic>? ?? {});
+    });
+  }
+
+  Stream<Map<String, dynamic>> islemDurumuStream(String sohbetId) {
+    return _sohbetler.doc(sohbetId).snapshots().map((doc) {
+      if (!doc.exists) return <String, dynamic>{};
+      final d = doc.data() as Map<String, dynamic>;
+      return Map<String, dynamic>.from(d['islemDurumlari'] ?? {});
+    });
+  }
+
+  Stream<String> ilanSahibiIdStream(String sohbetId) {
+    return _sohbetler.doc(sohbetId).snapshots().map((doc) {
+      if (!doc.exists) return '';
+      final d = doc.data() as Map<String, dynamic>;
+      return d['ilanSahibiId'] as String? ?? '';
+    });
+  }
+
+  Stream<String> ilanTipStream(String sohbetId) {
+    return _sohbetler.doc(sohbetId).snapshots().map((doc) {
+      if (!doc.exists) return 'istek';
+      final d = doc.data() as Map<String, dynamic>;
+      return d['ilanTip'] as String? ?? 'istek';
+    });
+  }
+
+  Stream<List<String>> sohbetKullanicilarStream(String sohbetId) {
+    return _sohbetler.doc(sohbetId).snapshots().map((doc) {
+      if (!doc.exists) return <String>[];
+      final d = doc.data() as Map<String, dynamic>;
+      return List<String>.from(d['kullanicilar'] ?? []);
+    });
   }
 }
