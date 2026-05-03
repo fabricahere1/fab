@@ -115,3 +115,50 @@ export const mesajBildirimiGonder = functions
 
     return { success: true };
   });
+  // ── Değerlendirme Bildirimi ───────────────────────────────────────────────────
+export const degerlendirmeBildirimiGonder = functions
+  .region("europe-west1")
+  .firestore.document("degerlendirmeler/{degId}")
+  .onCreate(async (snap) => {
+    const data = snap.data();
+    if (!data) return;
+
+    const { hedefKullaniciId, degerlendireninId, puan } = data as {
+      hedefKullaniciId: string;
+      degerlendireninId: string;
+      puan: number;
+    };
+
+    // Değerlendireni getir (isim için)
+    const degerlendireninSnap = await db
+      .collection("kullanicilar")
+      .doc(degerlendireninId)
+      .get();
+    const degerlendireninAd =
+      (degerlendireninSnap.data()?.adSoyad as string | undefined) ?? "Biri";
+
+    // Hedef kullanıcının FCM token'ını getir
+    const hedefSnap = await db
+      .collection("kullanicilar")
+      .doc(hedefKullaniciId)
+      .get();
+    const fcmToken = hedefSnap.data()?.fcmToken as string | undefined;
+    if (!fcmToken) return;
+
+    const yildiz = "⭐".repeat(Math.min(Math.round(puan), 5));
+
+    await admin.messaging().send({
+      token: fcmToken,
+      notification: {
+        title: "Yeni değerlendirme aldın!",
+        body: `${degerlendireninAd} seni değerlendirdi ${yildiz}`,
+      },
+      data: {
+        tip: "degerlendirme",
+        hedefKullaniciId: hedefKullaniciId,
+      },
+      android: {
+        priority: "high",
+      },
+    });
+  });

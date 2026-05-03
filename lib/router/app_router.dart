@@ -14,6 +14,9 @@ import '../features/profil/providers/profil_provider.dart';
 
 part 'app_router.g.dart';
 
+// Overlay erişimi için — main.dart'tan import edilir
+final navigatorKey = GlobalKey<NavigatorState>();
+
 abstract class AppRoutes {
   static const splash        = '/';
   static const login         = '/login';
@@ -22,11 +25,9 @@ abstract class AppRoutes {
   static const home          = '/home';
   static const ilanDetay     = '/ilan/:ilanId';
 
-  /// Programatik kullanım için: context.push(AppRoutes.ilanDetayPath('abc123'))
   static String ilanDetayPath(String ilanId) => '/ilan/$ilanId';
 }
 
-// FirebaseAuth.instance YOK — currentUserProvider üzerinden auth durumu izlenir
 class _AppStateNotifier extends ChangeNotifier {
   _AppStateNotifier(this._ref) {
     _sub = _ref.listen(authStateProvider, (_, __) => notifyListeners());
@@ -51,6 +52,7 @@ GoRouter router(Ref ref) {
   ref.onDispose(notifier.dispose);
 
   return GoRouter(
+    navigatorKey: navigatorKey,       // ← eklendi
     initialLocation: AppRoutes.splash,
     refreshListenable: notifier,
     redirect: (context, state) {
@@ -58,8 +60,6 @@ GoRouter router(Ref ref) {
       final girisYapildi = user != null;
       final loc = state.matchedLocation;
 
-      // /ilan/:ilanId — giriş yapılmamışsa login'e yönlendir,
-      // döndükten sonra aynı ilana geri gelsin diye redirect parametresi ekle
       if (loc.startsWith('/ilan/')) {
         if (!girisYapildi) {
           return '${AppRoutes.login}?redirect=${state.uri}';
@@ -107,7 +107,6 @@ GoRouter router(Ref ref) {
         path: AppRoutes.home,
         builder: (_, _) => const HomeScreen(),
       ),
-      // ── İlan detay — bildirim / deep link desteği ─────────────────────────
       GoRoute(
         path: AppRoutes.ilanDetay,
         builder: (_, state) {
