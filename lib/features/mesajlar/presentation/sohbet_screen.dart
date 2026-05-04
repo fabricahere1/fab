@@ -101,7 +101,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
           transitionDuration: const Duration(milliseconds: 350),
           pageBuilder: (ctx, anim, _) => _TeslimAlindiOnayDialog(
             sohbetId: _sohbetId,
-            karsiKullaniciAd: widget.karsiKullaniciAd, // ← eklendi
+            karsiKullaniciAd: widget.karsiKullaniciAd,
           ),
           transitionBuilder: (ctx, anim, _, child) {
             final curved =
@@ -116,7 +116,10 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
           },
         );
 
-        if (!mounted) { _degerlendirmeAcik = false; return; }
+        if (!mounted) {
+          _degerlendirmeAcik = false;
+          return;
+        }
 
         if (sonuc == true) {
           await DegerlendirmeModal.goster(
@@ -126,9 +129,6 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
             hedefKullaniciAd: widget.karsiKullaniciAd,
           );
         } else if (sonuc == false) {
-          // ── Düzeltme: "Şimdi Değil" → hem bekleyene kaydet
-          //    hem de degerlendirmeYapildi işaretle ki
-          //    sohbete tekrar girilince popup çıkmasın ──────
           final repo = ref.read(degerlendirmeRepositoryProvider);
           await repo.bekleyenDegerlendirmeKaydet(
             sohbetId: _sohbetId,
@@ -179,7 +179,10 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
   }
 
   String get _sohbetId {
-    final ids = [ref.read(currentUserProvider)?.uid ?? '', widget.karsiKullaniciId]..sort();
+    final ids = [
+      ref.read(currentUserProvider)?.uid ?? '',
+      widget.karsiKullaniciId
+    ]..sort();
     return '${ids[0]}_${ids[1]}_${widget.ilanId}';
   }
 
@@ -195,7 +198,8 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 36, height: 4,
+              width: 36,
+              height: 4,
               margin: const EdgeInsets.only(top: 12, bottom: 8),
               decoration: BoxDecoration(
                   color: AppColors.divider,
@@ -217,9 +221,11 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                     title: Text('Sohbeti Sil',
                         style: GoogleFonts.dmSans(
                             fontSize: 16, fontWeight: FontWeight.w600)),
-                    content: Text('Bu sohbet sadece senin için silinecek.',
+                    content: Text(
+                        'Bu sohbet sadece senin için silinecek.',
                         style: GoogleFonts.dmSans(
-                            fontSize: 14, color: AppColors.textSecondary)),
+                            fontSize: 14,
+                            color: AppColors.textSecondary)),
                     actions: [
                       TextButton(
                           onPressed: () => Navigator.pop(c, false),
@@ -244,7 +250,8 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
             ),
             const Divider(height: 1, indent: 56),
             ListTile(
-              leading: const Icon(Icons.block_outlined, color: AppColors.red),
+              leading:
+                  const Icon(Icons.block_outlined, color: AppColors.red),
               title: Text('${widget.karsiKullaniciAd} Engelle',
                   style: GoogleFonts.dmSans(
                       fontSize: 14,
@@ -263,7 +270,8 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                     content: Text(
                         '${widget.karsiKullaniciAd} adlı kullanıcıyı engellemek istiyor musun?',
                         style: GoogleFonts.dmSans(
-                            fontSize: 14, color: AppColors.textSecondary)),
+                            fontSize: 14,
+                            color: AppColors.textSecondary)),
                     actions: [
                       TextButton(
                           onPressed: () => Navigator.pop(c, false),
@@ -330,7 +338,9 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                       widget.ilanResimUrl!.isNotEmpty
                   ? CachedNetworkImage(
                       imageUrl: widget.ilanResimUrl!,
-                      width: 40, height: 40, fit: BoxFit.cover,
+                      width: 40,
+                      height: 40,
+                      fit: BoxFit.cover,
                       fadeInDuration: Duration.zero,
                       errorWidget: (_, _, _) => _IlanResimPlaceholder(),
                     )
@@ -388,9 +398,15 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
             ],
           ),
           Positioned(
-            right: 0, top: 0, bottom: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
             child: Center(
-                child: IslemDurumuTetikleyici(sohbetId: _sohbetId)),
+              child: IslemDurumuTetikleyici(
+                sohbetId: _sohbetId,
+                karsiKullaniciAd: widget.karsiKullaniciAd,
+              ),
+            ),
           ),
         ],
       ),
@@ -405,36 +421,40 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
         maxWidth: 1080,
         maxHeight: 1080);
     if (picked == null || !mounted) return;
-    await ref.read(sohbetProvider(
-      karsiKullaniciId: widget.karsiKullaniciId,
-      ilanId: widget.ilanId,
-    ).notifier).resimGonder(
-      dosya: File(picked.path),
-      karsiKullaniciId: widget.karsiKullaniciId,
-      ilanId: widget.ilanId,
-      ilanBaslik: widget.ilanBaslik,
-      ilanResimUrl: widget.ilanResimUrl ?? '',
-      ilanSahibiId: widget.ilanSahibiId,
-      ilanTip: widget.ilanTip,
-    );
+    await ref
+        .read(sohbetProvider(
+          karsiKullaniciId: widget.karsiKullaniciId,
+          ilanId: widget.ilanId,
+        ).notifier)
+        .resimGonder(
+          dosya: File(picked.path),
+          karsiKullaniciId: widget.karsiKullaniciId,
+          ilanId: widget.ilanId,
+          ilanBaslik: widget.ilanBaslik,
+          ilanResimUrl: widget.ilanResimUrl ?? '',
+          ilanSahibiId: widget.ilanSahibiId,
+          ilanTip: widget.ilanTip,
+        );
   }
 
   Future<void> _gonder(String benimUid) async {
     final metin = _mesajCtrl.text.trim();
     if (metin.isEmpty) return;
     _mesajCtrl.clear();
-    await ref.read(sohbetProvider(
-      karsiKullaniciId: widget.karsiKullaniciId,
-      ilanId: widget.ilanId,
-    ).notifier).mesajGonder(
-      metin: metin,
-      karsiKullaniciId: widget.karsiKullaniciId,
-      ilanId: widget.ilanId,
-      ilanBaslik: widget.ilanBaslik,
-      ilanResimUrl: widget.ilanResimUrl ?? '',
-      ilanSahibiId: widget.ilanSahibiId,
-      ilanTip: widget.ilanTip,
-    );
+    await ref
+        .read(sohbetProvider(
+          karsiKullaniciId: widget.karsiKullaniciId,
+          ilanId: widget.ilanId,
+        ).notifier)
+        .mesajGonder(
+          metin: metin,
+          karsiKullaniciId: widget.karsiKullaniciId,
+          ilanId: widget.ilanId,
+          ilanBaslik: widget.ilanBaslik,
+          ilanResimUrl: widget.ilanResimUrl ?? '',
+          ilanSahibiId: widget.ilanSahibiId,
+          ilanTip: widget.ilanTip,
+        );
   }
 }
 
@@ -571,7 +591,8 @@ class _InputBar extends StatelessWidget {
           GestureDetector(
             onTap: onResim,
             child: Container(
-              width: 42, height: 42,
+              width: 42,
+              height: 42,
               margin: const EdgeInsets.only(right: 6),
               decoration: BoxDecoration(
                   color: AppColors.surface,
@@ -591,13 +612,13 @@ class _InputBar extends StatelessWidget {
                 controller: mesajCtrl,
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => onGonder(),
-                maxLines: 5, minLines: 1,
+                maxLines: 5,
+                minLines: 1,
                 style: GoogleFonts.dmSans(
                     fontSize: 15, color: AppColors.textPrimary),
                 decoration: InputDecoration(
                   hintText: 'Mesaj yaz...',
-                  hintStyle:
-                      GoogleFonts.dmSans(color: AppColors.textHint),
+                  hintStyle: GoogleFonts.dmSans(color: AppColors.textHint),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 10),
@@ -609,7 +630,8 @@ class _InputBar extends StatelessWidget {
           GestureDetector(
             onTap: gonderiyor ? null : onGonder,
             child: Container(
-              width: 46, height: 46,
+              width: 46,
+              height: 46,
               decoration: BoxDecoration(
                   color: gonderiyor ? AppColors.divider : AppColors.red,
                   shape: BoxShape.circle),
@@ -630,12 +652,13 @@ class _InputBar extends StatelessWidget {
   }
 }
 
-// ── Widget'lar ────────────────────────────────────────────
+// ── Yardımcı Widget'lar ───────────────────────────────────
 
 class _IlanResimPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
-        width: 40, height: 40,
+        width: 40,
+        height: 40,
         decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(6)),
@@ -673,7 +696,9 @@ class _MesajBalonu extends StatelessWidget {
 
     final balonRenk = ilgileniyorum
         ? ilgilirenBalon
-        : benimMesajim ? gidanBalon : gelenBalon;
+        : benimMesajim
+            ? gidanBalon
+            : gelenBalon;
     const metinRenk = metin202124;
     final zamanRenk = metin202124.withValues(alpha: 0.5);
 
@@ -719,7 +744,8 @@ class _MesajBalonu extends StatelessWidget {
                           color: metinRenk, fontSize: 15, height: 1.35)),
             ),
             Positioned(
-              right: 0, bottom: 0,
+              right: 0,
+              bottom: 0,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -824,7 +850,8 @@ class _ResimBalonu extends StatelessWidget {
       padding: EdgeInsets.only(
           left: benimMesajim ? 60 : 12,
           right: benimMesajim ? 12 : 60,
-          top: 3, bottom: 3),
+          top: 3,
+          bottom: 3),
       child: Align(
         alignment:
             benimMesajim ? Alignment.centerRight : Alignment.centerLeft,
@@ -835,7 +862,8 @@ class _ResimBalonu extends StatelessWidget {
                   builder: (_) =>
                       _FullscreenResim(resimUrl: resimUrl))),
           child: Container(
-            width: w, height: h,
+            width: w,
+            height: h,
             decoration: BoxDecoration(
               borderRadius: radius,
               boxShadow: [
@@ -852,7 +880,9 @@ class _ResimBalonu extends StatelessWidget {
                 children: [
                   CachedNetworkImage(
                     imageUrl: resimUrl,
-                    width: w, height: h, fit: BoxFit.cover,
+                    width: w,
+                    height: h,
+                    fit: BoxFit.cover,
                     placeholder: (_, _) => Container(
                         color: AppColors.surface,
                         child: const Center(
@@ -865,7 +895,8 @@ class _ResimBalonu extends StatelessWidget {
                             color: AppColors.textHint, size: 32)),
                   ),
                   Positioned(
-                    bottom: 6, right: 8,
+                    bottom: 6,
+                    right: 8,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 2),
@@ -919,14 +950,17 @@ class _FullscreenResim extends StatelessWidget {
             elevation: 0),
         body: Center(
           child: InteractiveViewer(
-            minScale: 0.5, maxScale: 4.0,
+            minScale: 0.5,
+            maxScale: 4.0,
             child: CachedNetworkImage(
-              imageUrl: resimUrl, fit: BoxFit.contain,
+              imageUrl: resimUrl,
+              fit: BoxFit.contain,
               placeholder: (_, _) => const CircularProgressIndicator(
                   color: Colors.white, strokeWidth: 2),
               errorWidget: (_, _, _) => const Icon(
                   Icons.broken_image_outlined,
-                  color: Colors.white54, size: 48),
+                  color: Colors.white54,
+                  size: 48),
             ),
           ),
         ),
@@ -937,10 +971,11 @@ class _FullscreenResim extends StatelessWidget {
 
 class _TeslimAlindiOnayDialog extends StatefulWidget {
   final String sohbetId;
-  final String karsiKullaniciAd; // ← eklendi
+  final String karsiKullaniciAd;
+
   const _TeslimAlindiOnayDialog({
     required this.sohbetId,
-    required this.karsiKullaniciAd, // ← eklendi
+    required this.karsiKullaniciAd,
   });
 
   @override
@@ -1011,7 +1046,8 @@ class _TeslimAlindiOnayDialogState extends State<_TeslimAlindiOnayDialog>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 64, height: 64,
+                    width: 64,
+                    height: 64,
                     decoration: BoxDecoration(
                       color: const Color(0xFF81C784).withValues(alpha: 0.15),
                       shape: BoxShape.circle,
@@ -1020,7 +1056,6 @@ class _TeslimAlindiOnayDialogState extends State<_TeslimAlindiOnayDialog>
                         color: Color(0xFF81C784), size: 36),
                   ),
                   const SizedBox(height: 16),
-                  // ── Düzeltme: kişi adı dinamik ──────────
                   Text(
                     '${widget.karsiKullaniciAd} için\nDeğerlendirme Yapmak İster Misiniz?',
                     textAlign: TextAlign.center,
@@ -1043,7 +1078,8 @@ class _TeslimAlindiOnayDialogState extends State<_TeslimAlindiOnayDialog>
                   ),
                   const SizedBox(height: 24),
                   SizedBox(
-                    width: double.infinity, height: 48,
+                    width: double.infinity,
+                    height: 48,
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(context, true),
                       style: ElevatedButton.styleFrom(
@@ -1055,13 +1091,13 @@ class _TeslimAlindiOnayDialogState extends State<_TeslimAlindiOnayDialog>
                       ),
                       child: Text('Evet, Değerlendir',
                           style: GoogleFonts.dmSans(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600)),
+                              fontSize: 15, fontWeight: FontWeight.w600)),
                     ),
                   ),
                   const SizedBox(height: 10),
                   SizedBox(
-                    width: double.infinity, height: 44,
+                    width: double.infinity,
+                    height: 44,
                     child: TextButton(
                       onPressed: () => Navigator.pop(context, false),
                       style: TextButton.styleFrom(

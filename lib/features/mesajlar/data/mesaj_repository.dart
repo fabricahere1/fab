@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -237,21 +238,38 @@ class MesajRepository {
     });
   }
 
+  // ── Anlaşıldı — iki taraflı onay ─────────────────────────
+  Future<void> anlasildiIsaretle({
+    required String sohbetId,
+    required String benimUid,
+  }) async {
+    await _sohbetler.doc(sohbetId).update({
+      'islemDurumlari.anlasildi_$benimUid': true,
+    });
+  }
+
   Future<void> mesajBildirimiGonder({
     required String aliciId,
     required String gondereId,
     required String gondereAd,
     required String ilanBaslik,
     required String sohbetId,
+    required String metin,
   }) async {
     try {
-      await _functions.httpsCallable('mesajBildirimiGonder').call({
+      final result = await _functions.httpsCallable('mesajBildirimiGonder').call({
         'aliciId':    aliciId,
         'gondereAd':  gondereAd,
         'ilanBaslik': ilanBaslik,
         'sohbetId':   sohbetId,
+        'metin':      metin,
       });
-    } catch (_) {}
+      debugPrint('[FCM] mesajBildirimi sonuc: ${result.data}');
+    } on FirebaseFunctionsException catch (e) {
+      debugPrint('[FCM] FirebaseFunctionsException: ${e.code} - ${e.message} - ${e.details}');
+    } catch (e) {
+      debugPrint('[FCM] mesajBildirimi hata: $e');
+    }
   }
 
   // ── Sohbet dökümanı stream'leri ──────────────────────────

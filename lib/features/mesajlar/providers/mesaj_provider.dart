@@ -6,7 +6,6 @@ import '../data/mesaj_repository.dart';
 import '../domain/mesaj_model.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/data/kullanici_repository.dart';
-import '../../bildirimler/data/bildirim_repository.dart';
 import '../../../shared/constants/app_constants.dart';
 
 part 'mesaj_provider.g.dart';
@@ -233,13 +232,15 @@ class SohbetNotifier extends _$SohbetNotifier {
         tip: tip,
       );
       try {
-        await ref.read(bildirimRepositoryProvider).mesajBildirimiGonder(
-              aliciId: karsiKullaniciId,
-              gondereId: _benimId,
-              gondereAd: benimAd,
-              ilanBaslik: ilanBaslik,
-              sohbetId: _sohbetId,
-            );
+        // Cloud Function üzerinden push bildirim gönder
+        await _repo.mesajBildirimiGonder(
+          aliciId: karsiKullaniciId,
+          gondereId: _benimId,
+          gondereAd: benimAd,
+          ilanBaslik: ilanBaslik,
+          sohbetId: _sohbetId,
+          metin: metin.trim(),
+        );
       } catch (_) {}
     } finally {
       if (ref.mounted) state = state.copyWith(gonderiyor: false);
@@ -274,13 +275,15 @@ class SohbetNotifier extends _$SohbetNotifier {
         resimUrl: url,
       );
       try {
-        await ref.read(bildirimRepositoryProvider).mesajBildirimiGonder(
-              aliciId: karsiKullaniciId,
-              gondereId: _benimId,
-              gondereAd: benimAd,
-              ilanBaslik: ilanBaslik,
-              sohbetId: _sohbetId,
-            );
+        // Cloud Function üzerinden push bildirim gönder
+        await _repo.mesajBildirimiGonder(
+          aliciId: karsiKullaniciId,
+          gondereId: _benimId,
+          gondereAd: benimAd,
+          ilanBaslik: ilanBaslik,
+          sohbetId: _sohbetId,
+          metin: '📷 Fotoğraf',
+        );
       } catch (_) {}
     } catch (e) {
       if (kDebugMode) print('resimGonder hata: $e');

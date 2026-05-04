@@ -1,11 +1,10 @@
 import "package:flutter/material.dart";
-// lib/features/mesajlar/domain/islem_durumu.dart
 
 enum IslemDurumu {
   iletisimBasladi,
   anlasildi,
-  siparisVerildi, // Sadece tasiyici ilanlari icin (alici urun secti)
-  urunAlindi,     // Sadece tasiyici ilanlari icin (tasiyici satin aldi)
+  siparisVerildi,
+  urunAlindi,
   yolaCikti,
   teslimEdildi,
   teslimAlindi,
@@ -24,6 +23,19 @@ extension IslemDurumuX on IslemDurumu {
     }
   }
 
+  // Banner metni için — "xxx ilanınızı yola çıktığını onayladı" gibi
+  String get gecmisDonusu {
+    switch (this) {
+      case IslemDurumu.iletisimBasladi: return 'iletişime geçtiğini onayladı';
+      case IslemDurumu.anlasildi:       return 'anlaşıldığını onayladı';
+      case IslemDurumu.siparisVerildi:  return 'sipariş verdiğini onayladı';
+      case IslemDurumu.urunAlindi:      return 'ürünü satın aldığını onayladı';
+      case IslemDurumu.yolaCikti:       return 'yola çıktığını onayladı';
+      case IslemDurumu.teslimEdildi:    return 'teslim ettiğini onayladı';
+      case IslemDurumu.teslimAlindi:    return 'teslim aldığını onayladı';
+    }
+  }
+
   String get firestoreKey {
     switch (this) {
       case IslemDurumu.iletisimBasladi: return 'iletisimBasladi';
@@ -35,6 +47,10 @@ extension IslemDurumuX on IslemDurumu {
       case IslemDurumu.teslimAlindi:    return 'teslimAlindi';
     }
   }
+
+  String anlasildiKey(String uid) => 'anlasildi_$uid';
+
+  bool get ikiTarafliMi => this == IslemDurumu.anlasildi;
 
   IconData get ikon {
     switch (this) {
@@ -48,38 +64,30 @@ extension IslemDurumuX on IslemDurumu {
     }
   }
 
-  // ilanSahibiMi: true = ilan sahibi isaretler, false = karsi taraf, null = otomatik
-  // istek ilani: ilan sahibi = isteyen/alici
-  // tasiyici ilani: ilan sahibi = tasiyici
-  // Bu sayede her iki tipte de panel dogru calısır
   bool? get ilanSahibiMi {
     switch (this) {
-      case IslemDurumu.iletisimBasladi: return null;   // otomatik
-      case IslemDurumu.anlasildi:       return null;   // otomatik
-      case IslemDurumu.siparisVerildi:  return false;  // istek ilani: alici=karsitaraf | tasiyici ilani: alici=karsitaraf ✓
-      case IslemDurumu.urunAlindi:      return true;   // istek ilani: - | tasiyici ilani: tasiyici=ilanSahibi ✓
-      case IslemDurumu.yolaCikti:       return true;   // istek ilani: tasiyici=karsitaraf❌ | tasiyici ilani: tasiyici=ilanSahibi ✓
-      case IslemDurumu.teslimEdildi:    return true;   // ayni sekilde
-      case IslemDurumu.teslimAlindi:    return false;  // her iki tipte alici isaretler ✓
+      case IslemDurumu.iletisimBasladi: return null;
+      case IslemDurumu.anlasildi:       return null;
+      case IslemDurumu.siparisVerildi:  return false;
+      case IslemDurumu.urunAlindi:      return true;
+      case IslemDurumu.yolaCikti:       return true;
+      case IslemDurumu.teslimEdildi:    return true;
+      case IslemDurumu.teslimAlindi:    return false;
     }
   }
 
-  // istek ilani icin ayri kontrol
   bool? ilanSahibiMiForTip(String ilanTip) {
-    // tasiyici ilani: ilanSahibi = tasiyici
-    // istek ilani: ilanSahibi = isteyen/alici, karsi taraf = tasiyici
     if (ilanTip == 'tasiyici') {
-      return ilanSahibiMi; // ilanSahibi tasiyici, dogru
+      return ilanSahibiMi;
     } else {
-      // istek ilani: rolleri cevir — ilanSahibi=alici, karsitaraf=tasiyici
       switch (this) {
         case IslemDurumu.iletisimBasladi: return null;
         case IslemDurumu.anlasildi:       return null;
-        case IslemDurumu.siparisVerildi:  return null; // istek ilaninda bu adim yok
-        case IslemDurumu.urunAlindi:      return null; // istek ilaninda bu adim yok
-        case IslemDurumu.yolaCikti:       return false; // karsitaraf=tasiyici isaretler
-        case IslemDurumu.teslimEdildi:    return false; // karsitaraf=tasiyici isaretler
-        case IslemDurumu.teslimAlindi:    return true;  // ilanSahibi=alici isaretler
+        case IslemDurumu.siparisVerildi:  return null;
+        case IslemDurumu.urunAlindi:      return null;
+        case IslemDurumu.yolaCikti:       return false;
+        case IslemDurumu.teslimEdildi:    return false;
+        case IslemDurumu.teslimAlindi:    return true;
       }
     }
   }
@@ -102,9 +110,7 @@ extension IslemDurumuX on IslemDurumu {
   }
 }
 
-// İlan tipine gore adim listesi
 class IlanTipiAdimlar {
-  // istek ilani: biri bir urun istiyor, tasiyici goturuyor
   static const List<IslemDurumu> istek = [
     IslemDurumu.iletisimBasladi,
     IslemDurumu.anlasildi,
@@ -113,7 +119,6 @@ class IlanTipiAdimlar {
     IslemDurumu.teslimAlindi,
   ];
 
-  // tasiyici ilani: tasiyici geliyor, alici siparis veriyor
   static const List<IslemDurumu> tasiyici = [
     IslemDurumu.iletisimBasladi,
     IslemDurumu.anlasildi,

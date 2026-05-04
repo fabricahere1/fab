@@ -85,11 +85,12 @@ export const mesajBildirimiGonder = functions
       throw new functions.https.HttpsError("unauthenticated", "Giriş yapmalısın.");
     }
 
-    const { aliciId, gondereAd, ilanBaslik, sohbetId } = data as {
+    const { aliciId, gondereAd, ilanBaslik, sohbetId, metin } = data as {
       aliciId: string;
       gondereAd: string;
       ilanBaslik: string;
       sohbetId: string;
+      metin: string;
     };
 
     const kullaniciSnap = await db.collection("kullanicilar").doc(aliciId).get();
@@ -98,24 +99,57 @@ export const mesajBildirimiGonder = functions
     const fcmToken = kullaniciSnap.data()?.fcmToken as string | undefined;
     if (!fcmToken) return { success: false };
 
+    // Bildirim içeriği:
+    // title  → gönderenin adı
+    // body   → mesaj metni (ilan adı değil, gerçek mesaj)
+    // ticker → ilan adı (bildirim çekmecesinde küçük satır)
+    const bildirimMetin = metin && metin.trim().length > 0 ? metin.trim() : ilanBaslik;
+
     await admin.messaging().send({
       token: fcmToken,
       notification: {
         title: gondereAd,
-        body: ilanBaslik,
+        body: bildirimMetin,
       },
       data: {
         tip: "mesaj",
         sohbetId: sohbetId,
+        ilanBaslik: ilanBaslik,
       },
       android: {
         priority: "high",
+        // collapseKey: aynı sohbetten gelen bildirimler tek slotta birleşir
+        // Arka arkaya mesaj gelirse her biri ayrı bildirim açmaz,
+        // mevcut bildirimi günceller (tray'de tek satır kalır)
+        collapseKey: sohbetId,
+        notification: {
+          // tag: aynı sohbet = aynı tag = eski bildirimi güncelle
+          tag: sohbetId,
+          channelId: "mesajlar",
+          // ticker: bildirim geldiğinde status bar'da kısa süre görünen metin
+          ticker: `${gondereAd}: ${bildirimMetin}`,
+          // Birden fazla mesaj varsa sayıyı göster
+          notificationCount: 1,
+        },
+      },
+      apns: {
+        // iOS için thread-id ile aynı sohbet bildirimleri gruplanır
+        headers: {
+          "apns-collapse-id": sohbetId.substring(0, 64),
+        },
+        payload: {
+          aps: {
+            threadId: sohbetId,
+            badge: 1,
+          },
+        },
       },
     });
 
     return { success: true };
   });
-  // ── Değerlendirme Bildirimi ───────────────────────────────────────────────────
+
+// ── Değerlendirme Bildirimi ───────────────────────────────────────────────────
 export const degerlendirmeBildirimiGonder = functions
   .region("europe-west1")
   .firestore.document("degerlendirmeler/{degId}")
@@ -129,7 +163,6 @@ export const degerlendirmeBildirimiGonder = functions
       puan: number;
     };
 
-    // Değerlendireni getir (isim için)
     const degerlendireninSnap = await db
       .collection("kullanicilar")
       .doc(degerlendireninId)
@@ -137,7 +170,6 @@ export const degerlendirmeBildirimiGonder = functions
     const degerlendireninAd =
       (degerlendireninSnap.data()?.adSoyad as string | undefined) ?? "Biri";
 
-    // Hedef kullanıcının FCM token'ını getir
     const hedefSnap = await db
       .collection("kullanicilar")
       .doc(hedefKullaniciId)

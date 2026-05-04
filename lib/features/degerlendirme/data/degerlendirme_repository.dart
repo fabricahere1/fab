@@ -67,8 +67,6 @@ class DegerlendirmeRepository {
     return d['degerlendirmeYapildi_$kullaniciId'] == true;
   }
 
-  // Kullanici "Simdi Degil" secince bekleyen listeye kaydeder.
-  // Ayarlar > Degerlendirmelerim ekranindan tamamlanabilir.
   Future<void> bekleyenDegerlendirmeKaydet({
     required String sohbetId,
     required String kullaniciId,
@@ -79,14 +77,13 @@ class DegerlendirmeRepository {
         .collection('bekleyenDegerlendirmeler')
         .doc(sohbetId)
         .set({
-      'sohbetId':    sohbetId,
-      'tarih':       FieldValue.serverTimestamp(),
-      'tamamlandi':  false,
+      'sohbetId':   sohbetId,
+      'tarih':      FieldValue.serverTimestamp(),
+      'tamamlandi': false,
     }, SetOptions(merge: true));
   }
 
-  // Bir kullaniciya yapilan tum degerlendirmeleri getirir.
-  // orderBy kaldirildi — composite index gerektirmesin, client-side siralaniyor.
+  // orderBy kaldırıldı — composite index gerektirmesin, client-side sıralanıyor
   Stream<List<Map<String, dynamic>>> kullaniciDegerlendirmeleriStream(
       String hedefKullaniciId) {
     return _db
@@ -97,7 +94,6 @@ class DegerlendirmeRepository {
       final liste = snap.docs
           .map((doc) => {'id': doc.id, ...doc.data()})
           .toList();
-      // Tarihe gore azalan sirala (client-side)
       liste.sort((a, b) {
         final tA = a['tarih'];
         final tB = b['tarih'];
@@ -116,7 +112,7 @@ class DegerlendirmeRepository {
     });
   }
 
-  // Belirli kullanicinin bekleyen degerlendirmelerini stream olarak dinler.
+  // orderBy kaldırıldı — composite index gerektirmesin, client-side sıralanıyor
   Stream<List<Map<String, dynamic>>> bekleyenDegerlendirmelerStream(
       String kullaniciId) {
     return _db
@@ -124,14 +120,30 @@ class DegerlendirmeRepository {
         .doc(kullaniciId)
         .collection('bekleyenDegerlendirmeler')
         .where('tamamlandi', isEqualTo: false)
-        .orderBy('tarih', descending: true)
         .snapshots()
-        .map((snap) => snap.docs
-            .map((doc) => {'id': doc.id, ...doc.data()})
-            .toList());
+        .map((snap) {
+      final liste = snap.docs
+          .map((doc) => {'id': doc.id, ...doc.data()})
+          .toList();
+      // Client-side tarihe göre sırala
+      liste.sort((a, b) {
+        final tA = a['tarih'];
+        final tB = b['tarih'];
+        if (tA == null && tB == null) return 0;
+        if (tA == null) return 1;
+        if (tB == null) return -1;
+        try {
+          final dtA = (tA as dynamic).toDate() as DateTime;
+          final dtB = (tB as dynamic).toDate() as DateTime;
+          return dtB.compareTo(dtA);
+        } catch (_) {
+          return 0;
+        }
+      });
+      return liste;
+    });
   }
 
-  // Bekleyen degerlendirme tamamlandiginda isaretle.
   Future<void> bekleyenDegerlendirmeTamamla({
     required String sohbetId,
     required String kullaniciId,

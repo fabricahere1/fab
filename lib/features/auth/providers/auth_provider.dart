@@ -36,7 +36,8 @@ class AuthNotifier extends _$AuthNotifier {
         if (ref.mounted) state = const AsyncData(null);
         return AuthSonuc.hata('Giriş başarısız.');
       }
-      await _repo.fcmTokenKaydet(credential.user!.uid);
+      // FCM token kaydı FcmService tarafından authStateChanges üzerinden
+      // otomatik yapılır — burada ayrıca çağırmaya gerek yok.
       if (ref.mounted) state = const AsyncData(null);
       return AuthSonuc.basarili(credential.user!.uid);
     } on FirebaseAuthException catch (e) {
@@ -79,7 +80,8 @@ class AuthNotifier extends _$AuthNotifier {
         if (ref.mounted) state = const AsyncData(null);
         return AuthSonuc.hata('Google girişi başarısız.');
       }
-      await _repo.fcmTokenKaydet(credential.user!.uid);
+      // FCM token kaydı FcmService tarafından authStateChanges üzerinden
+      // otomatik yapılır — burada ayrıca çağırmaya gerek yok.
       if (ref.mounted) state = const AsyncData(null);
       return AuthSonuc.basarili(credential.user!.uid);
     } on FirebaseAuthException catch (e) {

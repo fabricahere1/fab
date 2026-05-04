@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../degerlendirme/data/degerlendirme_repository.dart';
 import '../../degerlendirme/presentation/degerlendirme_screen.dart';
+import '../../degerlendirme/presentation/degerlendirmeler_liste_screen.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../profil/data/kullanici_repository.dart';
@@ -56,7 +57,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: Text('Ayarlar',
-            style: GoogleFonts.dmSans(fontWeight: FontWeight.w700, fontSize: 18)),
+            style: GoogleFonts.dmSans(
+                fontWeight: FontWeight.w700, fontSize: 18)),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -206,7 +208,25 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 icon: Icons.rate_review_outlined,
                 iconColor: AppColors.textSecondary,
                 label: 'Tüm Değerlendirmelerim',
-                onTap: () {},
+                // ── Düzeltme: boş onTap dolduruldu ──────
+                onTap: () {
+                  final uid =
+                      ref.read(currentUserProvider)?.uid ?? '';
+                  final ad = ref
+                          .read(benimKullaniciProfilProvider)
+                          .value
+                          ?.adSoyad ??
+                      'Ben';
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DegerlendirmelerListeScreen(
+                        kullaniciId: uid,
+                        kullaniciAd: ad,
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -229,7 +249,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
             ],
           ),
 
-          // ── Hesap İşlemleri ─────────────────────────
+          // ── Tehlikeli Bölge ─────────────────────────
           _BolumBasligi('Tehlikeli Bölge'),
           _Kart(
             children: [
@@ -285,16 +305,20 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text('İptal',
-                style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
+                style:
+                    GoogleFonts.dmSans(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
               if (email != null) {
-                await ref.read(authProvider.notifier).sifreSifirla(email);
+                await ref
+                    .read(authProvider.notifier)
+                    .sifreSifirla(email);
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text('Şifre sıfırlama e-postası gönderildi.',
+                    content: Text(
+                        'Şifre sıfırlama e-postası gönderildi.',
                         style: GoogleFonts.dmSans()),
                     backgroundColor: AppColors.green,
                     behavior: SnackBarBehavior.floating,
@@ -304,7 +328,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
             },
             child: Text('Gönder',
                 style: GoogleFonts.dmSans(
-                    color: AppColors.red, fontWeight: FontWeight.w600)),
+                    color: AppColors.red,
+                    fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -314,7 +339,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
   Future<void> _telefonGuncelleDialog(String mevcutTelefon) async {
     final ctrl = TextEditingController(text: mevcutTelefon);
     bool gizli =
-        ref.read(benimKullaniciProfilProvider).value?.telefonGizli ?? false;
+        ref.read(benimKullaniciProfilProvider).value?.telefonGizli ??
+            false;
 
     await showDialog(
       context: context,
@@ -342,11 +368,13 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                   fillColor: AppColors.surface,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.divider),
+                    borderSide:
+                        const BorderSide(color: AppColors.divider),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.divider),
+                    borderSide:
+                        const BorderSide(color: AppColors.divider),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -368,7 +396,9 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                       height: 24,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
-                        color: gizli ? AppColors.primary : AppColors.divider,
+                        color: gizli
+                            ? AppColors.primary
+                            : AppColors.divider,
                       ),
                       child: AnimatedAlign(
                         duration: const Duration(milliseconds: 150),
@@ -376,8 +406,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                             ? Alignment.centerRight
                             : Alignment.centerLeft,
                         child: Container(
-                          margin:
-                              const EdgeInsets.symmetric(horizontal: 3),
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: 3),
                           width: 18,
                           height: 18,
                           decoration: const BoxDecoration(
@@ -401,19 +431,21 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: Text('İptal',
-                  style:
-                      GoogleFonts.dmSans(color: AppColors.textSecondary)),
+                  style: GoogleFonts.dmSans(
+                      color: AppColors.textSecondary)),
             ),
             TextButton(
               onPressed: () async {
                 Navigator.pop(ctx);
                 final uid = ref.read(currentUserProvider)?.uid;
                 if (uid == null) return;
-                await ref.read(kullaniciRepositoryProvider).profilGuncelle(
+                await ref
+                    .read(kullaniciRepositoryProvider)
+                    .profilGuncelle(
                   uid: uid,
                   data: {
                     'telefon': ctrl.text.trim(),
-                    'telefonGizli': gizli
+                    'telefonGizli': gizli,
                   },
                 );
                 if (mounted) {
@@ -427,7 +459,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
               },
               child: Text('Kaydet',
                   style: GoogleFonts.dmSans(
-                      color: AppColors.red, fontWeight: FontWeight.w600)),
+                      color: AppColors.red,
+                      fontWeight: FontWeight.w600)),
             ),
           ],
         ),
@@ -446,12 +479,14 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     );
   }
 
-  void _bekleyenDegerlendirmelerSayfasi(BuildContext ctx, WidgetRef ref) {
+  void _bekleyenDegerlendirmelerSayfasi(
+      BuildContext ctx, WidgetRef ref) {
     final uid = ref.read(currentUserProvider)?.uid ?? '';
     Navigator.push(
       ctx,
       MaterialPageRoute(
-        builder: (_) => _BekleyenDegerlendirmelerScreen(kullaniciId: uid),
+        builder: (_) =>
+            _BekleyenDegerlendirmelerScreen(kullaniciId: uid),
       ),
     );
   }
@@ -528,15 +563,13 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text('İptal',
-                style:
-                    GoogleFonts.dmSans(color: AppColors.textSecondary)),
+                style: GoogleFonts.dmSans(
+                    color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () {
               if (konuCtrl.text.trim().isEmpty ||
-                  mesajCtrl.text.trim().isEmpty) {
-                return;
-              }
+                  mesajCtrl.text.trim().isEmpty) return;
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                 content: Text('Mesajınız iletildi, teşekkürler!',
@@ -547,7 +580,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
             },
             child: Text('Gönder',
                 style: GoogleFonts.dmSans(
-                    color: AppColors.red, fontWeight: FontWeight.w600)),
+                    color: AppColors.red,
+                    fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -580,14 +614,15 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text('İptal',
-                style:
-                    GoogleFonts.dmSans(color: AppColors.textSecondary)),
+                style: GoogleFonts.dmSans(
+                    color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text('Devam Et',
                 style: GoogleFonts.dmSans(
-                    color: AppColors.red, fontWeight: FontWeight.w700)),
+                    color: AppColors.red,
+                    fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -616,11 +651,9 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'Güvenlik için şifreni gir.',
-              style: GoogleFonts.dmSans(
-                  fontSize: 13, color: AppColors.textSecondary),
-            ),
+            Text('Güvenlik için şifreni gir.',
+                style: GoogleFonts.dmSans(
+                    fontSize: 13, color: AppColors.textSecondary)),
             const SizedBox(height: 12),
             TextField(
               controller: sifreCtrl,
@@ -656,14 +689,15 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text('İptal',
-                style:
-                    GoogleFonts.dmSans(color: AppColors.textSecondary)),
+                style: GoogleFonts.dmSans(
+                    color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text('Hesabı Sil',
                 style: GoogleFonts.dmSans(
-                    color: AppColors.red, fontWeight: FontWeight.w700)),
+                    color: AppColors.red,
+                    fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -718,14 +752,15 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text('İptal',
-                style:
-                    GoogleFonts.dmSans(color: AppColors.textSecondary)),
+                style: GoogleFonts.dmSans(
+                    color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text('Google ile Doğrula',
                 style: GoogleFonts.dmSans(
-                    color: AppColors.red, fontWeight: FontWeight.w700)),
+                    color: AppColors.red,
+                    fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -836,12 +871,14 @@ class _EngellenenlerScreen extends ConsumerWidget {
                               title: Text('Engeli Kaldır',
                                   style: GoogleFonts.dmSans(
                                       fontSize: 16,
-                                      fontWeight: FontWeight.w600)),
+                                      fontWeight:
+                                          FontWeight.w600)),
                               content: Text(
                                   '$ad adlı kullanıcının engelini kaldırmak istiyor musun?',
                                   style: GoogleFonts.dmSans(
                                       fontSize: 14,
-                                      color: AppColors.textSecondary)),
+                                      color:
+                                          AppColors.textSecondary)),
                               actions: [
                                 TextButton(
                                   onPressed: () =>
@@ -974,7 +1011,8 @@ class _SatirOge extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
             Container(
@@ -1031,7 +1069,8 @@ class _SwitchSatir extends StatelessWidget {
               color: AppColors.textSecondary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: AppColors.textSecondary, size: 20),
+            child:
+                Icon(icon, color: AppColors.textSecondary, size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -1089,7 +1128,8 @@ class _BekleyenDegerlendirmelerScreen extends ConsumerWidget {
                 color: Color(0xFF81C784), strokeWidth: 2)),
         error: (_, __) => Center(
           child: Text('Bir hata oluştu.',
-              style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
+              style:
+                  GoogleFonts.dmSans(color: AppColors.textSecondary)),
         ),
         data: (liste) {
           if (liste.isEmpty) {
@@ -1101,7 +1141,8 @@ class _BekleyenDegerlendirmelerScreen extends ConsumerWidget {
                     width: 72,
                     height: 72,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF81C784).withValues(alpha: 0.12),
+                      color: const Color(0xFF81C784)
+                          .withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.star_outline_rounded,
@@ -1150,6 +1191,7 @@ class _BekleyenKarti extends ConsumerWidget {
   final String sohbetId;
   final String kullaniciId;
   final int index;
+
   const _BekleyenKarti({
     required this.sohbetId,
     required this.kullaniciId,
@@ -1158,6 +1200,7 @@ class _BekleyenKarti extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // ── Düzeltme: FirebaseFirestore.instance kaldırıldı, repository kullanılıyor
     final sohbetAsync = ref.watch(
       StreamProvider((r) =>
           r.read(mesajRepositoryProvider).sohbetDurumuStream(sohbetId)),
@@ -1175,7 +1218,8 @@ class _BekleyenKarti extends ConsumerWidget {
                 .where((id) => id != kullaniciId)
                 .firstOrNull ??
             '';
-        final ilanBaslik = sohbet['ilanBaslik'] as String? ?? 'İlan';
+        final ilanBaslik =
+            sohbet['ilanBaslik'] as String? ?? 'İlan';
 
         final karsiProfilAsync = karsiId.isNotEmpty
             ? ref.watch(kullaniciBilgiProvider(karsiId))
@@ -1207,8 +1251,8 @@ class _BekleyenKarti extends ConsumerWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color:
-                        const Color(0xFF81C784).withValues(alpha: 0.12),
+                    color: const Color(0xFF81C784)
+                        .withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.star_rounded,

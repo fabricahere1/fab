@@ -14,7 +14,7 @@ import '../features/profil/providers/profil_provider.dart';
 
 part 'app_router.g.dart';
 
-// Overlay erişimi için — main.dart'tan import edilir
+// ── Global navigator key — in-app banner için ─────────────
 final navigatorKey = GlobalKey<NavigatorState>();
 
 abstract class AppRoutes {
@@ -52,7 +52,7 @@ GoRouter router(Ref ref) {
   ref.onDispose(notifier.dispose);
 
   return GoRouter(
-    navigatorKey: navigatorKey,       // ← eklendi
+    navigatorKey: navigatorKey,
     initialLocation: AppRoutes.splash,
     refreshListenable: notifier,
     redirect: (context, state) {
@@ -123,9 +123,12 @@ String _hedefBelirle(Ref ref, dynamic user) {
   if (profilAsync.isLoading) return AppRoutes.splash;
 
   final providerData = user.providerData as List;
-  final emailKullanicisi = providerData.any((p) => p.providerId == 'password');
-  final googleKullanicisi = providerData.any((p) => p.providerId == 'google.com');
-  final telefonKullanicisi = providerData.any((p) => p.providerId == 'phone');
+  final emailKullanicisi =
+      providerData.any((p) => p.providerId == 'password');
+  final googleKullanicisi =
+      providerData.any((p) => p.providerId == 'google.com');
+  final telefonKullanicisi =
+      providerData.any((p) => p.providerId == 'phone');
 
   if (emailKullanicisi && !googleKullanicisi && !telefonKullanicisi) {
     return AppRoutes.home;
