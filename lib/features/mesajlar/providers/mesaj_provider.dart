@@ -232,7 +232,6 @@ class SohbetNotifier extends _$SohbetNotifier {
         tip: tip,
       );
       try {
-        // Cloud Function üzerinden push bildirim gönder
         await _repo.mesajBildirimiGonder(
           aliciId: karsiKullaniciId,
           gondereId: _benimId,

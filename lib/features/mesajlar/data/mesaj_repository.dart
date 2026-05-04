@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -257,19 +256,14 @@ class MesajRepository {
     required String metin,
   }) async {
     try {
-      final result = await _functions.httpsCallable('mesajBildirimiGonder').call({
+      await _functions.httpsCallable('mesajBildirimiGonder').call({
         'aliciId':    aliciId,
         'gondereAd':  gondereAd,
         'ilanBaslik': ilanBaslik,
         'sohbetId':   sohbetId,
         'metin':      metin,
       });
-      debugPrint('[FCM] mesajBildirimi sonuc: ${result.data}');
-    } on FirebaseFunctionsException catch (e) {
-      debugPrint('[FCM] FirebaseFunctionsException: ${e.code} - ${e.message} - ${e.details}');
-    } catch (e) {
-      debugPrint('[FCM] mesajBildirimi hata: $e');
-    }
+    } catch (_) {}
   }
 
   // ── Sohbet dökümanı stream'leri ──────────────────────────

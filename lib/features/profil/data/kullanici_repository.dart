@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/kullanici_model.dart';
@@ -95,25 +94,7 @@ class KullaniciRepository {
     return url;
   }
  
-  Future<void> fcmTokenKaydet(String uid) async {
-    try {
-      final messaging = FirebaseMessaging.instance;
-      await messaging.requestPermission(alert: true, badge: true, sound: true);
-      final token = await messaging.getToken();
-      if (token != null) {
-        await _col.doc(uid).update({'fcmToken': token});
-      }
-      messaging.onTokenRefresh.listen((yeniToken) {
-        _col.doc(uid).update({'fcmToken': yeniToken});
-      });
-    } catch (_) {}
-  }
  
-  Future<void> fcmTokenSil(String uid) async {
-    try {
-      await _col.doc(uid).update({'fcmToken': FieldValue.delete()});
-    } catch (_) {}
-  }
  
   Future<void> engelle({required String benimUid, required String hedefUid}) =>
       _col.doc(benimUid).update({
