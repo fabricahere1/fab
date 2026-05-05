@@ -10,49 +10,6 @@ import '../../auth/providers/auth_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart';
 
-const List<String> kDunyaSehirleri = [
-  'Adana', 'Ankara', 'Antalya', 'Bursa', 'Diyarbakır', 'Eskişehir',
-  'Gaziantep', 'İstanbul', 'İzmir', 'Kayseri', 'Konya', 'Mersin',
-  'Samsun', 'Trabzon', 'Adıyaman', 'Afyonkarahisar',
-  'Amsterdam', 'Antwerp', 'Athens', 'Atlanta', 'Auckland',
-  'Bangkok', 'Barcelona', 'Beijing', 'Berlin', 'Boston', 'Brussels',
-  'Budapest', 'Buenos Aires', 'Cairo', 'Calgary', 'Cape Town',
-  'Chicago', 'Copenhagen', 'Dallas', 'Delhi', 'Denver', 'Doha',
-  'Dubai', 'Dublin', 'Düsseldorf', 'Edinburgh', 'Frankfurt',
-  'Geneva', 'Hamburg', 'Helsinki', 'Hong Kong', 'Houston',
-  'Jakarta', 'Johannesburg', 'Karachi', 'Kuala Lumpur', 'Kuwait City',
-  'Lagos', 'Lahore', 'Las Vegas', 'Lisbon', 'London', 'Los Angeles',
-  'Lyon', 'Madrid', 'Manchester', 'Manila', 'Melbourne', 'Mexico City',
-  'Miami', 'Milan', 'Montreal', 'Moscow', 'Mumbai', 'Munich',
-  'Nairobi', 'New York', 'Nice', 'Osaka', 'Oslo', 'Paris',
-  'Prague', 'Riyadh', 'Rome', 'San Francisco', 'Santiago',
-  'São Paulo', 'Seoul', 'Shanghai', 'Singapore', 'Stockholm',
-  'Sydney', 'Taipei', 'Tehran', 'Tel Aviv', 'Tokyo', 'Toronto',
-  'Vancouver', 'Vienna', 'Warsaw', 'Washington DC', 'Zurich',
-  'Almaty', 'Baku', 'Tbilisi', 'Tashkent', 'Kyiv', 'Minsk',
-  'Bucharest', 'Sofia', 'Belgrade', 'Zagreb', 'Sarajevo',
-  'Beirut', 'Amman', 'Baghdad', 'Damascus', 'Muscat', 'Abu Dhabi',
-  'Islamabad', 'Dhaka', 'Colombo', 'Kathmandu',
-];
-
-const List<String> kDunyaUlkeleri = [
-  'Türkiye',
-  'Almanya', 'Amerika Birleşik Devletleri', 'Arjantin', 'Avustralya',
-  'Avusturya', 'Azerbaycan', 'Belçika', 'Birleşik Arap Emirlikleri',
-  'Birleşik Krallık', 'Brezilya', 'Çin', 'Danimarka', 'Endonezya',
-  'Fas', 'Filipinler', 'Finlandiya', 'Fransa', 'Güney Afrika',
-  'Güney Kore', 'Gürcistan', 'Hindistan', 'Hollanda', 'İran',
-  'İrlanda', 'İspanya', 'İsveç', 'İsviçre', 'İtalya', 'Japonya',
-  'Kanada', 'Katar', 'Kazakistan', 'Kuveyt', 'Lübnan', 'Macaristan',
-  'Malezya', 'Meksika', 'Mısır', 'Norveç', 'Özbekistan', 'Pakistan',
-  'Polonya', 'Portekiz', 'Romanya', 'Rusya', 'Suudi Arabistan',
-  'Singapur', 'Tayland', 'Ukrayna', 'Ürdün', 'Vietnam', 'Yunanistan',
-  'Çek Cumhuriyeti', 'Slovakya', 'Hırvatistan', 'Bosna Hersek',
-  'Sırbistan', 'Bulgaristan', 'Arnavutluk', 'Karadağ', 'Kosova',
-  'Kıbrıs', 'Irak', 'Suriye', 'İsrail', 'Filistin', 'Umman',
-  'Bahreyn', 'Yemen', 'Afganistan', 'Bangladeş', 'Sri Lanka', 'Nepal',
-];
-
 class IlanFormScreen extends ConsumerStatefulWidget {
   final String tip;
   final IlanModel? duzenlenecekIlan;

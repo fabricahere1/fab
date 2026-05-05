@@ -8,7 +8,7 @@ import '../providers/ilan_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart';
-import 'ilan_form_screen.dart' show kDunyaUlkeleri, kDunyaSehirleri, KategoriSecimSheet;
+import 'ilan_form_screen.dart' show KategoriSecimSheet;
 
 class GelenlerFormScreen extends ConsumerStatefulWidget {
   const GelenlerFormScreen({super.key});

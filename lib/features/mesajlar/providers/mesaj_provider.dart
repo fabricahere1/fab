@@ -11,11 +11,17 @@ import '../../../shared/constants/app_constants.dart';
 part 'mesaj_provider.g.dart';
 
 // ── Sohbet listesi ────────────────────────────────────────────────────────────
+// keepAlive: true — tab değişiminde dispose olmaz, Firestore bağlantısı korunur.
+// okunmamisSayi bu provider'ı watch ettiği için o da gereksiz yere
+// yeniden hesaplanmaz.
 
-@riverpod
+@Riverpod(keepAlive: true)
 Stream<List<SohbetModel>> sohbetler(Ref ref) {
   final uid = ref.watch(currentUserProvider)?.uid;
-  if (uid == null) return const Stream.empty();
+  if (uid == null) {
+    Future.microtask(() => ref.invalidateSelf());
+    return const Stream.empty();
+  }
   return ref.watch(mesajRepositoryProvider).sohbetlerStream(uid);
 }
 
@@ -52,7 +58,6 @@ Stream<String> karsiKullaniciAd(Ref ref, String uid) {
 }
 
 // ── Sohbet ekranı state ───────────────────────────────────────────────────────
-// ✅ raw Map<String, dynamic> yerine typed MesajModel kullanıyor
 
 class SohbetEkraniState {
   final Map<String, MesajModel> mesajMap;
@@ -124,19 +129,15 @@ class SohbetNotifier extends _$SohbetNotifier {
   void _mesajlariDinle() {
     _mesajSub?.cancel();
     _mesajSub = _repo.mesajlarStream(sohbetId: _sohbetId).listen((mesajlar) {
-      // ✅ Artık List<MesajModel> geliyor — Firestore tipi yok
       final yeniMap = Map<String, MesajModel>.from(state.mesajMap);
 
-      // Gelen snapshot'taki mesajları güncelle
       for (final mesaj in mesajlar) {
         yeniMap[mesaj.id] = mesaj;
       }
 
-      // Snapshot'ta olmayan (silinen) mesajları kaldır
       final snapIds = mesajlar.map((m) => m.id).toSet();
       yeniMap.removeWhere((id, _) => !snapIds.contains(id));
 
-      // En eski zamanı cursor olarak sakla
       final enEskiZaman = mesajlar.isNotEmpty ? mesajlar.last.zaman : state.enEskiZaman;
 
       state = state.copyWith(
@@ -168,7 +169,6 @@ class SohbetNotifier extends _$SohbetNotifier {
     } catch (_) {}
   }
 
-  // ✅ Timestamp yok — MesajModel.zaman zaten DateTime
   List<MesajModel> _sirala(Map<String, MesajModel> map) {
     final liste = map.values.toList();
     liste.sort((a, b) {
@@ -182,7 +182,6 @@ class SohbetNotifier extends _$SohbetNotifier {
   Future<void> dahaFazlaYukle() async {
     if (state.yukleniyor || !state.dahaFazlaVar || state.enEskiZaman == null) return;
 
-    // ✅ Artık List<MesajModel> geliyor
     final mesajlar = await _repo.eskiMesajlariGetir(
       sohbetId: _sohbetId,
       sonZaman: state.enEskiZaman!,
@@ -274,7 +273,6 @@ class SohbetNotifier extends _$SohbetNotifier {
         resimUrl: url,
       );
       try {
-        // Cloud Function üzerinden push bildirim gönder
         await _repo.mesajBildirimiGonder(
           aliciId: karsiKullaniciId,
           gondereId: _benimId,
@@ -327,12 +325,5 @@ class SohbetNotifier extends _$SohbetNotifier {
 
 @riverpod
 Stream<Map<String, dynamic>?> kullaniciProfil(Ref ref, String uid) {
-  return ref.watch(kullaniciRepositoryProvider).kullaniciDataStream(uid);
-}
-
-@riverpod
-Stream<Map<String, dynamic>?> benimProfil(Ref ref) {
-  final uid = ref.watch(currentUserProvider)?.uid;
-  if (uid == null) return const Stream.empty();
   return ref.watch(kullaniciRepositoryProvider).kullaniciDataStream(uid);
 }

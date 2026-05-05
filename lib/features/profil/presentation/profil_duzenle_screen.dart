@@ -5,25 +5,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../profil/data/kullanici_repository.dart';
 import '../../../shared/constants/app_colors.dart';
-import '../../ilanlar/presentation/ilan_form_screen.dart'
-    show kDunyaUlkeleri;
- 
-const List<String> _turkiyeSehirleri = [
-  'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Aksaray', 'Amasya',
-  'Ankara', 'Antalya', 'Ardahan', 'Artvin', 'Aydın', 'Balıkesir',
-  'Bartın', 'Batman', 'Bayburt', 'Bilecik', 'Bingöl', 'Bitlis',
-  'Bolu', 'Burdur', 'Bursa', 'Çanakkale', 'Çankırı', 'Çorum',
-  'Denizli', 'Diyarbakır', 'Düzce', 'Edirne', 'Elazığ', 'Erzincan',
-  'Erzurum', 'Eskişehir', 'Gaziantep', 'Giresun', 'Gümüşhane',
-  'Hakkari', 'Hatay', 'Iğdır', 'Isparta', 'İstanbul', 'İzmir',
-  'Kahramanmaraş', 'Karabük', 'Karaman', 'Kars', 'Kastamonu',
-  'Kayseri', 'Kilis', 'Kırıkkale', 'Kırklareli', 'Kırşehir',
-  'Kocaeli', 'Konya', 'Kütahya', 'Malatya', 'Manisa', 'Mardin',
-  'Mersin', 'Muğla', 'Muş', 'Nevşehir', 'Niğde', 'Ordu', 'Osmaniye',
-  'Rize', 'Sakarya', 'Samsun', 'Siirt', 'Sinop', 'Sivas', 'Şanlıurfa',
-  'Şırnak', 'Tekirdağ', 'Tokat', 'Trabzon', 'Tunceli', 'Uşak',
-  'Van', 'Yalova', 'Yozgat', 'Zonguldak',
-];
+import '../../../shared/constants/app_constants.dart' show kDunyaUlkeleri, kTurkiyeSehirleri;
  
 class ProfilDuzenleScreen extends ConsumerStatefulWidget {
   const ProfilDuzenleScreen({super.key});
@@ -286,7 +268,7 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
                       controller: _bulunduguSehirCtrl,
                       hint: 'Şehir ara...',
                       icon: Icons.location_on_outlined,
-                      secenekler: _turkiyeSehirleri,
+                      secenekler: kTurkiyeSehirleri,
                     ),
                   ],
                 ),

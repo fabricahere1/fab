@@ -6,26 +6,16 @@ import '../data/mesaj_repository.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 
-// ── Providers ─────────────────────────────────────────────
+// ── Provider ──────────────────────────────────────────────
+// Tek stream — tüm sohbet dökümanını getirir.
+// Panel ve tetikleyici ihtiyaç duydukları alanı Dart'ta ayırır.
+// Önceden 4 ayrı StreamProvider vardı (islemDurumu, ilanSahibiId,
+// ilanTip, sohbetKullanicilar) — hepsi aynı Firestore dokümanını
+// ayrı ayrı dinliyordu. Artık tek listener yeterli.
 
-final islemDurumuProvider =
+final sohbetDokumanProvider =
     StreamProvider.family<Map<String, dynamic>, String>((ref, sohbetId) {
-  return ref.read(mesajRepositoryProvider).islemDurumuStream(sohbetId);
-});
-
-final _ilanSahibiIdProvider =
-    StreamProvider.family<String, String>((ref, sohbetId) {
-  return ref.read(mesajRepositoryProvider).ilanSahibiIdStream(sohbetId);
-});
-
-final _ilanTipProvider =
-    StreamProvider.family<String, String>((ref, sohbetId) {
-  return ref.read(mesajRepositoryProvider).ilanTipStream(sohbetId);
-});
-
-final _sohbetKullanicilarProvider =
-    StreamProvider.family<List<String>, String>((ref, sohbetId) {
-  return ref.read(mesajRepositoryProvider).sohbetKullanicilarStream(sohbetId);
+  return ref.read(mesajRepositoryProvider).sohbetDurumuStream(sohbetId);
 });
 
 // ── Panel ─────────────────────────────────────────────────
@@ -42,15 +32,18 @@ class IslemDurumuPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final benimUid     = ref.watch(currentUserProvider)?.uid ?? '';
-    final durumlari    = ref.watch(islemDurumuProvider(sohbetId)).value ?? {};
-    final ilanSahibiId = ref.watch(_ilanSahibiIdProvider(sohbetId)).value ?? '';
-    final kullanicilar = ref.watch(_sohbetKullanicilarProvider(sohbetId)).value ?? [];
-    final ilanTip      = ref.watch(_ilanTipProvider(sohbetId)).value ?? 'istek';
-    final adimlar      = IlanTipiAdimlar.forTip(ilanTip);
-    final benimIlanSahibi = benimUid == ilanSahibiId;
+    final benimUid   = ref.watch(currentUserProvider)?.uid ?? '';
+    final sohbetData = ref.watch(sohbetDokumanProvider(sohbetId)).value ?? {};
 
-    final karsiUid = kullanicilar.firstWhere(
+    // Dart'ta alanları ayır — tek Firestore bağlantısından gelir
+    final durumlari    = Map<String, dynamic>.from(sohbetData['islemDurumlari'] as Map? ?? {});
+    final ilanSahibiId = sohbetData['ilanSahibiId'] as String? ?? '';
+    final ilanTip      = sohbetData['ilanTip']      as String? ?? 'istek';
+    final kullanicilar = List<String>.from(sohbetData['kullanicilar'] ?? []);
+
+    final adimlar         = IlanTipiAdimlar.forTip(ilanTip);
+    final benimIlanSahibi = benimUid == ilanSahibiId;
+    final karsiUid        = kullanicilar.firstWhere(
       (id) => id != benimUid,
       orElse: () => '',
     );
@@ -703,8 +696,11 @@ class _IslemDurumuTetikleyiciState
 
   @override
   Widget build(BuildContext context) {
-    final durumlari =
-        ref.watch(islemDurumuProvider(widget.sohbetId)).value ?? {};
+    final sohbetData =
+        ref.watch(sohbetDokumanProvider(widget.sohbetId)).value ?? {};
+    final durumlari = Map<String, dynamic>.from(
+        sohbetData['islemDurumlari'] as Map? ?? {});
+
     final tamamlanan = IslemDurumu.values
         .where((d) => durumlari[d.firestoreKey] == true)
         .length;

@@ -7,27 +7,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../shared/constants/app_colors.dart';
-
-// Ülke ve şehir listeleri buraya taşındı (screen dosyasından kaldırıldı)
-const List<String> kTumUlkeler = [
-  'Afganistan', 'Almanya', 'Amerika Birleşik Devletleri', 'Arjantin',
-  'Avustralya', 'Avusturya', 'Azerbaycan', 'Belçika',
-  'Birleşik Arap Emirlikleri', 'Birleşik Krallık', 'Brezilya', 'Çin',
-  'Danimarka', 'Endonezya', 'Fas', 'Filipinler', 'Finlandiya', 'Fransa',
-  'Güney Afrika', 'Güney Kore', 'Gürcistan', 'Hindistan', 'Hollanda',
-  'İngiltere', 'İran', 'İrlanda', 'İspanya', 'İsveç', 'İsviçre', 'İtalya',
-  'Japonya', 'Kanada', 'Katar', 'Kazakistan', 'Kuveyt', 'Kuzey Kıbrıs',
-  'Lübnan', 'Macaristan', 'Malezya', 'Meksika', 'Mısır', 'Norveç',
-  'Özbekistan', 'Pakistan', 'Polonya', 'Portekiz', 'Romanya', 'Rusya',
-  'Suudi Arabistan', 'Singapur', 'Tayland', 'Tunus', 'Türkmenistan',
-  'Ukrayna', 'Ürdün', 'Vietnam', 'Yunanistan',
-];
-
-const List<String> kTurkiyeSehirleri = [
-  'Adana', 'Ankara', 'Antalya', 'Bursa', 'Diyarbakır', 'Erzurum',
-  'Eskişehir', 'Gaziantep', 'İstanbul', 'İzmir', 'Kayseri', 'Konya',
-  'Malatya', 'Mersin', 'Samsun', 'Trabzon',
-];
+import '../../../shared/constants/app_constants.dart' show kDunyaUlkeleri, kTurkiyeSehirleri;
 
 // ── Tip Kartı ─────────────────────────────────────────────────────────────────
 

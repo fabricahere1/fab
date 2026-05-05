@@ -28,7 +28,7 @@ final class SohbetlerProvider
         argument: null,
         retry: null,
         name: r'sohbetlerProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -48,7 +48,7 @@ final class SohbetlerProvider
   }
 }
 
-String _$sohbetlerHash() => r'dfb5057bee78bc0e6caa5ccd3cc69e19ab60d26c';
+String _$sohbetlerHash() => r'e7241fb9d156529ab61b096f963a1583707322ed';
 
 @ProviderFor(okunmamisSayi)
 final okunmamisSayiProvider = OkunmamisSayiProvider._();
@@ -208,7 +208,7 @@ final class SohbetNotifierProvider
   }
 }
 
-String _$sohbetNotifierHash() => r'06085a55a5f8434beecb4ea5fdc89e815ce2aa4e';
+String _$sohbetNotifierHash() => r'b07d626c7c26d68c598d5c8b6b686f817795754c';
 
 final class SohbetNotifierFamily extends $Family
     with
@@ -347,44 +347,3 @@ final class KullaniciProfilFamily extends $Family
   @override
   String toString() => r'kullaniciProfilProvider';
 }
-
-@ProviderFor(benimProfil)
-final benimProfilProvider = BenimProfilProvider._();
-
-final class BenimProfilProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<Map<String, dynamic>?>,
-          Map<String, dynamic>?,
-          Stream<Map<String, dynamic>?>
-        >
-    with
-        $FutureModifier<Map<String, dynamic>?>,
-        $StreamProvider<Map<String, dynamic>?> {
-  BenimProfilProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'benimProfilProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$benimProfilHash();
-
-  @$internal
-  @override
-  $StreamProviderElement<Map<String, dynamic>?> $createElement(
-    $ProviderPointer pointer,
-  ) => $StreamProviderElement(pointer);
-
-  @override
-  Stream<Map<String, dynamic>?> create(Ref ref) {
-    return benimProfil(ref);
-  }
-}
-
-String _$benimProfilHash() => r'4391d383b930a8c55321342f716c9083ad2a7053';

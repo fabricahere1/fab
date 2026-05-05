@@ -30,18 +30,18 @@ abstract class AppRoutes {
 
 class _AppStateNotifier extends ChangeNotifier {
   _AppStateNotifier(this._ref) {
-    _sub = _ref.listen(authStateProvider, (_, __) => notifyListeners());
-    _ref.listen(benimKullaniciProfilProvider, (_, _) {
-      notifyListeners();
-    });
+    _authSub  = _ref.listen(authStateProvider, (_, __) => notifyListeners());
+    _profilSub = _ref.listen(benimKullaniciProfilProvider, (_, __) => notifyListeners());
   }
 
   final Ref _ref;
-  late final ProviderSubscription _sub;
+  late final ProviderSubscription _authSub;
+  late final ProviderSubscription _profilSub;
 
   @override
   void dispose() {
-    _sub.close();
+    _authSub.close();
+    _profilSub.close();
     super.dispose();
   }
 }
@@ -75,7 +75,7 @@ GoRouter router(Ref ref) {
       if (loc == AppRoutes.splash ||
           loc == AppRoutes.login  ||
           loc == AppRoutes.register) {
-        return _hedefBelirle(ref, user);
+        return _hedefBelirle(ref);
       }
 
       if (loc == AppRoutes.profilTamamla) {
@@ -118,21 +118,12 @@ GoRouter router(Ref ref) {
   );
 }
 
-String _hedefBelirle(Ref ref, dynamic user) {
+// Tüm kullanıcı tipleri için aynı profil kontrolü yapılır.
+// Email kullanıcısı da profilTamamlandi kontrolünden geçer —
+// register sonrası race condition önlenir.
+String _hedefBelirle(Ref ref) {
   final profilAsync = ref.read(benimKullaniciProfilProvider);
   if (profilAsync.isLoading) return AppRoutes.splash;
-
-  final providerData = user.providerData as List;
-  final emailKullanicisi =
-      providerData.any((p) => p.providerId == 'password');
-  final googleKullanicisi =
-      providerData.any((p) => p.providerId == 'google.com');
-  final telefonKullanicisi =
-      providerData.any((p) => p.providerId == 'phone');
-
-  if (emailKullanicisi && !googleKullanicisi && !telefonKullanicisi) {
-    return AppRoutes.home;
-  }
 
   final tamamlandi = profilAsync.value?.profilTamamlandi ?? false;
   return tamamlandi ? AppRoutes.home : AppRoutes.profilTamamla;

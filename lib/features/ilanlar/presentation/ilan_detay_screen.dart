@@ -385,9 +385,17 @@ class _IlanDetayIcerik extends ConsumerWidget {
                     if (favorideMi) {
                       await ref.read(ilanRepositoryProvider)
                           .favoridanCikar(kullaniciId: uid, ilanId: ilan.id);
+                      ref.read(istekIlanlarProvider.notifier)
+                          .ilanFavoriSayisiGuncelle(ilan.id, -1);
+                      ref.read(tasiyiciIlanlarProvider.notifier)
+                          .ilanFavoriSayisiGuncelle(ilan.id, -1);
                     } else {
                       await ref.read(ilanRepositoryProvider)
                           .favoriyeEkle(kullaniciId: uid, ilan: ilan);
+                      ref.read(istekIlanlarProvider.notifier)
+                          .ilanFavoriSayisiGuncelle(ilan.id, 1);
+                      ref.read(tasiyiciIlanlarProvider.notifier)
+                          .ilanFavoriSayisiGuncelle(ilan.id, 1);
                     }
                   },
                 ),
@@ -659,9 +667,17 @@ class _IlanDetayIcerik extends ConsumerWidget {
                       if (favorideMi) {
                         await ref.read(ilanRepositoryProvider)
                             .favoridanCikar(kullaniciId: uid, ilanId: ilan.id);
+                        ref.read(istekIlanlarProvider.notifier)
+                            .ilanFavoriSayisiGuncelle(ilan.id, -1);
+                        ref.read(tasiyiciIlanlarProvider.notifier)
+                            .ilanFavoriSayisiGuncelle(ilan.id, -1);
                       } else {
                         await ref.read(ilanRepositoryProvider)
                             .favoriyeEkle(kullaniciId: uid, ilan: ilan);
+                        ref.read(istekIlanlarProvider.notifier)
+                            .ilanFavoriSayisiGuncelle(ilan.id, 1);
+                        ref.read(tasiyiciIlanlarProvider.notifier)
+                            .ilanFavoriSayisiGuncelle(ilan.id, 1);
                       }
                     },
                     child: Container(

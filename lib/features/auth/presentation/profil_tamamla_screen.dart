@@ -15,6 +15,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../providers/auth_provider.dart';
 import '../../../shared/constants/app_colors.dart';
+import '../../../shared/constants/app_constants.dart' show kDunyaUlkeleri, kTurkiyeSehirleri;
 import '../../../router/app_router.dart';
 import 'profil_tamamla_widgets.dart';
 
@@ -354,7 +355,7 @@ class _ProfilTamamlaScreenState
                 ikon: Icons.public_outlined,
                 child: AutocompleteAlani(
                   value: _yasadigiUlke,
-                  secenekler: kTumUlkeler,
+                  secenekler: kDunyaUlkeleri,
                   hint: 'Ülke ara... (örn: Almanya)',
                   icon: Icons.public_outlined,
                   onSecildi: (v) =>

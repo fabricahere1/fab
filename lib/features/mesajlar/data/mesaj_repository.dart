@@ -266,45 +266,14 @@ class MesajRepository {
     } catch (_) {}
   }
 
-  // ── Sohbet dökümanı stream'leri ──────────────────────────
-
+  // ── Sohbet dökümanı stream ────────────────────────────────
+  // Tüm sohbet verisi tek stream'den gelir.
+  // Panel ve ekranlar ihtiyaç duydukları alanı Dart'ta ayırır.
   Stream<Map<String, dynamic>> sohbetDurumuStream(String sohbetId) {
     return _sohbetler.doc(sohbetId).snapshots().map((doc) {
       if (!doc.exists) return <String, dynamic>{};
       return Map<String, dynamic>.from(
           doc.data() as Map<String, dynamic>? ?? {});
-    });
-  }
-
-  Stream<Map<String, dynamic>> islemDurumuStream(String sohbetId) {
-    return _sohbetler.doc(sohbetId).snapshots().map((doc) {
-      if (!doc.exists) return <String, dynamic>{};
-      final d = doc.data() as Map<String, dynamic>;
-      return Map<String, dynamic>.from(d['islemDurumlari'] ?? {});
-    });
-  }
-
-  Stream<String> ilanSahibiIdStream(String sohbetId) {
-    return _sohbetler.doc(sohbetId).snapshots().map((doc) {
-      if (!doc.exists) return '';
-      final d = doc.data() as Map<String, dynamic>;
-      return d['ilanSahibiId'] as String? ?? '';
-    });
-  }
-
-  Stream<String> ilanTipStream(String sohbetId) {
-    return _sohbetler.doc(sohbetId).snapshots().map((doc) {
-      if (!doc.exists) return 'istek';
-      final d = doc.data() as Map<String, dynamic>;
-      return d['ilanTip'] as String? ?? 'istek';
-    });
-  }
-
-  Stream<List<String>> sohbetKullanicilarStream(String sohbetId) {
-    return _sohbetler.doc(sohbetId).snapshots().map((doc) {
-      if (!doc.exists) return <String>[];
-      final d = doc.data() as Map<String, dynamic>;
-      return List<String>.from(d['kullanicilar'] ?? []);
     });
   }
 }
