@@ -569,7 +569,9 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           TextButton(
             onPressed: () {
               if (konuCtrl.text.trim().isEmpty ||
-                  mesajCtrl.text.trim().isEmpty) return;
+                  mesajCtrl.text.trim().isEmpty) {
+                return;
+              }
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                 content: Text('Mesajınız iletildi, teşekkürler!',
@@ -1032,7 +1034,7 @@ class _SatirOge extends StatelessWidget {
                       color: labelColor,
                       fontWeight: FontWeight.w500)),
             ),
-            if (trailing != null) trailing!,
+            ?trailing,
             if (trailing == null && showArrow)
               const Icon(Icons.chevron_right,
                   color: AppColors.textSecondary, size: 20),
@@ -1126,7 +1128,7 @@ class _BekleyenDegerlendirmelerScreen extends ConsumerWidget {
         loading: () => const Center(
             child: CircularProgressIndicator(
                 color: Color(0xFF81C784), strokeWidth: 2)),
-        error: (_, __) => Center(
+        error: (_, _) => Center(
           child: Text('Bir hata oluştu.',
               style:
                   GoogleFonts.dmSans(color: AppColors.textSecondary)),
@@ -1208,7 +1210,7 @@ class _BekleyenKarti extends ConsumerWidget {
 
     return sohbetAsync.when(
       loading: () => const SizedBox(height: 72),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
       data: (sohbet) {
         if (sohbet.isEmpty) return const SizedBox.shrink();
 

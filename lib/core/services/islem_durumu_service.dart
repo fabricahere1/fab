@@ -16,11 +16,6 @@ class IslemDurumuService {
 
   final Map<String, StreamSubscription> _islemListeners = {};
   final Map<String, Map<String, dynamic>> _oncekiDurumlar = {};
-
-  // Her sohbet için ilk snapshot sessizce kaydedilir — banner gösterilmez.
-  // Böylece uygulama yeniden açıldığında geçmiş durumlar tekrar tetiklenmez.
-  final Set<String> _ilkSnapshotAlindi = {};
-
   StreamSubscription? _sohbetlerSub;
   StreamSubscription? _authSub;
 
@@ -35,7 +30,6 @@ class IslemDurumuService {
     }
     _islemListeners.clear();
     _oncekiDurumlar.clear();
-    _ilkSnapshotAlindi.clear();
 
     if (user == null) return;
 
@@ -57,16 +51,6 @@ class IslemDurumuService {
           final d = sohbetDoc.data() as Map<String, dynamic>;
           final islemDurumlari = Map<String, dynamic>.from(
               d['islemDurumlari'] as Map? ?? {});
-
-          // İlk snapshot — mevcut durumu sessizce kaydet, banner yok.
-          // Uygulama yeniden açıldığında geçmiş adımlar tekrar gösterilmez.
-          if (!_ilkSnapshotAlindi.contains(sohbetId)) {
-            _ilkSnapshotAlindi.add(sohbetId);
-            _oncekiDurumlar[sohbetId] =
-                Map<String, dynamic>.from(islemDurumlari);
-            return;
-          }
-
           final onceki = _oncekiDurumlar[sohbetId] ?? {};
 
           for (final durum in IslemDurumu.values) {
@@ -123,6 +107,5 @@ class IslemDurumuService {
     }
     _islemListeners.clear();
     _oncekiDurumlar.clear();
-    _ilkSnapshotAlindi.clear();
   }
 }

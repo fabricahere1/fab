@@ -50,7 +50,7 @@ class DegerlendirmelerListeScreen extends ConsumerWidget {
         loading: () => const Center(
             child: CircularProgressIndicator(
                 color: AppColors.red, strokeWidth: 2)),
-        error: (err, __) => Center(
+        error: (err, _) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

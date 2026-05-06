@@ -70,15 +70,15 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
   }
 
   void _degerlendirmeyiDinle() {
-    bool _ilkSnapshot = true;
+    bool ilkSnapshot = true;
 
     ref.listenManual(
       sohbetDurumuProvider(_sohbetId),
       (_, next) async {
         // İlk snapshot mevcut durumu yansıtır — değerlendirme popup'ı gösterme.
         // Sohbete her girişte yeniden tetiklenmesini önler.
-        if (_ilkSnapshot) {
-          _ilkSnapshot = false;
+        if (ilkSnapshot) {
+          ilkSnapshot = false;
           return;
         }
 

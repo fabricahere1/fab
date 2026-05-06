@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -30,18 +29,18 @@ abstract class AppRoutes {
 
 class _AppStateNotifier extends ChangeNotifier {
   _AppStateNotifier(this._ref) {
-    _authSub  = _ref.listen(authStateProvider, (_, __) => notifyListeners());
-    _profilSub = _ref.listen(benimKullaniciProfilProvider, (_, __) => notifyListeners());
+    _sub = _ref.listen(authStateProvider, (_, _) => notifyListeners());
+    _ref.listen(benimKullaniciProfilProvider, (_, _) {
+      notifyListeners();
+    });
   }
 
   final Ref _ref;
-  late final ProviderSubscription _authSub;
-  late final ProviderSubscription _profilSub;
+  late final ProviderSubscription _sub;
 
   @override
   void dispose() {
-    _authSub.close();
-    _profilSub.close();
+    _sub.close();
     super.dispose();
   }
 }
@@ -75,7 +74,7 @@ GoRouter router(Ref ref) {
       if (loc == AppRoutes.splash ||
           loc == AppRoutes.login  ||
           loc == AppRoutes.register) {
-        return _hedefBelirle(ref);
+        return _hedefBelirle(ref, user);
       }
 
       if (loc == AppRoutes.profilTamamla) {
@@ -118,12 +117,21 @@ GoRouter router(Ref ref) {
   );
 }
 
-// Tüm kullanıcı tipleri için aynı profil kontrolü yapılır.
-// Email kullanıcısı da profilTamamlandi kontrolünden geçer —
-// register sonrası race condition önlenir.
-String _hedefBelirle(Ref ref) {
+String _hedefBelirle(Ref ref, dynamic user) {
   final profilAsync = ref.read(benimKullaniciProfilProvider);
   if (profilAsync.isLoading) return AppRoutes.splash;
+
+  final providerData = user.providerData as List;
+  final emailKullanicisi =
+      providerData.any((p) => p.providerId == 'password');
+  final googleKullanicisi =
+      providerData.any((p) => p.providerId == 'google.com');
+  final telefonKullanicisi =
+      providerData.any((p) => p.providerId == 'phone');
+
+  if (emailKullanicisi && !googleKullanicisi && !telefonKullanicisi) {
+    return AppRoutes.home;
+  }
 
   final tamamlandi = profilAsync.value?.profilTamamlandi ?? false;
   return tamamlandi ? AppRoutes.home : AppRoutes.profilTamamla;
