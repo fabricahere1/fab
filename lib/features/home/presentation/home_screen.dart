@@ -1,24 +1,19 @@
 // lib/features/home/presentation/home_screen.dart
-//
-// DEĞİŞİKLİKLER:
-// - İstekler/Gelenler tab bar KALDIRILDI
-// - İstekler otomatik açılıyor (ana ekran)
-// - Gelenler nav bar'a taşındı (index 1)
-// - Nav sırası: İstekler · Gelenler · Mesajlar · Keşfet · Profil
-// - _AnaSayfaAppBar sadeleşti (tab yok)
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../shared/constants/app_constants.dart';
+import '../../../shared/constants/app_colors.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../ilanlar/presentation/ilanlar_screen.dart';
 import '../../ilanlar/presentation/gelenler_screen.dart';
+import '../../ilanlar/presentation/ilan_form_screen.dart';
 import '../../mesajlar/presentation/mesajlar_screen.dart';
 import '../../mesajlar/providers/mesaj_provider.dart';
 import '../../profil/presentation/profil_screen.dart';
 import 'kesfet_screen.dart';
-import '../../../shared/constants/app_colors.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -31,10 +26,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
   DateTime? _sonGeriTusu;
 
+  void _ilanVer() {
+    final tip = _selectedIndex == 1 ? IlanTip.tasiyici : IlanTip.istek;
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => IlanFormScreen(tip: tip)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final uid             = ref.watch(currentUserProvider)?.uid;
     final toplamOkunmamis = ref.watch(okunmamisSayiProvider);
+    final bottomPadding   = MediaQuery.of(context).padding.bottom;
 
     final pages = [
       const _IsteklerSayfa(),
@@ -69,6 +73,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Scaffold(
         body: IndexedStack(index: _selectedIndex, children: pages),
         bottomNavigationBar: Container(
+          height: 62 + bottomPadding,
           decoration: const BoxDecoration(
             color: Colors.white,
             border: Border(
@@ -79,7 +84,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               height: 62,
               child: Row(
                 children: [
-                  // ── İstekler ───────────────────────────────────────
                   _NavItem(
                     secili: _selectedIndex == 0,
                     onTap: () => setState(() => _selectedIndex = 0),
@@ -94,8 +98,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           : AppColors.textSecondary,
                     ),
                   ),
-
-                  // ── Gelenler ───────────────────────────────────────
                   _NavItem(
                     secili: _selectedIndex == 1,
                     onTap: () => setState(() => _selectedIndex = 1),
@@ -110,8 +112,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           : AppColors.textSecondary,
                     ),
                   ),
-
-                  // ── Mesajlar ───────────────────────────────────────
                   _NavItem(
                     secili: _selectedIndex == 2,
                     onTap: () => setState(() => _selectedIndex = 2),
@@ -148,8 +148,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ),
                           ),
                   ),
-
-                  // ── Keşfet ─────────────────────────────────────────
                   _NavItem(
                     secili: _selectedIndex == 3,
                     onTap: () => setState(() => _selectedIndex = 3),
@@ -164,8 +162,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           : AppColors.textSecondary,
                     ),
                   ),
-
-                  // ── Profil ─────────────────────────────────────────
                   _NavItem(
                     secili: _selectedIndex == 4,
                     onTap: () => setState(() => _selectedIndex = 4),
@@ -180,6 +176,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           : AppColors.textSecondary,
                     ),
                   ),
+
+                  // ── İlan Ver — diğer nav itemlarla aynı stil ──────
+                  _IlanVerItem(onTap: _ilanVer),
                 ],
               ),
             ),
@@ -190,15 +189,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-// ── İstekler sayfası wrapper — kendi AppBar'ı var ─────────────────────────────
+// ── İstekler sayfası wrapper ──────────────────────────────────────────────────
 
 class _IsteklerSayfa extends StatelessWidget {
   const _IsteklerSayfa();
 
   @override
-  Widget build(BuildContext context) {
-    return const IsteklerIcEkran();
-  }
+  Widget build(BuildContext context) => const IsteklerIcEkran();
 }
 
 // ── Nav Item ──────────────────────────────────────────────────────────────────
@@ -231,11 +228,40 @@ class _NavItem extends StatelessWidget {
               label,
               style: GoogleFonts.dmSans(
                 fontSize: 10,
-                fontWeight:
-                    secili ? FontWeight.w700 : FontWeight.w400,
-                color: secili
-                    ? AppColors.red
-                    : AppColors.textSecondary,
+                fontWeight: secili ? FontWeight.w700 : FontWeight.w400,
+                color: secili ? AppColors.red : AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── İlan Ver nav item ────────────────────────────────────────────────────────
+
+class _IlanVerItem extends StatelessWidget {
+  final VoidCallback onTap;
+  const _IlanVerItem({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.add_circle_rounded, size: 24, color: Color(0xFF66BB6A)),
+            const SizedBox(height: 3),
+            Text(
+              'İlan Ver',
+              style: GoogleFonts.dmSans(
+                fontSize: 10,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF66BB6A),
               ),
             ),
           ],

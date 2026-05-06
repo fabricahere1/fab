@@ -271,17 +271,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const GelenlerFormScreen()),
-        ),
-        backgroundColor: AppColors.red,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: Text('İlan Ver',
-            style: GoogleFonts.dmSans(
-                color: Colors.white, fontWeight: FontWeight.w600)),
-      ),
+
     );
   }
 }

@@ -1,12 +1,4 @@
 // lib/features/ilanlar/presentation/ilanlar_screen.dart
-//
-// Değişiklikler (eskiye göre):
-//   • GoruntulemeModeli.liste kaldırıldı → swipe eklendi
-//   • Mod butonu: tek buton döngü → 3 ayrı küçük ikonlu buton (sağ üst köşe)
-//   • Arama çubuğu: yuvarlak pill → köşeli, daha belirgin border, kırmızı filtre butonu
-//   • Swipe modunda liste/grid yerine SwipeGorunumu gösteriliyor
-//   • Swipe modunda FAB gizleniyor (alt butonlar var)
-//   • Neden İSTE barı korundu
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -254,7 +246,6 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
 
     Widget ilanWidget;
     if (isSwipe) {
-      // ── Swipe modu ────────────────────────────────────────────────────
       ilanWidget = SwipeGorunumu(
         ilanlar: ilanlar,
         onDahaFazla: () {
@@ -294,107 +285,160 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
 
     return Scaffold(
       backgroundColor: AppColors.surface,
-      body: Column(
+      body: Stack(
         children: [
+          // ── Ana içerik ─────────────────────────────────────────────────
+          Column(
+            children: [
+              Container(height: statusH, color: Colors.white),
 
-          // ── Status bar ─────────────────────────────────────────────────
-          Container(height: statusH, color: Colors.white),
+              _IsteklerHeader(
+                aramaCtrl: _aramaCtrl,
+                aramaMetni: _aramaMetni,
+                aramaGizli: _aramaGizli && !isSwipe,
+                filtrAktif: filtrAktif,
+                filtreBadgeMetni: _filtreBadgeMetni,
+                siralama: _siralama,
+                seciliAnaKey: _seciliAnaKey,
+                onAramaChanged: (v) => setState(() => _aramaMetni = v),
+                onAramaSifirla: () {
+                  _aramaCtrl.clear();
+                  setState(() => _aramaMetni = '');
+                },
+                onFiltreAc: _filtreAc,
+                onSiralamaAc: _siralamaSheet,
+                onKategoriSec: _kategoriSec,
+                onFiltreSifirla: () => setState(() {
+                  _seciliAnaKey = null;
+                  _seciliAltKey = null;
+                }),
+                kategoriScrollCtrl: _kategoriScrollCtrl,
+              ),
 
-          // ── Seçenek 3: Logo + arama + kategori (hem grid hem swipe modunda tam görünür) ──
-          _IsteklerHeader(
-            aramaCtrl: _aramaCtrl,
-            aramaMetni: _aramaMetni,
-            aramaGizli: _aramaGizli && !isSwipe,
-            filtrAktif: filtrAktif,
-            filtreBadgeMetni: _filtreBadgeMetni,
-            siralama: _siralama,
-            seciliAnaKey: _seciliAnaKey,
-            mod: mod,
-            onAramaChanged: (v) => setState(() => _aramaMetni = v),
-            onAramaSifirla: () {
-              _aramaCtrl.clear();
-              setState(() => _aramaMetni = '');
-            },
-            onFiltreAc: _filtreAc,
-            onSiralamaAc: _siralamaSheet,
-            onKategoriSec: _kategoriSec,
-            onFiltreSifirla: () => setState(() {
-              _seciliAnaKey = null;
-              _seciliAltKey = null;
-            }),
-            onModSec: (m) => ref.read(gridTercihiProvider.notifier).modSec(m),
-            kategoriScrollCtrl: _kategoriScrollCtrl,
+              Container(height: 0.5, color: AppColors.divider),
+
+              Expanded(
+                child: isSwipe
+                    ? ilanWidget
+                    : RefreshIndicator(
+                        color: AppColors.red,
+                        onRefresh: () =>
+                            ref.read(istekIlanlarProvider.notifier).yenile(),
+                        child: CustomScrollView(
+                          controller: _scrollController,
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          slivers: [
+                            SliverPadding(
+                              padding: const EdgeInsets.all(6),
+                              sliver: ilanWidget,
+                            ),
+                          ],
+                        ),
+                      ),
+              ),
+            ],
           ),
 
-          Container(height: 0.5, color: AppColors.divider),
-
-          // ── İçerik ─────────────────────────────────────────────────────
-          Expanded(
-            child: isSwipe
-                ? ilanWidget
-                : RefreshIndicator(
-                    color: AppColors.red,
-                    onRefresh: () =>
-                        ref.read(istekIlanlarProvider.notifier).yenile(),
-                    child: CustomScrollView(
-                      controller: _scrollController,
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      slivers: [
-                        SliverPadding(
-                          padding: const EdgeInsets.all(6),
-                          sliver: ilanWidget,
-                        ),
-                      ],
-                    ),
-                  ),
+          // ── Dikey mod tab — sağda tam orta ────────────────────────────
+          Positioned(
+            right: 0,
+            top: 0,
+            bottom: 0,
+            child: Center(
+              child: _DikeTabBar(
+                mod: mod,
+                isSwipe: isSwipe,
+                onModSec: (m) =>
+                    ref.read(gridTercihiProvider.notifier).modSec(m),
+              ),
+            ),
           ),
         ],
       ),
-      floatingActionButton: isSwipe
-          ? null // Swipe modunda FAB gizli — alt butonlar yeterli
-          : FloatingActionButton.extended(
-              onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) =>
-                          const IlanFormScreen(tip: IlanTip.istek))),
-              backgroundColor: AppColors.red,
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: Text('İlan Ver',
-                  style: GoogleFonts.dmSans(
-                      color: Colors.white, fontWeight: FontWeight.w600)),
-            ),
+
     );
   }
 }
 
-// ── Araç butonu ───────────────────────────────────────────────────────────────
+// ── Dikey mod tab bar ─────────────────────────────────────────────────────────
 
-class _ToolBtn extends StatelessWidget {
-  final VoidCallback onTap;
-  final Widget child;
-  final bool aktif;
-  const _ToolBtn({required this.onTap, required this.child, this.aktif = false});
+class _DikeTabBar extends StatelessWidget {
+  final GoruntulemeModeli mod;
+  final bool isSwipe;
+  final ValueChanged<GoruntulemeModeli> onModSec;
+
+  const _DikeTabBar({
+    required this.mod,
+    required this.isSwipe,
+    required this.onModSec,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
+    final modlar = [
+      (GoruntulemeModeli.iki,    Icons.grid_view_rounded),
+      (GoruntulemeModeli.uc,     Icons.view_module_rounded),
+      (GoruntulemeModeli.swipe,  Icons.swipe_left_alt_rounded),
+    ];
+
+    // Swipe modunda resmin üzerinde — yarı şeffaf siyah
+    // Grid modunda beyaz arka plan üzerinde — açık gri
+    final bgRenk = isSwipe
+        ? const Color(0x73000000)   // rgba(0,0,0,0.45)
+        : const Color(0xFFEEEEEE);
+
+    final borderRenk = isSwipe
+        ? Colors.white.withValues(alpha: 0.1)
+        : const Color(0xFFDDDDDD);
+
+    return ClipRRect(
+      borderRadius: const BorderRadius.horizontal(left: Radius.circular(10)),
       child: Container(
-        width: 30,
-        height: 30,
-        margin: const EdgeInsets.symmetric(horizontal: 1),
+        width: 36,
         decoration: BoxDecoration(
-          color: aktif
-              ? AppColors.red.withValues(alpha: 0.1)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+          color: bgRenk,
+          borderRadius: const BorderRadius.horizontal(left: Radius.circular(10)),
         ),
-        child: IconTheme(
-          data: IconThemeData(
-              color: aktif ? AppColors.red : AppColors.textSecondary,
-              size: 16),
-          child: child,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: modlar.map((entry) {
+            final (m, ikon) = entry;
+            final aktif = mod == m;
+            final isLast = m == GoruntulemeModeli.swipe;
+
+            Color ikonRenk;
+            Color itemBg;
+            if (aktif) {
+              ikonRenk = Colors.white;
+              itemBg = AppColors.red.withValues(alpha: isSwipe ? 0.8 : 1.0);
+            } else {
+              ikonRenk = isSwipe
+                  ? Colors.white.withValues(alpha: 0.55)
+                  : const Color(0xFF888888);
+              itemBg = Colors.transparent;
+            }
+
+            return GestureDetector(
+              onTap: () => onModSec(m),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                width: 36,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: itemBg,
+                  border: isLast
+                      ? null
+                      : Border(
+                          bottom: BorderSide(
+                            color: borderRenk,
+                            width: 0.5,
+                          ),
+                        ),
+                ),
+                child: Icon(ikon, size: 16, color: ikonRenk),
+              ),
+            );
+          }).toList(),
         ),
       ),
     );
@@ -430,7 +474,6 @@ class _NedenIsteBarState extends State<_NedenIsteBar>
   void initState() {
     super.initState();
     _ctrl = ScrollController();
-    // reduce-motion kontrolü
     final reduceMotion = SchedulerBinding
         .instance.platformDispatcher.accessibilityFeatures.reduceMotion;
     _ticker = createTicker(_onTick);
@@ -516,7 +559,8 @@ class _NedenAyrac extends StatelessWidget {
     );
   }
 }
-// ── Seçenek 3 Header: Logo + Arama + Kategori (grid & swipe ortak) ───────────
+
+// ── Header ────────────────────────────────────────────────────────────────────
 
 class _IsteklerHeader extends StatelessWidget {
   final TextEditingController aramaCtrl;
@@ -526,7 +570,6 @@ class _IsteklerHeader extends StatelessWidget {
   final String filtreBadgeMetni;
   final SiralamaTipi siralama;
   final String? seciliAnaKey;
-  final GoruntulemeModeli mod;
   final ScrollController kategoriScrollCtrl;
 
   final ValueChanged<String> onAramaChanged;
@@ -535,7 +578,6 @@ class _IsteklerHeader extends StatelessWidget {
   final VoidCallback onSiralamaAc;
   final ValueChanged<String> onKategoriSec;
   final VoidCallback onFiltreSifirla;
-  final ValueChanged<GoruntulemeModeli> onModSec;
 
   const _IsteklerHeader({
     required this.aramaCtrl,
@@ -545,7 +587,6 @@ class _IsteklerHeader extends StatelessWidget {
     required this.filtreBadgeMetni,
     required this.siralama,
     required this.seciliAnaKey,
-    required this.mod,
     required this.kategoriScrollCtrl,
     required this.onAramaChanged,
     required this.onAramaSifirla,
@@ -553,13 +594,10 @@ class _IsteklerHeader extends StatelessWidget {
     required this.onSiralamaAc,
     required this.onKategoriSec,
     required this.onFiltreSifirla,
-    required this.onModSec,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isSwipe = mod == GoruntulemeModeli.swipe;
-
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
       curve: Curves.easeOutCubic,
@@ -569,7 +607,7 @@ class _IsteklerHeader extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
 
-          // ── Satır 1: Logo + bildirim ────────────────────────────────────
+          // Satır 1: Logo + bildirim
           AnimatedContainer(
             duration: const Duration(milliseconds: 220),
             height: aramaGizli ? 0 : null,
@@ -597,7 +635,7 @@ class _IsteklerHeader extends StatelessWidget {
             ),
           ),
 
-          // ── Satır 2: Arama + Filtre ────────────────────────────────────
+          // Satır 2: Arama + Filtre
           AnimatedContainer(
             duration: const Duration(milliseconds: 220),
             height: aramaGizli ? 0 : null,
@@ -607,7 +645,6 @@ class _IsteklerHeader extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(12, 2, 12, 6),
               child: Row(
                 children: [
-                  // Arama kutusu
                   Expanded(
                     child: Container(
                       height: 40,
@@ -647,7 +684,6 @@ class _IsteklerHeader extends StatelessWidget {
                             ),
                             const SizedBox(width: 4),
                           ],
-                          // Sıralama ikonu
                           GestureDetector(
                             onTap: onSiralamaAc,
                             child: Container(
@@ -672,7 +708,6 @@ class _IsteklerHeader extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  // Filtre butonu
                   GestureDetector(
                     onTap: onFiltreAc,
                     child: AnimatedContainer(
@@ -690,13 +725,12 @@ class _IsteklerHeader extends StatelessWidget {
                               color: Colors.white, size: 18),
                           if (filtrAktif)
                             Positioned(
-                              top: 6,
-                              right: 6,
+                              top: 6, right: 6,
                               child: Container(
-                                width: 7,
-                                height: 7,
+                                width: 7, height: 7,
                                 decoration: const BoxDecoration(
-                                    color: Colors.white, shape: BoxShape.circle),
+                                    color: Colors.white,
+                                    shape: BoxShape.circle),
                               ),
                             ),
                         ],
@@ -708,22 +742,19 @@ class _IsteklerHeader extends StatelessWidget {
             ),
           ),
 
-          // ── Satır 3: Kategori chip'leri ────────────────────────────────
+          // Satır 3: Kategori chip'leri
           SizedBox(
             height: 36,
             child: ListView.builder(
               controller: kategoriScrollCtrl,
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+              padding: const EdgeInsets.fromLTRB(12, 4, 48, 4), // sağda tab için boşluk
               itemCount: kKategoriAgaci.length + 1,
               itemBuilder: (context, i) {
-                // "Tümü" chip'i
                 if (i == 0) {
                   final secili = seciliAnaKey == null;
                   return GestureDetector(
-                    onTap: () {
-                      if (!secili) onFiltreSifirla();
-                    },
+                    onTap: () { if (!secili) onFiltreSifirla(); },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 180),
                       margin: const EdgeInsets.only(right: 6),
@@ -732,9 +763,7 @@ class _IsteklerHeader extends StatelessWidget {
                         color: secili ? AppColors.red : AppColors.surface,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: secili
-                              ? AppColors.red
-                              : const Color(0xFFE8E8E8),
+                          color: secili ? AppColors.red : const Color(0xFFE8E8E8),
                           width: 1,
                         ),
                       ),
@@ -769,8 +798,7 @@ class _IsteklerHeader extends StatelessWidget {
                         style: GoogleFonts.dmSans(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color:
-                              secili ? Colors.white : AppColors.textPrimary,
+                          color: secili ? Colors.white : AppColors.textPrimary,
                         )),
                   ),
                 );
@@ -778,14 +806,14 @@ class _IsteklerHeader extends StatelessWidget {
             ),
           ),
 
-          // ── Satır 4: Aktif filtre badge (opsiyonel) ────────────────────
+          // Satır 4: Aktif filtre badge
           if (filtrAktif)
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 2, 12, 4),
               child: Row(children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 3),
                   decoration: BoxDecoration(
                     color: AppColors.red.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(20),
@@ -807,108 +835,12 @@ class _IsteklerHeader extends StatelessWidget {
               ]),
             ),
 
-          // ── Satır 5: Neden İSTE barı + Mod pill'leri ──────────────────
-          SizedBox(
+          // Satır 5: Neden İSTE barı
+          const SizedBox(
             height: 28,
-            child: Row(
-              children: [
-                // Sol: Neden İSTE kayan bar (grid modunda) veya boş alan (swipe)
-                Expanded(
-                  child: isSwipe
-                      ? Padding(
-                          padding: const EdgeInsets.only(left: 12),
-                          child: Text('kaydır & keşfet',
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 11, color: AppColors.textHint)),
-                        )
-                      : const _NedenIsteBar(),
-                ),
-                // Sağ: Mod pill'leri — her zaman görünür
-                Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _ModPill(
-                        ikon: Icons.grid_view_rounded,
-                        label: '',
-                        aktif: mod == GoruntulemeModeli.iki,
-                        onTap: () => onModSec(GoruntulemeModeli.iki),
-                      ),
-                      const SizedBox(width: 4),
-                      _ModPill(
-                        ikon: Icons.view_module_rounded,
-                        label: '',
-                        aktif: mod == GoruntulemeModeli.uc,
-                        onTap: () => onModSec(GoruntulemeModeli.uc),
-                      ),
-                      const SizedBox(width: 4),
-                      _ModPill(
-                        ikon: Icons.swipe_left_alt_rounded,
-                        label: isSwipe ? 'Swipe' : '',
-                        aktif: mod == GoruntulemeModeli.swipe,
-                        onTap: () => onModSec(GoruntulemeModeli.swipe),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+            child: _NedenIsteBar(),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ── Mod pill butonu ───────────────────────────────────────────────────────────
-
-class _ModPill extends StatelessWidget {
-  final IconData ikon;
-  final String label;
-  final bool aktif;
-  final VoidCallback onTap;
-
-  const _ModPill({
-    required this.ikon,
-    required this.label,
-    required this.aktif,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        height: 24,
-        padding: EdgeInsets.symmetric(
-            horizontal: label.isNotEmpty ? 10 : 8),
-        decoration: BoxDecoration(
-          color: aktif ? AppColors.red : const Color(0xFFF0F0F0),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: aktif ? AppColors.red : const Color(0xFFE0E0E0),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(ikon,
-                size: 13,
-                color: aktif ? Colors.white : const Color(0xFF9E9E9E)),
-            if (label.isNotEmpty) ...[
-              const SizedBox(width: 4),
-              Text(label,
-                  style: GoogleFonts.dmSans(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: aktif ? Colors.white : const Color(0xFF9E9E9E))),
-            ],
-          ],
-        ),
       ),
     );
   }

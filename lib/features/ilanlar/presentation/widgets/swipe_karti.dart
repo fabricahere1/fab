@@ -1,14 +1,11 @@
 // lib/features/ilanlar/presentation/widgets/swipe_karti.dart
-//
-// Tinder tarzı swipe — temiz ve çalışan versiyon.
-// SpringSimulation sorunları yerine Tween + CurvedAnimation kullanır.
-// Kart parmakla kayar, bırakılınca fırlar veya yaylanarak döner.
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:math' as math;
 
 import '../../../../shared/constants/app_colors.dart';
 import '../../../../core/cache/app_cache_manager.dart';
@@ -38,23 +35,33 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
   int _idx = 0;
   final List<int> _gecmis = [];
 
-  // Kart pozisyonu — drag esnasında direkt güncellenir
   Offset _konum = Offset.zero;
 
-  // Animasyon controller — fırlatma ve geri dönüş için
   late final AnimationController _animCtrl;
   late Animation<Offset> _animKonum;
 
-  // Animasyon modu
-  bool _animasyonAktif = false;
-  bool _kartFirliyor   = false;
+  bool _animasyonAktif  = false;
+  bool _kartFirliyor    = false;
+  bool _kartGeriAliyor  = false;
+  bool _geriAlAnimasyonu = false; // geri alma sırasında arka kartı gizler
 
-  // Kalp
   late final AnimationController _favCtrl;
   late final Animation<double>   _favScale;
 
-  static const _esik    = 100.0;
-  static const _hizEsik = 500.0;
+  static const _esik           = 100.0;
+  static const _hizEsik        = 500.0;
+  static const _maxGecmis      = 20;
+  static const _onYuklemEsigi  = 3;
+
+  // ── Nullable getterlar ───────────────────────────────────────────────────
+
+  bool get _listeBitti => _idx >= widget.ilanlar.length;
+
+  IlanModel? get _mevcutIlan =>
+      _idx < widget.ilanlar.length ? widget.ilanlar[_idx] : null;
+
+  IlanModel? get _sonrakiIlan =>
+      _idx + 1 < widget.ilanlar.length ? widget.ilanlar[_idx + 1] : null;
 
   @override
   void initState() {
@@ -96,32 +103,47 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
 
   void _animasyonBitti() {
     _animasyonAktif = false;
-    if (_kartFirliyor) {
+
+    if (_kartGeriAliyor) {
+      // Sola fırlatma bitti — arka kart gizliydi, şimdi geri al
+      _kartGeriAliyor    = false;
+      _geriAlAnimasyonu  = false;
+      if (_gecmis.isNotEmpty) {
+        setState(() {
+          _konum = Offset.zero;
+          _idx   = _gecmis.removeLast();
+        });
+      } else {
+        setState(() => _konum = Offset.zero);
+      }
+    } else if (_kartFirliyor) {
       _kartFirliyor = false;
-      setState(() {
-        _gecmis.add(_idx);
-        _idx++;
-        _konum = Offset.zero;
-      });
-      if (_idx >= widget.ilanlar.length - 3) {
+      final yeniIdx = _idx + 1;
+
+      if (yeniIdx >= widget.ilanlar.length - _onYuklemEsigi) {
         widget.onDahaFazla?.call();
       }
+
+      setState(() {
+        _gecmis.add(_idx);
+        if (_gecmis.length > _maxGecmis) _gecmis.removeAt(0);
+        _idx  = yeniIdx;
+        _konum = Offset.zero;
+      });
     } else {
       setState(() => _konum = Offset.zero);
     }
   }
-
-  IlanModel get _mevcut => widget.ilanlar[_idx % widget.ilanlar.length];
-  IlanModel get _sonraki =>
-      widget.ilanlar[(_idx + 1) % widget.ilanlar.length];
 
   // ── Drag ─────────────────────────────────────────────────────────────────
 
   void _onDragStart(DragStartDetails _) {
     if (_animasyonAktif) {
       _animCtrl.stop();
-      _animasyonAktif = false;
-      _kartFirliyor   = false;
+      _animasyonAktif    = false;
+      _kartFirliyor      = false;
+      _kartGeriAliyor    = false;
+      _geriAlAnimasyonu  = false;
     }
   }
 
@@ -131,9 +153,19 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
 
   void _onDragEnd(DragEndDetails d) {
     final vx = d.velocity.pixelsPerSecond.dx;
+    final dx = _konum.dx;
 
-    if (_konum.dx.abs() > _esik || vx.abs() > _hizEsik) {
-      _firlat(vx);
+    if (dx.abs() > _esik || vx.abs() > _hizEsik) {
+      final solaGidiyor = dx < 0 || vx < 0;
+      if (solaGidiyor) {
+        if (_gecmis.isNotEmpty) {
+          _firlat(vx, geriAl: true);
+        } else {
+          _gereDon();
+        }
+      } else {
+        _firlat(vx, geriAl: false);
+      }
     } else {
       _gereDon();
     }
@@ -141,47 +173,67 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
 
   // ── Fırlatma ─────────────────────────────────────────────────────────────
 
-  void _firlat(double vx) {
+  void _firlat(double vx, {bool geriAl = false}) {
     final w   = MediaQuery.of(context).size.width;
     final yon = (_konum.dx != 0)
         ? _konum.dx.sign
         : (vx != 0 ? vx.sign : 1);
     final hedef = Offset(yon * w * 1.5, _konum.dy + 80 * yon);
 
-    // Hız bazlı süre: hızlı swipe → kısa süre, yavaş → biraz daha uzun
     final hizFaktoru = (vx.abs() / 1000).clamp(0.3, 1.0);
     final sure = Duration(milliseconds: (400 - hizFaktoru * 200).round());
 
-    _animasyonAktif = true;
-    _kartFirliyor   = true;
+    _animasyonAktif   = true;
+    _kartFirliyor     = !geriAl;
+    _kartGeriAliyor   = geriAl;
+    _geriAlAnimasyonu = geriAl; // geri alma sırasında arka kartı gizle
 
     _animKonum = Tween<Offset>(begin: _konum, end: hedef).animate(
-      CurvedAnimation(
-        parent: _animCtrl,
-        curve: Curves.easeOutCubic,
-      ),
+      CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutCubic),
     );
 
     _animCtrl.duration = sure;
     _animCtrl.forward(from: 0);
   }
 
+  // ── Buton fırlatma ───────────────────────────────────────────────────────
+
+  void _firlatYon(double yon) {
+    if (_animasyonAktif) return;
+    final w = MediaQuery.of(context).size.width;
+
+    _animasyonAktif   = true;
+    _kartFirliyor     = true;
+    _kartGeriAliyor   = false;
+    _geriAlAnimasyonu = false;
+
+    _animKonum = Tween<Offset>(
+      begin: Offset.zero,
+      end: Offset(yon * w * 1.5, 60),
+    ).animate(CurvedAnimation(
+      parent: _animCtrl,
+      curve: Curves.easeOutCubic,
+    ));
+
+    _animCtrl.duration = const Duration(milliseconds: 280);
+    _animCtrl.forward(from: 0);
+  }
+
   // ── Geri dönüş ───────────────────────────────────────────────────────────
 
   void _gereDon() {
-    _animasyonAktif = true;
-    _kartFirliyor   = false;
+    _animasyonAktif   = true;
+    _kartFirliyor     = false;
+    _kartGeriAliyor   = false;
+    _geriAlAnimasyonu = false;
 
     _animKonum = Tween<Offset>(
       begin: _konum,
       end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _animCtrl,
-        // Elastik yay hissi — biraz titrer ve yerine oturur
-        curve: Curves.elasticOut,
-      ),
-    );
+    ).animate(CurvedAnimation(
+      parent: _animCtrl,
+      curve: Curves.elasticOut,
+    ));
 
     _animCtrl.duration = const Duration(milliseconds: 500);
     _animCtrl.forward(from: 0);
@@ -189,22 +241,12 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
 
   // ── Butonlar ─────────────────────────────────────────────────────────────
 
-  void _butonIleri() {
-    if (_animasyonAktif) return;
-    setState(() => _konum = const Offset(-15, 0));
-    _firlat(-1800);
-  }
+  void _butonSonraki() => _firlatYon(1);
 
-  void _butonSonraki() {
-    if (_animasyonAktif) return;
-    setState(() => _konum = const Offset(15, 0));
-    _firlat(1800);
-  }
-
-  void _geri() {
+  void _geriButon() {
     if (_gecmis.isEmpty || _animasyonAktif) return;
     setState(() {
-      _idx = _gecmis.removeLast();
+      _idx   = _gecmis.removeLast();
       _konum = Offset.zero;
     });
   }
@@ -233,50 +275,57 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
 
   @override
   Widget build(BuildContext context) {
-    if (widget.ilanlar.isEmpty) {
-      return const Center(child: Text('İlan bulunamadı'));
+    if (widget.ilanlar.isEmpty || _listeBitti) {
+      return _BosSonucEkrani(onYenile: widget.onDahaFazla);
     }
 
-    final favIdler  = ref.watch(favoriliIlanIdlerProvider);
-    final mevcut    = _mevcut;
-    final sonraki   = _sonraki;
-    final isFav     = favIdler.contains(mevcut.id);
+    final favIdler = ref.watch(favoriliIlanIdlerProvider);
+    final mevcut   = _mevcutIlan!;
+    final sonraki  = _sonrakiIlan;
+    final isFav    = favIdler.contains(mevcut.id);
+
+    // Geri alma sırasında arka kartta önceki ilanı göster
+    final arkaIlan = _geriAlAnimasyonu
+        ? (_gecmis.isNotEmpty ? widget.ilanlar[_gecmis.last] : null)
+        : sonraki;
 
     final x         = _konum.dx;
     final y         = _konum.dy;
-    // Rotasyon: yukarıdan tutunca az, aşağıdan tutunca fazla dönsün
-    final rotasyon  = (x / 18) * (3.14159 / 180);
+    final rotasyon  = (x / 18) * (math.pi / 180);
     final ilerleme  = (x.abs() / _esik).clamp(0.0, 1.0);
     final arkaScale = 0.92 + 0.08 * ilerleme;
 
-    return Column(
+    return Stack(
       children: [
-        Expanded(
+
+        // ── Kart alanı (fullscreen) ───────────────────────────────────────
+        Positioned.fill(
           child: GestureDetector(
             onPanStart:  _onDragStart,
             onPanUpdate: _onDragUpdate,
             onPanEnd:    _onDragEnd,
             child: Stack(
+              clipBehavior: Clip.hardEdge,
               children: [
 
-                // ── Arka kart ──────────────────────────────────────────
-                Positioned.fill(
-                  child: Transform(
-                    alignment: Alignment.center,
-                    transform: Matrix4.diagonal3Values(
-                        arkaScale, arkaScale, 1)
-                      ..setTranslationRaw(0, 18 * (1 - ilerleme), 0),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: _KartArkaplan(ilan: sonraki),
+                // Arka kart
+                if (arkaIlan != null)
+                  Positioned.fill(
+                    child: Transform(
+                      alignment: Alignment.center,
+                      transform: Matrix4.diagonal3Values(
+                          arkaScale, arkaScale, 1)
+                        ..setTranslationRaw(0, 18 * (1 - ilerleme), 0),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: _KartArkaplan(ilan: arkaIlan),
+                      ),
                     ),
                   ),
-                ),
 
-                // ── Ön kart ────────────────────────────────────────────
+                // Ön kart
                 Positioned.fill(
                   child: Transform(
-                    // Alt merkez pivot → daha doğal Tinder hissi
                     alignment: Alignment.bottomCenter,
                     transform: Matrix4.identity()
                       ..translate(x, y * 0.3)
@@ -297,47 +346,113 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
           ),
         ),
 
-        // ── Alt butonlar ───────────────────────────────────────────────
-        Container(
-          height: 100,
-          color: Colors.white,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Geri Al
-              _AltButon(
-                ikon: Icons.history_rounded,
-                renk: const Color(0xFFFFA726),
-                bgRenk: const Color(0xFFFFF8E1),
-                borderRenk: const Color(0xFFFFE082),
-                label: 'Geri Al',
-                boyut: 52,
-                ikonBoyut: 22,
-                onTap: _gecmis.isEmpty ? null : _geri,
+        // ── Alt butonlar — resmin üzerinde, gradient arkaplanlı ───────────
+        Positioned(
+          left: 0, right: 0, bottom: 0,
+          child: Container(
+            height: 110,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                colors: [
+                  Color(0xCC000000),
+                  Color(0x00000000),
+                ],
               ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _AltButon(
+                  ikon: Icons.history_rounded,
+                  renk: const Color(0xFFFFA726),
+                  bgRenk: Colors.white.withValues(alpha: 0.15),
+                  borderRenk: Colors.white.withValues(alpha: 0.25),
+                  label: 'Geri Al',
+                  boyut: 52,
+                  ikonBoyut: 22,
+                  onTap: _gecmis.isEmpty ? null : _geriButon,
+                ),
 
-              // Favorile — ortada, büyük
-              _FavorileButon(
-                aktif: isFav,
-                onTap: () => _favToggle(mevcut),
-              ),
+                _FavorileButon(
+                  aktif: isFav,
+                  onTap: () => _favToggle(mevcut),
+                ),
 
-              // İleri
-              _AltButon(
-                ikon: Icons.skip_next_rounded,
-                renk: const Color(0xFF5C6BC0),
-                bgRenk: const Color(0xFFEDE7F6),
-                borderRenk: const Color(0xFFB39DDB),
-                label: 'İleri',
-                boyut: 52,
-                ikonBoyut: 22,
-                onTap: _butonSonraki,
-              ),
-            ],
+                _AltButon(
+                  ikon: Icons.skip_next_rounded,
+                  renk: const Color(0xFF90CAF9),
+                  bgRenk: Colors.white.withValues(alpha: 0.15),
+                  borderRenk: Colors.white.withValues(alpha: 0.25),
+                  label: 'İleri',
+                  boyut: 52,
+                  ikonBoyut: 22,
+                  onTap: _butonSonraki,
+                ),
+              ],
+            ),
           ),
         ),
       ],
+    );
+  }
+}
+
+// ── Boş sonuç ekranı ─────────────────────────────────────────────────────────
+
+class _BosSonucEkrani extends StatelessWidget {
+  final VoidCallback? onYenile;
+  const _BosSonucEkrani({this.onYenile});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('🎉', style: TextStyle(fontSize: 64)),
+          const SizedBox(height: 16),
+          Text(
+            'Tüm ilanları gördün!',
+            style: GoogleFonts.dmSans(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF333333),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Yeni ilanlar için yenile',
+            style: GoogleFonts.dmSans(
+              fontSize: 13,
+              color: const Color(0xFFAAAAAA),
+            ),
+          ),
+          const SizedBox(height: 24),
+          if (onYenile != null)
+            GestureDetector(
+              onTap: onYenile,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24, vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.red,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Text(
+                  'Yenile',
+                  style: GoogleFonts.dmSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -372,14 +487,14 @@ class _OnKart extends StatelessWidget {
         ? ((suruklenmeX - 15) / 85).clamp(0.0, 1.0)
         : 0.0;
 
-    return Stack(
-      children: [
-        // Arka plan resim
-        Positioned.fill(child: _KartArkaplan(ilan: ilan)),
+    return GestureDetector(
+      onTap: () => context.push(AppRoutes.ilanDetayPath(ilan.id)),
+      child: Stack(
+        children: [
+          Positioned.fill(child: _KartArkaplan(ilan: ilan)),
 
-        // Alt gradient
-        Positioned.fill(
-          child: const DecoratedBox(
+        const Positioned.fill(
+          child: DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
@@ -396,7 +511,6 @@ class _OnKart extends StatelessWidget {
           ),
         ),
 
-        // Üst gradient
         Positioned.fill(
           child: DecoratedBox(
             decoration: BoxDecoration(
@@ -489,7 +603,7 @@ class _OnKart extends StatelessWidget {
                 ),
               ),
               Text(
-                '${(idx % toplam) + 1} / $toplam',
+                '${idx + 1} / $toplam',
                 style: GoogleFonts.dmSans(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -528,10 +642,8 @@ class _OnKart extends StatelessWidget {
 
         // Alt bilgi
         Positioned(
-          left: 0, right: 0, bottom: 0,
-          child: GestureDetector(
-            onTap: () => context.push(AppRoutes.ilanDetayPath(ilan.id)),
-            child: Padding(
+          left: 0, right: 0, bottom: 110,
+          child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -559,8 +671,7 @@ class _OnKart extends StatelessWidget {
                         '${ilan.nereden} → ${ilan.nereye}',
                         style: GoogleFonts.dmSans(
                             fontSize: 12,
-                            color:
-                                Colors.white.withValues(alpha: 0.65)),
+                            color: Colors.white.withValues(alpha: 0.65)),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -571,25 +682,14 @@ class _OnKart extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('taşıma ücreti',
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 9,
-                                  color: Colors.white
-                                      .withValues(alpha: 0.5))),
-                          Text(
-                            ilan.ucret.isNotEmpty
-                                ? '${ilan.ucret} ₺'
-                                : 'Belirtilmemiş',
-                            style: GoogleFonts.dmSans(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white),
-                          ),
-                        ],
-                      ),
+                      if (ilan.ucret.isNotEmpty)
+                        Text(
+                          '${ilan.ucret} ₺',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white),
+                        ),
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 7),
@@ -619,11 +719,10 @@ class _OnKart extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
           ),
         ),
 
-        // Kalp
+        // Kalp animasyonu
         Positioned.fill(
           child: IgnorePointer(
             child: Center(
@@ -635,7 +734,8 @@ class _OnKart extends StatelessWidget {
             ),
           ),
         ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -651,28 +751,11 @@ class _KartArkaplan extends StatelessWidget {
     Color(0xFF1A0030), Color(0xFF0D2137), Color(0xFF111111),
   ];
 
-  static const _emojiMap = {
-    'elektronik': '📱', 'giyim': '👗', 'guzellik': '💄',
-    'aksesuar': '👜', 'oyun': '🎮', 'ev': '🏠',
-    'spor': '⚽', 'kitap': '📚', 'cocuk': '🧸',
-  };
-
   @override
   Widget build(BuildContext context) {
     final bgRenk   = _renkler[ilan.id.hashCode.abs() % _renkler.length];
     final resimler = ilan.tumResimler;
-    final emoji    = _emojiMap.entries
-        .firstWhere(
-          (e) => ilan.kategori.toLowerCase().contains(e.key),
-          orElse: () => const MapEntry('', '📦'),
-        )
-        .value;
-
-    final placeholder = Container(
-      color: bgRenk,
-      child: Center(
-          child: Text(emoji, style: const TextStyle(fontSize: 90))),
-    );
+    final placeholder = Container(color: bgRenk);
 
     if (resimler.isNotEmpty) {
       return CachedNetworkImage(
@@ -729,7 +812,7 @@ class _AltButon extends StatelessWidget {
                 border: Border.all(color: borderRenk, width: 1.5),
                 boxShadow: [
                   BoxShadow(
-                    color: renk.withValues(alpha: 0.15),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -742,7 +825,7 @@ class _AltButon extends StatelessWidget {
                 style: GoogleFonts.dmSans(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFFAAAAAA))),
+                    color: Colors.white.withValues(alpha: 0.8))),
           ],
         ),
       ),
@@ -776,17 +859,26 @@ class _FavorileButon extends StatelessWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     )
-                  : const LinearGradient(
-                      colors: [Color(0xFFFFEBEE), Color(0xFFFFF0F0)],
+                  : LinearGradient(
+                      colors: [
+                        Colors.white.withValues(alpha: 0.2),
+                        Colors.white.withValues(alpha: 0.1),
+                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
               shape: BoxShape.circle,
+              border: Border.all(
+                color: aktif
+                    ? Colors.transparent
+                    : Colors.white.withValues(alpha: 0.3),
+                width: 1.5,
+              ),
               boxShadow: [
                 BoxShadow(
                   color: const Color(0xFFE53935)
-                      .withValues(alpha: aktif ? 0.45 : 0.2),
-                  blurRadius: aktif ? 20 : 12,
+                      .withValues(alpha: aktif ? 0.45 : 0.15),
+                  blurRadius: aktif ? 20 : 8,
                   spreadRadius: aktif ? 2 : 0,
                   offset: const Offset(0, 5),
                 ),
@@ -801,7 +893,7 @@ class _FavorileButon extends StatelessWidget {
               child: Icon(
                 aktif ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                 key: ValueKey(aktif),
-                color: aktif ? Colors.white : const Color(0xFFE53935),
+                color: Colors.white,
                 size: 30,
               ),
             ),
@@ -812,7 +904,7 @@ class _FavorileButon extends StatelessWidget {
             style: GoogleFonts.dmSans(
               fontSize: 10,
               fontWeight: FontWeight.w700,
-              color: aktif ? const Color(0xFFE53935) : const Color(0xFFAAAAAA),
+              color: Colors.white.withValues(alpha: aktif ? 1.0 : 0.7),
             ),
           ),
         ],
