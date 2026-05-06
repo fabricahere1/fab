@@ -119,6 +119,7 @@ class IlanKarti extends ConsumerWidget {
                       ),
                     ),
                   ),
+
               ],
             ),
             // Alt bilgi

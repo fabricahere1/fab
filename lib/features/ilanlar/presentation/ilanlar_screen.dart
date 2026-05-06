@@ -1,4 +1,12 @@
 // lib/features/ilanlar/presentation/ilanlar_screen.dart
+//
+// Değişiklikler (eskiye göre):
+//   • GoruntulemeModeli.liste kaldırıldı → swipe eklendi
+//   • Mod butonu: tek buton döngü → 3 ayrı küçük ikonlu buton (sağ üst köşe)
+//   • Arama çubuğu: yuvarlak pill → köşeli, daha belirgin border, kırmızı filtre butonu
+//   • Swipe modunda liste/grid yerine SwipeGorunumu gösteriliyor
+//   • Swipe modunda FAB gizleniyor (alt butonlar var)
+//   • Neden İSTE barı korundu
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -15,6 +23,7 @@ import '../../../shared/constants/app_constants.dart';
 import '../../../shared/widgets/bildirim_cani_widget.dart';
 import 'widgets/filtre_ekrani.dart';
 import 'widgets/ilan_karti.dart';
+import 'widgets/swipe_karti.dart';
 
 const _kResimYukseklikleri = [120.0, 150.0, 105.0, 135.0, 165.0, 112.0];
 
@@ -66,7 +75,7 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
     } else if (pos.userScrollDirection == ScrollDirection.forward && _aramaGizli) {
       setState(() => _aramaGizli = false);
     }
-    if (pos.pixels >= pos.maxScrollExtent - 400) {
+    if (pos.pixels >= pos.maxScrollExtent - 120) {
       if (!ref.read(istekIlanlarProvider).yukleniyor) {
         ref.read(istekIlanlarProvider.notifier).dahaFazlaYukle();
       }
@@ -236,15 +245,27 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final state       = ref.watch(istekIlanlarProvider);
-    final mod = ref.watch(gridTercihiProvider);
-    final ilanlar     = _sirala(_filtrele(state.filtrelenmis));
-    final filtrAktif  = _seciliAnaKey != null;
-    final statusH     = MediaQuery.of(context).padding.top;
+    final state      = ref.watch(istekIlanlarProvider);
+    final mod        = ref.watch(gridTercihiProvider);
+    final ilanlar    = _sirala(_filtrele(state.filtrelenmis));
+    final filtrAktif = _seciliAnaKey != null;
+    final statusH    = MediaQuery.of(context).padding.top;
+    final isSwipe    = mod == GoruntulemeModeli.swipe;
 
     Widget ilanWidget;
-    if (state.yukleniyor && ilanlar.isEmpty) {
-      ilanWidget = SliverToBoxAdapter(child: ShimmerGrid(kolonSayisi: mod.kolonSayisi));
+    if (isSwipe) {
+      // ── Swipe modu ────────────────────────────────────────────────────
+      ilanWidget = SwipeGorunumu(
+        ilanlar: ilanlar,
+        onDahaFazla: () {
+          if (!ref.read(istekIlanlarProvider).yukleniyor) {
+            ref.read(istekIlanlarProvider.notifier).dahaFazlaYukle();
+          }
+        },
+      );
+    } else if (state.yukleniyor && ilanlar.isEmpty) {
+      ilanWidget = SliverToBoxAdapter(
+          child: ShimmerGrid(kolonSayisi: mod.kolonSayisi));
     } else if (ilanlar.isEmpty) {
       ilanWidget = SliverToBoxAdapter(
         child: filtrAktif || _aramaMetni.isNotEmpty
@@ -256,39 +277,19 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
                 ref.read(istekIlanlarProvider.notifier).yenile()),
       );
     } else {
-      if (mod == GoruntulemeModeli.liste) {
-        ilanWidget = SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final item = ilanlar[index];
-              return Column(
-                children: [
-                  RepaintBoundary(
-                    key: ValueKey(item.id),
-                    child: IlanListeKarti(ilan: item),
-                  ),
-                  const Divider(height: 1, color: AppColors.divider),
-                ],
-              );
-            },
-            childCount: ilanlar.length,
+      ilanWidget = SliverMasonryGrid.count(
+        crossAxisCount: mod.kolonSayisi,
+        mainAxisSpacing: 6,
+        crossAxisSpacing: 6,
+        childCount: ilanlar.length,
+        itemBuilder: (context, index) => RepaintBoundary(
+          key: ValueKey(ilanlar[index].id),
+          child: IlanKarti(
+            ilan: ilanlar[index],
+            resimYukseklikleri: _kResimYukseklikleri,
           ),
-        );
-      } else {
-        ilanWidget = SliverMasonryGrid.count(
-          crossAxisCount: mod.kolonSayisi,
-          mainAxisSpacing: 6,
-          crossAxisSpacing: 6,
-          childCount: ilanlar.length,
-          itemBuilder: (context, index) => RepaintBoundary(
-            key: ValueKey(ilanlar[index].id),
-            child: IlanKarti(
-              ilan: ilanlar[index],
-              resimYukseklikleri: _kResimYukseklikleri,
-            ),
-          ),
-        );
-      }
+        ),
+      );
     }
 
     return Scaffold(
@@ -296,220 +297,73 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
       body: Column(
         children: [
 
-          // ── Status bar ────────────────────────────────────────────────
+          // ── Status bar ─────────────────────────────────────────────────
           Container(height: statusH, color: Colors.white),
 
-          // ── Arama çubuğu + Neden İSTE (scroll'da tamamen gizlenir) ───
-          AnimatedCrossFade(
-            duration: const Duration(milliseconds: 260),
-            firstCurve: Curves.easeOutCubic,
-            secondCurve: Curves.easeOutCubic,
-            crossFadeState: _aramaGizli
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
-            firstChild: Container(
-              color: Colors.white,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Arama satırı
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 6, 10, 4),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            height: 34,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF5F5F5),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                  color: const Color(0xFFE8E8E8), width: 0.5),
-                            ),
-                            child: Row(
-                              children: [
-                                const SizedBox(width: 10),
-                                const Icon(Icons.search_rounded,
-                                    size: 15,
-                                    color: AppColors.textSecondary),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: TextField(
-                                    controller: _aramaCtrl,
-                                    onChanged: (v) =>
-                                        setState(() => _aramaMetni = v),
-                                    style: GoogleFonts.dmSans(
-                                        fontSize: 12,
-                                        color: AppColors.textPrimary),
-                                    decoration: InputDecoration(
-                                      hintText: 'Ne getirmemizi istersin?',
-                                      hintStyle: GoogleFonts.dmSans(
-                                          color: AppColors.textHint,
-                                          fontSize: 12),
-                                      border: InputBorder.none,
-                                      isDense: true,
-                                      contentPadding: EdgeInsets.zero,
-                                    ),
-                                  ),
-                                ),
-                                if (_aramaMetni.isNotEmpty) ...[
-                                  GestureDetector(
-                                    onTap: () {
-                                      _aramaCtrl.clear();
-                                      setState(() => _aramaMetni = '');
-                                    },
-                                    child: const Icon(Icons.close_rounded,
-                                        size: 13,
-                                        color: AppColors.textSecondary),
-                                  ),
-                                  const SizedBox(width: 4),
-                                ],
-                                Container(
-                                    width: 0.5,
-                                    height: 14,
-                                    color: const Color(0xFFDDDDDD)),
-                                _ToolBtn(
-                                  onTap: _siralamaSheet,
-                                  aktif: _siralama != SiralamaTipi.enYeni,
-                                  child: const Icon(Icons.sort_rounded, size: 15),
-                                ),
-                                _ToolBtn(
-                                  onTap: () => ref
-                                      .read(gridTercihiProvider.notifier)
-                                      .sonrakiModa(),
-                                  aktif: mod != GoruntulemeModeli.iki,
-                                  child: Icon(
-                                    mod == GoruntulemeModeli.iki
-                                        ? Icons.grid_view_rounded
-                                        : mod == GoruntulemeModeli.uc
-                                            ? Icons.view_column_rounded
-                                            : Icons.list_rounded,
-                                    size: 15,
-                                  ),
-                                ),
-                                _ToolBtn(
-                                  onTap: _filtreAc,
-                                  aktif: filtrAktif,
-                                  child: const Icon(Icons.tune_rounded, size: 15),
-                                ),
-                                const SizedBox(width: 6),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        const BildirimCaniWidget(),
-                      ],
-                    ),
-                  ),
-
-                  // Neden İSTE barı — kayan yazı
-                  const _NedenIsteBar(),
-                ],
-              ),
-            ),
-            secondChild: const SizedBox(width: double.infinity),
+          // ── Seçenek 3: Logo + arama + kategori (hem grid hem swipe modunda tam görünür) ──
+          _IsteklerHeader(
+            aramaCtrl: _aramaCtrl,
+            aramaMetni: _aramaMetni,
+            aramaGizli: _aramaGizli && !isSwipe,
+            filtrAktif: filtrAktif,
+            filtreBadgeMetni: _filtreBadgeMetni,
+            siralama: _siralama,
+            seciliAnaKey: _seciliAnaKey,
+            mod: mod,
+            onAramaChanged: (v) => setState(() => _aramaMetni = v),
+            onAramaSifirla: () {
+              _aramaCtrl.clear();
+              setState(() => _aramaMetni = '');
+            },
+            onFiltreAc: _filtreAc,
+            onSiralamaAc: _siralamaSheet,
+            onKategoriSec: _kategoriSec,
+            onFiltreSifirla: () => setState(() {
+              _seciliAnaKey = null;
+              _seciliAltKey = null;
+            }),
+            onModSec: (m) => ref.read(gridTercihiProvider.notifier).modSec(m),
+            kategoriScrollCtrl: _kategoriScrollCtrl,
           ),
-
-          // ── Kategori barı (her zaman görünür) ─────────────────────────
-          Container(
-            height: 40,
-            color: Colors.white,
-            child: ListView.builder(
-              controller: _kategoriScrollCtrl,
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              itemCount: kKategoriAgaci.length,
-              itemBuilder: (context, i) {
-                final kat    = kKategoriAgaci[i];
-                final secili = _seciliAnaKey == kat.key;
-                return GestureDetector(
-                  onTap: () => _kategoriSec(kat.key),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    margin: const EdgeInsets.only(right: 6),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: secili ? AppColors.red : AppColors.surface,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(kat.ad,
-                        style: GoogleFonts.dmSans(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: secili ? Colors.white : AppColors.textPrimary,
-                        )),
-                  ),
-                );
-              },
-            ),
-          ),
-
-          // Aktif filtre badge
-          if (filtrAktif)
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
-              child: Row(children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.red.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Text(_filtreBadgeMetni,
-                        style: GoogleFonts.dmSans(
-                            fontSize: 12,
-                            color: AppColors.red,
-                            fontWeight: FontWeight.w500)),
-                    const SizedBox(width: 6),
-                    GestureDetector(
-                      onTap: () => setState(() {
-                        _seciliAnaKey = null; _seciliAltKey = null;
-                      }),
-                      child: const Icon(Icons.close_rounded,
-                          size: 13, color: AppColors.red),
-                    ),
-                  ]),
-                ),
-              ]),
-            ),
 
           Container(height: 0.5, color: AppColors.divider),
 
-          // ── İlan listesi ──────────────────────────────────────────────
+          // ── İçerik ─────────────────────────────────────────────────────
           Expanded(
-            child: RefreshIndicator(
-              color: AppColors.red,
-              onRefresh: () =>
-                  ref.read(istekIlanlarProvider.notifier).yenile(),
-              child: CustomScrollView(
-                controller: _scrollController,
-                physics: const AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  SliverPadding(
-                    padding: const EdgeInsets.all(6),
-                    sliver: ilanWidget,
+            child: isSwipe
+                ? ilanWidget
+                : RefreshIndicator(
+                    color: AppColors.red,
+                    onRefresh: () =>
+                        ref.read(istekIlanlarProvider.notifier).yenile(),
+                    child: CustomScrollView(
+                      controller: _scrollController,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      slivers: [
+                        SliverPadding(
+                          padding: const EdgeInsets.all(6),
+                          sliver: ilanWidget,
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
-            ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(context,
-            MaterialPageRoute(builder: (_) =>
-                const IlanFormScreen(tip: IlanTip.istek))),
-        backgroundColor: AppColors.red,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: Text('İlan Ver',
-            style: GoogleFonts.dmSans(
-                color: Colors.white, fontWeight: FontWeight.w600)),
-      ),
+      floatingActionButton: isSwipe
+          ? null // Swipe modunda FAB gizli — alt butonlar yeterli
+          : FloatingActionButton.extended(
+              onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) =>
+                          const IlanFormScreen(tip: IlanTip.istek))),
+              backgroundColor: AppColors.red,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: Text('İlan Ver',
+                  style: GoogleFonts.dmSans(
+                      color: Colors.white, fontWeight: FontWeight.w600)),
+            ),
     );
   }
 }
@@ -527,19 +381,19 @@ class _ToolBtn extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 28,
-        height: 28,
+        width: 30,
+        height: 30,
         margin: const EdgeInsets.symmetric(horizontal: 1),
         decoration: BoxDecoration(
           color: aktif
               ? AppColors.red.withValues(alpha: 0.1)
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: IconTheme(
           data: IconThemeData(
               color: aktif ? AppColors.red : AppColors.textSecondary,
-              size: 15),
+              size: 16),
           child: child,
         ),
       ),
@@ -563,7 +417,7 @@ class _NedenIsteBarState extends State<_NedenIsteBar>
   double _offset = 0;
   double _contentWidth = 0;
 
-  static const _hiz = 0.6; // piksel/ms
+  static const _hiz = 0.6;
   static const _maddeler = [
     'Güvenli alışveriş',
     'Onaylı taşıyıcılar',
@@ -576,17 +430,18 @@ class _NedenIsteBarState extends State<_NedenIsteBar>
   void initState() {
     super.initState();
     _ctrl = ScrollController();
-    _ticker = createTicker(_onTick)..start();
+    // reduce-motion kontrolü
+    final reduceMotion = SchedulerBinding
+        .instance.platformDispatcher.accessibilityFeatures.reduceMotion;
+    _ticker = createTicker(_onTick);
+    if (!reduceMotion) _ticker.start();
   }
 
   void _onTick(Duration elapsed) {
     if (!_ctrl.hasClients) return;
     if (_contentWidth == 0) return;
-
     _offset += _hiz;
-    if (_offset >= _contentWidth) {
-      _offset = 0;
-    }
+    if (_offset >= _contentWidth) _offset = 0;
     _ctrl.jumpTo(_offset);
   }
 
@@ -597,17 +452,14 @@ class _NedenIsteBarState extends State<_NedenIsteBar>
     super.dispose();
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Container(
       color: const Color(0xFFC8E6C9),
       height: 28,
       child: LayoutBuilder(builder: (context, constraints) {
-        // İçerik genişliğini hesapla — her madde ~120px, ayraç ~16px
         _contentWidth =
             (_maddeler.length * 120.0 + _maddeler.length * 16.0);
-
         return SingleChildScrollView(
           controller: _ctrl,
           scrollDirection: Axis.horizontal,
@@ -620,7 +472,7 @@ class _NedenIsteBarState extends State<_NedenIsteBar>
                 for (final m in _maddeler) ...[
                   const SizedBox(width: 16),
                   _NedenItem(metin: m),
-                  const _NedenAyrac(),
+                  _NedenAyrac(),
                 ],
               ],
             ],
@@ -634,7 +486,6 @@ class _NedenIsteBarState extends State<_NedenIsteBar>
 class _NedenItem extends StatelessWidget {
   final String metin;
   const _NedenItem({required this.metin});
-
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -643,14 +494,11 @@ class _NedenItem extends StatelessWidget {
         const Icon(Icons.check_circle_rounded,
             size: 12, color: Color(0xFF388E3C)),
         const SizedBox(width: 4),
-        Text(
-          metin,
-          style: GoogleFonts.dmSans(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF1B5E20),
-          ),
-        ),
+        Text(metin,
+            style: GoogleFonts.dmSans(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1B5E20))),
       ],
     );
   }
@@ -658,15 +506,410 @@ class _NedenItem extends StatelessWidget {
 
 class _NedenAyrac extends StatelessWidget {
   const _NedenAyrac();
-
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 3,
-      height: 3,
+      width: 3, height: 3,
       margin: const EdgeInsets.symmetric(horizontal: 10),
       decoration: const BoxDecoration(
           color: Color(0xFF4CAF50), shape: BoxShape.circle),
+    );
+  }
+}
+// ── Seçenek 3 Header: Logo + Arama + Kategori (grid & swipe ortak) ───────────
+
+class _IsteklerHeader extends StatelessWidget {
+  final TextEditingController aramaCtrl;
+  final String aramaMetni;
+  final bool aramaGizli;
+  final bool filtrAktif;
+  final String filtreBadgeMetni;
+  final SiralamaTipi siralama;
+  final String? seciliAnaKey;
+  final GoruntulemeModeli mod;
+  final ScrollController kategoriScrollCtrl;
+
+  final ValueChanged<String> onAramaChanged;
+  final VoidCallback onAramaSifirla;
+  final VoidCallback onFiltreAc;
+  final VoidCallback onSiralamaAc;
+  final ValueChanged<String> onKategoriSec;
+  final VoidCallback onFiltreSifirla;
+  final ValueChanged<GoruntulemeModeli> onModSec;
+
+  const _IsteklerHeader({
+    required this.aramaCtrl,
+    required this.aramaMetni,
+    required this.aramaGizli,
+    required this.filtrAktif,
+    required this.filtreBadgeMetni,
+    required this.siralama,
+    required this.seciliAnaKey,
+    required this.mod,
+    required this.kategoriScrollCtrl,
+    required this.onAramaChanged,
+    required this.onAramaSifirla,
+    required this.onFiltreAc,
+    required this.onSiralamaAc,
+    required this.onKategoriSec,
+    required this.onFiltreSifirla,
+    required this.onModSec,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isSwipe = mod == GoruntulemeModeli.swipe;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+      color: Colors.white,
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+
+          // ── Satır 1: Logo + bildirim ────────────────────────────────────
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            height: aramaGizli ? 0 : null,
+            clipBehavior: Clip.antiAlias,
+            color: Colors.transparent,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 12, 4),
+              child: Row(
+                children: [
+                  Text(
+                    'İSTE',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w900,
+                      fontStyle: FontStyle.italic,
+                      color: AppColors.red,
+                      letterSpacing: 1.5,
+                      height: 1,
+                    ),
+                  ),
+                  const Spacer(),
+                  const BildirimCaniWidget(),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Satır 2: Arama + Filtre ────────────────────────────────────
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            height: aramaGizli ? 0 : null,
+            clipBehavior: Clip.antiAlias,
+            color: Colors.transparent,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 2, 12, 6),
+              child: Row(
+                children: [
+                  // Arama kutusu
+                  Expanded(
+                    child: Container(
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F5F5),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: const Color(0xFFE8E8E8), width: 1.5),
+                      ),
+                      child: Row(
+                        children: [
+                          const SizedBox(width: 11),
+                          const Icon(Icons.search_rounded,
+                              size: 16, color: Color(0xFFBBBBBB)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              controller: aramaCtrl,
+                              onChanged: onAramaChanged,
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 13, color: AppColors.textPrimary),
+                              decoration: InputDecoration(
+                                hintText: 'Ne getirmemizi istersin?',
+                                hintStyle: GoogleFonts.dmSans(
+                                    color: AppColors.textHint, fontSize: 13),
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                            ),
+                          ),
+                          if (aramaMetni.isNotEmpty) ...[
+                            GestureDetector(
+                              onTap: onAramaSifirla,
+                              child: const Icon(Icons.close_rounded,
+                                  size: 14, color: AppColors.textSecondary),
+                            ),
+                            const SizedBox(width: 4),
+                          ],
+                          // Sıralama ikonu
+                          GestureDetector(
+                            onTap: onSiralamaAc,
+                            child: Container(
+                              width: 30,
+                              height: 30,
+                              margin: const EdgeInsets.symmetric(horizontal: 2),
+                              decoration: BoxDecoration(
+                                color: siralama != SiralamaTipi.enYeni
+                                    ? AppColors.red.withValues(alpha: 0.1)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(Icons.sort_rounded,
+                                  size: 16,
+                                  color: siralama != SiralamaTipi.enYeni
+                                      ? AppColors.red
+                                      : AppColors.textSecondary),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Filtre butonu
+                  GestureDetector(
+                    onTap: onFiltreAc,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.red,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          const Icon(Icons.tune_rounded,
+                              color: Colors.white, size: 18),
+                          if (filtrAktif)
+                            Positioned(
+                              top: 6,
+                              right: 6,
+                              child: Container(
+                                width: 7,
+                                height: 7,
+                                decoration: const BoxDecoration(
+                                    color: Colors.white, shape: BoxShape.circle),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Satır 3: Kategori chip'leri ────────────────────────────────
+          SizedBox(
+            height: 36,
+            child: ListView.builder(
+              controller: kategoriScrollCtrl,
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+              itemCount: kKategoriAgaci.length + 1,
+              itemBuilder: (context, i) {
+                // "Tümü" chip'i
+                if (i == 0) {
+                  final secili = seciliAnaKey == null;
+                  return GestureDetector(
+                    onTap: () {
+                      if (!secili) onFiltreSifirla();
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      margin: const EdgeInsets.only(right: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: secili ? AppColors.red : AppColors.surface,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: secili
+                              ? AppColors.red
+                              : const Color(0xFFE8E8E8),
+                          width: 1,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text('Tümü',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: secili ? Colors.white : AppColors.textSecondary,
+                          )),
+                    ),
+                  );
+                }
+                final kat = kKategoriAgaci[i - 1];
+                final secili = seciliAnaKey == kat.key;
+                return GestureDetector(
+                  onTap: () => onKategoriSec(kat.key),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    margin: const EdgeInsets.only(right: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: secili ? AppColors.red : AppColors.surface,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: secili ? AppColors.red : const Color(0xFFE8E8E8),
+                        width: 1,
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text('${kat.emoji} ${kat.ad}',
+                        style: GoogleFonts.dmSans(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color:
+                              secili ? Colors.white : AppColors.textPrimary,
+                        )),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // ── Satır 4: Aktif filtre badge (opsiyonel) ────────────────────
+          if (filtrAktif)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 2, 12, 4),
+              child: Row(children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.red.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Text(filtreBadgeMetni,
+                        style: GoogleFonts.dmSans(
+                            fontSize: 12,
+                            color: AppColors.red,
+                            fontWeight: FontWeight.w500)),
+                    const SizedBox(width: 6),
+                    GestureDetector(
+                      onTap: onFiltreSifirla,
+                      child: const Icon(Icons.close_rounded,
+                          size: 13, color: AppColors.red),
+                    ),
+                  ]),
+                ),
+              ]),
+            ),
+
+          // ── Satır 5: Neden İSTE barı + Mod pill'leri ──────────────────
+          SizedBox(
+            height: 28,
+            child: Row(
+              children: [
+                // Sol: Neden İSTE kayan bar (grid modunda) veya boş alan (swipe)
+                Expanded(
+                  child: isSwipe
+                      ? Padding(
+                          padding: const EdgeInsets.only(left: 12),
+                          child: Text('kaydır & keşfet',
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 11, color: AppColors.textHint)),
+                        )
+                      : const _NedenIsteBar(),
+                ),
+                // Sağ: Mod pill'leri — her zaman görünür
+                Container(
+                  color: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _ModPill(
+                        ikon: Icons.grid_view_rounded,
+                        label: '',
+                        aktif: mod == GoruntulemeModeli.iki,
+                        onTap: () => onModSec(GoruntulemeModeli.iki),
+                      ),
+                      const SizedBox(width: 4),
+                      _ModPill(
+                        ikon: Icons.view_module_rounded,
+                        label: '',
+                        aktif: mod == GoruntulemeModeli.uc,
+                        onTap: () => onModSec(GoruntulemeModeli.uc),
+                      ),
+                      const SizedBox(width: 4),
+                      _ModPill(
+                        ikon: Icons.swipe_left_alt_rounded,
+                        label: isSwipe ? 'Swipe' : '',
+                        aktif: mod == GoruntulemeModeli.swipe,
+                        onTap: () => onModSec(GoruntulemeModeli.swipe),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Mod pill butonu ───────────────────────────────────────────────────────────
+
+class _ModPill extends StatelessWidget {
+  final IconData ikon;
+  final String label;
+  final bool aktif;
+  final VoidCallback onTap;
+
+  const _ModPill({
+    required this.ikon,
+    required this.label,
+    required this.aktif,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        height: 24,
+        padding: EdgeInsets.symmetric(
+            horizontal: label.isNotEmpty ? 10 : 8),
+        decoration: BoxDecoration(
+          color: aktif ? AppColors.red : const Color(0xFFF0F0F0),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: aktif ? AppColors.red : const Color(0xFFE0E0E0),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(ikon,
+                size: 13,
+                color: aktif ? Colors.white : const Color(0xFF9E9E9E)),
+            if (label.isNotEmpty) ...[
+              const SizedBox(width: 4),
+              Text(label,
+                  style: GoogleFonts.dmSans(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: aktif ? Colors.white : const Color(0xFF9E9E9E))),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
