@@ -617,17 +617,7 @@ class _IsteklerHeader extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(14, 10, 12, 4),
               child: Row(
                 children: [
-                  Text(
-                    'İSTE',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w900,
-                      fontStyle: FontStyle.italic,
-                      color: AppColors.red,
-                      letterSpacing: 1.5,
-                      height: 1,
-                    ),
-                  ),
+                  Image.asset('assets/images/logo.png', height: 38),
                   const Spacer(),
                   const BildirimCaniWidget(),
                 ],
