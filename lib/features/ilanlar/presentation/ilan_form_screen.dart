@@ -106,12 +106,20 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
       _snack('En fazla ${Pagination.maxResimSayisi} resim ekleyebilirsin.');
       return;
     }
-    final picked = await _picker.pickImage(
-      source: ImageSource.gallery,
+    final kalanSlot = Pagination.maxResimSayisi - toplamResim;
+    final picked = await _picker.pickMultiImage(
       imageQuality: 80,
+      limit: kalanSlot,
     );
-    if (picked != null) {
-      setState(() => _yeniResimler.add(File(picked.path)));
+    if (picked.isNotEmpty) {
+      setState(() {
+        for (final img in picked) {
+          if (_mevcutResimler.length + _yeniResimler.length <
+              Pagination.maxResimSayisi) {
+            _yeniResimler.add(File(img.path));
+          }
+        }
+      });
     }
   }
 

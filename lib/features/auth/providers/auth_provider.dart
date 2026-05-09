@@ -104,6 +104,39 @@ class AuthNotifier extends _$AuthNotifier {
     }
   }
 
+  Future<void> telefonKoduGonder({
+    required String telefon,
+    required void Function(String) onKodGonderildi,
+    required void Function(String) onHata,
+  }) async {
+    await _repo.telefonKoduGonder(
+      telefon: telefon,
+      onKodGonderildi: onKodGonderildi,
+      onHata: onHata,
+    );
+  }
+
+  Future<AuthSonuc> telefonIleGiris({
+    required String verificationId,
+    required String smsKodu,
+  }) async {
+    state = const AsyncLoading();
+    try {
+      final credential = await _repo.telefonIleGiris(
+        verificationId: verificationId,
+        smsKodu: smsKodu,
+      );
+      if (ref.mounted) state = const AsyncData(null);
+      return AuthSonuc.basarili(credential.user?.uid ?? '');
+    } on FirebaseAuthException catch (e) {
+      if (ref.mounted) state = const AsyncData(null);
+      return AuthSonuc.hata(AuthRepository.hataMesaji(e.code));
+    } catch (e) {
+      if (ref.mounted) state = const AsyncData(null);
+      return AuthSonuc.hata('Doğrulama başarısız. Tekrar dene.');
+    }
+  }
+
   Future<void> cikisYap() async {
     await _repo.cikisYap();
   }

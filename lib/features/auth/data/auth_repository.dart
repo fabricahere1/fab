@@ -115,6 +115,78 @@ class AuthRepository {
  
  
  
+  // ── Telefon Girişi ────────────────────────────────────────
+
+  Future<void> telefonKoduGonder({
+    required String telefon,
+    required void Function(String verificationId) onKodGonderildi,
+    required void Function(String hata) onHata,
+  }) async {
+    await auth.verifyPhoneNumber(
+      phoneNumber: telefon,
+      verificationCompleted: (credential) async {
+        // Android otomatik doğrulama
+        final userCredential = await auth.signInWithCredential(credential);
+        final user = userCredential.user;
+        if (user != null) {
+          final doc = await firestore
+              .collection(Collections.kullanicilar)
+              .doc(user.uid)
+              .get();
+          if (!doc.exists) {
+            await firestore
+                .collection(Collections.kullanicilar)
+                .doc(user.uid)
+                .set({
+              'adSoyad':          user.displayName ?? '',
+              'telefon':          user.phoneNumber ?? '',
+              'profilTamamlandi': false,
+              'olusturmaTarihi':  FieldValue.serverTimestamp(),
+            });
+          }
+        }
+      },
+      verificationFailed: (e) {
+        onHata(hataMesaji(e.code));
+      },
+      codeSent: (verificationId, _) {
+        onKodGonderildi(verificationId);
+      },
+      codeAutoRetrievalTimeout: (_) {},
+      timeout: const Duration(seconds: 60),
+    );
+  }
+
+  Future<UserCredential> telefonIleGiris({
+    required String verificationId,
+    required String smsKodu,
+  }) async {
+    final credential = PhoneAuthProvider.credential(
+      verificationId: verificationId,
+      smsCode: smsKodu,
+    );
+    final userCredential = await auth.signInWithCredential(credential);
+    final user = userCredential.user;
+    if (user != null) {
+      final doc = await firestore
+          .collection(Collections.kullanicilar)
+          .doc(user.uid)
+          .get();
+      if (!doc.exists) {
+        await firestore
+            .collection(Collections.kullanicilar)
+            .doc(user.uid)
+            .set({
+          'adSoyad':          '',
+          'telefon':          user.phoneNumber ?? '',
+          'profilTamamlandi': false,
+          'olusturmaTarihi':  FieldValue.serverTimestamp(),
+        });
+      }
+    }
+    return userCredential;
+  }
+
   Future<void> cikisYap() async {
     // FCM token silme FcmService tarafından authStateChanges ile otomatik yapılır
     try { await _googleSignIn.signOut(); } catch (_) {}
@@ -206,7 +278,9 @@ class AuthRepository {
       case 'email-already-in-use': return 'Bu e-posta adresi zaten kullanımda.';
       case 'weak-password': return 'Şifre çok zayıf. Daha güçlü bir şifre deneyin.';
       case 'user-disabled': return 'Bu hesap devre dışı bırakılmış.';
-      case 'too-many-requests': return 'Çok fazla başarısız deneme. Lütfen daha sonra tekrar deneyin.';
+      case 'invalid-verification-code': return 'Doğrulama kodu hatalı.';
+      case 'invalid-phone-number': return 'Geçersiz telefon numarası.';
+      case 'too-many-requests': return 'Çok fazla deneme. Lütfen daha sonra tekrar deneyin.';
       case 'network-request-failed': return 'İnternet bağlantınızı kontrol edin.';
       case 'email-not-verified': return 'Emailinizi doğrulamadan giriş yapamazsınız.';
       case 'google-sign-in-cancelled': return 'Google girişi iptal edildi.';

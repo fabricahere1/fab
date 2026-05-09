@@ -621,11 +621,13 @@ class _AdimSatiri extends StatelessWidget {
 class IslemDurumuTetikleyici extends ConsumerStatefulWidget {
   final String sohbetId;
   final String karsiKullaniciAd;
+  final String ilanTip;
 
   const IslemDurumuTetikleyici({
     super.key,
     required this.sohbetId,
     required this.karsiKullaniciAd,
+    this.ilanTip = 'istek',
   });
 
   @override
@@ -705,10 +707,11 @@ class _IslemDurumuTetikleyiciState
   Widget build(BuildContext context) {
     final durumlari =
         ref.watch(islemDurumuProvider(widget.sohbetId)).value ?? {};
-    final tamamlanan = IslemDurumu.values
+    final adimlar   = IlanTipiAdimlar.forTip(widget.ilanTip);
+    final tamamlanan = adimlar
         .where((d) => durumlari[d.firestoreKey] == true)
         .length;
-    final toplam = IslemDurumu.values.length;
+    final toplam = adimlar.length;
 
     return GestureDetector(
       onTap: _onTap,

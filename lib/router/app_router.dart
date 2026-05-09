@@ -137,11 +137,84 @@ String _hedefBelirle(Ref ref, dynamic user) {
   return tamamlandi ? AppRoutes.home : AppRoutes.profilTamamla;
 }
 
-class _SplashPage extends StatelessWidget {
+class _SplashPage extends StatefulWidget {
   const _SplashPage();
 
   @override
-  Widget build(BuildContext context) => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+  State<_SplashPage> createState() => _SplashPageState();
+}
+
+class _SplashPageState extends State<_SplashPage>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _logoOpacity;
+  late final Animation<double> _logoScale;
+  late final Animation<double> _hintOpacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+
+    _logoOpacity = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _ctrl, curve: const Interval(0, 0.6, curve: Curves.easeOut)),
+    );
+    _logoScale = Tween<double>(begin: 0.75, end: 1).animate(
+      CurvedAnimation(parent: _ctrl, curve: const Interval(0, 0.7, curve: Curves.easeOutBack)),
+    );
+    _hintOpacity = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _ctrl, curve: const Interval(0.5, 1.0, curve: Curves.easeIn)),
+    );
+
+    _ctrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: AnimatedBuilder(
+          animation: _ctrl,
+          builder: (_, _) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Opacity(
+                opacity: _logoOpacity.value,
+                child: Transform.scale(
+                  scale: _logoScale.value,
+                  child: Image.asset(
+                    'assets/images/logo_seffaf.png',
+                    height: 140,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Opacity(
+                opacity: _hintOpacity.value,
+                child: Text(
+                  'Yeter ki Sen İste',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[400],
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/ilan_model.dart';
 import '../../../shared/constants/app_constants.dart';
@@ -162,6 +164,23 @@ class IlanRepository {
         .map((snap) => snap.docs.map(IlanModel.fromFirestore).toList());
   }
 
+  /// Resmi yüklemeden önce sıkıştırır.
+  /// Çıktı: max 1200px, %85 kalite → genellikle 200-500 KB arası
+  Future<File> _resimSikistir(File dosya, int index) async {
+    final tempDir = await getTemporaryDirectory();
+    final hedefYol =
+        '${tempDir.path}/ilan_compressed_${DateTime.now().millisecondsSinceEpoch}_$index.jpg';
+    final sonuc = await FlutterImageCompress.compressAndGetFile(
+      dosya.absolute.path,
+      hedefYol,
+      quality: 85,
+      minWidth: 1200,
+      minHeight: 1200,
+      format: CompressFormat.jpeg,
+    );
+    return sonuc != null ? File(sonuc.path) : dosya;
+  }
+
   Future<String> ilanOlustur({
     required IlanModel ilan,
     List<File> resimler = const [],
@@ -172,11 +191,13 @@ class IlanRepository {
     final List<String> resimUrller = [];
     for (int i = 0; i < resimler.length; i++) {
       onProgress?.call(i, 0.0);
+      // Yüklemeden önce sıkıştır
+      final sikistirilmis = await _resimSikistir(resimler[i], i);
       final ref = storage
           .ref()
           .child(StoragePaths.ilanResimleri)
           .child('${user.uid}_${DateTime.now().millisecondsSinceEpoch}_$i.jpg');
-      final task = ref.putFile(resimler[i]);
+      final task = ref.putFile(sikistirilmis);
       task.snapshotEvents.listen((snap) {
         onProgress?.call(i, snap.bytesTransferred / snap.totalBytes);
       });

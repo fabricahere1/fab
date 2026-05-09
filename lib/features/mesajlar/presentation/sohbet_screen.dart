@@ -414,6 +414,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
               child: IslemDurumuTetikleyici(
                 sohbetId: _sohbetId,
                 karsiKullaniciAd: widget.karsiKullaniciAd,
+                ilanTip: widget.ilanTip,
               ),
             ),
           ),

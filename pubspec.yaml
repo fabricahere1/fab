@@ -43,15 +43,15 @@ dependencies:
 
   # ── Utilities ────────────────────────────────────────────
   image_picker: ^1.1.2
+  flutter_image_compress: ^2.3.0
+  path_provider: ^2.1.4
   url_launcher: ^6.3.1
   shared_preferences: ^2.5.5
-
-  # ── Splash ───────────────────────────────────────────────
-  flutter_native_splash: ^2.4.3
 
   cupertino_icons: ^1.0.8
   flutter_cache_manager: ^3.4.1
   cloud_functions: ^6.2.0
+  flutter_native_splash: ^2.4.3
 
 dev_dependencies:
   flutter_test:
@@ -70,3 +70,24 @@ flutter:
   assets:
     - assets/splash/
     - assets/images/
+
+# ── Splash Ekranı ────────────────────────────────────────────────────────────
+flutter_native_splash:
+  color: "#0D0D0D"
+  color_dark: "#0D0D0D"
+
+  image: assets/splash/iste_splash.png
+  image_dark: assets/splash/iste_splash.png
+
+  android_12:
+    image: assets/splash/iste_splash.png
+    color: "#0D0D0D"
+    image_dark: assets/splash/iste_splash.png
+    color_dark: "#0D0D0D"
+    icon_background_color: "#0D0D0D"
+    icon_background_color_dark: "#0D0D0D"
+
+  fullscreen: false
+  android: true
+  ios: true
+  web: false
