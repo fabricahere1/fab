@@ -97,7 +97,7 @@ class DegerlendirmelerListeScreen extends ConsumerWidget {
   }
 }
 
-// ── Kart ──────────────────────────────────────────────────
+// ── Kart — B stili (tırnak + ilan bilgisi) ───────────────
 
 class DegerlendirmeKarti extends ConsumerWidget {
   final Map<String, dynamic> data;
@@ -107,106 +107,179 @@ class DegerlendirmeKarti extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final degerlendireninId = data['degerlendireninId'] as String? ?? '';
-    final puan = (data['puan'] as num?)?.toDouble() ?? 0.0;
-    final yorum = data['yorum'] as String? ?? '';
-    final tarih = data['tarih'];
+    final puan       = (data['puan'] as num?)?.toDouble() ?? 0.0;
+    final yorum      = data['yorum'] as String? ?? '';
+    final ilanBaslik = data['ilanBaslik'] as String? ?? '';
+    final tarih      = data['tarih'];
 
     String tarihYazi = '';
     if (tarih != null) {
       try {
         final dt = (tarih as dynamic).toDate() as DateTime;
-        tarihYazi =
-            '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}';
+        const aylar = ['', 'Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz',
+            'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+        tarihYazi = '${dt.day} ${aylar[dt.month]} ${dt.year}';
       } catch (_) {}
     }
 
     final profilAsync = ref.watch(kullaniciBilgiProvider(degerlendireninId));
-    final ad = profilAsync.value?.adSoyad ?? '';
+    final ad      = profilAsync.value?.adSoyad ?? '';
     final fotoUrl = profilAsync.value?.fotoUrl;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.divider.withValues(alpha: 0.6)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              fotoUrl != null && fotoUrl.isNotEmpty
-                  ? CircleAvatar(
-                      radius: 20,
-                      backgroundImage: NetworkImage(fotoUrl),
-                    )
-                  : CircleAvatar(
-                      radius: 20,
-                      backgroundColor:
-                          AppColors.red.withValues(alpha: 0.12),
-                      child: Text(
-                        ad.isNotEmpty ? ad[0].toUpperCase() : '?',
-                        style: const TextStyle(
-                            color: AppColors.red,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14),
-                      ),
-                    ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      ad.isNotEmpty ? ad : 'Kullanıcı',
-                      style: GoogleFonts.dmSans(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary),
-                    ),
-                    if (tarihYazi.isNotEmpty)
-                      Text(
-                        tarihYazi,
-                        style: GoogleFonts.dmSans(
-                            fontSize: 11, color: AppColors.textHint),
-                      ),
-                  ],
+
+          // ── İlan badge — sadece varsa ─────────────────────────
+          if (ilanBaslik.isNotEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(14)),
+                border: Border(
+                  bottom: BorderSide(
+                      color: AppColors.divider.withValues(alpha: 0.6),
+                      width: 0.5),
                 ),
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: List.generate(5, (i) {
-                  return Icon(
-                    i < puan.floor()
-                        ? Icons.star_rounded
-                        : (i < puan
-                            ? Icons.star_half_rounded
-                            : Icons.star_outline_rounded),
-                    color: const Color(0xFFFFA726),
-                    size: 18,
-                  );
-                }),
+              child: Row(
+                children: [
+                  const Icon(Icons.shopping_bag_outlined,
+                      size: 13, color: AppColors.textSecondary),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      ilanBaslik,
+                      style: GoogleFonts.dmSans(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w500),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-          if (yorum.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Text(
-              yorum,
-              style: GoogleFonts.dmSans(
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
-                  height: 1.5),
             ),
-          ],
+
+          // ── Yorum alanı ───────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            child: Stack(
+              children: [
+                // Büyük tırnak arka planda
+                Positioned(
+                  top: -4,
+                  left: -2,
+                  child: Text(
+                    '“',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 52,
+                      height: 1,
+                      color: AppColors.divider,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: yorum.isNotEmpty
+                      ? Text(
+                          yorum,
+                          style: GoogleFonts.dmSans(
+                            fontSize: 13,
+                            color: AppColors.textPrimary,
+                            height: 1.6,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        )
+                      : Text(
+                          'Yorum yapılmadı.',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 13,
+                            color: AppColors.textHint,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── Alt: avatar + isim + tarih | yıldızlar ───────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+            child: Row(
+              children: [
+                // Avatar
+                fotoUrl != null && fotoUrl.isNotEmpty
+                    ? CircleAvatar(
+                        radius: 16,
+                        backgroundImage: NetworkImage(fotoUrl),
+                      )
+                    : CircleAvatar(
+                        radius: 16,
+                        backgroundColor:
+                            AppColors.red.withValues(alpha: 0.12),
+                        child: Text(
+                          ad.isNotEmpty ? ad[0].toUpperCase() : '?',
+                          style: GoogleFonts.dmSans(
+                              color: AppColors.red,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12),
+                        ),
+                      ),
+                const SizedBox(width: 8),
+                // İsim + tarih
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        ad.isNotEmpty ? ad : 'Kullanıcı',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary),
+                      ),
+                      if (tarihYazi.isNotEmpty)
+                        Text(
+                          tarihYazi,
+                          style: GoogleFonts.dmSans(
+                              fontSize: 11,
+                              color: AppColors.textHint),
+                        ),
+                    ],
+                  ),
+                ),
+                // Yıldızlar
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(5, (i) {
+                    return Icon(
+                      i < puan.floor()
+                          ? Icons.star_rounded
+                          : (i < puan
+                              ? Icons.star_half_rounded
+                              : Icons.star_outline_rounded),
+                      color: const Color(0xFFFFA726),
+                      size: 16,
+                    );
+                  }),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

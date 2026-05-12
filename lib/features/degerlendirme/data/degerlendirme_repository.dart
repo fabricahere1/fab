@@ -19,6 +19,7 @@ class DegerlendirmeRepository {
     required String hedefKullaniciId,
     required double puan,
     required String yorum,
+    String ilanBaslik = '',
   }) async {
     await _db.runTransaction((tx) async {
       final userRef = _db.collection('kullanicilar').doc(hedefKullaniciId);
@@ -31,6 +32,7 @@ class DegerlendirmeRepository {
         'hedefKullaniciId':  hedefKullaniciId,
         'puan':              puan,
         'yorum':             yorum,
+        'ilanBaslik':        ilanBaslik,
         'tarih':             FieldValue.serverTimestamp(),
       });
 

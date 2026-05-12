@@ -116,6 +116,8 @@ class _IsteAppState extends ConsumerState<IsteApp> {
           final sohbetId = doc.id;
           if (_islemListeners.containsKey(sohbetId)) continue;
 
+          bool ilkSnapshot = true; // ← Bug 1 fix: ilk snapshot'ı atla
+
           final sub = FirebaseFirestore.instance
               .collection('sohbetler')
               .doc(sohbetId)
@@ -125,12 +127,41 @@ class _IsteAppState extends ConsumerState<IsteApp> {
             final d = sohbetDoc.data() as Map<String, dynamic>;
             final islemDurumlari = Map<String, dynamic>.from(
                 d['islemDurumlari'] as Map? ?? {});
+
+            // İlk snapshot mevcut durumu baseline olarak kaydet,
+            // bildirim gösterme — sadece sonraki değişiklikleri bildir
+            if (ilkSnapshot) {
+              ilkSnapshot = false;
+              _oncekiDurumlar[sohbetId] =
+                  Map<String, dynamic>.from(islemDurumlari);
+              return;
+            }
+
             final onceki = _oncekiDurumlar[sohbetId] ?? {};
 
             for (final durum in IslemDurumu.values) {
-              final key = durum.firestoreKey;
-              final yeniDeger = islemDurumlari[key] == true;
-              final eskiDeger = onceki[key] == true;
+              // Bug 2 fix: anlasildi iki taraflı — uid bazlı key'leri de kontrol et
+              final bool yeniDeger;
+              final bool eskiDeger;
+
+              if (durum == IslemDurumu.anlasildi) {
+                // Her iki tarafın da onayladığı an → anlasildi tamamlandı sayılır
+                final kullanicilar = List<String>.from(d['kullanicilar'] ?? []);
+                final uid1 = kullanicilar.isNotEmpty ? kullanicilar[0] : '';
+                final uid2 = kullanicilar.length > 1 ? kullanicilar[1] : '';
+                // Yeni: her iki uid de onayladı mı?
+                final yeni1 = islemDurumlari['anlasildi_$uid1'] == true;
+                final yeni2 = islemDurumlari['anlasildi_$uid2'] == true;
+                yeniDeger = yeni1 && yeni2;
+                // Önceki: her iki uid de onaylamış mıydı?
+                final eski1 = onceki['anlasildi_$uid1'] == true;
+                final eski2 = onceki['anlasildi_$uid2'] == true;
+                eskiDeger = eski1 && eski2;
+              } else {
+                final key = durum.firestoreKey;
+                yeniDeger = islemDurumlari[key] == true;
+                eskiDeger = onceki[key] == true;
+              }
 
               if (yeniDeger && !eskiDeger) {
                 final kullanicilar =

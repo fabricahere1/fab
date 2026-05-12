@@ -13,6 +13,7 @@ class DegerlendirmeModal extends ConsumerStatefulWidget {
   final String hedefKullaniciId;
   final String hedefKullaniciAd;
   final String? hedefFotoUrl;
+  final String ilanBaslik;
 
   const DegerlendirmeModal({
     super.key,
@@ -20,6 +21,7 @@ class DegerlendirmeModal extends ConsumerStatefulWidget {
     required this.hedefKullaniciId,
     required this.hedefKullaniciAd,
     this.hedefFotoUrl,
+    this.ilanBaslik = '',
   });
 
   static Future<void> goster({
@@ -28,6 +30,7 @@ class DegerlendirmeModal extends ConsumerStatefulWidget {
     required String hedefKullaniciId,
     required String hedefKullaniciAd,
     String? hedefFotoUrl,
+    String ilanBaslik = '',
   }) {
     return showModalBottomSheet(
       context: context,
@@ -38,6 +41,7 @@ class DegerlendirmeModal extends ConsumerStatefulWidget {
         hedefKullaniciId: hedefKullaniciId,
         hedefKullaniciAd: hedefKullaniciAd,
         hedefFotoUrl:     hedefFotoUrl,
+        ilanBaslik:       ilanBaslik,
       ),
     );
   }
@@ -71,6 +75,7 @@ class _DegerlendirmeModalState extends ConsumerState<DegerlendirmeModal> {
         hedefKullaniciId:  widget.hedefKullaniciId,
         puan:              _secilenYildiz.toDouble(),
         yorum:             _yorumCtrl.text.trim(),
+        ilanBaslik:        widget.ilanBaslik,
       );
       await repo.sohbetDegerlendirmeyiIsaretle(
         sohbetId:    widget.sohbetId,
