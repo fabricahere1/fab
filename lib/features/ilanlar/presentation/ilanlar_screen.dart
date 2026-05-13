@@ -631,34 +631,47 @@ class _IsteklerHeader extends StatelessWidget {
             clipBehavior: Clip.antiAlias,
             color: Colors.transparent,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 2, 12, 6),
+              padding: const EdgeInsets.fromLTRB(12, 2, 12, 8),
               child: Row(
                 children: [
                   Expanded(
                     child: Container(
-                      height: 40,
+                      height: 44,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF5F5F5),
-                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(22),
                         border: Border.all(
-                            color: const Color(0xFFE8E8E8), width: 1.5),
+                            color: const Color(0xFFEEEEEE), width: 1),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 12,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
                       ),
                       child: Row(
                         children: [
-                          const SizedBox(width: 11),
-                          const Icon(Icons.search_rounded,
-                              size: 16, color: Color(0xFFBBBBBB)),
+                          const SizedBox(width: 14),
+                          Icon(Icons.search_rounded,
+                              size: 18,
+                              color: aramaMetni.isNotEmpty
+                                  ? AppColors.red
+                                  : const Color(0xFFCCCCCC)),
                           const SizedBox(width: 8),
                           Expanded(
                             child: TextField(
                               controller: aramaCtrl,
                               onChanged: onAramaChanged,
                               style: GoogleFonts.dmSans(
-                                  fontSize: 13, color: AppColors.textPrimary),
+                                  fontSize: 13,
+                                  color: AppColors.textPrimary,
+                                  fontWeight: FontWeight.w500),
                               decoration: InputDecoration(
                                 hintText: 'Ne getirmemizi istersin?',
                                 hintStyle: GoogleFonts.dmSans(
-                                    color: AppColors.textHint, fontSize: 13),
+                                    color: const Color(0xFFCCCCCC),
+                                    fontSize: 13),
                                 border: InputBorder.none,
                                 isDense: true,
                                 contentPadding: EdgeInsets.zero,
@@ -668,28 +681,35 @@ class _IsteklerHeader extends StatelessWidget {
                           if (aramaMetni.isNotEmpty) ...[
                             GestureDetector(
                               onTap: onAramaSifirla,
-                              child: const Icon(Icons.close_rounded,
-                                  size: 14, color: AppColors.textSecondary),
+                              child: Container(
+                                width: 18, height: 18,
+                                margin: const EdgeInsets.only(right: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFCCCCCC),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.close_rounded,
+                                    size: 12, color: Colors.white),
+                              ),
                             ),
-                            const SizedBox(width: 4),
                           ],
                           GestureDetector(
                             onTap: onSiralamaAc,
                             child: Container(
-                              width: 30,
-                              height: 30,
-                              margin: const EdgeInsets.symmetric(horizontal: 2),
+                              width: 32,
+                              height: 32,
+                              margin: const EdgeInsets.only(right: 4),
                               decoration: BoxDecoration(
                                 color: siralama != SiralamaTipi.enYeni
                                     ? AppColors.red.withValues(alpha: 0.1)
                                     : Colors.transparent,
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(16),
                               ),
                               child: Icon(Icons.sort_rounded,
-                                  size: 16,
+                                  size: 17,
                                   color: siralama != SiralamaTipi.enYeni
                                       ? AppColors.red
-                                      : AppColors.textSecondary),
+                                      : const Color(0xFFCCCCCC)),
                             ),
                           ),
                         ],
@@ -701,20 +721,29 @@ class _IsteklerHeader extends StatelessWidget {
                     onTap: onFiltreAc,
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      width: 40,
-                      height: 40,
+                      width: 44,
+                      height: 44,
                       decoration: BoxDecoration(
-                        color: AppColors.red,
-                        borderRadius: BorderRadius.circular(12),
+                        color: filtrAktif
+                            ? const Color(0xFF1A1A1A)
+                            : const Color(0xFF2C2C2C),
+                        borderRadius: BorderRadius.circular(22),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
                           const Icon(Icons.tune_rounded,
-                              color: Colors.white, size: 18),
+                              color: Colors.white, size: 19),
                           if (filtrAktif)
                             Positioned(
-                              top: 6, right: 6,
+                              top: 8, right: 8,
                               child: Container(
                                 width: 7, height: 7,
                                 decoration: const BoxDecoration(
@@ -749,12 +778,23 @@ class _IsteklerHeader extends StatelessWidget {
                       margin: const EdgeInsets.only(right: 6),
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       decoration: BoxDecoration(
-                        color: secili ? AppColors.red : AppColors.surface,
+                        gradient: secili
+                            ? const LinearGradient(
+                                colors: [Color(0xFFE53935), Color(0xFFEF5350)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              )
+                            : null,
+                        color: secili ? null : Colors.white,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: secili ? AppColors.red : const Color(0xFFE8E8E8),
+                          color: secili ? Colors.transparent : const Color(0xFFEEEEEE),
                           width: 1,
                         ),
+                        boxShadow: secili ? [BoxShadow(
+                          color: const Color(0xFFE53935).withValues(alpha: 0.3),
+                          blurRadius: 8, offset: const Offset(0, 2),
+                        )] : null,
                       ),
                       alignment: Alignment.center,
                       child: Text('Tümü',
@@ -775,12 +815,23 @@ class _IsteklerHeader extends StatelessWidget {
                     margin: const EdgeInsets.only(right: 6),
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
-                      color: secili ? AppColors.red : AppColors.surface,
+                      gradient: secili
+                          ? const LinearGradient(
+                              colors: [Color(0xFFE53935), Color(0xFFEF5350)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            )
+                          : null,
+                      color: secili ? null : Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: secili ? AppColors.red : const Color(0xFFE8E8E8),
+                        color: secili ? Colors.transparent : const Color(0xFFEEEEEE),
                         width: 1,
                       ),
+                      boxShadow: secili ? [BoxShadow(
+                        color: const Color(0xFFE53935).withValues(alpha: 0.3),
+                        blurRadius: 8, offset: const Offset(0, 2),
+                      )] : null,
                     ),
                     alignment: Alignment.center,
                     child: Text('${kat.emoji} ${kat.ad}',

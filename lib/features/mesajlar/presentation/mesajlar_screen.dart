@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -78,7 +79,6 @@ class _MesajlarScreenState extends ConsumerState<MesajlarScreen>
         data: (sohbetler) {
           final engellenenUidler = (engellenenlerAsync.value ?? []).toSet();
 
-          // SohbetModel extension'dan gizliMi() kullan — raw map yok
           final gorunenler = sohbetler.where((s) {
             final karsiUid = s.karsiKullaniciId(uid);
             if (engellenenUidler.contains(karsiUid)) return false;
@@ -167,10 +167,7 @@ class _SohbetKarti extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Karşı kullanıcı UID'i — SohbetModel extension'dan
     final karsiUid = sohbet.karsiKullaniciId(benimUid);
-
-    // Karşı kullanıcı adı — profil koleksiyonundan, tek kaynak
     final karsiAdAsync = ref.watch(karsiKullaniciAdProvider(karsiUid));
     final karsiAd = karsiAdAsync.value ?? 'Yükleniyor...';
 
@@ -184,7 +181,7 @@ class _SohbetKarti extends ConsumerWidget {
       onLongPress: () => _silDialog(context, ref),
       onTap: () => Navigator.push(
         context,
-        MaterialPageRoute(
+        CupertinoPageRoute(
           builder: (_) => SohbetScreen(
             karsiKullaniciId: karsiUid,
             karsiKullaniciAd: karsiAd,
@@ -246,7 +243,6 @@ class _SohbetKarti extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Üstte ilan adı
                   Text(
                     sohbet.ilanBaslik.isNotEmpty ? sohbet.ilanBaslik : 'İlan',
                     style: GoogleFonts.dmSans(
@@ -256,7 +252,6 @@ class _SohbetKarti extends ConsumerWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  // Altta karşı kullanıcı adı
                   Text(
                     karsiAd,
                     style: GoogleFonts.dmSans(
@@ -266,7 +261,6 @@ class _SohbetKarti extends ConsumerWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
-                  // Son mesaj
                   Text(
                     sohbet.sonMesaj ?? '',
                     style: GoogleFonts.dmSans(

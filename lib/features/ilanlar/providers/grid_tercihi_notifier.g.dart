@@ -41,7 +41,7 @@ final class GridTercihiProvider
   }
 }
 
-String _$gridTercihiHash() => r'9568f17310e632e8e90e6224cd13df19399e0e2b';
+String _$gridTercihiHash() => r'81893a2ca386e42dbbdb5c04cef641ab7a126310';
 
 abstract class _$GridTercihi extends $Notifier<GoruntulemeModeli> {
   GoruntulemeModeli build();

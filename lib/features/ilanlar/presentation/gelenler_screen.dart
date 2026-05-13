@@ -1,18 +1,18 @@
 // lib/features/ilanlar/presentation/gelenler_screen.dart
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../domain/ilan_model.dart';
 import '../providers/ilan_provider.dart';
+import '../presentation/ilan_detay_screen.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart' as app_constants;
 import '../../../core/cache/app_cache_manager.dart';
 import '../../../shared/widgets/bildirim_cani_widget.dart';
-import '../../../router/app_router.dart';
 
 class GelenlerScreen extends ConsumerStatefulWidget {
   final bool embedded;
@@ -54,7 +54,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
     if (pos.userScrollDirection == ScrollDirection.reverse && !_aramaGizli) {
       setState(() => _aramaGizli = true);
     } else if (pos.userScrollDirection == ScrollDirection.forward && _aramaGizli) {
-      setState(() => _aramaGizli = false);  // hemen göster, en üst bekleme
+      setState(() => _aramaGizli = false);
     }
     if (pos.pixels >= pos.maxScrollExtent - 400) {
       ref.read(tasiyiciIlanlarProvider.notifier).dahaFazlaYukle();
@@ -143,10 +143,8 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
     final header = Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Status bar
         Container(height: statusH, color: Colors.white),
 
-        // Arama çubuğu (scroll'da gizlenir)
         AnimatedCrossFade(
           duration: const Duration(milliseconds: 250),
           firstCurve: Curves.easeOutCubic,
@@ -214,7 +212,6 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
           secondChild: const SizedBox(width: double.infinity),
         ),
 
-        // Kategori barı (her zaman görünür)
         Container(
           height: 40,
           color: Colors.white,
@@ -270,18 +267,16 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
           ],
         ),
       ),
-
     );
   }
 }
 
-// ── Yatay Kart — sol çizgi + resim + detaylar ────────────────────────────────
+// ── Yatay Kart ────────────────────────────────────────────────────────────────
 
 class _GelenKarti extends StatelessWidget {
   final IlanModel ilan;
   const _GelenKarti({required this.ilan});
 
-  // Aciliyet rengi
   Color get _aciliyetRenk {
     if (ilan.tarih == null) return AppColors.textSecondary;
     final fark = ilan.tarih!
@@ -312,7 +307,12 @@ class _GelenKarti extends StatelessWidget {
     final kategori     = app_constants.kategoriAdi(ilan.kategori);
 
     return GestureDetector(
-      onTap: () => context.push(AppRoutes.ilanDetayPath(ilan.id)),
+      onTap: () => Navigator.push(
+        context,
+        CupertinoPageRoute(
+          builder: (_) => IlanDetayScreen(ilanId: ilan.id, ilan: ilan),
+        ),
+      ),
       child: Container(
         height: 88,
         decoration: BoxDecoration(
@@ -328,7 +328,6 @@ class _GelenKarti extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // ── Resim ─────────────────────────────────────────
             ClipRRect(
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(14),
@@ -343,16 +342,15 @@ class _GelenKarti extends StatelessWidget {
                         imageUrl: resimler.first,
                         fit: BoxFit.cover,
                         fadeInDuration: Duration.zero,
+                        fadeOutDuration: Duration.zero,
                         memCacheWidth: 176,
                         placeholder: (_, _) => _ResimPlaceholder(ilan: ilan),
-                        errorWidget: (_, _, _) =>
-                            _ResimPlaceholder(ilan: ilan),
+                        errorWidget: (_, _, _) => _ResimPlaceholder(ilan: ilan),
                       )
                     : _ResimPlaceholder(ilan: ilan),
               ),
             ),
 
-            // ── İçerik ────────────────────────────────────────
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
@@ -360,7 +358,6 @@ class _GelenKarti extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Ürün adı
                     Text(
                       ilan.urun,
                       style: GoogleFonts.dmSans(
@@ -372,7 +369,6 @@ class _GelenKarti extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
 
-                    // Güzergah
                     Row(
                       children: [
                         const Icon(Icons.flight_takeoff_rounded,
@@ -393,10 +389,8 @@ class _GelenKarti extends StatelessWidget {
                       ],
                     ),
 
-                    // Alt satır: kategori + tarih + fiyat
                     Row(
                       children: [
-                        // Kategori chip
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
@@ -413,7 +407,6 @@ class _GelenKarti extends StatelessWidget {
 
                         const Spacer(),
 
-                        // Tarih badge
                         if (gelisYazisi != null)
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -433,7 +426,6 @@ class _GelenKarti extends StatelessWidget {
                           ),
 
                         const SizedBox(width: 6),
-
                       ],
                     ),
                   ],

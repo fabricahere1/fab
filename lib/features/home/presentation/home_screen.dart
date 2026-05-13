@@ -71,7 +71,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         }
       },
       child: Scaffold(
-        body: IndexedStack(index: _selectedIndex, children: pages),
+        body: _LazyIndexedStack(
+          index: _selectedIndex,
+          children: pages,
+        ),
         bottomNavigationBar: Container(
           height: 62 + bottomPadding,
           decoration: const BoxDecoration(
@@ -176,14 +179,62 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           : AppColors.textSecondary,
                     ),
                   ),
-
-                  // ── İlan Ver — diğer nav itemlarla aynı stil ──────
                   _IlanVerItem(onTap: _ilanVer),
                 ],
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ── Lazy IndexedStack — sadece ziyaret edilen sayfaları render eder ───────────
+
+class _LazyIndexedStack extends StatefulWidget {
+  final int index;
+  final List<Widget> children;
+
+  const _LazyIndexedStack({
+    required this.index,
+    required this.children,
+  });
+
+  @override
+  State<_LazyIndexedStack> createState() => _LazyIndexedStackState();
+}
+
+class _LazyIndexedStackState extends State<_LazyIndexedStack> {
+  late final List<bool> _initialized;
+
+  @override
+  void initState() {
+    super.initState();
+    // Sadece aktif tab build edilir, diğerleri ilk ziyarette build edilir
+    _initialized = List.generate(
+      widget.children.length,
+      (i) => i == widget.index,
+    );
+  }
+
+  @override
+  void didUpdateWidget(_LazyIndexedStack old) {
+    super.didUpdateWidget(old);
+    if (!_initialized[widget.index]) {
+      _initialized[widget.index] = true;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IndexedStack(
+      index: widget.index,
+      children: List.generate(
+        widget.children.length,
+        (i) => _initialized[i]
+            ? widget.children[i]
+            : const SizedBox.shrink(),
       ),
     );
   }
@@ -254,7 +305,8 @@ class _IlanVerItem extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.add_circle_rounded, size: 24, color: Color(0xFF66BB6A)),
+            const Icon(Icons.add_circle_rounded,
+                size: 24, color: Color(0xFF66BB6A)),
             const SizedBox(height: 3),
             Text(
               'İlan Ver',

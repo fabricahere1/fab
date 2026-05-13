@@ -3,7 +3,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:math' as math;
 
@@ -12,8 +11,8 @@ import '../../../../core/cache/app_cache_manager.dart';
 import '../../domain/ilan_model.dart';
 import '../../providers/ilan_provider.dart';
 import '../../data/ilan_repository.dart';
-import '../../../../router/app_router.dart';
 import '../../../auth/providers/auth_provider.dart';
+import '../ilan_detay_screen.dart';
 
 class SwipeGorunumu extends ConsumerStatefulWidget {
   final List<IlanModel> ilanlar;
@@ -488,7 +487,22 @@ class _OnKart extends StatelessWidget {
         : 0.0;
 
     return GestureDetector(
-      onTap: () => context.push(AppRoutes.ilanDetayPath(ilan.id)),
+      onTap: () => Navigator.push(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (_, _, _) =>
+              IlanDetayScreen(ilanId: ilan.id, ilan: ilan),
+          transitionsBuilder: (_, anim, _, child) => SlideTransition(
+            position: Tween(
+              begin: const Offset(1, 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
+            child: child,
+          ),
+          transitionDuration: const Duration(milliseconds: 280),
+          reverseTransitionDuration: const Duration(milliseconds: 220),
+        ),
+      ),
       child: Stack(
         children: [
           Positioned.fill(child: _KartArkaplan(ilan: ilan)),
@@ -762,6 +776,8 @@ class _KartArkaplan extends StatelessWidget {
         cacheManager: AppCacheManager.instance,
         imageUrl: resimler.first,
         fit: BoxFit.cover,
+        fadeInDuration: Duration.zero,
+        fadeOutDuration: Duration.zero,
         placeholder: (_, _) => placeholder,
         errorWidget: (_, _, _) => placeholder,
       );

@@ -15,7 +15,7 @@ Stream<KullaniciModel?> benimKullaniciProfil(Ref ref) {
   return ref.watch(kullaniciRepositoryProvider).kullaniciStream(uid);
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<KullaniciModel?> kullaniciBilgi(Ref ref, String uid) {
   return ref.watch(kullaniciRepositoryProvider).kullaniciGetir(uid);
 }

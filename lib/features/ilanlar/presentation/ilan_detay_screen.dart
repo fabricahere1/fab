@@ -15,15 +15,18 @@ import '../../mesajlar/presentation/sohbet_screen.dart';
 import '../../profil/presentation/kullanici_profil_screen.dart';
 import '../../../router/app_router.dart';
 import '../../../shared/constants/app_colors.dart';
+import '../../../shared/utils/app_layout.dart';
 import '../../../shared/constants/app_constants.dart' as app_constants;
 import '../../../core/cache/app_cache_manager.dart';
 
 class IlanDetayScreen extends ConsumerStatefulWidget {
-  /// Sadece ilanId alır — Firestore stream ile güncel veriyi izler.
-  /// Böylece hem bildirimden deep link ile hem de kart tıklamasından açılabilir.
+  /// ilanId her zaman gerekli (deep link desteği için).
+  /// ilan verilirse ilk yüklemede direkt gösterilir — Firestore beklenmez.
+  /// ilan null ise (deep link) Firestore stream'den çekilir.
   final String ilanId;
+  final IlanModel? ilan;
 
-  const IlanDetayScreen({super.key, required this.ilanId});
+  const IlanDetayScreen({super.key, required this.ilanId, this.ilan});
 
   @override
   ConsumerState<IlanDetayScreen> createState() => _IlanDetayScreenState();
@@ -190,9 +193,9 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
       builder: (c) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text(baslik,
-            style: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w600)),
+            style: GoogleFonts.dmSans(fontSize: AppLayout.fs(context, 16), fontWeight: FontWeight.w600)),
         content: Text(icerik,
-            style: GoogleFonts.dmSans(fontSize: 14, color: AppColors.textSecondary)),
+            style: GoogleFonts.dmSans(fontSize: AppLayout.fs(context, 14), color: AppColors.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(c, false),
@@ -220,14 +223,14 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
         builder: (ctx, setS) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           title: Text('Şikayet Et',
-              style: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w600)),
+              style: GoogleFonts.dmSans(fontSize: AppLayout.fs(context, 16), fontWeight: FontWeight.w600)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: sebepler
                 .map((s) => RadioListTile<String>(
                       value: s,
                       groupValue: seciliSebep,
-                      title: Text(s, style: GoogleFonts.dmSans(fontSize: 14)),
+                      title: Text(s, style: GoogleFonts.dmSans(fontSize: AppLayout.fs(context, 14))),
                       fillColor: WidgetStateProperty.resolveWith(
                         (states) => states.contains(WidgetState.selected)
                             ? AppColors.red
@@ -280,12 +283,22 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final ilanAsync = ref.watch(ilanByIdProvider(widget.ilanId));
+    final ilanProp = widget.ilan;
 
+    // Prop varsa direkt göster — stream'i arka planda dinle,
+    // gelince setState ile günceller (ref.listen ile).
+    if (ilanProp != null) {
+      // Stream gelince yeniden build tetiklenir ama loading gösterilmez.
+      final streamDegeri = ref.watch(ilanByIdProvider(widget.ilanId)).value;
+      final ilan = streamDegeri ?? ilanProp;
+      return _detayScaffold(context, ilan);
+    }
+
+    // Prop yok (deep link) — stream'den bekle.
+    final ilanAsync = ref.watch(ilanByIdProvider(widget.ilanId));
     return ilanAsync.when(
       loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
+          body: Center(child: CircularProgressIndicator())),
       error: (e, _) => Scaffold(
         appBar: AppBar(),
         body: Center(
@@ -303,21 +316,22 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
             ),
           );
         }
-
-        // 30 gün kontrolü — sadece bir kere çalışsın
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _otuzGunKontrol(ilan);
-        });
-
-        return _IlanDetayIcerik(
-          ilan: ilan,
-          aktifResim: _aktifResim,
-          pageController: _pageController,
-          onResimDegis: (i) => setState(() => _aktifResim = i),
-          onMesajGonder: () => _mesajGonder(ilan),
-          onUcNokta: () => _ucNoktaMenu(ilan),
-        );
+        return _detayScaffold(context, ilan);
       },
+    );
+  }
+
+  Widget _detayScaffold(BuildContext context, IlanModel ilan) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _otuzGunKontrol(ilan);
+    });
+    return _IlanDetayIcerik(
+      ilan: ilan,
+      aktifResim: _aktifResim,
+      pageController: _pageController,
+      onResimDegis: (i) => setState(() => _aktifResim = i),
+      onMesajGonder: () => _mesajGonder(ilan),
+      onUcNokta: () => _ucNoktaMenu(ilan),
     );
   }
 }
@@ -363,7 +377,7 @@ class _IlanDetayIcerik extends ConsumerWidget {
         .toList();
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+  backgroundColor: Colors.white,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -372,6 +386,8 @@ class _IlanDetayIcerik extends ConsumerWidget {
             backgroundColor: Colors.white,
             foregroundColor: AppColors.textPrimary,
             elevation: 0,
+            scrolledUnderElevation: 0,
+            forceMaterialTransparency: false,
             leading: _CircleIconButton(
               icon: Icons.arrow_back_ios_new,
               onTap: () => context.pop(),
@@ -403,6 +419,8 @@ class _IlanDetayIcerik extends ConsumerWidget {
             ],
             flexibleSpace: resimler.isNotEmpty
                 ? FlexibleSpaceBar(
+                    collapseMode: CollapseMode.pin,
+                    stretchModes: const [],
                     background: Stack(
                       children: [
                         PageView.builder(
@@ -448,8 +466,8 @@ class _IlanDetayIcerik extends ConsumerWidget {
                               ),
                               child: Text(
                                 '${aktifResim + 1}/${resimler.length}',
-                                style: const TextStyle(
-                                    color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: AppLayout.fs(context, 12), fontWeight: FontWeight.w600),
                               ),
                             ),
                           ),
@@ -481,9 +499,9 @@ class _IlanDetayIcerik extends ConsumerWidget {
                               ),
                               child: Text(kategoriAdiStr,
                                   style: GoogleFonts.dmSans(
-                                      fontSize: 12, color: AppColors.red, fontWeight: FontWeight.w500)),
+                                      fontSize: AppLayout.fs(context, 12), color: AppColors.red, fontWeight: FontWeight.w500)),
                             ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
@@ -495,7 +513,7 @@ class _IlanDetayIcerik extends ConsumerWidget {
                             child: Text(
                               ilan.tip == 'istek' ? '📦 İstek' : '✈️ Taşıyıcı',
                               style: GoogleFonts.dmSans(
-                                fontSize: 12,
+                                fontSize: AppLayout.fs(context, 12),
                                 fontWeight: FontWeight.w500,
                                 color: ilan.tip == 'istek'
                                     ? const Color(0xFF1976D2)
@@ -505,18 +523,18 @@ class _IlanDetayIcerik extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       Text(
                         ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
                         style: GoogleFonts.dmSans(
-                            fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                            fontSize: AppLayout.fs(context, 22), fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                       ),
                       if (ilan.ucret.isNotEmpty) ...[
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         Text(
                           ilan.ucret,
                           style: GoogleFonts.dmSans(
-                            fontSize: 18,
+                            fontSize: AppLayout.fs(context, 18),
                             fontWeight: FontWeight.w700,
                             color: AppColors.red,
                           ),
@@ -526,7 +544,7 @@ class _IlanDetayIcerik extends ConsumerWidget {
                   ),
                 ),
 
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
 
                 // ── Güzergah + Tarih ────────────────────────────────────────
                 Container(
@@ -589,21 +607,21 @@ class _IlanDetayIcerik extends ConsumerWidget {
                       children: [
                         Text('Notlar',
                             style: GoogleFonts.dmSans(
-                                fontSize: 13,
+                                fontSize: AppLayout.fs(context, 13),
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textSecondary)),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         Text(
                           ilan.notlar,
                           style: GoogleFonts.dmSans(
-                              fontSize: 14,
+                              fontSize: AppLayout.fs(context, 14),
                               color: AppColors.textPrimary,
                               height: 1.5),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                 ],
 
                 // ── İlan sahibi profil kartı ─────────────────────────────────
@@ -621,7 +639,7 @@ class _IlanDetayIcerik extends ConsumerWidget {
                       children: [
                         Text('Benzer İlanlar',
                             style: GoogleFonts.dmSans(
-                                fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                                fontSize: AppLayout.fs(context, 13), fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
                         const SizedBox(height: 14),
                         SizedBox(
                           height: 160,
@@ -700,7 +718,7 @@ class _IlanDetayIcerik extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: 10),
                   Expanded(
                     child: SizedBox(
                       height: 48,
@@ -716,7 +734,7 @@ class _IlanDetayIcerik extends ConsumerWidget {
                         icon: const Icon(Icons.emoji_people_outlined, size: 18),
                         label: Text('İlanınızla İlgileniyorum',
                             style: GoogleFonts.dmSans(
-                                fontSize: 14, fontWeight: FontWeight.w600)),
+                                fontSize: AppLayout.fs(context, 14), fontWeight: FontWeight.w600)),
                       ),
                     ),
                   ),
@@ -799,7 +817,7 @@ class _IlanSahibiKarti extends ConsumerWidget {
         children: [
           Text('İlan Sahibi',
               style: GoogleFonts.dmSans(
-                  fontSize: 13,
+                  fontSize: AppLayout.fs(context, 13),
                   fontWeight: FontWeight.w700,
                   color: AppColors.textSecondary)),
           const SizedBox(height: 12),
@@ -845,7 +863,7 @@ class _IlanSahibiKarti extends ConsumerWidget {
                           : _AvatarHarf(ad: kullaniciAd),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   // İsim + puan
                   Expanded(
                     child: Column(
@@ -854,13 +872,13 @@ class _IlanSahibiKarti extends ConsumerWidget {
                         Text(
                           kullaniciAd,
                           style: GoogleFonts.dmSans(
-                            fontSize: 15,
+                            fontSize: AppLayout.fs(context, 15),
                             fontWeight: FontWeight.w600,
                             color: AppColors.textPrimary,
                           ),
                         ),
                         if (sayi > 0) ...[
-                          const SizedBox(height: 3),
+                          SizedBox(height: 3),
                           Row(
                             children: [
                               const Icon(Icons.star_rounded,
@@ -869,27 +887,27 @@ class _IlanSahibiKarti extends ConsumerWidget {
                               Text(
                                 puan.toStringAsFixed(1),
                                 style: GoogleFonts.dmSans(
-                                  fontSize: 13,
+                                  fontSize: AppLayout.fs(context, 13),
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.textPrimary,
                                 ),
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: 4),
                               Text(
                                 '($sayi değerlendirme)',
                                 style: GoogleFonts.dmSans(
-                                  fontSize: 12,
+                                  fontSize: AppLayout.fs(context, 12),
                                   color: AppColors.textSecondary,
                                 ),
                               ),
                             ],
                           ),
                         ] else ...[
-                          const SizedBox(height: 3),
+                          SizedBox(height: 3),
                           Text(
                             'Henüz değerlendirme yok',
                             style: GoogleFonts.dmSans(
-                              fontSize: 12,
+                              fontSize: AppLayout.fs(context, 12),
                               color: AppColors.textHint,
                             ),
                           ),
@@ -920,7 +938,7 @@ class _AvatarHarf extends StatelessWidget {
         child: Text(
           ad.isNotEmpty ? ad[0].toUpperCase() : '?',
           style: GoogleFonts.dmSans(
-            fontSize: 18,
+            fontSize: AppLayout.fs(context, 18),
             fontWeight: FontWeight.w700,
             color: AppColors.red,
           ),
@@ -960,7 +978,7 @@ class _BenzerIlanKarti extends StatelessWidget {
                       fadeInDuration: Duration.zero, memCacheWidth: 260,
                       placeholder: (_, _) => Container(height: 90, color: AppColors.divider),
                       errorWidget: (_, _, _) => Container(height: 90, color: AppColors.divider,
-                          child: const Icon(Icons.image_outlined, color: AppColors.textHint)))
+                          child: Icon(Icons.image_outlined, color: AppColors.textHint)))
                   : Container(width: 130, height: 90, color: AppColors.divider,
                       child: const Icon(Icons.image_outlined, color: AppColors.textHint)),
             ),
@@ -968,7 +986,7 @@ class _BenzerIlanKarti extends StatelessWidget {
               padding: const EdgeInsets.all(8),
               child: Text(ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
                   style: GoogleFonts.dmSans(
-                      fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                      fontSize: AppLayout.fs(context, 12), fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                   maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
           ],
@@ -1004,10 +1022,10 @@ class _FavoriButon extends StatelessWidget {
             Icon(favorideMi ? Icons.favorite : Icons.favorite_border,
                 color: favorideMi ? AppColors.red : AppColors.textPrimary, size: 20),
             if (favoriSayisi > 0) ...[
-              const SizedBox(width: 4),
+              SizedBox(width: 4),
               Text('$favoriSayisi',
                   style: GoogleFonts.dmSans(
-                      fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                      fontSize: AppLayout.fs(context, 13), fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
             ],
           ],
         ),
@@ -1066,8 +1084,8 @@ class _ResimWidget extends StatelessWidget {
         cacheManager: AppCacheManager.instance,
         imageUrl: url, fit: BoxFit.cover, width: double.infinity,
         fadeInDuration: Duration.zero, memCacheWidth: 600,
-        placeholder: (_, _) => Container(color: AppColors.surface),
-        errorWidget: (_, _, _) => Container(color: AppColors.surface,
+        placeholder: (_, _) => Container(color: const Color(0xFFF5F5F5)),
+        errorWidget: (_, _, _) => Container(color: const Color(0xFFF5F5F5),
             child: const Icon(Icons.image_outlined, color: AppColors.textHint, size: 48)),
       ),
     );
@@ -1120,11 +1138,11 @@ class _ResimBuyukEkranState extends State<_ResimBuyukEkran> {
         foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-            icon: const Icon(Icons.close, color: Colors.white),
+            icon: Icon(Icons.close, color: Colors.white),
             onPressed: () => Navigator.pop(context)),
         title: widget.resimler.length > 1
             ? Text('${_aktif + 1} / ${widget.resimler.length}',
-                style: const TextStyle(color: Colors.white, fontSize: 14))
+                style: TextStyle(color: Colors.white, fontSize: AppLayout.fs(context, 14)))
             : null,
       ),
       body: PageView.builder(
@@ -1180,7 +1198,7 @@ class _MenuItem extends StatelessWidget {
       leading: Icon(icon, color: iconColor),
       title: Text(label,
           style: GoogleFonts.dmSans(
-              fontSize: 14, color: labelColor, fontWeight: FontWeight.w500)),
+              fontSize: AppLayout.fs(context, 14), color: labelColor, fontWeight: FontWeight.w500)),
       onTap: onTap,
     );
   }

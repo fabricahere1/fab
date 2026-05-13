@@ -66,7 +66,7 @@ final class SohbetDurumuProvider
   }
 }
 
-String _$sohbetDurumuHash() => r'cd31d7e1852322c0cd517c630d6888ecc9dac6c3';
+String _$sohbetDurumuHash() => r'0a5c3953d3094bf9d1d600c6e55c56bbc76a8c0e';
 
 final class SohbetDurumuFamily extends $Family
     with $FunctionalFamilyOverride<Stream<Map<String, dynamic>>, String> {

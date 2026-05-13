@@ -66,7 +66,7 @@ final class KullaniciBilgiProvider
   }) : super(
          retry: null,
          name: r'kullaniciBilgiProvider',
-         isAutoDispose: true,
+         isAutoDispose: false,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
@@ -104,7 +104,7 @@ final class KullaniciBilgiProvider
   }
 }
 
-String _$kullaniciBilgiHash() => r'554f43341b4804d77e83b342a9417a3a1e5ce965';
+String _$kullaniciBilgiHash() => r'c2705ee69ec2e345cc2c21ec16956b58a3422f99';
 
 final class KullaniciBilgiFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<KullaniciModel?>, String> {
@@ -114,7 +114,7 @@ final class KullaniciBilgiFamily extends $Family
         name: r'kullaniciBilgiProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
-        isAutoDispose: true,
+        isAutoDispose: false,
       );
 
   KullaniciBilgiProvider call(String uid) =>
