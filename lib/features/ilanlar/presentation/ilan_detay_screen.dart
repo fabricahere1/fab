@@ -65,7 +65,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
           ilanId: ilan.id,
           ilanBaslik: ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
           ilanResimUrl: resimler.isNotEmpty ? resimler.first : null,
-          ilgileniyorumMesaji: 'İlanınızla ilgileniyorum',
+          ilgileniyorumMesaji: 'İletişime Geç',
           ilanSahibiId: ilan.kullaniciId,
           ilanTip: ilan.tip,
         ),
@@ -1083,7 +1083,8 @@ class _ResimWidget extends StatelessWidget {
       child: CachedNetworkImage(
         cacheManager: AppCacheManager.instance,
         imageUrl: url, fit: BoxFit.cover, width: double.infinity,
-        fadeInDuration: Duration.zero, memCacheWidth: 600,
+        fadeInDuration: Duration.zero,
+        memCacheWidth: (MediaQuery.of(context).size.width * MediaQuery.of(context).devicePixelRatio).toInt(),
         placeholder: (_, _) => Container(color: const Color(0xFFF5F5F5)),
         errorWidget: (_, _, _) => Container(color: const Color(0xFFF5F5F5),
             child: const Icon(Icons.image_outlined, color: AppColors.textHint, size: 48)),

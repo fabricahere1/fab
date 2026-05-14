@@ -616,7 +616,7 @@ class _IsteklerHeader extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(14, 10, 12, 4),
               child: Row(
                 children: [
-                  Image.asset('assets/images/logo.png', height: 38),
+                  Image.asset('assets/images/logo.png', height: 48),
                   const Spacer(),
                   const BildirimCaniWidget(),
                 ],
