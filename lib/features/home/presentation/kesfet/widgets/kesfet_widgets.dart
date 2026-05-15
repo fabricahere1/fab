@@ -11,16 +11,17 @@ import 'package:iste_v3/shared/constants/app_constants.dart' show IlanTip;
 import 'package:iste_v3/router/app_router.dart';
 import 'package:iste_v3/features/home/providers/son_goruntulenenler_provider.dart';
 
-// ── Bölüm başlığı ────────────────────────────────────────────────────────────
+// ── Bölüm başlığı ─────────────────────────────────────────────────────────────
 
 Widget bolumBasligi(String baslik) => Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
       child: Text(
-        baslik,
+        baslik.toUpperCase(),
         style: GoogleFonts.dmSans(
-          fontSize: 15,
+          fontSize: 11,
           fontWeight: FontWeight.w700,
-          color: AppColors.textPrimary,
+          color: AppColors.textHint,
+          letterSpacing: 1.0,
         ),
       ),
     );
@@ -38,13 +39,13 @@ class ResimPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.surface,
+      color: const Color(0xFFF7F7F7),
       child: Center(
         child: Icon(
           ilan.tip == IlanTip.tasiyici
               ? Icons.flight_takeoff_outlined
               : Icons.shopping_bag_outlined,
-          color: AppColors.red.withValues(alpha: 0.25),
+          color: AppColors.red.withValues(alpha: 0.18),
           size: 24,
         ),
       ),
@@ -94,37 +95,27 @@ class _SkeletonKartState extends State<SkeletonKart>
         child: Container(
           height: widget.yukseklik,
           decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(12),
+            color: const Color(0xFFF7F7F7),
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 height: widget.yukseklik * 0.65,
-                decoration: BoxDecoration(
-                  color: AppColors.divider,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(12),
-                  ),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFEEEEEE),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      height: 10,
-                      width: double.infinity,
-                      color: AppColors.divider,
-                    ),
+                    Container(height: 10, width: double.infinity, color: const Color(0xFFEEEEEE)),
                     const SizedBox(height: 6),
-                    Container(
-                      height: 10,
-                      width: 60,
-                      color: AppColors.divider,
-                    ),
+                    Container(height: 10, width: 60, color: const Color(0xFFEEEEEE)),
                   ],
                 ),
               ),
@@ -157,42 +148,33 @@ class StoryItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(right: 12),
+        margin: const EdgeInsets.only(right: 18),
         child: Column(
           children: [
             Container(
-              width: 52,
-              height: 52,
-              padding: const EdgeInsets.all(2.5),
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: secili
-                    ? const LinearGradient(
-                        colors: [AppColors.red, Color(0xFFFF8C42)],
-                      )
-                    : const LinearGradient(
-                        colors: [Color(0xFFDDDDDD), Color(0xFFDDDDDD)],
-                      ),
+                border: Border.all(
+                  color: secili ? AppColors.red : const Color(0xFFEEEEEE),
+                  width: secili ? 1.5 : 1.0,
+                ),
+                color: Colors.white,
               ),
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(emoji, style: const TextStyle(fontSize: 22)),
-                ),
+              child: Center(
+                child: Text(emoji, style: const TextStyle(fontSize: 20)),
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             SizedBox(
               width: 52,
               child: Text(
                 label,
                 style: GoogleFonts.dmSans(
-                  fontSize: 9,
+                  fontSize: 10,
                   fontWeight: secili ? FontWeight.w700 : FontWeight.w400,
-                  color: secili ? AppColors.red : AppColors.textSecondary,
+                  color: secili ? AppColors.red : const Color(0xFFBDBDBD),
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 1,
@@ -218,26 +200,31 @@ class HeroKart extends ConsumerWidget {
     return GestureDetector(
       onTap: () {
         ref.read(sonGoruntulenenlerProvider.notifier).kaydet(ilan);
-        context.push(AppRoutes.ilanDetayPath(ilan.id));
+        context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan);
       },
       child: Container(
-        width: 130,
+        width: 140,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.divider, width: 0.5),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFF0F0F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(14),
-              ),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
               child: Stack(
                 children: [
                   SizedBox(
-                    height: 90,
+                    height: 100,
                     width: double.infinity,
                     child: resimler.isNotEmpty
                         ? CachedNetworkImage(
@@ -245,38 +232,29 @@ class HeroKart extends ConsumerWidget {
                             imageUrl: resimler.first,
                             fit: BoxFit.cover,
                             fadeInDuration: Duration.zero,
-                            placeholder: (_, _) =>
-                                ResimPlaceholder(ilan: ilan),
-                            errorWidget: (_, _, _) =>
-                                ResimPlaceholder(ilan: ilan),
+                            memCacheWidth: 280,
+                            placeholder: (_, _) => ResimPlaceholder(ilan: ilan),
+                            errorWidget: (_, _, _) => ResimPlaceholder(ilan: ilan),
                           )
                         : ResimPlaceholder(ilan: ilan),
                   ),
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      height: 40,
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Colors.transparent, Colors.black54],
-                        ),
-                      ),
-                    ),
-                  ),
                   if (ilan.ucret.isNotEmpty)
                     Positioned(
-                      bottom: 6,
-                      right: 7,
-                      child: Text(
-                        '${ilan.ucret} ₺',
-                        style: GoogleFonts.dmSans(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w900,
+                      bottom: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
                           color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '${ilan.ucret} ₺',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.red,
+                          ),
                         ),
                       ),
                     ),
@@ -284,18 +262,33 @@ class HeroKart extends ConsumerWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
-              child: Text(
-                ilan.urun.isNotEmpty
-                    ? ilan.urun
-                    : '${ilan.nereden} → ${ilan.nereye}',
-                style: GoogleFonts.dmSans(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    ilan.urun.isNotEmpty ? ilan.urun : '${ilan.nereden} → ${ilan.nereye}',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (ilan.nereden.isNotEmpty && ilan.urun.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      '${ilan.nereden} → ${ilan.nereye}',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 11,
+                        color: const Color(0xFFBDBDBD),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
               ),
             ),
           ],
@@ -322,21 +315,26 @@ class KesfetKarti extends ConsumerWidget {
     return GestureDetector(
       onTap: () {
         ref.read(sonGoruntulenenlerProvider.notifier).kaydet(ilan);
-        context.push(AppRoutes.ilanDetayPath(ilan.id));
+        context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan);
       },
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.divider, width: 0.5),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFF0F0F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(12),
-              ),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
               child: SizedBox(
                 height: _yukseklik(),
                 width: double.infinity,
@@ -346,6 +344,7 @@ class KesfetKarti extends ConsumerWidget {
                         imageUrl: resimler.first,
                         fit: BoxFit.cover,
                         fadeInDuration: Duration.zero,
+                        memCacheWidth: 200,
                         placeholder: (_, _) => ResimPlaceholder(ilan: ilan),
                         errorWidget: (_, _, _) => ResimPlaceholder(ilan: ilan),
                       )
@@ -353,31 +352,31 @@ class KesfetKarti extends ConsumerWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    ilan.urun.isNotEmpty
-                        ? ilan.urun
-                        : '${ilan.nereden} → ${ilan.nereye}',
+                    ilan.urun.isNotEmpty ? ilan.urun : '${ilan.nereden} → ${ilan.nereye}',
                     style: GoogleFonts.dmSans(
-                      fontSize: 11,
+                      fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (ilan.ucret.isNotEmpty)
+                  if (ilan.ucret.isNotEmpty) ...[
+                    const SizedBox(height: 4),
                     Text(
                       '${ilan.ucret} ₺',
                       style: GoogleFonts.dmSans(
-                        fontSize: 11,
+                        fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: AppColors.red,
                       ),
                     ),
+                  ],
                 ],
               ),
             ),
@@ -405,10 +404,18 @@ class StatKart extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: renk.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFF0F0F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 6,
+              offset: const Offset(0, 1),
+            ),
+          ],
         ),
         child: Column(
           children: [
@@ -416,7 +423,7 @@ class StatKart extends StatelessWidget {
               sayi,
               style: GoogleFonts.dmSans(
                 fontSize: 20,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w800,
                 color: renk,
               ),
             ),
@@ -424,8 +431,8 @@ class StatKart extends StatelessWidget {
             Text(
               label,
               style: GoogleFonts.dmSans(
-                fontSize: 9,
-                color: AppColors.textSecondary,
+                fontSize: 10,
+                color: const Color(0xFFBDBDBD),
               ),
               textAlign: TextAlign.center,
             ),
@@ -463,7 +470,7 @@ class SuAnHavadaKart extends StatelessWidget {
         color: const Color(0xFF0D1B2A),
         borderRadius: BorderRadius.circular(16),
       ),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -490,8 +497,7 @@ class SuAnHavadaKart extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      width: 5,
-                      height: 5,
+                      width: 5, height: 5,
                       decoration: const BoxDecoration(
                         color: Color(0xFF4CAF50),
                         shape: BoxShape.circle,
@@ -511,14 +517,13 @@ class SuAnHavadaKart extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           ...ilanlar.asMap().entries.map((entry) {
             final i    = entry.key;
             final ilan = entry.value;
             final eta  = _etaYazisi(ilan);
             return Container(
-              margin: EdgeInsets.only(
-                  bottom: i < ilanlar.length - 1 ? 6 : 0),
+              margin: EdgeInsets.only(bottom: i < ilanlar.length - 1 ? 6 : 0),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.06),
@@ -557,11 +562,9 @@ class SuAnHavadaKart extends StatelessWidget {
                   ),
                   if (eta.isNotEmpty)
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color:
-                            const Color(0xFF64B5F6).withValues(alpha: 0.15),
+                        color: const Color(0xFF64B5F6).withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -596,20 +599,20 @@ class SonGoruntulenenlerBolumu extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        bolumBasligi('🕐 Son baktıklarınız'),
+        bolumBasligi('Son baktıklarınız'),
         SizedBox(
-          height: 100,
+          height: 110,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
             itemCount: liste.length,
             itemBuilder: (_, i) => Padding(
-              padding: const EdgeInsets.only(right: 10),
+              padding: const EdgeInsets.only(right: 12),
               child: HeroKart(ilan: liste[i]),
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 24),
       ],
     );
   }

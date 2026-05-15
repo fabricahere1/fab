@@ -408,7 +408,7 @@ class _HaritaTabState extends ConsumerState<HaritaTab> {
               child: FilledButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  context.push(AppRoutes.ilanDetayPath(ilan.id));
+                  context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan);
                 },
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.red,

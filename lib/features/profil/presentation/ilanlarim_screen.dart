@@ -174,7 +174,7 @@ class _IstekKarti extends StatelessWidget {
   const _IstekKarti({required this.ilan});
 
   void _detayaGit(BuildContext context) {
-    context.push(AppRoutes.ilanDetayPath(ilan.id));
+    context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan);
   }
 
   @override
@@ -318,7 +318,7 @@ class _GelenKarti extends StatelessWidget {
   const _GelenKarti({required this.ilan});
 
   void _detayaGit(BuildContext context) {
-    context.push(AppRoutes.ilanDetayPath(ilan.id));
+    context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan);
   }
 
   @override

@@ -83,7 +83,7 @@ class CanliTab extends ConsumerWidget {
                       ref
                           .read(sonGoruntulenenlerProvider.notifier)
                           .kaydet(ilan);
-                      context.push(AppRoutes.ilanDetayPath(ilan.id));
+                      context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan);
                     },
                     child: Container(
                       margin: const EdgeInsets.only(right: 8),
@@ -160,7 +160,7 @@ class CanliTab extends ConsumerWidget {
                     ref
                         .read(sonGoruntulenenlerProvider.notifier)
                         .kaydet(ilan);
-                    context.push(AppRoutes.ilanDetayPath(ilan.id));
+                    context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan);
                   },
                   child: Container(
                     margin: const EdgeInsets.fromLTRB(12, 0, 12, 6),

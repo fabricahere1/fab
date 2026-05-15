@@ -139,7 +139,7 @@ class _FavoriKarti extends StatelessWidget {
     final kategoriAdi_ = kategoriAdi(ilan.kategori);
  
     return GestureDetector(
-      onTap: () => context.push(AppRoutes.ilanDetayPath(ilan.id)),
+      onTap: () => context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,

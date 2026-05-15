@@ -727,14 +727,14 @@ class _IslemDurumuTetikleyiciState
           width: 28,
           height: 96,
           decoration: BoxDecoration(
-            color: const Color(0xFF81C784),
+            color: const Color(0xFFE0E0E0),
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(48),
               bottomLeft: Radius.circular(48),
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF81C784).withValues(alpha: 0.45),
+                color: const Color(0xFFE0E0E0).withValues(alpha: 0.45),
                 blurRadius: 14,
                 offset: const Offset(-4, 0),
               ),
@@ -744,12 +744,12 @@ class _IslemDurumuTetikleyiciState
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(Icons.chevron_left_rounded,
-                  color: Colors.white, size: 20),
+                  color: Colors.black54, size: 20),
               const SizedBox(height: 4),
               Text(
                 '$tamamlanan',
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Colors.black54,
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
                   height: 1,
@@ -758,13 +758,13 @@ class _IslemDurumuTetikleyiciState
               Container(
                 width: 12,
                 height: 1,
-                color: Colors.white.withValues(alpha: 0.6),
+                color: Colors.black26.withValues(alpha: 0.6),
                 margin: const EdgeInsets.symmetric(vertical: 2),
               ),
               Text(
                 '$toplam',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.8),
+                  color: Colors.black45.withValues(alpha: 0.8),
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
                   height: 1,

@@ -318,7 +318,7 @@ class _IlanSatiri extends StatelessWidget {
     final kategoriAdi_ = kategoriAdi(ilan.kategori);
 
     return InkWell(
-      onTap: () => context.push(AppRoutes.ilanDetayPath(ilan.id)),
+      onTap: () => context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan),
       child: Container(
         color: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

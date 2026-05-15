@@ -7,6 +7,7 @@ import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
 import '../features/auth/presentation/profil_tamamla_screen.dart';
 import '../features/home/presentation/home_screen.dart';
+import '../features/ilanlar/domain/ilan_model.dart';
 import '../features/ilanlar/presentation/ilan_detay_screen.dart';
 import '../features/auth/providers/auth_provider.dart';
 import '../features/profil/providers/profil_provider.dart';
@@ -110,7 +111,10 @@ GoRouter router(Ref ref) {
         path: AppRoutes.ilanDetay,
         builder: (_, state) {
           final ilanId = state.pathParameters['ilanId']!;
-          return IlanDetayScreen(ilanId: ilanId);
+          // extra varsa (normal navigasyon) direkt göster — loading yok
+          // extra yoksa (deep link / FCM) Firestore'dan çek
+          final ilan = state.extra as IlanModel?;
+          return IlanDetayScreen(ilanId: ilanId, ilan: ilan);
         },
       ),
     ],

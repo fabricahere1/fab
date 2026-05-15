@@ -65,7 +65,6 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
           ilanId: ilan.id,
           ilanBaslik: ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
           ilanResimUrl: resimler.isNotEmpty ? resimler.first : null,
-          ilgileniyorumMesaji: 'İletişime Geç',
           ilanSahibiId: ilan.kullaniciId,
           ilanTip: ilan.tip,
         ),
@@ -109,8 +108,6 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                           tip: ilan.tip, duzenlenecekIlan: ilan),
                     ),
                   ).then((_) {
-                    // ilanById stream zaten günceli izliyor, manuel yenile gerekmez.
-                    // Liste provider'larını yenile.
                     ref.read(istekIlanlarProvider.notifier).yenile();
                     ref.read(tasiyiciIlanlarProvider.notifier).yenile();
                   });
@@ -285,16 +282,12 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
   Widget build(BuildContext context) {
     final ilanProp = widget.ilan;
 
-    // Prop varsa direkt göster — stream'i arka planda dinle,
-    // gelince setState ile günceller (ref.listen ile).
     if (ilanProp != null) {
-      // Stream gelince yeniden build tetiklenir ama loading gösterilmez.
       final streamDegeri = ref.watch(ilanByIdProvider(widget.ilanId)).value;
       final ilan = streamDegeri ?? ilanProp;
       return _detayScaffold(context, ilan);
     }
 
-    // Prop yok (deep link) — stream'den bekle.
     final ilanAsync = ref.watch(ilanByIdProvider(widget.ilanId));
     return ilanAsync.when(
       loading: () => const Scaffold(
@@ -377,7 +370,7 @@ class _IlanDetayIcerik extends ConsumerWidget {
         .toList();
 
     return Scaffold(
-  backgroundColor: Colors.white,
+      backgroundColor: Colors.white,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -418,7 +411,7 @@ class _IlanDetayIcerik extends ConsumerWidget {
             ],
           ),
 
-          // ── Resim slider — FlexibleSpaceBar yerine SliverToBoxAdapter ──────
+          // ── Resim slider ─────────────────────────────────────────────────
           if (resimler.isNotEmpty)
             SliverToBoxAdapter(
               child: SizedBox(
@@ -469,7 +462,9 @@ class _IlanDetayIcerik extends ConsumerWidget {
                           child: Text(
                             '${aktifResim + 1}/${resimler.length}',
                             style: TextStyle(
-                                color: Colors.white, fontSize: AppLayout.fs(context, 12), fontWeight: FontWeight.w600),
+                                color: Colors.white,
+                                fontSize: AppLayout.fs(context, 12),
+                                fontWeight: FontWeight.w600),
                           ),
                         ),
                       ),
@@ -500,7 +495,9 @@ class _IlanDetayIcerik extends ConsumerWidget {
                               ),
                               child: Text(kategoriAdiStr,
                                   style: GoogleFonts.dmSans(
-                                      fontSize: AppLayout.fs(context, 12), color: AppColors.red, fontWeight: FontWeight.w500)),
+                                      fontSize: AppLayout.fs(context, 12),
+                                      color: AppColors.red,
+                                      fontWeight: FontWeight.w500)),
                             ),
                           SizedBox(width: 8),
                           Container(
@@ -525,10 +522,15 @@ class _IlanDetayIcerik extends ConsumerWidget {
                         ],
                       ),
                       SizedBox(height: 12),
+                      // ── Ürün başlığı ────────────────────────────────────
                       Text(
                         ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
                         style: GoogleFonts.dmSans(
-                            fontSize: AppLayout.fs(context, 22), fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                          fontSize: AppLayout.fs(context, 24),
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                          letterSpacing: -0.5,
+                        ),
                       ),
                       if (ilan.ucret.isNotEmpty) ...[
                         SizedBox(height: 8),
@@ -554,11 +556,8 @@ class _IlanDetayIcerik extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _BilgiSatiri(
-                        icon: Icons.flight_takeoff_outlined,
-                        label: '${ilan.nereden}  →  ${ilan.nereye}',
-                        bold: true,
-                      ),
+                      // ── Nereden → Nereye ────────────────────────────────
+                      _GuzergahSatiri(nereden: ilan.nereden, nereye: ilan.nereye),
                       if (ilan.tarih != null) ...[
                         const SizedBox(height: 12),
                         _BilgiSatiri(
@@ -640,7 +639,9 @@ class _IlanDetayIcerik extends ConsumerWidget {
                       children: [
                         Text('Benzer İlanlar',
                             style: GoogleFonts.dmSans(
-                                fontSize: AppLayout.fs(context, 13), fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                                fontSize: AppLayout.fs(context, 13),
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textSecondary)),
                         const SizedBox(height: 14),
                         SizedBox(
                           height: 160,
@@ -726,16 +727,17 @@ class _IlanDetayIcerik extends ConsumerWidget {
                       child: ElevatedButton.icon(
                         onPressed: onMesajGonder,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.red,
-                          foregroundColor: Colors.white,
+                          backgroundColor: const Color(0xFFE0E0E0),
+                          foregroundColor: Colors.black87,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
                         ),
-                        icon: const Icon(Icons.emoji_people_outlined, size: 18),
-                        label: Text('İlanınızla İlgileniyorum',
+                        icon: const Icon(Icons.message_outlined, size: 18),
+                        label: Text('İletişime Geç',
                             style: GoogleFonts.dmSans(
-                                fontSize: AppLayout.fs(context, 14), fontWeight: FontWeight.w600)),
+                                fontSize: AppLayout.fs(context, 14),
+                                fontWeight: FontWeight.w600)),
                       ),
                     ),
                   ),
@@ -754,6 +756,44 @@ class _IlanDetayIcerik extends ConsumerWidget {
 }
 
 // ── Ortak widget'lar ──────────────────────────────────────────────────────────
+
+class _GuzergahSatiri extends StatelessWidget {
+  final String nereden;
+  final String nereye;
+  const _GuzergahSatiri({required this.nereden, required this.nereye});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(Icons.flight_takeoff_outlined, size: 15, color: AppColors.textHint),
+        const SizedBox(width: 10),
+        Text(
+          nereden.toUpperCase(),
+          style: GoogleFonts.dmSans(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textSecondary,
+            letterSpacing: 0.5,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.textHint),
+        ),
+        Text(
+          nereye.toUpperCase(),
+          style: GoogleFonts.dmSans(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textSecondary,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 class _BilgiSatiri extends StatelessWidget {
   final IconData icon;
@@ -844,79 +884,77 @@ class _IlanSahibiKarti extends ConsumerWidget {
                   ),
                 ),
                 child: Row(
-                children: [
-                  // Avatar
-                  Container(
-                    width: 48, height: 48,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppColors.surface,
-                      border: Border.all(color: AppColors.divider),
+                  children: [
+                    Container(
+                      width: 48, height: 48,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.surface,
+                        border: Border.all(color: AppColors.divider),
+                      ),
+                      child: ClipOval(
+                        child: fotoUrl != null && fotoUrl.isNotEmpty
+                            ? CachedNetworkImage(
+                                imageUrl: fotoUrl,
+                                fit: BoxFit.cover,
+                                placeholder: (_, _) => Container(color: AppColors.surface),
+                                errorWidget: (_, _, _) => _AvatarHarf(ad: kullaniciAd),
+                              )
+                            : _AvatarHarf(ad: kullaniciAd),
+                      ),
                     ),
-                    child: ClipOval(
-                      child: fotoUrl != null && fotoUrl.isNotEmpty
-                          ? CachedNetworkImage(
-                              imageUrl: fotoUrl,
-                              fit: BoxFit.cover,
-                              placeholder: (_, _) => Container(color: AppColors.surface),
-                              errorWidget: (_, _, _) => _AvatarHarf(ad: kullaniciAd),
-                            )
-                          : _AvatarHarf(ad: kullaniciAd),
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  // İsim + puan
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          kullaniciAd,
-                          style: GoogleFonts.dmSans(
-                            fontSize: AppLayout.fs(context, 15),
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        if (sayi > 0) ...[
-                          SizedBox(height: 3),
-                          Row(
-                            children: [
-                              const Icon(Icons.star_rounded,
-                                  size: 14, color: Color(0xFFFFA726)),
-                              const SizedBox(width: 3),
-                              Text(
-                                puan.toStringAsFixed(1),
-                                style: GoogleFonts.dmSans(
-                                  fontSize: AppLayout.fs(context, 13),
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                '($sayi değerlendirme)',
-                                style: GoogleFonts.dmSans(
-                                  fontSize: AppLayout.fs(context, 12),
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ] else ...[
-                          SizedBox(height: 3),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            'Henüz değerlendirme yok',
+                            kullaniciAd,
                             style: GoogleFonts.dmSans(
-                              fontSize: AppLayout.fs(context, 12),
-                              color: AppColors.textHint,
+                              fontSize: AppLayout.fs(context, 15),
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
                             ),
                           ),
+                          if (sayi > 0) ...[
+                            SizedBox(height: 3),
+                            Row(
+                              children: [
+                                const Icon(Icons.star_rounded,
+                                    size: 14, color: Color(0xFFFFA726)),
+                                const SizedBox(width: 3),
+                                Text(
+                                  puan.toStringAsFixed(1),
+                                  style: GoogleFonts.dmSans(
+                                    fontSize: AppLayout.fs(context, 13),
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  '($sayi değerlendirme)',
+                                  style: GoogleFonts.dmSans(
+                                    fontSize: AppLayout.fs(context, 12),
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ] else ...[
+                            SizedBox(height: 3),
+                            Text(
+                              'Henüz değerlendirme yok',
+                              style: GoogleFonts.dmSans(
+                                fontSize: AppLayout.fs(context, 12),
+                                color: AppColors.textHint,
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
                 ),
               );
             },
@@ -957,7 +995,7 @@ class _BenzerIlanKarti extends StatelessWidget {
   Widget build(BuildContext context) {
     final resimler = ilan.tumResimler;
     return GestureDetector(
-      onTap: () => context.push(AppRoutes.ilanDetayPath(ilan.id)),
+      onTap: () => context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan),
       child: Container(
         width: 130,
         margin: const EdgeInsets.only(right: 10),
@@ -987,7 +1025,9 @@ class _BenzerIlanKarti extends StatelessWidget {
               padding: const EdgeInsets.all(8),
               child: Text(ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
                   style: GoogleFonts.dmSans(
-                      fontSize: AppLayout.fs(context, 12), fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                      fontSize: AppLayout.fs(context, 12),
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary),
                   maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
           ],
@@ -1026,7 +1066,9 @@ class _FavoriButon extends StatelessWidget {
               SizedBox(width: 4),
               Text('$favoriSayisi',
                   style: GoogleFonts.dmSans(
-                      fontSize: AppLayout.fs(context, 13), fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                      fontSize: AppLayout.fs(context, 13),
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary)),
             ],
           ],
         ),
@@ -1085,8 +1127,8 @@ class _ResimWidget extends StatelessWidget {
         cacheManager: AppCacheManager.instance,
         imageUrl: url, fit: BoxFit.cover, width: double.infinity,
         fadeInDuration: Duration.zero,
-fadeOutDuration: Duration.zero,
-memCacheWidth: MediaQuery.of(context).size.width.toInt(),
+        fadeOutDuration: Duration.zero,
+        memCacheWidth: MediaQuery.of(context).size.width.toInt(),
         placeholder: (_, _) => Container(color: const Color(0xFFF5F5F5)),
         errorWidget: (_, _, _) => Container(color: const Color(0xFFF5F5F5),
             child: const Icon(Icons.image_outlined, color: AppColors.textHint, size: 48)),
@@ -1141,7 +1183,7 @@ class _ResimBuyukEkranState extends State<_ResimBuyukEkran> {
         foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-            icon: Icon(Icons.close, color: Colors.white),
+            icon: const Icon(Icons.close, color: Colors.white),
             onPressed: () => Navigator.pop(context)),
         title: widget.resimler.length > 1
             ? Text('${_aktif + 1} / ${widget.resimler.length}',
@@ -1201,7 +1243,9 @@ class _MenuItem extends StatelessWidget {
       leading: Icon(icon, color: iconColor),
       title: Text(label,
           style: GoogleFonts.dmSans(
-              fontSize: AppLayout.fs(context, 14), color: labelColor, fontWeight: FontWeight.w500)),
+              fontSize: AppLayout.fs(context, 14),
+              color: labelColor,
+              fontWeight: FontWeight.w500)),
       onTap: onTap,
     );
   }
