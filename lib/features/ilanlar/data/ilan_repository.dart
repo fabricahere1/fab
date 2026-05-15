@@ -150,7 +150,12 @@ class IlanRepository {
     final ilanlar = snap.docs.map(IlanModel.fromFirestore).toList();
     return IlanSayfasi(
       ilanlar: ilanlar,
-      sonTarih: ilanlar.isNotEmpty ? ilanlar.last.olusturmaTarihi : sonTarih,
+      // orderField ile cursor alanı eşleşmeli
+      sonTarih: ilanlar.isNotEmpty
+          ? (orderField == 'tarih'
+              ? ilanlar.last.tarih
+              : ilanlar.last.olusturmaTarihi)
+          : sonTarih,
       sonId: ilanlar.isNotEmpty ? ilanlar.last.id : null,
       bitti: snap.docs.length < limit,
     );
@@ -244,32 +249,32 @@ class IlanRepository {
     required String kullaniciId,
     required IlanModel ilan,
   }) async {
-    final mevcutSnap = await firestore
-        .collection(Collections.favoriler)
-        .where('kullaniciId', isEqualTo: kullaniciId)
-        .where('ilanId', isEqualTo: ilan.id)
-        .get();
-    if (mevcutSnap.docs.isNotEmpty) return;
+    // Deterministik ID — race condition'ı önler
+    // Aynı kullanıcı aynı ilanı iki kez favorilerse ikinci yazma birincinin üzerine yazar
+    final favoriId = '${kullaniciId}_${ilan.id}';
+    final favoriRef = firestore.collection(Collections.favoriler).doc(favoriId);
 
-    final batch = firestore.batch();
-    final favoriRef = firestore.collection(Collections.favoriler).doc();
-    batch.set(favoriRef, {
-      'kullaniciId':  kullaniciId,
-      'ilanId':       ilan.id,
-      'tip':          ilan.tip,
-      'kullaniciAd':  ilan.kullaniciAd,
-      'nereden':      ilan.nereden,
-      'nereye':       ilan.nereye,
-      'urun':         ilan.urun,
-      'ucret':        ilan.ucret,
-      'kategori':     ilan.kategori,
-      if (ilan.resimUrl.isNotEmpty) 'resimUrl': ilan.resimUrl,
-      'eklemeTarihi': FieldValue.serverTimestamp(),
+    await firestore.runTransaction((txn) async {
+      final favoriSnap = await txn.get(favoriRef);
+      if (favoriSnap.exists) return; // Zaten favoride
+
+      txn.set(favoriRef, {
+        'kullaniciId':  kullaniciId,
+        'ilanId':       ilan.id,
+        'tip':          ilan.tip,
+        'kullaniciAd':  ilan.kullaniciAd,
+        'nereden':      ilan.nereden,
+        'nereye':       ilan.nereye,
+        'urun':         ilan.urun,
+        'ucret':        ilan.ucret,
+        'kategori':     ilan.kategori,
+        if (ilan.resimUrl.isNotEmpty) 'resimUrl': ilan.resimUrl,
+        'eklemeTarihi': FieldValue.serverTimestamp(),
+      });
+      txn.update(_col.doc(ilan.id), {
+        'favoriSayisi': FieldValue.increment(1),
+      });
     });
-    batch.update(_col.doc(ilan.id), {
-      'favoriSayisi': FieldValue.increment(1),
-    });
-    await batch.commit();
   }
 
   Future<void> favoridanCikar({

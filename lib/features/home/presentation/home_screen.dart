@@ -1,5 +1,6 @@
 // lib/features/home/presentation/home_screen.dart
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +11,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../ilanlar/presentation/ilanlar_screen.dart';
 import '../../ilanlar/presentation/gelenler_screen.dart';
 import '../../ilanlar/presentation/ilan_form_screen.dart';
+import '../../ilanlar/presentation/gelenler_form_screen.dart';
 import '../../mesajlar/presentation/mesajlar_screen.dart';
 import '../../mesajlar/providers/mesaj_provider.dart';
 import '../../profil/presentation/profil_screen.dart';
@@ -27,10 +29,62 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   DateTime? _sonGeriTusu;
 
   void _ilanVer() {
-    final tip = _selectedIndex == 1 ? IlanTip.tasiyici : IlanTip.istek;
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => IlanFormScreen(tip: tip)),
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 32, height: 3,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.divider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.shopping_bag_outlined,
+                    color: AppColors.textPrimary, size: 22),
+                title: Text('İstek İlanı Ver',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    )),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(context, CupertinoPageRoute(
+                    builder: (_) => IlanFormScreen(tip: IlanTip.istek),
+                  ));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.flight_takeoff_outlined,
+                    color: AppColors.textPrimary, size: 22),
+                title: Text('Gelen İlanı Ver',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    )),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(context, CupertinoPageRoute(
+                    builder: (_) => const GelenlerFormScreen(),
+                  ));
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -316,6 +370,77 @@ class _IlanVerItem extends StatelessWidget {
                 color: Color(0xFF66BB6A),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── İlan tip seçim kartı ─────────────────────────────────────────────────────
+
+class _IlanTipKarti extends StatelessWidget {
+  final IconData icon;
+  final Color renk;
+  final String baslik;
+  final String aciklama;
+  final VoidCallback onTap;
+
+  const _IlanTipKarti({
+    required this.icon,
+    required this.renk,
+    required this.baslik,
+    required this.aciklama,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.divider, width: 0.5),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: renk.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: renk, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    baslik,
+                    style: GoogleFonts.dmSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    aciklama,
+                    style: GoogleFonts.dmSans(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: AppColors.textHint, size: 20),
           ],
         ),
       ),

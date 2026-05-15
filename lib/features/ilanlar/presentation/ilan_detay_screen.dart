@@ -381,7 +381,6 @@ class _IlanDetayIcerik extends ConsumerWidget {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: resimler.isNotEmpty ? 320 : 0,
             pinned: true,
             backgroundColor: Colors.white,
             foregroundColor: AppColors.textPrimary,
@@ -417,65 +416,67 @@ class _IlanDetayIcerik extends ConsumerWidget {
                 ),
               _CircleIconButton(icon: Icons.more_vert, onTap: onUcNokta),
             ],
-            flexibleSpace: resimler.isNotEmpty
-                ? FlexibleSpaceBar(
-                    collapseMode: CollapseMode.pin,
-                    stretchModes: const [],
-                    background: Stack(
-                      children: [
-                        PageView.builder(
-                          controller: pageController,
-                          itemCount: resimler.length,
-                          onPageChanged: onResimDegis,
-                          itemBuilder: (_, i) => _ResimWidget(
-                            url: resimler[i],
-                            tumResimler: resimler,
-                            baslangicIndex: i,
+          ),
+
+          // ── Resim slider — FlexibleSpaceBar yerine SliverToBoxAdapter ──────
+          if (resimler.isNotEmpty)
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: 320,
+                child: Stack(
+                  children: [
+                    PageView.builder(
+                      controller: pageController,
+                      itemCount: resimler.length,
+                      onPageChanged: onResimDegis,
+                      itemBuilder: (_, i) => _ResimWidget(
+                        url: resimler[i],
+                        tumResimler: resimler,
+                        baslangicIndex: i,
+                      ),
+                    ),
+                    if (resimler.length > 1)
+                      Positioned(
+                        bottom: 12, left: 0, right: 0,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(
+                            resimler.length,
+                            (i) => AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              margin: const EdgeInsets.symmetric(horizontal: 3),
+                              width: aktifResim == i ? 20 : 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: aktifResim == i
+                                    ? Colors.white
+                                    : Colors.white.withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                            ),
                           ),
                         ),
-                        if (resimler.length > 1)
-                          Positioned(
-                            bottom: 12, left: 0, right: 0,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: List.generate(
-                                resimler.length,
-                                (i) => AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                                  width: aktifResim == i ? 20 : 6,
-                                  height: 6,
-                                  decoration: BoxDecoration(
-                                    color: aktifResim == i
-                                        ? Colors.white
-                                        : Colors.white.withValues(alpha: 0.5),
-                                    borderRadius: BorderRadius.circular(3),
-                                  ),
-                                ),
-                              ),
-                            ),
+                      ),
+                    if (resimler.length > 1)
+                      Positioned(
+                        top: 12, right: 16,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                        if (resimler.length > 1)
-                          Positioned(
-                            top: 12, right: 56,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.5),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                '${aktifResim + 1}/${resimler.length}',
-                                style: TextStyle(
-                                    color: Colors.white, fontSize: AppLayout.fs(context, 12), fontWeight: FontWeight.w600),
-                              ),
-                            ),
+                          child: Text(
+                            '${aktifResim + 1}/${resimler.length}',
+                            style: TextStyle(
+                                color: Colors.white, fontSize: AppLayout.fs(context, 12), fontWeight: FontWeight.w600),
                           ),
-                      ],
-                    ),
-                  )
-                : null,
-          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
 
           SliverToBoxAdapter(
             child: Column(

@@ -21,14 +21,20 @@ import '../../../../shared/constants/app_constants.dart';
 class IlanKarti extends ConsumerWidget {
   final IlanModel ilan;
   final List<double> resimYukseklikleri;
+  final int kolonSayisi;
 
   const IlanKarti({
     super.key,
     required this.ilan,
     required this.resimYukseklikleri,
+    this.kolonSayisi = 2,
   });
 
-  double _resimYuksekligi() {
+  double _resimYuksekligi(BuildContext context) {
+    if (kolonSayisi == 3) {
+      final kartGenisligi = (MediaQuery.of(context).size.width - 24 - 12) / 3;
+      return kartGenisligi * 1.0;
+    }
     return resimYukseklikleri[ilan.id.hashCode.abs() % resimYukseklikleri.length];
   }
 
@@ -77,7 +83,7 @@ class IlanKarti extends ConsumerWidget {
             Stack(
               children: [
                 SizedBox(
-                  height: _resimYuksekligi(),
+                  height: _resimYuksekligi(context),
                   width: double.infinity,
                   child: resimler.isNotEmpty
                       ? CachedNetworkImage(
@@ -108,7 +114,6 @@ class IlanKarti extends ConsumerWidget {
                     top: 6, right: 6,
                     child: GestureDetector(
                       onTap: () async {
-                        if (uid == null) return;
                         if (favorideMi) {
                           await ref.read(ilanRepositoryProvider)
                               .favoridanCikar(kullaniciId: uid, ilanId: guncelIlan.id);
@@ -300,7 +305,6 @@ class IlanListeKarti extends ConsumerWidget {
             if (gosterFavori)
               GestureDetector(
                 onTap: () async {
-                  if (uid == null) return;
                   if (favorideMi) {
                     await ref.read(ilanRepositoryProvider)
                         .favoridanCikar(kullaniciId: uid, ilanId: ilan.id);

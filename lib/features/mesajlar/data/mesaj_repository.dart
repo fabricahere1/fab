@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -145,14 +146,26 @@ class MesajRepository {
           .where('okundu', isEqualTo: false)
           .get();
       if (mesajlar.docs.isEmpty) return;
-      final batch = firestore.batch();
-      for (final doc in mesajlar.docs) {
+
+      // Firestore batch limiti 500 — gruplara böl
+      final hedefler = mesajlar.docs.where((doc) {
         final data = doc.data() as Map<String, dynamic>;
-        if (data['gondereId'] == kullaniciId) continue;
-        batch.update(doc.reference, {'okundu': true});
+        return data['gondereId'] != kullaniciId;
+      }).toList();
+
+      const grupBoyutu = 490;
+      for (int i = 0; i < hedefler.length; i += grupBoyutu) {
+        final grup = hedefler.sublist(
+          i, (i + grupBoyutu).clamp(0, hedefler.length));
+        final batch = firestore.batch();
+        for (final doc in grup) {
+          batch.update(doc.reference, {'okundu': true});
+        }
+        await batch.commit();
       }
-      await batch.commit();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[MesajRepository] okunduIsaretle hatası: $e');
+    }
   }
 
   Future<void> mesajSil({
@@ -160,20 +173,34 @@ class MesajRepository {
     required String mesajId,
     required String metin,
   }) async {
-    final sohbetRef = _sohbetler.doc(sohbetId);
-    await _mesajlar(sohbetId).doc(mesajId).delete();
-    final sohbetSnap = await sohbetRef.get();
-    if (sohbetSnap.exists &&
-        (sohbetSnap.data() as Map<String, dynamic>?)?['sonMesaj'] == metin) {
-      final onceki = await _mesajlar(sohbetId)
-          .orderBy('zaman', descending: true)
-          .limit(1)
-          .get();
-      await sohbetRef.update({
-        'sonMesaj': onceki.docs.isNotEmpty
+    try {
+      final sohbetRef = _sohbetler.doc(sohbetId);
+      final sohbetSnap = await sohbetRef.get();
+      final sohbetData = sohbetSnap.data() as Map<String, dynamic>?;
+
+      await _mesajlar(sohbetId).doc(mesajId).delete();
+
+      // Silinen mesaj son mesajsa güncelle — metin yerine sonMesajId ile kontrol
+      final sonGondereId = sohbetData?['sonGondereId'] as String?;
+      final sonMesaj = sohbetData?['sonMesaj'] as String?;
+      if (sohbetSnap.exists && sonMesaj == metin) {
+        final onceki = await _mesajlar(sohbetId)
+            .orderBy('zaman', descending: true)
+            .limit(1)
+            .get();
+        final yeniSonMesaj = onceki.docs.isNotEmpty
             ? (onceki.docs.first.data() as Map<String, dynamic>)['metin'] ?? ''
-            : '',
-      });
+            : '';
+        final yeniGondereId = onceki.docs.isNotEmpty
+            ? (onceki.docs.first.data() as Map<String, dynamic>)['gondereId'] ?? ''
+            : '';
+        await sohbetRef.update({
+          'sonMesaj': yeniSonMesaj,
+          'sonGondereId': yeniGondereId,
+        });
+      }
+    } catch (e) {
+      debugPrint('[MesajRepository] mesajSil hatası: $e');
     }
   }
 
@@ -263,7 +290,9 @@ class MesajRepository {
         'sohbetId':   sohbetId,
         'metin':      metin,
       });
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[MesajRepository] mesajBildirimiGonder hatası: $e');
+    }
   }
 
   // ── Sohbet dökümanı stream'leri ──────────────────────────

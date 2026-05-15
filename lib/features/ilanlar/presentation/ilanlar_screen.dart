@@ -277,6 +277,7 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
           child: IlanKarti(
             ilan: ilanlar[index],
             resimYukseklikleri: _kResimYukseklikleri,
+            kolonSayisi: mod.kolonSayisi,
           ),
         ),
       );
