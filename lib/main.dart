@@ -1,7 +1,3 @@
-import 'dart:async';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -12,8 +8,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/services/banner_service.dart';
 import 'core/services/fcm_service.dart';
+import 'core/services/islem_durumu_service.dart';
 import 'core/theme/app_theme.dart';
-import 'features/mesajlar/domain/islem_durumu.dart';
 import 'firebase_options.dart';
 import 'router/app_router.dart';
 
@@ -29,8 +25,6 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
-  
 
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
@@ -55,24 +49,17 @@ class IsteApp extends ConsumerStatefulWidget {
 }
 
 class _IsteAppState extends ConsumerState<IsteApp> {
-  final Map<String, StreamSubscription> _islemListeners = {};
-  final Map<String, Map<String, dynamic>> _oncekiDurumlar = {};
-  StreamSubscription? _sohbetlerSub;
-
   @override
   void initState() {
     super.initState();
     FcmService.instance.init(onBildirimAc: _bildirimdenAc);
-    _islemDurumuDinlemeyiBaslat();
+    IslemDurumuService.instance.init();
   }
 
   @override
   void dispose() {
     FcmService.instance.dispose();
-    _sohbetlerSub?.cancel();
-    for (final sub in _islemListeners.values) {
-      sub.cancel();
-    }
+    IslemDurumuService.instance.dispose();
     super.dispose();
   }
 
@@ -94,113 +81,6 @@ class _IsteAppState extends ConsumerState<IsteApp> {
     if (sohbetId != null && sohbetId.isNotEmpty) {
       debugPrint('[FCM] sohbet bildirimi: $sohbetId');
     }
-  }
-
-  void _islemDurumuDinlemeyiBaslat() {
-    FirebaseAuth.instance.authStateChanges().listen((user) {
-      _sohbetlerSub?.cancel();
-      for (final sub in _islemListeners.values) {
-        sub.cancel();
-      }
-      _islemListeners.clear();
-      _oncekiDurumlar.clear();
-
-      if (user == null) return;
-
-      _sohbetlerSub = FirebaseFirestore.instance
-          .collection('sohbetler')
-          .where('kullanicilar', arrayContains: user.uid)
-          .snapshots()
-          .listen((snap) {
-        for (final doc in snap.docs) {
-          final sohbetId = doc.id;
-          if (_islemListeners.containsKey(sohbetId)) continue;
-
-          bool ilkSnapshot = true; // ← Bug 1 fix: ilk snapshot'ı atla
-
-          final sub = FirebaseFirestore.instance
-              .collection('sohbetler')
-              .doc(sohbetId)
-              .snapshots()
-              .listen((sohbetDoc) {
-            if (!sohbetDoc.exists) return;
-            final d = sohbetDoc.data() as Map<String, dynamic>;
-            final islemDurumlari = Map<String, dynamic>.from(
-                d['islemDurumlari'] as Map? ?? {});
-
-            // İlk snapshot mevcut durumu baseline olarak kaydet,
-            // bildirim gösterme — sadece sonraki değişiklikleri bildir
-            if (ilkSnapshot) {
-              ilkSnapshot = false;
-              _oncekiDurumlar[sohbetId] =
-                  Map<String, dynamic>.from(islemDurumlari);
-              return;
-            }
-
-            final onceki = _oncekiDurumlar[sohbetId] ?? {};
-
-            for (final durum in IslemDurumu.values) {
-              // Bug 2 fix: anlasildi iki taraflı — uid bazlı key'leri de kontrol et
-              final bool yeniDeger;
-              final bool eskiDeger;
-
-              if (durum == IslemDurumu.anlasildi) {
-                // Her iki tarafın da onayladığı an → anlasildi tamamlandı sayılır
-                final kullanicilar = List<String>.from(d['kullanicilar'] ?? []);
-                final uid1 = kullanicilar.isNotEmpty ? kullanicilar[0] : '';
-                final uid2 = kullanicilar.length > 1 ? kullanicilar[1] : '';
-                // Yeni: her iki uid de onayladı mı?
-                final yeni1 = islemDurumlari['anlasildi_$uid1'] == true;
-                final yeni2 = islemDurumlari['anlasildi_$uid2'] == true;
-                yeniDeger = yeni1 && yeni2;
-                // Önceki: her iki uid de onaylamış mıydı?
-                final eski1 = onceki['anlasildi_$uid1'] == true;
-                final eski2 = onceki['anlasildi_$uid2'] == true;
-                eskiDeger = eski1 && eski2;
-              } else {
-                final key = durum.firestoreKey;
-                yeniDeger = islemDurumlari[key] == true;
-                eskiDeger = onceki[key] == true;
-              }
-
-              if (yeniDeger && !eskiDeger) {
-                final kullanicilar =
-                    List<String>.from(d['kullanicilar'] ?? []);
-                final karsiUid = kullanicilar
-                    .firstWhere((id) => id != user.uid, orElse: () => '');
-
-                if (karsiUid.isNotEmpty) {
-                  final ilanBaslik = d['ilanBaslik'] as String? ?? 'İlan';
-
-                  FirebaseFirestore.instance
-                      .collection('kullanicilar')
-                      .doc(karsiUid)
-                      .get()
-                      .then((karsiDoc) {
-                    if (!karsiDoc.exists) return;
-                    final karsiAd =
-                        (karsiDoc.data()?['adSoyad'] as String?) ??
-                            'Karşı taraf';
-
-                    BannerService.instance.goster(
-                      baslik: karsiAd,
-                      icerik: '"$ilanBaslik" ilanınızı '
-                          '${durum.gecmisDonusu}',
-                      tip: 'islem',
-                    );
-                  });
-                }
-              }
-            }
-
-            _oncekiDurumlar[sohbetId] =
-                Map<String, dynamic>.from(islemDurumlari);
-          });
-
-          _islemListeners[sohbetId] = sub;
-        }
-      });
-    });
   }
 
   @override

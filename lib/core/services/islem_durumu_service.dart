@@ -42,6 +42,8 @@ class IslemDurumuService {
         final sohbetId = doc.id;
         if (_islemListeners.containsKey(sohbetId)) continue;
 
+        bool ilkSnapshot = true;
+
         final sub = _firestore
             .collection('sohbetler')
             .doc(sohbetId)
@@ -51,12 +53,35 @@ class IslemDurumuService {
           final d = sohbetDoc.data() as Map<String, dynamic>;
           final islemDurumlari = Map<String, dynamic>.from(
               d['islemDurumlari'] as Map? ?? {});
+
+          // İlk snapshot'ı baseline olarak kaydet, bildirim gösterme
+          if (ilkSnapshot) {
+            ilkSnapshot = false;
+            _oncekiDurumlar[sohbetId] =
+                Map<String, dynamic>.from(islemDurumlari);
+            return;
+          }
+
           final onceki = _oncekiDurumlar[sohbetId] ?? {};
 
           for (final durum in IslemDurumu.values) {
-            final key = durum.firestoreKey;
-            final yeniDeger = islemDurumlari[key] == true;
-            final eskiDeger = onceki[key] == true;
+            final bool yeniDeger;
+            final bool eskiDeger;
+
+            if (durum == IslemDurumu.anlasildi) {
+              // Her iki tarafın da onayladığı an → tamamlandı sayılır
+              final kullanicilar = List<String>.from(d['kullanicilar'] ?? []);
+              final uid1 = kullanicilar.isNotEmpty ? kullanicilar[0] : '';
+              final uid2 = kullanicilar.length > 1 ? kullanicilar[1] : '';
+              yeniDeger = islemDurumlari['anlasildi_$uid1'] == true &&
+                  islemDurumlari['anlasildi_$uid2'] == true;
+              eskiDeger = onceki['anlasildi_$uid1'] == true &&
+                  onceki['anlasildi_$uid2'] == true;
+            } else {
+              final key = durum.firestoreKey;
+              yeniDeger = islemDurumlari[key] == true;
+              eskiDeger = onceki[key] == true;
+            }
 
             if (yeniDeger && !eskiDeger) {
               final kullanicilar =

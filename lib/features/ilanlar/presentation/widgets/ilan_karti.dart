@@ -92,7 +92,7 @@ class IlanKarti extends ConsumerWidget {
                           fit: BoxFit.cover,
                           fadeInDuration: Duration.zero,
                           fadeOutDuration: Duration.zero,
-                          memCacheWidth: 400,
+                          memCacheWidth: MediaQuery.of(context).size.width.toInt(),
                           errorWidget: (_, _, _) => Container(
                             color: AppColors.surface,
                             child: const Center(
