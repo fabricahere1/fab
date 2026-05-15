@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -5,6 +6,8 @@ import '../domain/bildirim_model.dart';
 import '../providers/bildirim_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../mesajlar/presentation/sohbet_screen.dart';
+import '../../degerlendirme/presentation/degerlendirme_screen.dart';
+import '../../degerlendirme/data/degerlendirme_repository.dart';
 import '../../../shared/constants/app_colors.dart';
 
 class BildirimlerScreen extends ConsumerStatefulWidget {
@@ -107,47 +110,134 @@ class _BildirimSatiri extends ConsumerWidget {
 
   const _BildirimSatiri({required this.bildirim});
 
-  void _navigate(BuildContext context, WidgetRef ref) {
-    if (bildirim.tip != BildirimTip.mesaj || bildirim.hedefId.isEmpty) return;
+  Future<void> _navigate(BuildContext context, WidgetRef ref) async {
+    // ── Mesaj bildirimi → sohbet ekranı ──────────────────────────────────
+    if (bildirim.tip == BildirimTip.mesaj && bildirim.hedefId.isNotEmpty) {
+      final parts = bildirim.hedefId.split('_');
+      if (parts.length < 3) return;
 
-    final parts = bildirim.hedefId.split('_');
-    if (parts.length < 3) return;
+      final ilanId = parts.last;
+      final karsiUid = bildirim.gondereId.isNotEmpty
+          ? bildirim.gondereId
+          : (() {
+              final benimUid = ref.read(currentUserProvider)?.uid ?? '';
+              return parts
+                  .sublist(0, parts.length - 1)
+                  .firstWhere((p) => p != benimUid, orElse: () => '');
+            })();
 
-    final ilanId   = parts.last;
-    final karsiUid = bildirim.gondereId.isNotEmpty
-        ? bildirim.gondereId
-        : (() {
-            final benimUid = ref.read(currentUserProvider)?.uid ?? '';
-            return parts
-                .sublist(0, parts.length - 1)
-                .firstWhere((p) => p != benimUid, orElse: () => '');
-          })();
+      if (karsiUid.isEmpty) return;
 
-    if (karsiUid.isEmpty) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => SohbetScreen(
-          karsiKullaniciId: karsiUid,
-          karsiKullaniciAd: bildirim.gondereAd,
-          ilanId:           ilanId,
-          ilanBaslik:       bildirim.baslik,
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SohbetScreen(
+            karsiKullaniciId: karsiUid,
+            karsiKullaniciAd: bildirim.gondereAd,
+            ilanId: ilanId,
+            ilanBaslik: bildirim.baslik,
+          ),
         ),
-      ),
-    );
+      );
+      return;
+    }
+
+    // ── Anlaşıldı bildirimi → sohbet + panel otomatik aç ─────────────────
+    if (bildirim.tip == BildirimTip.anlasildi && bildirim.hedefId.isNotEmpty) {
+      final sohbetId = bildirim.hedefId;
+      final karsiId  = bildirim.gondereId;
+      final karsiAd  = bildirim.gondereAd;
+
+      if (karsiId.isEmpty) return;
+
+      final sohbetDoc = await FirebaseFirestore.instance
+          .collection('sohbetler')
+          .doc(sohbetId)
+          .get();
+      if (!sohbetDoc.exists) return;
+
+      final d = sohbetDoc.data() as Map<String, dynamic>;
+      final ilanId     = d['ilanId']     as String? ?? '';
+      final ilanBaslik = d['ilanBaslik'] as String? ?? '';
+      final ilanTip    = d['ilanTip']    as String? ?? 'istek';
+
+      if (!context.mounted) return;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SohbetScreen(
+            karsiKullaniciId: karsiId,
+            karsiKullaniciAd: karsiAd,
+            ilanId:        ilanId,
+            ilanBaslik:    ilanBaslik,
+            ilanTip:       ilanTip,
+            autoOpenPanel: true,
+          ),
+        ),
+      );
+      return;
+    }
+
+    // ── Değerlendirme bildirimi → değerlendirme popup ─────────────────────
+    if (bildirim.tip == BildirimTip.degerlendirme && bildirim.hedefId.isNotEmpty) {
+      final sohbetId = bildirim.hedefId;
+      final karsiId  = bildirim.gondereId;
+      final karsiAd  = bildirim.gondereAd;
+
+      if (karsiId.isEmpty) return;
+
+      final benimUid = ref.read(currentUserProvider)?.uid ?? '';
+      if (benimUid.isEmpty) return;
+
+      final repo = ref.read(degerlendirmeRepositoryProvider);
+      final zaten = await repo.zatenDegerlendirdimMi(
+        sohbetId: sohbetId,
+        kullaniciId: benimUid,
+      );
+      if (zaten) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Bu ilanı zaten değerlendirdin.',
+                style: GoogleFonts.dmSans()),
+            behavior: SnackBarBehavior.floating,
+          ));
+        }
+        return;
+      }
+
+      if (!context.mounted) return;
+
+      final tamamlandi = await DegerlendirmeModal.goster(
+        context: context,
+        sohbetId: sohbetId,
+        hedefKullaniciId: karsiId,
+        hedefKullaniciAd: karsiAd,
+      );
+
+      if (tamamlandi && context.mounted) {
+        await repo.bekleyenDegerlendirmeTamamla(
+          sohbetId: sohbetId,
+          kullaniciId: benimUid,
+        );
+      }
+    }
   }
 
   IconData get _ikon => switch (bildirim.tip) {
-        BildirimTip.mesaj  => Icons.chat_bubble_outline,
-        BildirimTip.ilan   => Icons.list_alt_outlined,
-        BildirimTip.sistem => Icons.notifications_outlined,
+        BildirimTip.mesaj         => Icons.chat_bubble_outline,
+        BildirimTip.ilan          => Icons.list_alt_outlined,
+        BildirimTip.sistem        => Icons.notifications_outlined,
+        BildirimTip.degerlendirme => Icons.star_outline_rounded,
+        BildirimTip.anlasildi     => Icons.handshake_outlined,
       };
 
   Color get _ikonRenk => switch (bildirim.tip) {
-        BildirimTip.mesaj  => AppColors.primary,
-        BildirimTip.ilan   => AppColors.red,
-        BildirimTip.sistem => Colors.amber,
+        BildirimTip.mesaj         => AppColors.primary,
+        BildirimTip.ilan          => AppColors.red,
+        BildirimTip.sistem        => Colors.amber,
+        BildirimTip.degerlendirme => const Color(0xFF81C784),
+        BildirimTip.anlasildi     => AppColors.red,
       };
 
   String _zamanYazi(DateTime? tarih) {

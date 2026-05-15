@@ -803,12 +803,12 @@ class _BilgiSatiri extends StatelessWidget {
   final Color? color;
 
   const _BilgiSatiri({
-    required this.icon,
-    required this.label,
-    this.bold = false,
-    this.small = false,
-    this.color,
-  });
+  required this.icon,
+  required this.label,
+  this.bold = false,
+  this.small = false,
+  this.color,
+});
 
   @override
   Widget build(BuildContext context) {

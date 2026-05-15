@@ -25,6 +25,7 @@ class SohbetScreen extends ConsumerStatefulWidget {
   final String? ilgileniyorumMesaji;
   final String ilanSahibiId;
   final String ilanTip;
+  final bool autoOpenPanel;
 
   const SohbetScreen({
     super.key,
@@ -37,6 +38,7 @@ class SohbetScreen extends ConsumerStatefulWidget {
     this.ilgileniyorumMesaji,
     this.ilanSahibiId = '',
     this.ilanTip = 'istek',
+    this.autoOpenPanel = false,
   });
 
   @override
@@ -57,6 +59,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _iletisimBasladiIsaretle();
       _degerlendirmeyiDinle();
+      if (widget.autoOpenPanel) _panelAc();
     });
   }
 
@@ -67,6 +70,30 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
         durum: 'iletisimBasladi',
       );
     } catch (_) {}
+  }
+
+  void _panelAc() {
+    if (!mounted) return;
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black.withValues(alpha: 0.35),
+        barrierDismissible: true,
+        pageBuilder: (ctx, anim, _) => Align(
+          alignment: Alignment.centerRight,
+          child: IslemDurumuPanel(
+            sohbetId: _sohbetId,
+            karsiKullaniciAd: widget.karsiKullaniciAd,
+          ),
+        ),
+        transitionsBuilder: (ctx, anim, _, child) => SlideTransition(
+          position: Tween(begin: const Offset(1, 0), end: Offset.zero)
+              .animate(CurvedAnimation(
+                  parent: anim, curve: Curves.easeOutCubic)),
+          child: child,
+        ),
+      ),
+    );
   }
 
   void _degerlendirmeyiDinle() {

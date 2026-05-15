@@ -24,15 +24,15 @@ class DegerlendirmeModal extends ConsumerStatefulWidget {
     this.ilanBaslik = '',
   });
 
-  static Future<void> goster({
+  static Future<bool> goster({
     required BuildContext context,
     required String sohbetId,
     required String hedefKullaniciId,
     required String hedefKullaniciAd,
     String? hedefFotoUrl,
     String ilanBaslik = '',
-  }) {
-    return showModalBottomSheet(
+  }) async {
+    final sonuc = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -44,6 +44,7 @@ class DegerlendirmeModal extends ConsumerStatefulWidget {
         ilanBaslik:       ilanBaslik,
       ),
     );
+    return sonuc == true;
   }
 
   @override
