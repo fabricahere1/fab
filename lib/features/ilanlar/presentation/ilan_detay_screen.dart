@@ -20,9 +20,6 @@ import '../../../shared/constants/app_constants.dart' as app_constants;
 import '../../../core/cache/app_cache_manager.dart';
 
 class IlanDetayScreen extends ConsumerStatefulWidget {
-  /// ilanId her zaman gerekli (deep link desteği için).
-  /// ilan verilirse ilk yüklemede direkt gösterilir — Firestore beklenmez.
-  /// ilan null ise (deep link) Firestore stream'den çekilir.
   final String ilanId;
   final IlanModel? ilan;
 
@@ -329,7 +326,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
   }
 }
 
-// ── İçerik widget'ı — IlanModel hazır olunca render edilir ───────────────────
+// ── İçerik widget'ı ───────────────────────────────────────────────────────────
 
 class _IlanDetayIcerik extends ConsumerWidget {
   final IlanModel ilan;
@@ -414,62 +411,95 @@ class _IlanDetayIcerik extends ConsumerWidget {
           // ── Resim slider ─────────────────────────────────────────────────
           if (resimler.isNotEmpty)
             SliverToBoxAdapter(
-              child: SizedBox(
-                height: 320,
-                child: Stack(
-                  children: [
-                    PageView.builder(
-                      controller: pageController,
-                      itemCount: resimler.length,
-                      onPageChanged: onResimDegis,
-                      itemBuilder: (_, i) => _ResimWidget(
-                        url: resimler[i],
-                        tumResimler: resimler,
-                        baslangicIndex: i,
-                      ),
-                    ),
-                    if (resimler.length > 1)
-                      Positioned(
-                        bottom: 12, left: 0, right: 0,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(
-                            resimler.length,
-                            (i) => AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              margin: const EdgeInsets.symmetric(horizontal: 3),
-                              width: aktifResim == i ? 20 : 6,
-                              height: 6,
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: 300,
+                    child: Stack(
+                      children: [
+                        PageView.builder(
+                          controller: pageController,
+                          itemCount: resimler.length,
+                          onPageChanged: onResimDegis,
+                          itemBuilder: (_, i) => _ResimWidget(
+                            url: resimler[i],
+                            tumResimler: resimler,
+                            baslangicIndex: i,
+                          ),
+                        ),
+                        if (resimler.length > 1)
+                          Positioned(
+                            top: 12, right: 16,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '${aktifResim + 1}/${resimler.length}',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: AppLayout.fs(context, 12),
+                                    fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  // ── Thumbnail strip ──────────────────────────────────────
+                  if (resimler.length > 1)
+                    Container(
+                      height: 68,
+                      color: Colors.white,
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: resimler.length,
+                        itemBuilder: (_, i) => GestureDetector(
+                          onTap: () {
+                            pageController.animateToPage(
+                              i,
+                              duration: const Duration(milliseconds: 250),
+                              curve: Curves.easeOutCubic,
+                            );
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            width: 52,
+                            height: 52,
+                            margin: const EdgeInsets.only(right: 6),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
                                 color: aktifResim == i
-                                    ? Colors.white
-                                    : Colors.white.withValues(alpha: 0.5),
-                                borderRadius: BorderRadius.circular(3),
+                                    ? AppColors.red
+                                    : const Color(0xFFE0E0E0),
+                                width: aktifResim == i ? 2 : 1,
+                              ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(7),
+                              child: CachedNetworkImage(
+                                cacheManager: AppCacheManager.instance,
+                                imageUrl: resimler[i],
+                                fit: BoxFit.cover,
+                                fadeInDuration: Duration.zero,
+                                memCacheWidth: 104,
+                                placeholder: (_, _) => Container(color: const Color(0xFFF5F5F5)),
+                                errorWidget: (_, _, _) => Container(
+                                  color: const Color(0xFFF5F5F5),
+                                  child: const Icon(Icons.image_outlined,
+                                      size: 16, color: AppColors.textHint),
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    if (resimler.length > 1)
-                      Positioned(
-                        top: 12, right: 16,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.5),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${aktifResim + 1}/${resimler.length}',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: AppLayout.fs(context, 12),
-                                fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
+                    ),
+                ],
               ),
             ),
 
@@ -499,7 +529,7 @@ class _IlanDetayIcerik extends ConsumerWidget {
                                       color: AppColors.red,
                                       fontWeight: FontWeight.w500)),
                             ),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
@@ -521,19 +551,19 @@ class _IlanDetayIcerik extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      SizedBox(height: 12),
-                      // ── Ürün başlığı ────────────────────────────────────
+                      const SizedBox(height: 12),
+                      // ── Ürün başlığı — Syne font ─────────────────────────
                       Text(
                         ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
-                        style: GoogleFonts.dmSans(
+                        style: GoogleFonts.nunito(
                           fontSize: AppLayout.fs(context, 24),
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary,
-                          letterSpacing: -0.5,
+                          letterSpacing: -0.3,
                         ),
                       ),
                       if (ilan.ucret.isNotEmpty) ...[
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         Text(
                           ilan.ucret,
                           style: GoogleFonts.dmSans(
@@ -547,7 +577,7 @@ class _IlanDetayIcerik extends ConsumerWidget {
                   ),
                 ),
 
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
 
                 // ── Güzergah + Tarih ────────────────────────────────────────
                 Container(
@@ -556,7 +586,6 @@ class _IlanDetayIcerik extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ── Nereden → Nereye ────────────────────────────────
                       _GuzergahSatiri(nereden: ilan.nereden, nereye: ilan.nereye),
                       if (ilan.tarih != null) ...[
                         const SizedBox(height: 12),
@@ -610,7 +639,7 @@ class _IlanDetayIcerik extends ConsumerWidget {
                                 fontSize: AppLayout.fs(context, 13),
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textSecondary)),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         Text(
                           ilan.notlar,
                           style: GoogleFonts.dmSans(
@@ -621,15 +650,15 @@ class _IlanDetayIcerik extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                 ],
 
-                // ── İlan sahibi profil kartı ─────────────────────────────────
+                // ── İlan sahibi profil kartı ──────────────────────────────
                 _IlanSahibiKarti(kullaniciId: ilan.kullaniciId, kullaniciAd: ilan.kullaniciAd),
 
                 const SizedBox(height: 8),
 
-                // ── Benzer İlanlar ──────────────────────────────────────────
+                // ── Benzer İlanlar ───────────────────────────────────────
                 if (benzerIlanlar.isNotEmpty) ...[
                   Container(
                     color: Colors.white,
@@ -720,7 +749,7 @@ class _IlanDetayIcerik extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  SizedBox(width: 10),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: SizedBox(
                       height: 48,
@@ -803,12 +832,12 @@ class _BilgiSatiri extends StatelessWidget {
   final Color? color;
 
   const _BilgiSatiri({
-  required this.icon,
-  required this.label,
-  this.bold = false,
-  this.small = false,
-  this.color,
-});
+    required this.icon,
+    required this.label,
+    this.bold = false,
+    this.small = false,
+    this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -867,7 +896,7 @@ class _IlanSahibiKarti extends ConsumerWidget {
               height: 56,
               child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
             ),
-            error: (_, _) => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
             data: (profil) {
               final puan = profil?.ortalamaPuan ?? 0.0;
               final sayi = profil?.degerlendirmeSayisi ?? 0;
@@ -897,13 +926,13 @@ class _IlanSahibiKarti extends ConsumerWidget {
                             ? CachedNetworkImage(
                                 imageUrl: fotoUrl,
                                 fit: BoxFit.cover,
-                                placeholder: (_, _) => Container(color: AppColors.surface),
-                                errorWidget: (_, _, _) => _AvatarHarf(ad: kullaniciAd),
+                                placeholder: (_, __) => Container(color: AppColors.surface),
+                                errorWidget: (_, __, ___) => _AvatarHarf(ad: kullaniciAd),
                               )
                             : _AvatarHarf(ad: kullaniciAd),
                       ),
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -917,7 +946,7 @@ class _IlanSahibiKarti extends ConsumerWidget {
                             ),
                           ),
                           if (sayi > 0) ...[
-                            SizedBox(height: 3),
+                            const SizedBox(height: 3),
                             Row(
                               children: [
                                 const Icon(Icons.star_rounded,
@@ -931,7 +960,7 @@ class _IlanSahibiKarti extends ConsumerWidget {
                                     color: AppColors.textPrimary,
                                   ),
                                 ),
-                                SizedBox(width: 4),
+                                const SizedBox(width: 4),
                                 Text(
                                   '($sayi değerlendirme)',
                                   style: GoogleFonts.dmSans(
@@ -942,7 +971,7 @@ class _IlanSahibiKarti extends ConsumerWidget {
                               ],
                             ),
                           ] else ...[
-                            SizedBox(height: 3),
+                            const SizedBox(height: 3),
                             Text(
                               'Henüz değerlendirme yok',
                               style: GoogleFonts.dmSans(
@@ -1015,9 +1044,9 @@ class _BenzerIlanKarti extends StatelessWidget {
                       imageUrl: resimler.first,
                       width: 130, height: 90, fit: BoxFit.cover,
                       fadeInDuration: Duration.zero, memCacheWidth: 260,
-                      placeholder: (_, _) => Container(height: 90, color: AppColors.divider),
-                      errorWidget: (_, _, _) => Container(height: 90, color: AppColors.divider,
-                          child: Icon(Icons.image_outlined, color: AppColors.textHint)))
+                      placeholder: (_, __) => Container(height: 90, color: AppColors.divider),
+                      errorWidget: (_, __, ___) => Container(height: 90, color: AppColors.divider,
+                          child: const Icon(Icons.image_outlined, color: AppColors.textHint)))
                   : Container(width: 130, height: 90, color: AppColors.divider,
                       child: const Icon(Icons.image_outlined, color: AppColors.textHint)),
             ),
@@ -1063,7 +1092,7 @@ class _FavoriButon extends StatelessWidget {
             Icon(favorideMi ? Icons.favorite : Icons.favorite_border,
                 color: favorideMi ? AppColors.red : AppColors.textPrimary, size: 20),
             if (favoriSayisi > 0) ...[
-              SizedBox(width: 4),
+              const SizedBox(width: 4),
               Text('$favoriSayisi',
                   style: GoogleFonts.dmSans(
                       fontSize: AppLayout.fs(context, 13),
@@ -1129,8 +1158,8 @@ class _ResimWidget extends StatelessWidget {
         fadeInDuration: Duration.zero,
         fadeOutDuration: Duration.zero,
         memCacheWidth: MediaQuery.of(context).size.width.toInt(),
-        placeholder: (_, _) => Container(color: const Color(0xFFF5F5F5)),
-        errorWidget: (_, _, _) => Container(color: const Color(0xFFF5F5F5),
+        placeholder: (_, __) => Container(color: const Color(0xFFF5F5F5)),
+        errorWidget: (_, __, ___) => Container(color: const Color(0xFFF5F5F5),
             child: const Icon(Icons.image_outlined, color: AppColors.textHint, size: 48)),
       ),
     );
@@ -1210,9 +1239,9 @@ class _ResimBuyukEkranState extends State<_ResimBuyukEkran> {
                 imageUrl: widget.resimler[i],
                 fit: BoxFit.contain,
                 fadeInDuration: Duration.zero,
-                placeholder: (_, _) => const CircularProgressIndicator(
+                placeholder: (_, __) => const CircularProgressIndicator(
                     color: Colors.white, strokeWidth: 2),
-                errorWidget: (_, _, _) => const Icon(
+                errorWidget: (_, __, ___) => const Icon(
                     Icons.broken_image_outlined, color: Colors.white54, size: 64),
               ),
             ),

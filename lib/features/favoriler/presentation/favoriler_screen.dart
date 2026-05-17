@@ -192,6 +192,37 @@ class _FavoriKarti extends StatelessWidget {
                   right: 6,
                   child: GestureDetector(
                     onTap: () async {
+                      final onay = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          title: Text('Favorilerden Çıkar',
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 16, fontWeight: FontWeight.w600)),
+                          content: Text(
+                              '"${ilan.urun.isNotEmpty ? ilan.urun : 'Bu ilan'}" favorilerden çıkarılsın mı?',
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 14,
+                                  color: AppColors.textSecondary)),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              child: Text('İptal',
+                                  style: GoogleFonts.dmSans(
+                                      color: AppColors.textSecondary)),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              child: Text('Çıkar',
+                                  style: GoogleFonts.dmSans(
+                                      color: AppColors.red,
+                                      fontWeight: FontWeight.w700)),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (onay != true) return;
                       await ref
                           .read(ilanRepositoryProvider)
                           .favoridanCikar(

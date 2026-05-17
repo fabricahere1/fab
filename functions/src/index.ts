@@ -5,6 +5,55 @@ admin.initializeApp();
 
 const db = admin.firestore();
 
+// ── Yardımcı: okunmamış bildirim sayısını çek ────────────────────────────────
+async function okunmamisSayisi(kullaniciId: string): Promise<number> {
+  const snap = await db
+    .collection("bildirimler")
+    .where("kullaniciId", "==", kullaniciId)
+    .where("okundu", "==", false)
+    .get();
+  return snap.size;
+}
+
+// ── Yardımcı: FCM gönder (badge dahil) ───────────────────────────────────────
+async function fcmGonder(params: {
+  token: string;
+  title: string;
+  body: string;
+  data: Record<string, string>;
+  badge: number;
+  collapseKey?: string;
+  tag?: string;
+  channelId?: string;
+}) {
+  const { token, title, body, data, badge, collapseKey, tag, channelId } = params;
+  await admin.messaging().send({
+    token,
+    notification: { title, body },
+    data,
+    android: {
+      priority: "high",
+      ...(collapseKey ? { collapseKey } : {}),
+      notification: {
+        ...(tag ? { tag } : {}),
+        ...(channelId ? { channelId } : {}),
+        notificationCount: badge,
+      },
+    },
+    apns: {
+      ...(collapseKey
+        ? { headers: { "apns-collapse-id": collapseKey.substring(0, 64) } }
+        : {}),
+      payload: {
+        aps: {
+          badge,
+          ...(collapseKey ? { threadId: collapseKey } : {}),
+        },
+      },
+    },
+  });
+}
+
 // ── Anlaşma Kabul ─────────────────────────────────────────────────────────────
 export const anlasmaKabul = functions
   .region("europe-west1")
@@ -100,39 +149,17 @@ export const mesajBildirimiGonder = functions
     if (!fcmToken) return { success: false };
 
     const bildirimMetin = metin && metin.trim().length > 0 ? metin.trim() : ilanBaslik;
+    const badge = await okunmamisSayisi(aliciId);
 
-    await admin.messaging().send({
+    await fcmGonder({
       token: fcmToken,
-      notification: {
-        title: gondereAd,
-        body: bildirimMetin,
-      },
-      data: {
-        tip: "mesaj",
-        sohbetId: sohbetId,
-        ilanBaslik: ilanBaslik,
-      },
-      android: {
-        priority: "high",
-        collapseKey: sohbetId,
-        notification: {
-          tag: sohbetId,
-          channelId: "mesajlar",
-          ticker: `${gondereAd}: ${bildirimMetin}`,
-          notificationCount: 1,
-        },
-      },
-      apns: {
-        headers: {
-          "apns-collapse-id": sohbetId.substring(0, 64),
-        },
-        payload: {
-          aps: {
-            threadId: sohbetId,
-            badge: 1,
-          },
-        },
-      },
+      title: gondereAd,
+      body: bildirimMetin,
+      data: { tip: "mesaj", sohbetId, ilanBaslik },
+      badge,
+      collapseKey: sohbetId,
+      tag: sohbetId,
+      channelId: "mesajlar",
     });
 
     return { success: true };
@@ -169,27 +196,7 @@ export const degerlendirmeBildirimiGonder = functions
     const bildirimBaslik = "Yeni değerlendirme aldın!";
     const bildirimIcerik = `${degerlendireninAd} seni değerlendirdi ${yildiz}`;
 
-    // FCM push gönder
-    if (fcmToken) {
-      try {
-        await admin.messaging().send({
-          token: fcmToken,
-          notification: {
-            title: bildirimBaslik,
-            body: bildirimIcerik,
-          },
-          data: {
-            tip: "degerlendirme",
-            hedefKullaniciId: hedefKullaniciId,
-          },
-          android: {
-            priority: "high",
-          },
-        });
-      } catch (_) {}
-    }
-
-    // bildirimler collection'a yaz (çan ikonu için)
+    // bildirimler collection'a yaz
     await db.collection("bildirimler").add({
       kullaniciId: hedefKullaniciId,
       tip: "sistem",
@@ -201,9 +208,23 @@ export const degerlendirmeBildirimiGonder = functions
       gondereId: degerlendireninId,
       gondereAd: degerlendireninAd,
     });
+
+    // FCM push gönder (badge dahil)
+    if (fcmToken) {
+      try {
+        const badge = await okunmamisSayisi(hedefKullaniciId);
+        await fcmGonder({
+          token: fcmToken,
+          title: bildirimBaslik,
+          body: bildirimIcerik,
+          data: { tip: "degerlendirme", hedefKullaniciId },
+          badge,
+        });
+      } catch (_) {}
+    }
   });
 
-// ── Teslim Alındı Trigger — Her iki kullanıcıya bekleyen değerlendirme yaz ───
+// ── Teslim Alındı Trigger ─────────────────────────────────────────────────────
 export const teslimAlindiTrigger = functions
   .region("europe-west1")
   .firestore.document("sohbetler/{sohbetId}")
@@ -216,7 +237,6 @@ export const teslimAlindiTrigger = functions
     const oncekiTeslim = onceki?.islemDurumlari?.teslimAlindi === true;
     const sonrakiTeslim = sonraki?.islemDurumlari?.teslimAlindi === true;
 
-    // Sadece teslimAlindi yeni true olduysa işlem yap
     if (oncekiTeslim || !sonrakiTeslim) return;
 
     const sohbetId = context.params.sohbetId;
@@ -227,12 +247,10 @@ export const teslimAlindiTrigger = functions
 
     const batch = db.batch();
 
-    // Her iki kullanıcıya da bekleyen değerlendirme yaz
     for (const uid of kullanicilar) {
       const zatenYapildi = sonraki[`degerlendirmeYapildi_${uid}`] === true;
       if (zatenYapildi) continue;
 
-      // bekleyenDegerlendirmeler sub-collection'a yaz
       const bekleyenRef = db
         .collection("kullanicilar")
         .doc(uid)
@@ -242,18 +260,15 @@ export const teslimAlindiTrigger = functions
       const mevcutSnap = await bekleyenRef.get();
       if (!mevcutSnap.exists) {
         batch.set(bekleyenRef, {
-          sohbetId: sohbetId,
+          sohbetId,
           tarih: admin.firestore.FieldValue.serverTimestamp(),
           tamamlandi: false,
         });
       }
 
-      // FCM bildirimi gönder
       const kullaniciSnap = await db.collection("kullanicilar").doc(uid).get();
       const fcmToken = kullaniciSnap.data()?.fcmToken as string | undefined;
-      if (!fcmToken) continue;
 
-      // Karşı tarafın adını bul
       const karsiUid = kullanicilar.find((id) => id !== uid) ?? "";
       let karsiAd = "Karşı taraf";
       if (karsiUid) {
@@ -261,26 +276,7 @@ export const teslimAlindiTrigger = functions
         karsiAd = (karsiSnap.data()?.adSoyad as string | undefined) ?? "Karşı taraf";
       }
 
-      try {
-        await admin.messaging().send({
-          token: fcmToken,
-          notification: {
-            title: "Değerlendirme zamanı!",
-            body: `"${ilanBaslik}" ilanı tamamlandı. ${karsiAd} için değerlendirme yap.`,
-          },
-          data: {
-            tip: "degerlendirme",
-            sohbetId: sohbetId,
-          },
-          android: {
-            priority: "high",
-          },
-        });
-      } catch (_) {
-        // FCM hatası önemsiz, bekleyen yine de yazıldı
-      }
-
-      // bildirimler collection'a da yaz (çan ikonu için)
+      // bildirimler collection'a yaz
       const bildirimRef = db.collection("bildirimler").doc();
       batch.set(bildirimRef, {
         kullaniciId: uid,
@@ -293,6 +289,20 @@ export const teslimAlindiTrigger = functions
         gondereId: karsiUid,
         gondereAd: karsiAd,
       });
+
+      // FCM push gönder (badge dahil)
+      if (fcmToken) {
+        try {
+          const badge = await okunmamisSayisi(uid);
+          await fcmGonder({
+            token: fcmToken,
+            title: "Değerlendirme zamanı!",
+            body: `"${ilanBaslik}" ilanı tamamlandı. ${karsiAd} için değerlendirme yap.`,
+            data: { tip: "degerlendirme", sohbetId },
+            badge: badge + 1, // yeni bildirim henüz yazılmadı, +1 ekle
+          });
+        } catch (_) {}
+      }
     }
 
     await batch.commit();

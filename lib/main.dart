@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/services/badge_service.dart';
 import 'core/services/fcm_service.dart';
 import 'core/services/islem_durumu_service.dart';
 import 'core/theme/app_theme.dart';
@@ -53,12 +54,14 @@ class _IsteAppState extends ConsumerState<IsteApp> {
     super.initState();
     FcmService.instance.init(onBildirimAc: _bildirimdenAc);
     IslemDurumuService.instance.init();
+    BadgeService.instance.init();
   }
 
   @override
   void dispose() {
     FcmService.instance.dispose();
     IslemDurumuService.instance.dispose();
+    BadgeService.instance.dispose();
     super.dispose();
   }
 

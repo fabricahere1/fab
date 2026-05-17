@@ -608,12 +608,13 @@ class _IsteklerHeader extends StatelessWidget {
         children: [
 
           // Satır 1: Logo + bildirim
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            height: aramaGizli ? 0 : null,
-            clipBehavior: Clip.antiAlias,
-            color: Colors.transparent,
-            child: Padding(
+          ClipRect(
+            child: AnimatedAlign(
+              duration: const Duration(milliseconds: 450),
+              curve: Curves.easeInOutCubic,
+              heightFactor: aramaGizli ? 0.0 : 1.0,
+              alignment: Alignment.topCenter,
+              child: Padding(
               padding: const EdgeInsets.fromLTRB(14, 10, 12, 4),
               child: Row(
                 children: [
@@ -624,13 +625,15 @@ class _IsteklerHeader extends StatelessWidget {
               ),
             ),
           ),
+          ),
 
           // Satır 2: Arama + Filtre
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            height: aramaGizli ? 0 : null,
-            clipBehavior: Clip.antiAlias,
-            color: Colors.transparent,
+          ClipRect(
+            child: AnimatedAlign(
+              duration: const Duration(milliseconds: 450),
+              curve: Curves.easeInOutCubic,
+            heightFactor: aramaGizli ? 0.0 : 1.0,
+            alignment: Alignment.topCenter,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 2, 12, 8),
               child: Row(
@@ -759,6 +762,7 @@ class _IsteklerHeader extends StatelessWidget {
                 ],
               ),
             ),
+          ),
           ),
 
           // Satır 3: Kategori chip'leri
