@@ -12,6 +12,10 @@ import '../providers/grid_tercihi_notifier.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../../../shared/widgets/bildirim_cani_widget.dart';
+import '../../home/presentation/kesfet_screen.dart';
+import '../../profil/providers/profil_provider.dart';
+import '../../profil/presentation/profil_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'widgets/filtre_ekrani.dart';
 import 'widgets/ilan_karti.dart';
 import 'widgets/swipe_karti.dart';
@@ -615,16 +619,16 @@ class _IsteklerHeader extends StatelessWidget {
               heightFactor: aramaGizli ? 0.0 : 1.0,
               alignment: Alignment.topCenter,
               child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 10, 12, 4),
-              child: Row(
-                children: [
-                  Image.asset('assets/images/logo.png', height: 48),
-                  const Spacer(),
-                  const BildirimCaniWidget(),
-                ],
+                padding: const EdgeInsets.fromLTRB(14, 10, 12, 4),
+                child: Row(
+                  children: [
+                    Image.asset('assets/images/logo.png', height: 48),
+                    const Spacer(),
+                    const _ProfilAvatar(),
+                  ],
+                ),
               ),
             ),
-          ),
           ),
 
           // Satır 2: Arama + Filtre
@@ -632,10 +636,10 @@ class _IsteklerHeader extends StatelessWidget {
             child: AnimatedAlign(
               duration: const Duration(milliseconds: 450),
               curve: Curves.easeInOutCubic,
-            heightFactor: aramaGizli ? 0.0 : 1.0,
-            alignment: Alignment.topCenter,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 2, 12, 8),
+              heightFactor: aramaGizli ? 0.0 : 1.0,
+              alignment: Alignment.topCenter,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 2, 12, 8),
               child: Row(
                 children: [
                   Expanded(
@@ -768,14 +772,40 @@ class _IsteklerHeader extends StatelessWidget {
           // Satır 3: Kategori chip'leri
           SizedBox(
             height: 36,
-            child: ListView.builder(
-              controller: kategoriScrollCtrl,
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.fromLTRB(12, 4, 48, 4), // sağda tab için boşluk
-              itemCount: kKategoriAgaci.length + 1,
-              itemBuilder: (context, i) {
-                if (i == 0) {
-                  final secili = seciliAnaKey == null;
+            child: Row(
+              children: [
+                // ── Keşfet — sabit ───────────────────────────────────────
+                GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const KesfetScreen()),
+                  ),
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(12, 4, 0, 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1A1A1A),
+                      borderRadius: BorderRadius.zero,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text('Keşfet',
+                        style: GoogleFonts.dmSans(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        )),
+                  ),
+                ),
+                // ── Diğer kategoriler — kaydırılabilir ───────────────────
+                Expanded(
+                  child: ListView.builder(
+                    controller: kategoriScrollCtrl,
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.fromLTRB(6, 4, 48, 4),
+                    itemCount: kKategoriAgaci.length + 1,
+                    itemBuilder: (context, i) {
+                      if (i == 0) {
+                        final secili = seciliAnaKey == null;
                   return GestureDetector(
                     onTap: () { if (!secili) onFiltreSifirla(); },
                     child: AnimatedContainer(
@@ -850,6 +880,9 @@ class _IsteklerHeader extends StatelessWidget {
               },
             ),
           ),
+              ],
+            ),
+          ),
 
           // Satır 4: Aktif filtre badge
           if (filtrAktif)
@@ -886,6 +919,65 @@ class _IsteklerHeader extends StatelessWidget {
             child: _NedenIsteBar(),
           ),
         ],
+      ),
+    );
+  }
+}
+// ── Profil Avatar (üst sağ) ───────────────────────────────────────────────────
+
+class _ProfilAvatar extends ConsumerWidget {
+  const _ProfilAvatar();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profil = ref.watch(benimKullaniciProfilProvider).value;
+    final fotoUrl = profil?.fotoUrl ?? '';
+    final ad = profil?.adSoyad ?? '';
+
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const ProfilScreen()),
+      ),
+      child: Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: const Color(0xFFEEEEEE), width: 1.5),
+        ),
+        child: ClipOval(
+          child: fotoUrl.isNotEmpty
+              ? CachedNetworkImage(
+                  imageUrl: fotoUrl,
+                  fit: BoxFit.cover,
+                  placeholder: (_, __) => _AvatarHarf(ad: ad),
+                  errorWidget: (_, __, ___) => _AvatarHarf(ad: ad),
+                )
+              : _AvatarHarf(ad: ad),
+        ),
+      ),
+    );
+  }
+}
+
+class _AvatarHarf extends StatelessWidget {
+  final String ad;
+  const _AvatarHarf({required this.ad});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.red.withValues(alpha: 0.12),
+      child: Center(
+        child: Text(
+          ad.isNotEmpty ? ad[0].toUpperCase() : '?',
+          style: GoogleFonts.dmSans(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: AppColors.red,
+          ),
+        ),
       ),
     );
   }

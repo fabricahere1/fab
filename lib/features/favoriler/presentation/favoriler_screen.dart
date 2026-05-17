@@ -1,25 +1,26 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import '../../ilanlar/data/ilan_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../ilanlar/data/ilan_repository.dart';
 import '../../ilanlar/domain/ilan_model.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
+import '../../../core/cache/app_cache_manager.dart';
+import '../../../router/app_router.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart';
-import '../../../router/app_router.dart';
- 
+
 class FavorilerScreen extends ConsumerWidget {
   const FavorilerScreen({super.key});
- 
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final uid = ref.watch(currentUserProvider)?.uid;
     final favorilerAsync = ref.watch(favorilerProvider);
- 
+
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
@@ -43,7 +44,7 @@ class FavorilerScreen extends ConsumerWidget {
               loading: () => const Center(
                   child: CircularProgressIndicator(
                       color: AppColors.red, strokeWidth: 2)),
-              error: (_, _) => Center(
+              error: (_, __) => Center(
                 child: Text('Bir hata oluştu.',
                     style: GoogleFonts.dmSans(
                         color: AppColors.textSecondary)),
@@ -63,7 +64,7 @@ class FavorilerScreen extends ConsumerWidget {
                                 color: AppColors.textSecondary)),
                         const SizedBox(height: 8),
                         Text(
-                            'İlanları favorilere eklemek için\nilan detayındaki ••• menüsünü kullan',
+                            'İlan detayında kalp ikonuna basarak\nfavorilere ekleyebilirsin',
                             textAlign: TextAlign.center,
                             style: GoogleFonts.dmSans(
                                 fontSize: 13,
@@ -72,21 +73,19 @@ class FavorilerScreen extends ConsumerWidget {
                     ),
                   );
                 }
- 
+
                 return MasonryGridView.count(
                   crossAxisCount: 2,
-                  mainAxisSpacing: 6,
-                  crossAxisSpacing: 6,
-                  padding: const EdgeInsets.all(6),
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  padding: const EdgeInsets.all(8),
                   itemCount: favoriler.length,
                   itemBuilder: (context, index) {
                     final favori = favoriler[index];
                     final ilan = _favoridenIlan(favori);
                     return _FavoriKarti(
                       ilan: ilan,
-                      favoriId: favori['id'] as String? ?? '',
                       uid: uid,
-                      ref: ref,
                     );
                   },
                 );
@@ -94,7 +93,7 @@ class FavorilerScreen extends ConsumerWidget {
             ),
     );
   }
- 
+
   IlanModel _favoridenIlan(Map<String, dynamic> favori) {
     return IlanModel(
       id: favori['ilanId'] as String? ?? '',
@@ -112,63 +111,105 @@ class FavorilerScreen extends ConsumerWidget {
     );
   }
 }
- 
-// ── Favori Kartı ──────────────────────────────────────────
- 
-class _FavoriKarti extends StatelessWidget {
+
+// ── Favori Kartı ──────────────────────────────────────────────────────────────
+
+class _FavoriKarti extends ConsumerWidget {
   final IlanModel ilan;
-  final String favoriId;
   final String uid;
-  final WidgetRef ref;
- 
+
   const _FavoriKarti({
     required this.ilan,
-    required this.favoriId,
     required this.uid,
-    required this.ref,
   });
- 
+
   double _resimYuksekligi() {
-    final heights = [160.0, 200.0, 140.0, 180.0, 220.0, 150.0];
+    const heights = [160.0, 200.0, 140.0, 180.0, 220.0, 150.0];
     return heights[ilan.id.hashCode.abs() % heights.length];
   }
- 
+
+  Future<void> _favoridenCikar(BuildContext context, WidgetRef ref) async {
+    final onay = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Text('Favorilerden Çıkar',
+            style: GoogleFonts.dmSans(
+                fontSize: 16, fontWeight: FontWeight.w600)),
+        content: Text(
+            '"${ilan.urun.isNotEmpty ? ilan.urun : 'Bu ilan'}" favorilerden çıkarılsın mı?',
+            style: GoogleFonts.dmSans(
+                fontSize: 14, color: AppColors.textSecondary)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('İptal',
+                style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Çıkar',
+                style: GoogleFonts.dmSans(
+                    color: AppColors.red, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    if (onay != true) return;
+    await ref.read(ilanRepositoryProvider).favoridanCikar(
+          kullaniciId: uid,
+          ilanId: ilan.id,
+        );
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Favorilerden çıkarıldı.',
+            style: GoogleFonts.dmSans()),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ));
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final resimler = ilan.tumResimler;
     final kategoriAdi_ = kategoriAdi(ilan.kategori);
- 
+
     return GestureDetector(
       onTap: () => context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 4,
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
         ),
+        clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Resim + Favori çıkar butonu
+            // ── Resim + favori çıkar butonu ──────────────────────────────
             Stack(
               children: [
                 resimler.isNotEmpty
                     ? CachedNetworkImage(
+                        cacheManager: AppCacheManager.instance,
                         imageUrl: resimler.first,
                         width: double.infinity,
                         height: _resimYuksekligi(),
                         fit: BoxFit.cover,
                         fadeInDuration: Duration.zero,
-                        placeholder: (_, _) => Container(
+                        memCacheWidth: 200,
+                        placeholder: (_, __) => Container(
                           height: _resimYuksekligi(),
                           color: AppColors.surface,
                         ),
-                        errorWidget: (_, _, _) => Container(
+                        errorWidget: (_, __, ___) => Container(
                           height: _resimYuksekligi(),
                           color: AppColors.surface,
                           child: const Center(
@@ -185,66 +226,24 @@ class _FavoriKarti extends StatelessWidget {
                               color: AppColors.textHint, size: 32),
                         ),
                       ),
- 
+
                 // Favoriden çıkar butonu
                 Positioned(
                   top: 6,
                   right: 6,
                   child: GestureDetector(
-                    onTap: () async {
-                      final onay = await showDialog<bool>(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                          title: Text('Favorilerden Çıkar',
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 16, fontWeight: FontWeight.w600)),
-                          content: Text(
-                              '"${ilan.urun.isNotEmpty ? ilan.urun : 'Bu ilan'}" favorilerden çıkarılsın mı?',
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 14,
-                                  color: AppColors.textSecondary)),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(ctx, false),
-                              child: Text('İptal',
-                                  style: GoogleFonts.dmSans(
-                                      color: AppColors.textSecondary)),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(ctx, true),
-                              child: Text('Çıkar',
-                                  style: GoogleFonts.dmSans(
-                                      color: AppColors.red,
-                                      fontWeight: FontWeight.w700)),
-                            ),
-                          ],
-                        ),
-                      );
-                      if (onay != true) return;
-                      await ref
-                          .read(ilanRepositoryProvider)
-                          .favoridanCikar(
-                            kullaniciId: uid,
-                            ilanId: ilan.id,
-                          );
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Favorilerden çıkarıldı.',
-                                style: GoogleFonts.dmSans()),
-                            behavior: SnackBarBehavior.floating,
-                            duration: const Duration(seconds: 2),
-                          ),
-                        );
-                      }
-                    },
+                    onTap: () => _favoridenCikar(context, ref),
                     child: Container(
-                      padding: const EdgeInsets.all(5),
+                      padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: Colors.white.withValues(alpha: 0.92),
                         shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 4,
+                          ),
+                        ],
                       ),
                       child: const Icon(Icons.favorite,
                           color: AppColors.red, size: 16),
@@ -253,10 +252,10 @@ class _FavoriKarti extends StatelessWidget {
                 ),
               ],
             ),
- 
-            // Detaylar
+
+            // ── Detaylar ─────────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 7, 8, 8),
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -272,9 +271,9 @@ class _FavoriKarti extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.location_on_outlined,
+                      const Icon(Icons.flight_takeoff_outlined,
                           size: 11, color: AppColors.textSecondary),
-                      const SizedBox(width: 2),
+                      const SizedBox(width: 3),
                       Expanded(
                         child: Text(
                           '${ilan.nereden} → ${ilan.nereye}',
@@ -287,39 +286,35 @@ class _FavoriKarti extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          ilan.ucret.isNotEmpty
-                              ? '${ilan.ucret} ₺'
-                              : 'Belirtilmemiş',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 13,
-                            fontWeight: ilan.ucret.isNotEmpty
-                                ? FontWeight.w700
-                                : FontWeight.w400,
-                            color: ilan.ucret.isNotEmpty
-                                ? AppColors.red
-                                : AppColors.textHint,
-                          ),
-                        ),
+                  if (ilan.ucret.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      '${ilan.ucret} ₺',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.red,
                       ),
-                      if (kategoriAdi_.isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 5, vertical: 2),
-                          color: AppColors.chipBg,
-                          child: Text(
-                            kategoriAdi_,
-                            style: GoogleFonts.dmSans(
-                                fontSize: 9,
-                                color: AppColors.textSecondary),
-                          ),
-                        ),
-                    ],
-                  ),
+                    ),
+                  ],
+                  if (kategoriAdi_.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.red.withValues(alpha: 0.07),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        kategoriAdi_,
+                        style: GoogleFonts.dmSans(
+                            fontSize: 10,
+                            color: AppColors.red,
+                            fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
