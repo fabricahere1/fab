@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../domain/islem_durumu.dart';
 import '../data/mesaj_repository.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 
 // ── Providers ─────────────────────────────────────────────
@@ -34,15 +33,11 @@ final _sohbetKullanicilarProvider =
 class IslemDurumuPanel extends ConsumerWidget {
   final String sohbetId;
   final String karsiKullaniciAd;
-  final String karsiKullaniciId;
-  final String ilanBaslik;
 
   const IslemDurumuPanel({
     super.key,
     required this.sohbetId,
     required this.karsiKullaniciAd,
-    required this.karsiKullaniciId,
-    required this.ilanBaslik,
   });
 
   @override
@@ -239,21 +234,6 @@ class IslemDurumuPanel extends ConsumerWidget {
             sohbetId: sohbetId,
             durum: durum.firestoreKey,
           );
-    }
-
-    final benimProfil = ref.read(benimKullaniciProfilProvider).value;
-    final gondereAd = benimProfil?.adSoyad ?? '';
-
-    try {
-      await ref.read(mesajRepositoryProvider).islemDurumiBildirimiGonder(
-        aliciId: karsiKullaniciId,
-        gondereAd: gondereAd,
-        ilanBaslik: ilanBaslik,
-        sohbetId: sohbetId,
-        durum: durum.firestoreKey,
-      );
-    } catch (e) {
-      debugPrint('[IslemDurumuPanel] bildirim hatası: $e');
     }
   }
 }
@@ -641,16 +621,12 @@ class _AdimSatiri extends StatelessWidget {
 class IslemDurumuTetikleyici extends ConsumerStatefulWidget {
   final String sohbetId;
   final String karsiKullaniciAd;
-  final String karsiKullaniciId;
-  final String ilanBaslik;
   final String ilanTip;
 
   const IslemDurumuTetikleyici({
     super.key,
     required this.sohbetId,
     required this.karsiKullaniciAd,
-    required this.karsiKullaniciId,
-    required this.ilanBaslik,
     this.ilanTip = 'istek',
   });
 
@@ -715,8 +691,6 @@ class _IslemDurumuTetikleyiciState
           child: IslemDurumuPanel(
               sohbetId: widget.sohbetId,
               karsiKullaniciAd: widget.karsiKullaniciAd,
-              karsiKullaniciId: widget.karsiKullaniciId,
-              ilanBaslik: widget.ilanBaslik,
             ), // IslemDurumuPanel
         ),
         transitionsBuilder: (ctx, anim, _, child) => SlideTransition(

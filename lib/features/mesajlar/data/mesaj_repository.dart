@@ -274,26 +274,6 @@ class MesajRepository {
     });
   }
 
-  Future<void> islemDurumiBildirimiGonder({
-    required String aliciId,
-    required String gondereAd,
-    required String ilanBaslik,
-    required String sohbetId,
-    required String durum,
-  }) async {
-    try {
-      await _functions.httpsCallable('islemDurumiBildirimiGonder').call({
-        'aliciId':    aliciId,
-        'gondereAd':  gondereAd,
-        'ilanBaslik': ilanBaslik,
-        'sohbetId':   sohbetId,
-        'durum':      durum,
-      });
-    } catch (e) {
-      debugPrint('[MesajRepository] islemDurumiBildirimiGonder hatası: $e');
-    }
-  }
-
   Future<void> mesajBildirimiGonder({
     required String aliciId,
     required String gondereId,

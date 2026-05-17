@@ -288,82 +288,135 @@ export const teslimAlindiTrigger = functions
     await batch.commit();
   });
 
-// ── İşlem Durumu Bildirimi ────────────────────────────────────────────────────
-export const islemDurumiBildirimiGonder = functions
+// ── İşlem Durumu FCM Trigger — Firestore değişince karşı tarafa push gönder ──
+export const islemDurumuFcmTrigger = functions
   .region("europe-west1")
-  .https.onCall(async (data, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError("unauthenticated", "Giriş yapmalısın.");
-    }
+  .firestore.document("sohbetler/{sohbetId}")
+  .onUpdate(async (change, context) => {
+    const onceki = change.before.data();
+    const sonraki = change.after.data();
 
-    const { aliciId, gondereAd, ilanBaslik, sohbetId, durum } = data as {
-      aliciId: string;
-      gondereAd: string;
-      ilanBaslik: string;
-      sohbetId: string;
-      durum: string;
+    if (!onceki || !sonraki) return;
+
+    const oncekiDurumlar = (onceki.islemDurumlari as Record<string, boolean>) ?? {};
+    const sonrakiDurumlar = (sonraki.islemDurumlari as Record<string, boolean>) ?? {};
+
+    const ilanBaslik: string = sonraki.ilanBaslik ?? "İlan";
+    const kullanicilar: string[] = sonraki.kullanicilar ?? [];
+    const sohbetId = context.params.sohbetId;
+
+    // Hangi durum yeni true oldu?
+    const durumBilgileri: Record<string, { baslik: string; icerik: (ad: string) => string }> = {
+      yolaCikti: {
+        baslik: "Ürün yola çıktı! 🚀",
+        icerik: (ad) => `${ad}, "${ilanBaslik}" ürününü yola çıkardı.`,
+      },
+      teslimEdildi: {
+        baslik: "Ürün teslim edildi! 📦",
+        icerik: (ad) => `${ad}, "${ilanBaslik}" ürününü teslim etti.`,
+      },
+      teslimAlindi: {
+        baslik: "Ürün teslim alındı! ✅",
+        icerik: (ad) => `${ad}, "${ilanBaslik}" ürününü teslim aldı.`,
+      },
+      siparisVerildi: {
+        baslik: "Sipariş verildi!",
+        icerik: (ad) => `${ad}, "${ilanBaslik}" için sipariş verdi.`,
+      },
+      urunAlindi: {
+        baslik: "Ürün alındı!",
+        icerik: (ad) => `${ad}, "${ilanBaslik}" ürününü aldı.`,
+      },
     };
 
-    const kullaniciSnap = await db.collection("kullanicilar").doc(aliciId).get();
-    if (!kullaniciSnap.exists) return { success: false };
+    for (const [key, bilgi] of Object.entries(durumBilgileri)) {
+      const eskiDeger = oncekiDurumlar[key] === true;
+      const yeniDeger = sonrakiDurumlar[key] === true;
 
-    const fcmToken = kullaniciSnap.data()?.fcmToken as string | undefined;
-    if (!fcmToken) return { success: false };
+      if (!eskiDeger && yeniDeger) {
+        // Kim değiştirdi? Bunu bilemeyiz ama sohbetteki iki kullanıcıdan
+        // değişikliği yapan değil, diğerine bildirim gönderiyoruz.
+        // Kimin yaptığını anlayamadığımız için her iki kullanıcıya da
+        // gönderip Flutter tarafında filtre bırakıyoruz (zaten bildirimler
+        // koleksiyonuna yazılmıyor bu triggerda — sadece FCM push).
 
-    let bildirimBaslik = "";
-    let bildirimIcerik = "";
+        for (const uid of kullanicilar) {
+          const kullaniciSnap = await db.collection("kullanicilar").doc(uid).get();
+          if (!kullaniciSnap.exists) continue;
 
-    switch (durum) {
-      case "anlasildi":
-        bildirimBaslik = "Anlaşma onaylandı!";
-        bildirimIcerik = `${gondereAd}, "${ilanBaslik}" için anlaşmayı onayladı.`;
-        break;
-      case "yolaCikti":
-        bildirimBaslik = "Ürün yola çıktı! 🚀";
-        bildirimIcerik = `${gondereAd}, "${ilanBaslik}" ürününü yola çıkardı.`;
-        break;
-      case "teslimEdildi":
-        bildirimBaslik = "Ürün teslim edildi! 📦";
-        bildirimIcerik = `${gondereAd}, "${ilanBaslik}" ürününü teslim etti.`;
-        break;
-      case "teslimAlindi":
-        bildirimBaslik = "Ürün teslim alındı! ✅";
-        bildirimIcerik = `${gondereAd}, "${ilanBaslik}" ürününü teslim aldı.`;
-        break;
-      default:
-        return { success: false };
+          const fcmToken = kullaniciSnap.data()?.fcmToken as string | undefined;
+          if (!fcmToken) continue;
+
+          // Karşı tarafın adını bul
+          const karsiUid = kullanicilar.find((id) => id !== uid) ?? "";
+          if (!karsiUid) continue;
+
+          const karsiSnap = await db.collection("kullanicilar").doc(karsiUid).get();
+          const karsiAd = (karsiSnap.data()?.adSoyad as string | undefined) ?? "Karşı taraf";
+
+          try {
+            await admin.messaging().send({
+              token: fcmToken,
+              notification: {
+                title: bilgi.baslik,
+                body: bilgi.icerik(karsiAd),
+              },
+              data: {
+                tip: "islem",
+                sohbetId: sohbetId,
+              },
+              android: {
+                priority: "high",
+                notification: {
+                  channelId: "islem_durumu",
+                  tag: `${sohbetId}_${key}`,
+                },
+              },
+            });
+          } catch (_) {}
+        }
+      }
     }
 
-    await admin.messaging().send({
-      token: fcmToken,
-      notification: {
-        title: bildirimBaslik,
-        body: bildirimIcerik,
-      },
-      data: {
-        tip: "islem",
-        sohbetId: sohbetId,
-      },
-      android: {
-        priority: "high",
-        notification: {
-          channelId: "islem_durumu",
-          tag: sohbetId,
-        },
-      },
-    });
+    // anlasildi özel case
+    for (const uid of kullanicilar) {
+      const benimKey = `anlasildi_${uid}`;
+      const eskiOnay = oncekiDurumlar[benimKey] === true;
+      const yeniOnay = sonrakiDurumlar[benimKey] === true;
 
-    await db.collection("bildirimler").add({
-      kullaniciId: aliciId,
-      tip: "islem",
-      baslik: bildirimBaslik,
-      icerik: bildirimIcerik,
-      okundu: false,
-      tarih: admin.firestore.FieldValue.serverTimestamp(),
-      hedefId: sohbetId,
-      gondereId: context.auth.uid,
-      gondereAd: gondereAd,
-    });
+      if (!eskiOnay && yeniOnay) {
+        const karsiUid = kullanicilar.find((id) => id !== uid) ?? "";
+        if (!karsiUid) continue;
 
-    return { success: true };
+        const karsiSnap = await db.collection("kullanicilar").doc(karsiUid).get();
+        if (!karsiSnap.exists) continue;
+
+        const fcmToken = karsiSnap.data()?.fcmToken as string | undefined;
+        if (!fcmToken) continue;
+
+        const benimSnap = await db.collection("kullanicilar").doc(uid).get();
+        const benimAd = (benimSnap.data()?.adSoyad as string | undefined) ?? "Karşı taraf";
+
+        try {
+          await admin.messaging().send({
+            token: fcmToken,
+            notification: {
+              title: "Anlaşma onaylandı! 🤝",
+              body: `${benimAd}, "${ilanBaslik}" için anlaşmayı onayladı.`,
+            },
+            data: {
+              tip: "islem",
+              sohbetId: sohbetId,
+            },
+            android: {
+              priority: "high",
+              notification: {
+                channelId: "islem_durumu",
+                tag: `${sohbetId}_anlasildi_${uid}`,
+              },
+            },
+          });
+        } catch (_) {}
+      }
+    }
   });

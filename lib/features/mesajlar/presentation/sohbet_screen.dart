@@ -84,8 +84,6 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
           child: IslemDurumuPanel(
             sohbetId: _sohbetId,
             karsiKullaniciAd: widget.karsiKullaniciAd,
-            karsiKullaniciId: widget.karsiKullaniciId,
-            ilanBaslik: widget.ilanBaslik,
           ),
         ),
         transitionsBuilder: (ctx, anim, _, child) => SlideTransition(
@@ -443,8 +441,6 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
               child: IslemDurumuTetikleyici(
                 sohbetId: _sohbetId,
                 karsiKullaniciAd: widget.karsiKullaniciAd,
-                karsiKullaniciId: widget.karsiKullaniciId,
-                ilanBaslik: widget.ilanBaslik,
                 ilanTip: widget.ilanTip,
               ),
             ),
