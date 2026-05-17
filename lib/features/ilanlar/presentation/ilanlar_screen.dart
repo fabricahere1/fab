@@ -267,20 +267,42 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
                 ref.read(istekIlanlarProvider.notifier).yenile()),
       );
     } else {
-      ilanWidget = SliverMasonryGrid.count(
-        crossAxisCount: mod.kolonSayisi,
-        mainAxisSpacing: 6,
-        crossAxisSpacing: 6,
-        childCount: ilanlar.length,
-        itemBuilder: (context, index) => RepaintBoundary(
-          key: ValueKey(ilanlar[index].id),
-          child: IlanKarti(
-            ilan: ilanlar[index],
-            resimYukseklikleri: _kResimYukseklikleri,
-            kolonSayisi: mod.kolonSayisi,
-          ),
+      if (mod.kolonSayisi == 3) {
+  ilanWidget = SliverGrid(
+    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+  crossAxisCount: 3,
+  mainAxisSpacing: 6,
+  crossAxisSpacing: 6,
+  mainAxisExtent: 185,
+),
+    delegate: SliverChildBuilderDelegate(
+      (context, index) => RepaintBoundary(
+        key: ValueKey(ilanlar[index].id),
+        child: IlanKarti(
+          ilan: ilanlar[index],
+          resimYukseklikleri: _kResimYukseklikleri,
+          kolonSayisi: mod.kolonSayisi,
         ),
-      );
+      ),
+      childCount: ilanlar.length,
+    ),
+  );
+} else {
+  ilanWidget = SliverMasonryGrid.count(
+    crossAxisCount: mod.kolonSayisi,
+    mainAxisSpacing: 6,
+    crossAxisSpacing: 6,
+    childCount: ilanlar.length,
+    itemBuilder: (context, index) => RepaintBoundary(
+      key: ValueKey(ilanlar[index].id),
+      child: IlanKarti(
+        ilan: ilanlar[index],
+        resimYukseklikleri: _kResimYukseklikleri,
+        kolonSayisi: mod.kolonSayisi,
+      ),
+    ),
+  );
+}
     }
 
     return Scaffold(

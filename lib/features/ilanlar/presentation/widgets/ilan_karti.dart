@@ -78,9 +78,10 @@ class IlanKarti extends ConsumerWidget {
         ),
         clipBehavior: Clip.hardEdge,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Stack(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  mainAxisSize: MainAxisSize.min,
+  children: [
+    Stack(
               children: [
                 SizedBox(
                   height: _resimYuksekligi(context),
@@ -139,7 +140,12 @@ class IlanKarti extends ConsumerWidget {
               ],
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 7, 8, 8),
+              padding: EdgeInsets.fromLTRB(
+  kolonSayisi == 3 ? 5 : 8,
+  kolonSayisi == 3 ? 5 : 7,
+  kolonSayisi == 3 ? 5 : 8,
+  kolonSayisi == 3 ? 5 : 8,
+),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

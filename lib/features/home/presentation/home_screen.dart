@@ -9,6 +9,7 @@ import '../../../shared/constants/app_constants.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../ilanlar/presentation/ilanlar_screen.dart';
+import '../../ilanlar/providers/grid_tercihi_notifier.dart';
 import '../../ilanlar/presentation/gelenler_screen.dart';
 import '../../ilanlar/presentation/ilan_form_screen.dart';
 import '../../ilanlar/presentation/gelenler_form_screen.dart';
@@ -27,65 +28,10 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
   DateTime? _sonGeriTusu;
+  bool _fabAcik = false;
 
   void _ilanVer() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 32, height: 3,
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: AppColors.divider,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.shopping_bag_outlined,
-                    color: AppColors.textPrimary, size: 22),
-                title: Text('İstek İlanı Ver',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary,
-                    )),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  Navigator.push(context, CupertinoPageRoute(
-                    builder: (_) => IlanFormScreen(tip: IlanTip.istek),
-                  ));
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.flight_takeoff_outlined,
-                    color: AppColors.textPrimary, size: 22),
-                title: Text('Gelen İlanı Ver',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary,
-                    )),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  Navigator.push(context, CupertinoPageRoute(
-                    builder: (_) => const GelenlerFormScreen(),
-                  ));
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    setState(() => _fabAcik = !_fabAcik);
   }
 
   @override
@@ -95,12 +41,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final bottomPadding   = MediaQuery.of(context).padding.bottom;
 
     final pages = [
-      const _IsteklerSayfa(),
-      const GelenlerScreen(embedded: true),
-      const MesajlarScreen(),
-      const KesfetScreen(),
-      const ProfilScreen(),
-    ];
+  const _IsteklerSayfa(),
+  const GelenlerScreen(embedded: true),
+  const MesajlarScreen(),
+  const ProfilScreen(),
+  const KesfetScreen(),
+];
 
     return PopScope(
       canPop: false,
@@ -125,10 +71,106 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         }
       },
       child: Scaffold(
-        body: _LazyIndexedStack(
-          index: _selectedIndex,
-          children: pages,
+        body: Stack(
+          children: [
+            _LazyIndexedStack(
+              index: _selectedIndex,
+              children: pages,
+            ),
+            if (_fabAcik)
+              GestureDetector(
+                onTap: () => setState(() => _fabAcik = false),
+                child: AnimatedOpacity(
+                  opacity: _fabAcik ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 200),
+                  child: Container(
+                    color: Colors.black.withValues(alpha: 0.4),
+                  ),
+                ),
+              ),
+          ],
         ),
+        floatingActionButton: _selectedIndex <= 1 && !(_selectedIndex == 0 && ref.watch(gridTercihiProvider) == GoruntulemeModeli.swipe) ? Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            AnimatedSlide(
+              offset: _fabAcik ? Offset.zero : const Offset(0, 0.3),
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutCubic,
+              child: AnimatedOpacity(
+                opacity: _fabAcik ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOutCubic,
+                child: IgnorePointer(
+                  ignoring: !_fabAcik,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      SizedBox(
+                        width: 160,
+                        child: FloatingActionButton.extended(
+                          heroTag: 'istek',
+                          onPressed: () {
+                            setState(() => _fabAcik = false);
+                            Navigator.push(context, CupertinoPageRoute(
+                              builder: (_) => IlanFormScreen(tip: IlanTip.istek),
+                            ));
+                          },
+                          backgroundColor: const Color(0xFF9575CD),
+                          elevation: 3,
+                          label: Text('İstek İlanı Ver',
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white)),
+                          icon: const Icon(Icons.shopping_bag_outlined,
+                              color: Colors.white, size: 18),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: 160,
+                        child: FloatingActionButton.extended(
+                          heroTag: 'gelen',
+                          onPressed: () {
+                            setState(() => _fabAcik = false);
+                            Navigator.push(context, CupertinoPageRoute(
+                              builder: (_) => const GelenlerFormScreen(),
+                            ));
+                          },
+                          backgroundColor: const Color(0xFF9575CD),
+                          elevation: 3,
+                          label: Text('Gelen İlanı Ver',
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white)),
+                          icon: const Icon(Icons.flight_takeoff_outlined,
+                              color: Colors.white, size: 18),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            FloatingActionButton(
+              heroTag: 'main',
+              onPressed: _ilanVer,
+              backgroundColor: const Color(0xFF66BB6A),
+              elevation: 4,
+              child: AnimatedRotation(
+                turns: _fabAcik ? 0.125 : 0,
+                duration: const Duration(milliseconds: 200),
+                child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+              ),
+            ),
+          ],
+        )
+        : null,
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         bottomNavigationBar: Container(
           height: 62 + bottomPadding,
           decoration: const BoxDecoration(
@@ -143,7 +185,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: [
                   _NavItem(
                     secili: _selectedIndex == 0,
-                    onTap: () => setState(() => _selectedIndex = 0),
+                    onTap: () => setState(() { _selectedIndex = 0; _fabAcik = false; }),
                     label: 'İstekler',
                     child: Icon(
                       _selectedIndex == 0
@@ -157,7 +199,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   _NavItem(
                     secili: _selectedIndex == 1,
-                    onTap: () => setState(() => _selectedIndex = 1),
+                    onTap: () => setState(() { _selectedIndex = 1; _fabAcik = false; }),
                     label: 'Gelenler',
                     child: Icon(
                       _selectedIndex == 1
@@ -171,8 +213,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   _NavItem(
                     secili: _selectedIndex == 2,
-                    onTap: () => setState(() => _selectedIndex = 2),
-                    label: 'Mesajlar',
+    onTap: () => setState(() { _selectedIndex = 2; _fabAcik = false; }),
+    label: 'Mesajlar',
                     child: uid == null || toplamOkunmamis == 0
                         ? Icon(
                             _selectedIndex == 2
@@ -207,12 +249,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   _NavItem(
                     secili: _selectedIndex == 3,
-                    onTap: () => setState(() => _selectedIndex = 3),
-                    label: 'Keşfet',
+                    onTap: () => setState(() { _selectedIndex = 3; _fabAcik = false; }),
+                    label: 'Profil',
                     child: Icon(
                       _selectedIndex == 3
-                          ? Icons.explore_rounded
-                          : Icons.explore_outlined,
+                          ? Icons.person_rounded
+                          : Icons.person_outline,
                       size: 24,
                       color: _selectedIndex == 3
                           ? AppColors.red
@@ -221,19 +263,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   _NavItem(
                     secili: _selectedIndex == 4,
-                    onTap: () => setState(() => _selectedIndex = 4),
-                    label: 'Profil',
+                    onTap: () => setState(() { _selectedIndex = 4; _fabAcik = false; }),
+                    label: 'Keşfet',
                     child: Icon(
                       _selectedIndex == 4
-                          ? Icons.person_rounded
-                          : Icons.person_outline,
+                          ? Icons.explore_rounded
+                          : Icons.explore_outlined,
                       size: 24,
                       color: _selectedIndex == 4
                           ? AppColors.red
                           : AppColors.textSecondary,
                     ),
                   ),
-                  _IlanVerItem(onTap: _ilanVer),
                 ],
               ),
             ),
