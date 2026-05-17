@@ -289,9 +289,9 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
   );
 } else {
   ilanWidget = SliverMasonryGrid.count(
-    crossAxisCount: mod.kolonSayisi,
-    mainAxisSpacing: 6,
-    crossAxisSpacing: 6,
+        crossAxisCount: mod.kolonSayisi,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
     childCount: ilanlar.length,
     itemBuilder: (context, index) => RepaintBoundary(
       key: ValueKey(ilanlar[index].id),
@@ -351,8 +351,8 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
                           physics: const AlwaysScrollableScrollPhysics(),
                           slivers: [
                             SliverPadding(
-                              padding: const EdgeInsets.all(6),
-                              sliver: ilanWidget,
+                              padding: const EdgeInsets.all(10),
+                            sliver: ilanWidget,
                             ),
                           ],
                         ),
@@ -664,17 +664,10 @@ class _IsteklerHeader extends StatelessWidget {
                     child: Container(
                       height: 44,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: const Color(0xFFF5F5F5),
                         borderRadius: BorderRadius.circular(22),
                         border: Border.all(
                             color: const Color(0xFFEEEEEE), width: 1),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.06),
-                            blurRadius: 12,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
                       ),
                       child: Row(
                         children: [
@@ -812,15 +805,15 @@ class _IsteklerHeader extends StatelessWidget {
                                 end: Alignment.bottomRight,
                               )
                             : null,
-                        color: secili ? null : Colors.white,
+                        color: secili ? null : Colors.transparent,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: secili ? Colors.transparent : const Color(0xFFEEEEEE),
+                          color: const Color(0xFFDDDDDD),
                           width: 1,
                         ),
                         boxShadow: secili ? [BoxShadow(
-                          color: const Color(0xFFE53935).withValues(alpha: 0.3),
-                          blurRadius: 8, offset: const Offset(0, 2),
+                          color: const Color(0xFFE53935).withValues(alpha: 0.2),
+                          blurRadius: 6, offset: const Offset(0, 2),
                         )] : null,
                       ),
                       alignment: Alignment.center,
