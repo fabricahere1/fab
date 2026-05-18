@@ -4,21 +4,24 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../shared/constants/app_colors.dart';
 import '../../../../shared/constants/app_constants.dart';
+import '../ilanlar_screen.dart';
 
 // ── Filtre Ekranı ─────────────────────────────────────────────────────────────
 
 class FiltreEkrani extends StatefulWidget {
-  final String? seciliAnaKey;
-  final String? seciliAltKey;
-  final void Function(String? anaKey, String? altKey) onSecildi;
+  final List<String> seciliKategoriYolu;
+  final SiralamaTipi seciliSiralama;
+  final void Function(List<String> yol) onKategoriSecildi;
   final VoidCallback onTemizle;
+  final ValueChanged<SiralamaTipi> onSiralamaSecildi;
 
   const FiltreEkrani({
     super.key,
-    required this.seciliAnaKey,
-    required this.seciliAltKey,
-    required this.onSecildi,
+    required this.seciliKategoriYolu,
+    required this.seciliSiralama,
+    required this.onKategoriSecildi,
     required this.onTemizle,
+    required this.onSiralamaSecildi,
   });
 
   @override
@@ -26,43 +29,121 @@ class FiltreEkrani extends StatefulWidget {
 }
 
 class _FiltreEkraniState extends State<FiltreEkrani> {
-  String? _acikAnaKey;
+  // Filtre ekranında gezinme yolu (hangi seviyedeyiz)
+  List<String> _gezinmeYolu = [];
+  late SiralamaTipi _seciliSiralama;
 
   @override
   void initState() {
     super.initState();
-    _acikAnaKey = widget.seciliAnaKey;
+    _seciliSiralama = widget.seciliSiralama;
+    // Eğer seçili bir yol varsa o seviyeden başla
+    if (widget.seciliKategoriYolu.isNotEmpty) {
+      // Son elemandan bir üst seviyede başla
+      _gezinmeYolu = List<String>.from(widget.seciliKategoriYolu)
+        ..removeLast();
+    }
   }
 
-  IconData _kategoriIkon(String key) {
-    switch (key) {
-      case 'giyim':      return Icons.checkroom_outlined;
-      case 'elektronik': return Icons.smartphone_outlined;
-      case 'guzellik':   return Icons.favorite_border;
-      case 'ev':         return Icons.home_outlined;
-      case 'spor':       return Icons.sports_soccer_outlined;
-      case 'kultur':     return Icons.menu_book_outlined;
-      case 'gida':       return Icons.coffee_outlined;
-      default:           return Icons.grid_view_outlined;
+  // Mevcut seviyedeki node listesi
+  List<KategoriNode> _mevcutSeviyeNodes() {
+    if (_gezinmeYolu.isEmpty) return kKategoriAgaci;
+    List<KategoriNode> liste = kKategoriAgaci;
+    for (final key in _gezinmeYolu) {
+      final node = liste.firstWhere(
+        (n) => n.key == key,
+        orElse: () => KategoriNode(key: '', ad: ''),
+      );
+      if (node.key.isEmpty || node.altlar.isEmpty) break;
+      liste = node.altlar;
     }
+    return liste;
+  }
+
+  // Mevcut seviyenin başlığı
+  String _seviyeBasligi() {
+    if (_gezinmeYolu.isEmpty) return 'Kategori';
+    final node = kategoriNodeBul(_gezinmeYolu.last);
+    return node?.ad ?? 'Kategori';
+  }
+
+  // Breadcrumb
+  String _breadcrumb() {
+    if (_gezinmeYolu.isEmpty) return '';
+    return _gezinmeYolu.map((key) {
+      final node = kategoriNodeBul(key);
+      return node?.ad ?? key;
+    }).join(' › ');
+  }
+
+  void _nodeSecildi(KategoriNode node) {
+    if (node.yaprakMi) {
+      // En alt seviye — doğrudan seç
+      final yeniYol = [..._gezinmeYolu, node.key];
+      widget.onKategoriSecildi(yeniYol);
+    } else {
+      // Ara seviye — bir alt in
+      setState(() => _gezinmeYolu = [..._gezinmeYolu, node.key]);
+    }
+  }
+
+  void _tumunuSec() {
+    // Mevcut seviyeyi seç (daha derine inmeden)
+    widget.onKategoriSecildi(List<String>.from(_gezinmeYolu));
+  }
+
+  void _geriGit() {
+    if (_gezinmeYolu.isNotEmpty) {
+      setState(() => _gezinmeYolu = _gezinmeYolu.sublist(0, _gezinmeYolu.length - 1));
+    }
+  }
+
+  bool _nodeSeciliMi(KategoriNode node) {
+    if (widget.seciliKategoriYolu.isEmpty) return false;
+    return widget.seciliKategoriYolu.contains(node.key);
+  }
+
+  bool _tumSeciliMi() {
+    if (widget.seciliKategoriYolu.isEmpty) return false;
+    if (_gezinmeYolu.isEmpty) return false;
+    // Mevcut seviye seçiliyse (daha alt seçim yoksa)
+    return widget.seciliKategoriYolu.length == _gezinmeYolu.length &&
+        widget.seciliKategoriYolu.last == _gezinmeYolu.last;
   }
 
   @override
   Widget build(BuildContext context) {
+    final nodes      = _mevcutSeviyeNodes();
+    final breadcrumb = _breadcrumb();
+    final baslik     = _seviyeBasligi();
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
+            // ── Header ──────────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Row(
                 children: [
-                  Text('Kategori',
+                  if (_gezinmeYolu.isNotEmpty)
+                    GestureDetector(
+                      onTap: _geriGit,
+                      child: const Padding(
+                        padding: EdgeInsets.only(right: 12),
+                        child: Icon(Icons.arrow_back_ios_rounded,
+                            size: 18, color: AppColors.textPrimary),
+                      ),
+                    ),
+                  Expanded(
+                    child: Text(
+                      baslik,
                       style: GoogleFonts.dmSans(
-                          fontSize: 16, fontWeight: FontWeight.w700)),
-                  const Spacer(),
-                  if (widget.seciliAnaKey != null)
+                          fontSize: 16, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  if (widget.seciliKategoriYolu.isNotEmpty)
                     GestureDetector(
                       onTap: widget.onTemizle,
                       child: Text('Temizle',
@@ -81,107 +162,120 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                 ],
               ),
             ),
-            const Divider(height: 1, color: AppColors.divider),
-            Expanded(
-              child: ListView.builder(
-                itemCount: kKategoriAgaci.length,
-                itemBuilder: (ctx, i) {
-                  final ana       = kKategoriAgaci[i];
-                  final acik      = _acikAnaKey == ana.key;
-                  final secili    = widget.seciliAnaKey == ana.key;
-                  final altSecili = ana.altlar
-                      .any((a) => a.key == widget.seciliAltKey);
-                  final vurgulu   = secili || altSecili;
 
-                  return Column(
-                    children: [
-                      InkWell(
+            const Divider(height: 1, color: AppColors.divider),
+
+            // Breadcrumb
+            if (breadcrumb.isNotEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20, vertical: 8),
+                color: AppColors.surface,
+                child: Text(
+                  breadcrumb,
+                  style: GoogleFonts.dmSans(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+
+            // ── Liste ────────────────────────────────────────────────────────
+            Expanded(
+              child: ListView(
+                children: [
+                  // "Tüm X" seçeneği — ana seviyede değilsek göster
+                  if (_gezinmeYolu.isNotEmpty) ...[
+                    _KategoriSatiri(
+                      ad: 'Tüm "$baslik" Ürünleri',
+                      secili: _tumSeciliMi(),
+                      onTap: _tumunuSec,
+                      vurgulu: true,
+                    ),
+                  ],
+
+                  // Alt kategoriler
+                  ...nodes.map((node) => _KategoriSatiri(
+                    ad: node.emoji.isNotEmpty
+                        ? '${node.emoji}  ${node.ad}'
+                        : node.ad,
+                    secili: _nodeSeciliMi(node),
+                    onTap: () => _nodeSecildi(node),
+                    derinlikOku: !node.yaprakMi,
+                  )),
+
+                  // ── Sıralama bölümü — sadece ana seviyede göster ──────────
+                  if (_gezinmeYolu.isEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+                      child: Text('Sıralama',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 16, fontWeight: FontWeight.w700)),
+                    ),
+                    ...SiralamaTipi.values.map((tip) {
+                      final secili = _seciliSiralama == tip;
+                      return InkWell(
                         onTap: () {
-                          if (ana.altlar.isEmpty) {
-                            widget.onSecildi(ana.key, null);
-                          } else {
-                            setState(() =>
-                                _acikAnaKey = acik ? null : ana.key);
-                          }
+                          setState(() => _seciliSiralama = tip);
+                          widget.onSiralamaSecildi(tip);
+                          Navigator.of(context).pop();
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 20, vertical: 16),
                           decoration: BoxDecoration(
-                            color: (secili && !altSecili)
+                            color: secili
                                 ? AppColors.red.withValues(alpha: 0.05)
                                 : Colors.white,
                             border: Border(
                               bottom: BorderSide(
-                                color: AppColors.divider
-                                    .withValues(alpha: 0.5),
+                                color: AppColors.divider.withValues(alpha: 0.5),
                                 width: 0.5,
                               ),
                             ),
                           ),
                           child: Row(
                             children: [
-                              Icon(_kategoriIkon(ana.key),
-                                  size: 22,
-                                  color: vurgulu
-                                      ? AppColors.red
-                                      : Colors.black87),
+                              Icon(
+                                tip == SiralamaTipi.enYeni
+                                    ? Icons.schedule_outlined
+                                    : tip == SiralamaTipi.enEski
+                                        ? Icons.history_outlined
+                                        : tip == SiralamaTipi.enCokFavorilenen
+                                            ? Icons.favorite_border
+                                            : Icons.verified_outlined,
+                                size: 22,
+                                color: secili
+                                    ? AppColors.red
+                                    : Colors.black87,
+                              ),
                               const SizedBox(width: 16),
                               Expanded(
                                 child: Text(
-                                  ana.ad,
+                                  tip.label,
                                   style: GoogleFonts.dmSans(
                                     fontSize: 15,
-                                    fontWeight: vurgulu
+                                    fontWeight: secili
                                         ? FontWeight.w600
                                         : FontWeight.w400,
-                                    color: vurgulu
+                                    color: secili
                                         ? AppColors.red
                                         : AppColors.textPrimary,
                                   ),
                                 ),
                               ),
-                              AnimatedRotation(
-                                turns: acik ? 0.25 : 0,
-                                duration: const Duration(milliseconds: 200),
-                                child: Icon(
-                                  Icons.chevron_right,
-                                  size: 20,
-                                  color: acik
-                                      ? AppColors.red
-                                      : AppColors.textSecondary,
-                                ),
-                              ),
+                              if (secili)
+                                const Icon(Icons.check,
+                                    size: 16, color: AppColors.red),
                             ],
                           ),
                         ),
-                      ),
-                      if (acik && ana.altlar.isNotEmpty)
-                        Container(
-                          color: AppColors.surface,
-                          child: Column(
-                            children: [
-                              _AltKategoriSatiri(
-                                ad: 'Tümü',
-                                secili: widget.seciliAnaKey == ana.key &&
-                                    widget.seciliAltKey == null,
-                                onTap: () =>
-                                    widget.onSecildi(ana.key, null),
-                              ),
-                              ...ana.altlar.map((alt) =>
-                                  _AltKategoriSatiri(
-                                    ad: alt.ad,
-                                    secili:
-                                        widget.seciliAltKey == alt.key,
-                                    onTap: () => widget.onSecildi(
-                                        ana.key, alt.key),
-                                  )),
-                            ],
-                          ),
-                        ),
-                    ],
-                  );
-                },
+                      );
+                    }),
+                  ],
+                ],
               ),
             ),
           ],
@@ -191,15 +285,19 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
   }
 }
 
-class _AltKategoriSatiri extends StatelessWidget {
+class _KategoriSatiri extends StatelessWidget {
   final String ad;
   final bool secili;
   final VoidCallback onTap;
+  final bool derinlikOku;
+  final bool vurgulu;
 
-  const _AltKategoriSatiri({
+  const _KategoriSatiri({
     required this.ad,
     required this.secili,
     required this.onTap,
+    this.derinlikOku = false,
+    this.vurgulu = false,
   });
 
   @override
@@ -207,12 +305,11 @@ class _AltKategoriSatiri extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding:
-            const EdgeInsets.only(left: 58, right: 20, top: 13, bottom: 13),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
           color: secili
               ? AppColors.red.withValues(alpha: 0.05)
-              : Colors.transparent,
+              : Colors.white,
           border: Border(
             bottom: BorderSide(
               color: AppColors.divider.withValues(alpha: 0.5),
@@ -226,14 +323,23 @@ class _AltKategoriSatiri extends StatelessWidget {
               child: Text(
                 ad,
                 style: GoogleFonts.dmSans(
-                  fontSize: 14,
-                  fontWeight: secili ? FontWeight.w600 : FontWeight.w400,
-                  color: secili ? AppColors.red : AppColors.textPrimary,
+                  fontSize: 15,
+                  fontWeight: (secili || vurgulu)
+                      ? FontWeight.w600
+                      : FontWeight.w400,
+                  color: secili
+                      ? AppColors.red
+                      : vurgulu
+                          ? AppColors.textPrimary
+                          : AppColors.textPrimary,
                 ),
               ),
             ),
             if (secili)
-              const Icon(Icons.check, size: 16, color: AppColors.red),
+              const Icon(Icons.check, size: 16, color: AppColors.red)
+            else if (derinlikOku)
+              const Icon(Icons.chevron_right,
+                  size: 20, color: AppColors.textSecondary),
           ],
         ),
       ),
@@ -285,7 +391,8 @@ class BosEkran extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.inbox_outlined, size: 64, color: AppColors.divider),
+          const Icon(Icons.inbox_outlined,
+              size: 64, color: AppColors.divider),
           const SizedBox(height: 16),
           Text('Henüz ilan yok',
               style: GoogleFonts.dmSans(

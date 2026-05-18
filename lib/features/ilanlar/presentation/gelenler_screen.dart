@@ -85,7 +85,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
     if (_seciliAnaKey != null) {
       final anaKat = app_constants.kKategoriAgaci.firstWhere(
         (k) => k.key == _seciliAnaKey,
-        orElse: () => app_constants.AnaKategori(key: '', ad: '', emoji: ''),
+        orElse: () => app_constants.KategoriNode(key: '', ad: ''),
       );
       if (anaKat.altlar.isNotEmpty) {
         final gecerliKeyler = {anaKat.key, ...anaKat.altlar.map((a) => a.key)};

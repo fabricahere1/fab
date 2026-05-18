@@ -44,6 +44,8 @@ abstract class IlanModel with _$IlanModel {
     @Default(0) int favoriSayisi,
     @Default('hepsi') String tasimaTercihi,
     @Default(0.0) double kullaniciPuan,
+    @Default('') String anaKategori,
+    @Default([]) List<String> kategoriYolu,
   }) = _IlanModel;
 
   factory IlanModel.fromFirestore(DocumentSnapshot doc) {
@@ -68,6 +70,8 @@ abstract class IlanModel with _$IlanModel {
       favoriSayisi:    (data['favoriSayisi'] as num?)?.toInt() ?? 0,
       tasimaTercihi:   data['tasimaTercihi'] as String? ?? 'hepsi',
       kullaniciPuan:   (data['kullaniciPuan'] as num?)?.toDouble() ?? 0.0,
+      anaKategori:     data['anaKategori']   as String? ?? '',
+      kategoriYolu:    List<String>.from(data['kategoriYolu'] ?? []),
     );
   }
 
@@ -96,6 +100,8 @@ extension IlanModelX on IlanModel {
     'aktif':           aktif,
     'tasimaTercihi':   tasimaTercihi,
     'kullaniciPuan':   kullaniciPuan,
+    'anaKategori':     anaKategori,
+    'kategoriYolu':    kategoriYolu,
     if (tarih != null) 'tarih': Timestamp.fromDate(tarih!),
     'olusturmaTarihi': FieldValue.serverTimestamp(),
     if (resimUrl.isNotEmpty) 'resimUrl': resimUrl,
