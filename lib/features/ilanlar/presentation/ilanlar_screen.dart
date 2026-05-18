@@ -18,15 +18,15 @@ import 'widgets/swipe_karti.dart';
 
 const _kResimYukseklikleri = [120.0, 150.0, 105.0, 135.0, 165.0, 112.0];
 
-enum SiralamaTipi { enYeni, enEski, ucretArtan, ucretAzalan }
+enum SiralamaTipi { enYeni, enEski, enCokFavorilenen, onayliIstekci }
 
 extension SiralamaTipiX on SiralamaTipi {
   String get label {
     switch (this) {
-      case SiralamaTipi.enYeni:      return 'En yeni';
-      case SiralamaTipi.enEski:      return 'En eski';
-      case SiralamaTipi.ucretArtan:  return 'Ücret: Düşük → Yüksek';
-      case SiralamaTipi.ucretAzalan: return 'Ücret: Yüksek → Düşük';
+      case SiralamaTipi.enYeni:          return 'En yeni';
+      case SiralamaTipi.enEski:          return 'En eski';
+      case SiralamaTipi.enCokFavorilenen: return 'En çok favorilenen';
+      case SiralamaTipi.onayliIstekci:   return 'Onaylı istekçi';
     }
   }
 }
@@ -106,17 +106,16 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
       case SiralamaTipi.enEski:
         kopya.sort((a, b) => (a.olusturmaTarihi ?? DateTime(0))
             .compareTo(b.olusturmaTarihi ?? DateTime(0)));
-      case SiralamaTipi.ucretArtan:
+      case SiralamaTipi.enCokFavorilenen:
+        kopya.sort((a, b) => b.favoriSayisi.compareTo(a.favoriSayisi));
+      case SiralamaTipi.onayliIstekci:
         kopya.sort((a, b) {
-          final aU = double.tryParse(a.ucret) ?? 0;
-          final bU = double.tryParse(b.ucret) ?? 0;
-          return aU.compareTo(bU);
-        });
-      case SiralamaTipi.ucretAzalan:
-        kopya.sort((a, b) {
-          final aU = double.tryParse(a.ucret) ?? 0;
-          final bU = double.tryParse(b.ucret) ?? 0;
-          return bU.compareTo(aU);
+          // 4 yıldız ve üzeri olanlar önce, sonra puana göre azalan sıra
+          final aOnayliMi = a.kullaniciPuan >= 4.0;
+          final bOnayliMi = b.kullaniciPuan >= 4.0;
+          if (aOnayliMi && !bOnayliMi) return -1;
+          if (!aOnayliMi && bOnayliMi) return 1;
+          return b.kullaniciPuan.compareTo(a.kullaniciPuan);
         });
     }
     return kopya;
