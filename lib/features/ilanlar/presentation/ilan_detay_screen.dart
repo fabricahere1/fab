@@ -515,8 +515,6 @@ class _IlanDetayIcerik extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Breadcrumb
-                      // Breadcrumb
                       if (ilan.kategoriYolu.isNotEmpty)
                         _BreadcrumbWidget(kategoriYolu: ilan.kategoriYolu, ilanTip: ilan.tip),
                       Row(

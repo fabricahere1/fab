@@ -294,7 +294,7 @@ const List<KategoriNode> kKategoriAgaci = [
             KategoriNode(key: 'samsung_s25', ad: 'Galaxy S25 Serisi', altlar: [
               KategoriNode(key: 'samsung_s25_ultra', ad: 'Galaxy S25 Ultra'),
               KategoriNode(key: 'samsung_s25_plus', ad: 'Galaxy S25+'),
-              KategoriNode(key: 'samsung_s25', ad: 'Galaxy S25'),
+              KategoriNode(key: 'samsung_s25_base', ad: 'Galaxy S25'),
             ]),
             KategoriNode(key: 'samsung_s24', ad: 'Galaxy S24 Serisi', altlar: [
               KategoriNode(key: 'samsung_s24_ultra', ad: 'Galaxy S24 Ultra'),
@@ -748,7 +748,7 @@ Set<String> tumAltKeyler(String key, [List<KategoriNode>? liste]) {
   final kuyruk = <String>[key];
   while (kuyruk.isNotEmpty) {
     final k = kuyruk.removeLast();
-    result.add(k);
+    if (!result.add(k)) continue; // zaten ziyaret edildi
     final node = kategoriNodeBul(k);
     if (node != null) {
       for (final alt in node.altlar) {
