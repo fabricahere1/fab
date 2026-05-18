@@ -22,13 +22,8 @@ enum GelenlerSiralama { enYeni, enEski }
 // ── Şehirler ──────────────────────────────────────────────────────────────────
 
 const _kSehirler = [
-  'İstanbul',
-  'Ankara',
-  'İzmir',
-  'Bursa',
-  'Çanakkale',
-  'Eskişehir',
-  'Antalya',
+  'İstanbul', 'Ankara', 'İzmir', 'Bursa',
+  'Çanakkale', 'Eskişehir', 'Antalya',
 ];
 
 class GelenlerScreen extends ConsumerStatefulWidget {
@@ -45,10 +40,10 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
   final _aramaCtrl          = TextEditingController();
   final _kategoriScrollCtrl = ScrollController();
 
-  String              _aramaMetni  = '';
-  String?             _seciliAnaKey;
-  bool                _aramaGizli  = false;
-  GelenlerSiralama    _siralama    = GelenlerSiralama.enYeni;
+  String              _aramaMetni        = '';
+  List<String>        _seciliKategoriYolu = [];
+  bool                _aramaGizli        = false;
+  GelenlerSiralama    _siralama          = GelenlerSiralama.enYeni;
   String?             _seciliSehir;
 
   @override
@@ -80,24 +75,30 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
     }
   }
 
+  bool get _filtrAktif => _seciliSehir != null || _seciliKategoriYolu.isNotEmpty || _siralama != GelenlerSiralama.enYeni;
+
+  String? get _seciliAnaKey =>
+      _seciliKategoriYolu.isNotEmpty ? _seciliKategoriYolu.first : null;
+
   List<IlanModel> _filtrele(List<IlanModel> liste) {
     var sonuc = liste;
-    if (_seciliAnaKey != null) {
-      final anaKat = app_constants.kKategoriAgaci.firstWhere(
-        (k) => k.key == _seciliAnaKey,
-        orElse: () => app_constants.KategoriNode(key: '', ad: ''),
-      );
-      if (anaKat.altlar.isNotEmpty) {
-        final gecerliKeyler = {anaKat.key, ...anaKat.altlar.map((a) => a.key)};
-        sonuc = sonuc.where((i) => gecerliKeyler.contains(i.kategori)).toList();
-      } else {
-        sonuc = sonuc.where((i) => i.kategori == _seciliAnaKey).toList();
-      }
+
+    // Kategori filtresi
+    if (_seciliKategoriYolu.isNotEmpty) {
+      final sonKey = _seciliKategoriYolu.last;
+      final gecerliKeyler = app_constants.tumAltKeyler(sonKey);
+      sonuc = sonuc.where((i) =>
+          gecerliKeyler.contains(i.kategori) ||
+          i.kategoriYolu.any((k) => gecerliKeyler.contains(k))).toList();
     }
+
+    // Şehir filtresi
     if (_seciliSehir != null) {
       final sehir = _seciliSehir!.toLowerCase();
       sonuc = sonuc.where((i) => i.nereye.toLowerCase().contains(sehir)).toList();
     }
+
+    // Arama filtresi
     if (_aramaMetni.isNotEmpty) {
       final q = _aramaMetni.toLowerCase();
       sonuc = sonuc.where((i) =>
@@ -121,13 +122,15 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
     return kopya;
   }
 
-  void _kategoriSec(String anaKey) {
+  void _anaKategoriSec(String anaKey) {
     setState(() {
-      _seciliAnaKey = _seciliAnaKey == anaKey ? null : anaKey;
+      if (_seciliAnaKey == anaKey) {
+        _seciliKategoriYolu = [];
+      } else {
+        _seciliKategoriYolu = [anaKey];
+      }
     });
   }
-
-  bool get _filtrAktif => _seciliSehir != null || _siralama != GelenlerSiralama.enYeni;
 
   void _filtreAc() {
     showModalBottomSheet(
@@ -138,97 +141,245 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 36, height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.divider,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
+        builder: (ctx, setModalState) {
+          // Lokal state — modal içinde gezinme yolu
+          List<String> gezinmeYolu = List<String>.from(_seciliKategoriYolu);
+          if (gezinmeYolu.isNotEmpty) gezinmeYolu = gezinmeYolu.sublist(0, gezinmeYolu.length - 1);
 
-                // ── Sıralama ──
-                Text('Sıralama', style: GoogleFonts.dmSans(
-                    fontSize: 14, fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary)),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    _FiltreChip(
-                      label: 'En Yeni',
-                      secili: _siralama == GelenlerSiralama.enYeni,
-                      onTap: () => setModalState(
-                          () => _siralama = GelenlerSiralama.enYeni),
-                    ),
-                    const SizedBox(width: 8),
-                    _FiltreChip(
-                      label: 'En Eski',
-                      secili: _siralama == GelenlerSiralama.enEski,
-                      onTap: () => setModalState(
-                          () => _siralama = GelenlerSiralama.enEski),
-                    ),
-                  ],
-                ),
+          return StatefulBuilder(
+            builder: (ctx, setInnerState) {
 
-                const SizedBox(height: 20),
+              List<app_constants.KategoriNode> mevcutNodes() {
+                if (gezinmeYolu.isEmpty) return app_constants.kKategoriAgaci;
+                List<app_constants.KategoriNode> liste = app_constants.kKategoriAgaci;
+                for (final key in gezinmeYolu) {
+                  final node = liste.firstWhere(
+                    (n) => n.key == key,
+                    orElse: () => app_constants.KategoriNode(key: '', ad: ''),
+                  );
+                  if (node.key.isEmpty || node.altlar.isEmpty) break;
+                  liste = node.altlar;
+                }
+                return liste;
+              }
 
-                // ── Varış Şehri ──
-                Text('Varış Şehri', style: GoogleFonts.dmSans(
-                    fontSize: 14, fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary)),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _FiltreChip(
-                      label: 'Tümü',
-                      secili: _seciliSehir == null,
-                      onTap: () => setModalState(() => _seciliSehir = null),
-                    ),
-                    ..._kSehirler.map((sehir) => _FiltreChip(
-                      label: sehir,
-                      secili: _seciliSehir == sehir,
-                      onTap: () => setModalState(() => _seciliSehir = sehir),
-                    )),
-                  ],
-                ),
+              String seviyeBasligi() {
+                if (gezinmeYolu.isEmpty) return 'Kategori';
+                final node = app_constants.kategoriNodeBul(gezinmeYolu.last);
+                return node?.ad ?? 'Kategori';
+              }
 
-                const SizedBox(height: 24),
+              String breadcrumb() {
+                if (gezinmeYolu.isEmpty) return '';
+                return gezinmeYolu.map((key) {
+                  final node = app_constants.kategoriNodeBul(key);
+                  return node?.ad ?? key;
+                }).join(' › ');
+              }
 
-                // ── Uygula butonu ──
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      setState(() {});
-                      Navigator.pop(ctx);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.red,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+              return SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 16, 0, 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Handle
+                      Center(
+                        child: Container(
+                          width: 36, height: 4,
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: AppColors.divider,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
                       ),
-                    ),
-                    child: Text('Uygula', style: GoogleFonts.dmSans(
-                        fontSize: 15, fontWeight: FontWeight.w600)),
+
+                      // ── Kategori bölümü ──
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
+                          children: [
+                            if (gezinmeYolu.isNotEmpty)
+                              GestureDetector(
+                                onTap: () => setInnerState(() =>
+                                    gezinmeYolu = gezinmeYolu.sublist(0, gezinmeYolu.length - 1)),
+                                child: const Padding(
+                                  padding: EdgeInsets.only(right: 8),
+                                  child: Icon(Icons.arrow_back_ios_rounded,
+                                      size: 16, color: AppColors.textPrimary),
+                                ),
+                              ),
+                            Text(
+                              gezinmeYolu.isEmpty ? 'Kategori' : seviyeBasligi(),
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 14, fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary),
+                            ),
+                            const Spacer(),
+                            if (_seciliKategoriYolu.isNotEmpty)
+                              GestureDetector(
+                                onTap: () {
+                                  setModalState(() => _seciliKategoriYolu = []);
+                                  setInnerState(() => gezinmeYolu = []);
+                                },
+                                child: Text('Temizle',
+                                    style: GoogleFonts.dmSans(
+                                        fontSize: 12, color: AppColors.red,
+                                        fontWeight: FontWeight.w500)),
+                              ),
+                          ],
+                        ),
+                      ),
+
+                      // Breadcrumb
+                      if (breadcrumb().isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+                          child: Text(
+                            breadcrumb(),
+                            style: GoogleFonts.dmSans(
+                                fontSize: 11, color: AppColors.textSecondary),
+                          ),
+                        ),
+
+                      const SizedBox(height: 10),
+
+                      // Kategori listesi
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: MediaQuery.of(context).size.height * 0.3,
+                        ),
+                        child: ListView(
+                          shrinkWrap: true,
+                          padding: EdgeInsets.zero,
+                          children: [
+                            // Tüm X seçeneği
+                            if (gezinmeYolu.isNotEmpty)
+                              _FiltreKategoriSatiri(
+                                ad: 'Tüm "${seviyeBasligi()}" Ürünleri',
+                                secili: _seciliKategoriYolu.isNotEmpty &&
+                                    _seciliKategoriYolu.last == gezinmeYolu.last,
+                                vurgulu: true,
+                                onTap: () {
+                                  setModalState(() => _seciliKategoriYolu = List<String>.from(gezinmeYolu));
+                                },
+                              ),
+                            ...mevcutNodes().map((node) => _FiltreKategoriSatiri(
+                              ad: node.emoji.isNotEmpty
+                                  ? '${node.emoji}  ${node.ad}'
+                                  : node.ad,
+                              secili: _seciliKategoriYolu.contains(node.key),
+                              derinlikOku: !node.yaprakMi,
+                              onTap: () {
+                                if (node.yaprakMi) {
+                                  setModalState(() => _seciliKategoriYolu = [...gezinmeYolu, node.key]);
+                                } else {
+                                  setInnerState(() => gezinmeYolu = [...gezinmeYolu, node.key]);
+                                }
+                              },
+                            )),
+                          ],
+                        ),
+                      ),
+
+                      const Divider(height: 24),
+
+                      // ── Sıralama ──
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Text('Sıralama',
+                            style: GoogleFonts.dmSans(
+                                fontSize: 14, fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary)),
+                      ),
+                      const SizedBox(height: 10),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
+                          children: [
+                            _FiltreChip(
+                              label: 'En Yeni',
+                              secili: _siralama == GelenlerSiralama.enYeni,
+                              onTap: () => setModalState(
+                                  () => _siralama = GelenlerSiralama.enYeni),
+                            ),
+                            const SizedBox(width: 8),
+                            _FiltreChip(
+                              label: 'En Eski',
+                              secili: _siralama == GelenlerSiralama.enEski,
+                              onTap: () => setModalState(
+                                  () => _siralama = GelenlerSiralama.enEski),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const Divider(height: 24),
+
+                      // ── Varış Şehri ──
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Text('Varış Şehri',
+                            style: GoogleFonts.dmSans(
+                                fontSize: 14, fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary)),
+                      ),
+                      const SizedBox(height: 10),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _FiltreChip(
+                              label: 'Tümü',
+                              secili: _seciliSehir == null,
+                              onTap: () => setModalState(() => _seciliSehir = null),
+                            ),
+                            ..._kSehirler.map((sehir) => _FiltreChip(
+                              label: sehir,
+                              secili: _seciliSehir == sehir,
+                              onTap: () => setModalState(() => _seciliSehir = sehir),
+                            )),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // ── Uygula ──
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              setState(() {});
+                              Navigator.pop(ctx);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.red,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text('Uygula',
+                                style: GoogleFonts.dmSans(
+                                    fontSize: 15, fontWeight: FontWeight.w600)),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
-        ),
+              );
+            },
+          );
+        },
       ),
     );
   }
@@ -383,8 +534,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                     onTap: _filtreAc,
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      width: 44,
-                      height: 44,
+                      width: 44, height: 44,
                       decoration: BoxDecoration(
                         color: _filtrAktif
                             ? const Color(0xFF1A1A1A)
@@ -435,7 +585,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
               if (i == 0) {
                 final secili = _seciliAnaKey == null;
                 return GestureDetector(
-                  onTap: () => setState(() => _seciliAnaKey = null),
+                  onTap: () => setState(() => _seciliKategoriYolu = []),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
                     margin: const EdgeInsets.only(right: 6),
@@ -457,14 +607,10 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                         width: 1,
                       ),
                       boxShadow: secili
-                          ? [
-                              BoxShadow(
-                                color: const Color(0xFFE53935)
-                                    .withValues(alpha: 0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              )
-                            ]
+                          ? [BoxShadow(
+                              color: const Color(0xFFE53935).withValues(alpha: 0.3),
+                              blurRadius: 8, offset: const Offset(0, 2),
+                            )]
                           : null,
                     ),
                     alignment: Alignment.center,
@@ -472,9 +618,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                         style: GoogleFonts.dmSans(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: secili
-                              ? Colors.white
-                              : AppColors.textSecondary,
+                          color: secili ? Colors.white : AppColors.textSecondary,
                         )),
                   ),
                 );
@@ -482,7 +626,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
               final kat    = app_constants.kKategoriAgaci[i - 1];
               final secili = _seciliAnaKey == kat.key;
               return GestureDetector(
-                onTap: () => _kategoriSec(kat.key),
+                onTap: () => _anaKategoriSec(kat.key),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
                   margin: const EdgeInsets.only(right: 6),
@@ -504,14 +648,10 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                       width: 1,
                     ),
                     boxShadow: secili
-                        ? [
-                            BoxShadow(
-                              color: const Color(0xFFE53935)
-                                  .withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            )
-                          ]
+                        ? [BoxShadow(
+                            color: const Color(0xFFE53935).withValues(alpha: 0.3),
+                            blurRadius: 8, offset: const Offset(0, 2),
+                          )]
                         : null,
                   ),
                   alignment: Alignment.center,
@@ -527,40 +667,69 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
           ),
         ),
 
-        // ── Aktif filtre badge ──
-        if (_seciliSehir != null)
+        // ── Aktif filtre badge'leri ──
+        if (_seciliKategoriYolu.isNotEmpty || _seciliSehir != null)
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 2, 12, 4),
-            child: Row(children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppColors.red.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Text(_seciliSehir!,
-                      style: GoogleFonts.dmSans(
-                          fontSize: 12,
-                          color: AppColors.red,
-                          fontWeight: FontWeight.w500)),
-                  const SizedBox(width: 6),
-                  GestureDetector(
-                    onTap: () => setState(() => _seciliSehir = null),
-                    child: const Icon(Icons.close_rounded,
-                        size: 13, color: AppColors.red),
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+            child: Row(
+              children: [
+                if (_seciliKategoriYolu.isNotEmpty)
+                  Container(
+                    margin: const EdgeInsets.only(right: 6),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.red.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Flexible(
+                        child: Text(
+                          app_constants.kategoriYoluMetni(_seciliKategoriYolu),
+                          style: GoogleFonts.dmSans(
+                              fontSize: 12,
+                              color: AppColors.red,
+                              fontWeight: FontWeight.w500),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      GestureDetector(
+                        onTap: () => setState(() => _seciliKategoriYolu = []),
+                        child: const Icon(Icons.close_rounded,
+                            size: 13, color: AppColors.red),
+                      ),
+                    ]),
                   ),
-                ]),
-              ),
-            ]),
+                if (_seciliSehir != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.red.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Text(_seciliSehir!,
+                          style: GoogleFonts.dmSans(
+                              fontSize: 12,
+                              color: AppColors.red,
+                              fontWeight: FontWeight.w500)),
+                      const SizedBox(width: 6),
+                      GestureDetector(
+                        onTap: () => setState(() => _seciliSehir = null),
+                        child: const Icon(Icons.close_rounded,
+                            size: 13, color: AppColors.red),
+                      ),
+                    ]),
+                  ),
+              ],
+            ),
           ),
 
         // ── Neden İSTE barı ──
-        const SizedBox(
-          height: 28,
-          child: _NedenIsteBar(),
-        ),
+        const SizedBox(height: 28, child: _NedenIsteBar()),
 
         Container(height: 0.5, color: AppColors.divider),
       ],
@@ -628,6 +797,61 @@ class _FiltreChip extends StatelessWidget {
   }
 }
 
+// ── Filtre Kategori Satırı ────────────────────────────────────────────────────
+
+class _FiltreKategoriSatiri extends StatelessWidget {
+  final String ad;
+  final bool secili;
+  final VoidCallback onTap;
+  final bool derinlikOku;
+  final bool vurgulu;
+
+  const _FiltreKategoriSatiri({
+    required this.ad,
+    required this.secili,
+    required this.onTap,
+    this.derinlikOku = false,
+    this.vurgulu = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          color: secili ? AppColors.red.withValues(alpha: 0.05) : Colors.white,
+          border: Border(
+            bottom: BorderSide(
+              color: AppColors.divider.withValues(alpha: 0.5),
+              width: 0.5,
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                ad,
+                style: GoogleFonts.dmSans(
+                  fontSize: 14,
+                  fontWeight: (secili || vurgulu) ? FontWeight.w600 : FontWeight.w400,
+                  color: secili ? AppColors.red : AppColors.textPrimary,
+                ),
+              ),
+            ),
+            if (secili)
+              const Icon(Icons.check, size: 16, color: AppColors.red)
+            else if (derinlikOku)
+              const Icon(Icons.chevron_right, size: 20, color: AppColors.textSecondary),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ── Neden İSTE barı ───────────────────────────────────────────────────────────
 
 class _NedenIsteBar extends StatefulWidget {
@@ -684,8 +908,7 @@ class _NedenIsteBarState extends State<_NedenIsteBar>
       color: const Color(0xFFC8E6C9),
       height: 28,
       child: LayoutBuilder(builder: (context, constraints) {
-        _contentWidth =
-            (_maddeler.length * 120.0 + _maddeler.length * 16.0);
+        _contentWidth = _maddeler.length * 120.0 + _maddeler.length * 16.0;
         return SingleChildScrollView(
           controller: _ctrl,
           scrollDirection: Axis.horizontal,
@@ -717,13 +940,11 @@ class _NedenItem extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Icon(Icons.check_circle_rounded,
-            size: 12, color: Color(0xFF388E3C)),
+        const Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF388E3C)),
         const SizedBox(width: 4),
         Text(metin,
             style: GoogleFonts.dmSans(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
+                fontSize: 11, fontWeight: FontWeight.w600,
                 color: const Color(0xFF1B5E20))),
       ],
     );
@@ -793,8 +1014,7 @@ class _GelenKarti extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              blurRadius: 8, offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -806,8 +1026,7 @@ class _GelenKarti extends StatelessWidget {
                 bottomLeft: Radius.circular(14),
               ),
               child: SizedBox(
-                width: 88,
-                height: 88,
+                width: 88, height: 88,
                 child: resimler.isNotEmpty
                     ? CachedNetworkImage(
                         cacheManager: AppCacheManager.instance,
@@ -833,14 +1052,11 @@ class _GelenKarti extends StatelessWidget {
                     Text(
                       ilan.urun,
                       style: GoogleFonts.dmSans(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 13, fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1, overflow: TextOverflow.ellipsis,
                     ),
-
                     Row(
                       children: [
                         const Icon(Icons.flight_takeoff_rounded,
@@ -854,13 +1070,11 @@ class _GelenKarti extends StatelessWidget {
                               color: AppColors.textSecondary,
                               fontWeight: FontWeight.w500,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1, overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ),
-
                     Row(
                       children: [
                         Container(
@@ -876,9 +1090,7 @@ class _GelenKarti extends StatelessWidget {
                                 fontSize: 10, color: AppColors.textSecondary),
                           ),
                         ),
-
                         const Spacer(),
-
                         if (gelisYazisi != null)
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -890,13 +1102,11 @@ class _GelenKarti extends StatelessWidget {
                             child: Text(
                               gelisYazisi,
                               style: GoogleFonts.dmSans(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
+                                fontSize: 10, fontWeight: FontWeight.w700,
                                 color: aciliyetRenk,
                               ),
                             ),
                           ),
-
                         const SizedBox(width: 6),
                       ],
                     ),
@@ -907,8 +1117,7 @@ class _GelenKarti extends StatelessWidget {
 
             const Padding(
               padding: EdgeInsets.only(right: 8),
-              child: Icon(Icons.chevron_right,
-                  size: 18, color: AppColors.textHint),
+              child: Icon(Icons.chevron_right, size: 18, color: AppColors.textHint),
             ),
           ],
         ),
@@ -938,8 +1147,7 @@ class _ResimPlaceholder extends StatelessWidget {
                 ? ilan.nereden.substring(0, 6)
                 : ilan.nereden,
             style: GoogleFonts.dmSans(
-                fontSize: 9,
-                color: AppColors.textSecondary,
+                fontSize: 9, color: AppColors.textSecondary,
                 fontWeight: FontWeight.w500),
             textAlign: TextAlign.center,
           ),
@@ -967,8 +1175,7 @@ class _BosEkran extends StatelessWidget {
           const SizedBox(height: 16),
           Text('Henüz gelen ilanı yok',
               style: GoogleFonts.dmSans(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 16, fontWeight: FontWeight.w600,
                   color: AppColors.textSecondary)),
           const SizedBox(height: 8),
           Text('Yurt dışından bir şey getireceksen hemen ilan ver',

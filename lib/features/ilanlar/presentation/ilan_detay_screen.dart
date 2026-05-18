@@ -514,6 +514,19 @@ class _IlanDetayIcerik extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Breadcrumb
+                      if (ilan.kategoriYolu.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Text(
+                            app_constants.kategoriYoluMetni(ilan.kategoriYolu),
+                            style: GoogleFonts.dmSans(
+                              fontSize: AppLayout.fs(context, 11),
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ),
                       Row(
                         children: [
                           if (kategoriAdiStr.isNotEmpty)
