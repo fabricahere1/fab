@@ -689,9 +689,9 @@ class _IslemDurumuTetikleyiciState
         pageBuilder: (ctx, anim, _) => Align(
           alignment: Alignment.centerRight,
           child: IslemDurumuPanel(
-            sohbetId: widget.sohbetId,
-            karsiKullaniciAd: widget.karsiKullaniciAd,
-          ),
+              sohbetId: widget.sohbetId,
+              karsiKullaniciAd: widget.karsiKullaniciAd,
+            ), // IslemDurumuPanel
         ),
         transitionsBuilder: (ctx, anim, _, child) => SlideTransition(
           position: Tween(begin: const Offset(1, 0), end: Offset.zero)

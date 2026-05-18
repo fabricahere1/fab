@@ -20,43 +20,23 @@ class GelenlerFormScreen extends ConsumerStatefulWidget {
 
 class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
   final _neredenCtrl = TextEditingController();
-  final _nereyeCtrl = TextEditingController();
-  final _notlarCtrl = TextEditingController();
-  final _picker = ImagePicker();
+  final _nereyeCtrl  = TextEditingController();
+  final _notlarCtrl  = TextEditingController();
+  final _picker      = ImagePicker();
 
-  DateTime? _seyahatTarihi;
+  DateTime?    _seyahatTarihi;
+  List<String> _kategoriYolu   = [];
+  String       _tasimaTercihi  = 'istekler';
+  final List<File> _resimler   = [];
 
-  // Kategori
-  String? _seciliAnaKey;
-  String? _seciliAltKey;
+  String get _kayitKategoriKey =>
+      _kategoriYolu.isNotEmpty ? _kategoriYolu.last : 'diger';
 
-  // Taşıma tercihi
-  String _tasimaTercihi = 'istekler'; // 'istekler', 'getirebilirim', 'hepsi'
+  String get _kayitAnaKategoriKey =>
+      _kategoriYolu.isNotEmpty ? _kategoriYolu.first : '';
 
-  // Resimler
-  final List<File> _resimler = [];
-
-  String get _kayitKategoriKey {
-    if (_seciliAltKey != null) return _seciliAltKey!;
-    if (_seciliAnaKey != null) return _seciliAnaKey!;
-    return 'diger';
-  }
-
-  String get _kategoriGorunumAdi {
-    if (_seciliAnaKey == null) return '';
-    final ana = kKategoriAgaci.firstWhere(
-      (k) => k.key == _seciliAnaKey,
-      orElse: () => AnaKategori(key: '', ad: '', emoji: ''),
-    );
-    if (_seciliAltKey != null) {
-      final alt = ana.altlar.firstWhere(
-        (a) => a.key == _seciliAltKey,
-        orElse: () => AltKategori(key: '', ad: ''),
-      );
-      if (alt.key.isNotEmpty) return '${ana.emoji} ${ana.ad} › ${alt.ad}';
-    }
-    return '${ana.emoji} ${ana.ad}';
-  }
+  String get _kategoriGorunumAdi =>
+      _kategoriYolu.isEmpty ? '' : kategoriYoluMetni(_kategoriYolu);
 
   @override
   void dispose() {
@@ -125,13 +105,9 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (ctx) => KategoriSecimSheet(
-        seciliAnaKey: _seciliAnaKey,
-        seciliAltKey: _seciliAltKey,
-        onSecildi: (anaKey, altKey) {
-          setState(() {
-            _seciliAnaKey = anaKey;
-            _seciliAltKey = altKey;
-          });
+        seciliYol: _kategoriYolu,
+        onSecildi: (yol) {
+          setState(() => _kategoriYolu = yol);
           Navigator.pop(ctx);
         },
       ),
@@ -148,22 +124,24 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
     }
 
     final ilan = IlanModel(
-      id: '',
-      tip: IlanTip.tasiyici,
-      nereden: _neredenCtrl.text.trim(),
-      nereye: _nereyeCtrl.text.trim(),
-      ucret: '',
-      notlar: _notlarCtrl.text.trim(),
-      kategori: _kayitKategoriKey,
-      kullaniciId: user.uid,
-      kullaniciAd: user.displayName ?? user.email ?? '',
-      tarih: _seyahatTarihi,
+      id:           '',
+      tip:          IlanTip.tasiyici,
+      nereden:      _neredenCtrl.text.trim(),
+      nereye:       _nereyeCtrl.text.trim(),
+      ucret:        '',
+      notlar:       _notlarCtrl.text.trim(),
+      kategori:     _kayitKategoriKey,
+      anaKategori:  _kayitAnaKategoriKey,
+      kategoriYolu: _kategoriYolu,
+      kullaniciId:  user.uid,
+      kullaniciAd:  user.displayName ?? user.email ?? '',
+      tarih:        _seyahatTarihi,
     );
 
     final id = await ref.read(ilanOlusturProvider.notifier).olustur(
-          ilan: ilan,
-          resimler: _resimler,
-        );
+      ilan: ilan,
+      resimler: _resimler,
+    );
 
     if (!mounted) return;
 
@@ -222,16 +200,14 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
                 child: Row(
                   children: [
                     Container(
-                      width: 52,
-                      height: 52,
+                      width: 52, height: 52,
                       decoration: BoxDecoration(
                         color: AppColors.red.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: const Icon(
                         Icons.flight_takeoff_outlined,
-                        color: AppColors.red,
-                        size: 26,
+                        color: AppColors.red, size: 26,
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -239,21 +215,16 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Nereye gidiyorsun?',
-                            style: GoogleFonts.dmSans(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
+                          Text('Nereye gidiyorsun?',
+                              style: GoogleFonts.dmSans(
+                                fontSize: 16, fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              )),
                           const SizedBox(height: 2),
                           Text(
                             'Güzergahını paylaş, getirmek istediklerin sana ulaşsın.',
                             style: GoogleFonts.dmSans(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
+                                fontSize: 12, color: AppColors.textSecondary),
                           ),
                         ],
                       ),
@@ -340,13 +311,11 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
                         ),
                         child: Row(
                           children: [
-                            Icon(
-                              Icons.calendar_today_outlined,
-                              size: 20,
-                              color: _seyahatTarihi != null
-                                  ? AppColors.red
-                                  : AppColors.textSecondary,
-                            ),
+                            Icon(Icons.calendar_today_outlined,
+                                size: 20,
+                                color: _seyahatTarihi != null
+                                    ? AppColors.red
+                                    : AppColors.textSecondary),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
@@ -361,33 +330,26 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
                                 ),
                               ),
                             ),
-                            Icon(
-                              Icons.chevron_right,
-                              color: _seyahatTarihi != null
-                                  ? AppColors.red
-                                  : AppColors.textSecondary,
-                            ),
+                            Icon(Icons.chevron_right,
+                                color: _seyahatTarihi != null
+                                    ? AppColors.red
+                                    : AppColors.textSecondary),
                           ],
                         ),
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // ── Taşıma Tercihi ──────────────────
                     ...[
-                      ('istekler', 'İsteklere açığım',
-                          Icons.search_outlined),
-                      ('getirebilirim', 'Bunları getirebilirim',
-                          Icons.inventory_2_outlined),
-                      ('hepsi', 'Her ikisi de',
-                          Icons.swap_horiz_outlined),
+                      ('istekler',     'İsteklere açığım',       Icons.search_outlined),
+                      ('getirebilirim','Bunları getirebilirim',   Icons.inventory_2_outlined),
+                      ('hepsi',        'Her ikisi de',            Icons.swap_horiz_outlined),
                     ].map((item) {
-                      final key = item.$1;
+                      final key   = item.$1;
                       final label = item.$2;
-                      final icon = item.$3;
+                      final icon  = item.$3;
                       final secili = _tasimaTercihi == key;
                       return GestureDetector(
-                        onTap: () =>
-                            setState(() => _tasimaTercihi = key),
+                        onTap: () => setState(() => _tasimaTercihi = key),
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 8),
                           padding: const EdgeInsets.symmetric(
@@ -399,8 +361,7 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
                               color: secili
-                                  ? AppColors.red
-                                      .withValues(alpha: 0.4)
+                                  ? AppColors.red.withValues(alpha: 0.4)
                                   : AppColors.divider,
                             ),
                           ),
@@ -425,15 +386,11 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
                                     )),
                               ),
                               AnimatedContainer(
-                                duration:
-                                    const Duration(milliseconds: 150),
-                                width: 20,
-                                height: 20,
+                                duration: const Duration(milliseconds: 150),
+                                width: 20, height: 20,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: secili
-                                      ? AppColors.red
-                                      : Colors.white,
+                                  color: secili ? AppColors.red : Colors.white,
                                   border: Border.all(
                                     color: secili
                                         ? AppColors.red
@@ -466,12 +423,12 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 14),
                     decoration: BoxDecoration(
-                      color: _seciliAnaKey != null
+                      color: _kategoriYolu.isNotEmpty
                           ? AppColors.red.withValues(alpha: 0.05)
                           : AppColors.surface,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: _seciliAnaKey != null
+                        color: _kategoriYolu.isNotEmpty
                             ? AppColors.red.withValues(alpha: 0.3)
                             : AppColors.divider,
                       ),
@@ -480,23 +437,21 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            _seciliAnaKey != null
+                            _kategoriYolu.isNotEmpty
                                 ? _kategoriGorunumAdi
                                 : 'Kategori seç... (opsiyonel)',
                             style: GoogleFonts.dmSans(
                               fontSize: 14,
-                              color: _seciliAnaKey != null
+                              color: _kategoriYolu.isNotEmpty
                                   ? AppColors.textPrimary
                                   : AppColors.textHint,
                             ),
                           ),
                         ),
-                        Icon(
-                          Icons.chevron_right,
-                          color: _seciliAnaKey != null
-                              ? AppColors.red
-                              : AppColors.textSecondary,
-                        ),
+                        Icon(Icons.chevron_right,
+                            color: _kategoriYolu.isNotEmpty
+                                ? AppColors.red
+                                : AppColors.textSecondary),
                       ],
                     ),
                   ),
@@ -531,8 +486,7 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
                     Text(
                       'Opsiyonel — resim ekleyerek daha hızlı eşleşirsin.',
                       style: GoogleFonts.dmSans(
-                          fontSize: 12,
-                          color: AppColors.textSecondary),
+                          fontSize: 12, color: AppColors.textSecondary),
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
@@ -544,37 +498,28 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
                             GestureDetector(
                               onTap: _resimEkle,
                               child: Container(
-                                width: 120,
-                                height: 120,
-                                margin:
-                                    const EdgeInsets.only(right: 10),
+                                width: 120, height: 120,
+                                margin: const EdgeInsets.only(right: 10),
                                 decoration: BoxDecoration(
-                                  color: AppColors.red
-                                      .withValues(alpha: 0.05),
-                                  borderRadius:
-                                      BorderRadius.circular(12),
+                                  color: AppColors.red.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: AppColors.red
-                                        .withValues(alpha: 0.3),
+                                    color: AppColors.red.withValues(alpha: 0.3),
                                     width: 1.5,
                                   ),
                                 ),
                                 child: Column(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Container(
-                                      width: 40,
-                                      height: 40,
+                                      width: 40, height: 40,
                                       decoration: BoxDecoration(
-                                        color: AppColors.red
-                                            .withValues(alpha: 0.1),
+                                        color: AppColors.red.withValues(alpha: 0.1),
                                         shape: BoxShape.circle,
                                       ),
                                       child: const Icon(
                                         Icons.add_photo_alternate_outlined,
-                                        color: AppColors.red,
-                                        size: 22,
+                                        color: AppColors.red, size: 22,
                                       ),
                                     ),
                                     const SizedBox(height: 8),
@@ -582,8 +527,7 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
                                         style: GoogleFonts.dmSans(
                                             fontSize: 12,
                                             color: AppColors.red,
-                                            fontWeight:
-                                                FontWeight.w500)),
+                                            fontWeight: FontWeight.w500)),
                                   ],
                                 ),
                               ),
@@ -592,61 +536,49 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
                             return Stack(
                               children: [
                                 ClipRRect(
-                                  borderRadius:
-                                      BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(12),
                                   child: Image.file(
                                     e.value,
-                                    width: 120,
-                                    height: 120,
+                                    width: 120, height: 120,
                                     fit: BoxFit.cover,
                                   ),
                                 ),
                                 Positioned(
-                                  top: 6,
-                                  right: 16,
+                                  top: 6, right: 16,
                                   child: GestureDetector(
                                     onTap: () => setState(
                                         () => _resimler.removeAt(e.key)),
                                     child: Container(
-                                      padding:
-                                          const EdgeInsets.all(4),
+                                      padding: const EdgeInsets.all(4),
                                       decoration: BoxDecoration(
-                                        color: Colors.black
-                                            .withValues(alpha: 0.6),
+                                        color: Colors.black.withValues(alpha: 0.6),
                                         shape: BoxShape.circle,
                                       ),
                                       child: const Icon(Icons.close,
-                                          size: 14,
-                                          color: Colors.white),
+                                          size: 14, color: Colors.white),
                                     ),
                                   ),
                                 ),
                                 if (e.key == 0)
                                   Positioned(
-                                    bottom: 6,
-                                    left: 6,
+                                    bottom: 6, left: 6,
                                     child: Container(
-                                      padding:
-                                          const EdgeInsets.symmetric(
-                                              horizontal: 6,
-                                              vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 2),
                                       decoration: BoxDecoration(
                                         color: AppColors.red,
-                                        borderRadius:
-                                            BorderRadius.circular(4),
+                                        borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Text('Kapak',
                                           style: GoogleFonts.dmSans(
                                               fontSize: 10,
                                               color: Colors.white,
-                                              fontWeight:
-                                                  FontWeight.w600)),
+                                              fontWeight: FontWeight.w600)),
                                     ),
                                   ),
                                 Container(
                                     width: 120,
-                                    margin: const EdgeInsets.only(
-                                        right: 10)),
+                                    margin: const EdgeInsets.only(right: 10)),
                               ],
                             );
                           }),
@@ -657,7 +589,6 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              
 
               // ── Notlar ────────────────────────────────
               _Bolum(
@@ -676,13 +607,11 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
                     fillColor: AppColors.surface,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide:
-                          const BorderSide(color: AppColors.divider),
+                      borderSide: const BorderSide(color: AppColors.divider),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide:
-                          const BorderSide(color: AppColors.divider),
+                      borderSide: const BorderSide(color: AppColors.divider),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -713,15 +642,13 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
                     ),
                     child: yukleniyor
                         ? const SizedBox(
-                            width: 22,
-                            height: 22,
+                            width: 22, height: 22,
                             child: CircularProgressIndicator(
                                 color: Colors.white, strokeWidth: 2))
                         : Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.rocket_launch_outlined,
-                                  size: 18),
+                              const Icon(Icons.rocket_launch_outlined, size: 18),
                               const SizedBox(width: 8),
                               Text('İlanı Yayınla',
                                   style: GoogleFonts.dmSans(
@@ -767,8 +694,7 @@ class _Bolum extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 32,
-                height: 32,
+                width: 32, height: 32,
                 decoration: BoxDecoration(
                   color: AppColors.red.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8),
@@ -783,7 +709,7 @@ class _Bolum extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary)),
               ),
-              ?trailing,
+              if (trailing != null) trailing!,
             ],
           ),
           const SizedBox(height: 16),
@@ -844,7 +770,7 @@ class _AutocompleteAlanState extends State<_AutocompleteAlan> {
             s.toLowerCase().contains(ql))
         .toList();
     setState(() {
-      _acik = true;
+      _acik    = true;
       _filtreli = [...baslayan, ...icerenler].take(8).toList();
     });
   }

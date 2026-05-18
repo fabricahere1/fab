@@ -67,20 +67,22 @@ class IlanKarti extends ConsumerWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 12,
+              spreadRadius: 0,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         clipBehavior: Clip.hardEdge,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Stack(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  mainAxisSize: MainAxisSize.min,
+  children: [
+    Stack(
               children: [
                 SizedBox(
                   height: _resimYuksekligi(context),
@@ -139,7 +141,12 @@ class IlanKarti extends ConsumerWidget {
               ],
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 7, 8, 8),
+              padding: EdgeInsets.fromLTRB(
+  kolonSayisi == 3 ? 5 : 10,
+  kolonSayisi == 3 ? 5 : 9,
+  kolonSayisi == 3 ? 5 : 10,
+  kolonSayisi == 3 ? 5 : 10,
+),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -147,7 +154,7 @@ class IlanKarti extends ConsumerWidget {
                     guncelIlan.urun.isNotEmpty ? guncelIlan.urun : 'İlan',
                     style: GoogleFonts.dmSans(
                         fontSize: AppLayout.fs(context, 12),
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w500,
                         color: AppColors.textPrimary),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -176,7 +183,7 @@ class IlanKarti extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                       decoration: BoxDecoration(
                         color: AppColors.chipBg,
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         kategoriAdiStr,
@@ -352,7 +359,7 @@ class ShimmerGrid extends StatelessWidget {
           return Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

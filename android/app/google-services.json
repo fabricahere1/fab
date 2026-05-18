@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "783365190841-qgpo2k6jjgk4csrnhp887ub4fmiev8ku.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.fabricahere.iste_v3",
+            "certificate_hash": "fea2cb343d7d0ddac87243fe6602f0d51ecb4f8c"
+          }
+        },
+        {
           "client_id": "783365190841-sr6uf51d775c35osuesfr6k9s3cttci0.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

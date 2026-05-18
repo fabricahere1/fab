@@ -209,7 +209,14 @@ class IlanRepository {
       await task;
       resimUrller.add(await ref.getDownloadURL());
     }
-    final ilanData = ilan.toFirestore();
+    // Kullanıcının güncel puanını çek
+    final kullaniciDoc = await firestore
+        .collection(Collections.kullanicilar)
+        .doc(user.uid)
+        .get();
+    final kullaniciPuan = (kullaniciDoc.data()?['ortalamaPuan'] as num?)?.toDouble() ?? 0.0;
+
+    final ilanData = ilan.copyWith(kullaniciPuan: kullaniciPuan).toFirestore();
     if (resimUrller.isNotEmpty) {
       ilanData['resimUrl'] = resimUrller.first;
       ilanData['resimUrller'] = resimUrller;

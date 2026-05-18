@@ -8,14 +8,15 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../../bildirimler/providers/bildirim_provider.dart';
 import '../../ilanlar/presentation/ilanlar_screen.dart';
+import '../../ilanlar/providers/grid_tercihi_notifier.dart';
 import '../../ilanlar/presentation/gelenler_screen.dart';
 import '../../ilanlar/presentation/ilan_form_screen.dart';
 import '../../ilanlar/presentation/gelenler_form_screen.dart';
 import '../../mesajlar/presentation/mesajlar_screen.dart';
 import '../../mesajlar/providers/mesaj_provider.dart';
-import '../../bildirimler/presentation/bildirimler_screen.dart';
+import '../../profil/presentation/profil_screen.dart';
+import 'kesfet_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -27,79 +28,25 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
   DateTime? _sonGeriTusu;
+  bool _fabAcik = false;
 
   void _ilanVer() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 32, height: 3,
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: AppColors.divider,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.shopping_bag_outlined,
-                    color: AppColors.textPrimary, size: 22),
-                title: Text('İstek İlanı Ver',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary,
-                    )),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  Navigator.push(context, CupertinoPageRoute(
-                    builder: (_) => IlanFormScreen(tip: IlanTip.istek),
-                  ));
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.flight_takeoff_outlined,
-                    color: AppColors.textPrimary, size: 22),
-                title: Text('Gelen İlanı Ver',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary,
-                    )),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  Navigator.push(context, CupertinoPageRoute(
-                    builder: (_) => const GelenlerFormScreen(),
-                  ));
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    setState(() => _fabAcik = !_fabAcik);
   }
 
   @override
   Widget build(BuildContext context) {
+    final uid             = ref.watch(currentUserProvider)?.uid;
     final toplamOkunmamis = ref.watch(okunmamisSayiProvider);
-    final okunmamisBildirim = ref.watch(okunmamisBildirimSayiProvider).value ?? 0;
     final bottomPadding   = MediaQuery.of(context).padding.bottom;
 
     final pages = [
-      const _IsteklerSayfa(),
-      const GelenlerScreen(embedded: true),
-      const MesajlarScreen(),
-      const BildirimlerScreen(),
-    ];
+  const _IsteklerSayfa(),
+  const GelenlerScreen(embedded: true),
+  const MesajlarScreen(),
+  const ProfilScreen(),
+  const KesfetScreen(),
+];
 
     return PopScope(
       canPop: false,
@@ -124,91 +71,214 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         }
       },
       child: Scaffold(
-        body: _LazyIndexedStack(
-          index: _selectedIndex,
-          children: pages,
+        body: Stack(
+          children: [
+            _LazyIndexedStack(
+              index: _selectedIndex,
+              children: pages,
+            ),
+            if (_fabAcik)
+              GestureDetector(
+                onTap: () => setState(() => _fabAcik = false),
+                child: AnimatedOpacity(
+                  opacity: _fabAcik ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 200),
+                  child: Container(
+                    color: Colors.black.withValues(alpha: 0.4),
+                  ),
+                ),
+              ),
+          ],
         ),
+        floatingActionButton: _selectedIndex <= 1 && !(_selectedIndex == 0 && ref.watch(gridTercihiProvider) == GoruntulemeModeli.swipe) ? Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            AnimatedSlide(
+              offset: _fabAcik ? Offset.zero : const Offset(0, 0.3),
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutCubic,
+              child: AnimatedOpacity(
+                opacity: _fabAcik ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOutCubic,
+                child: IgnorePointer(
+                  ignoring: !_fabAcik,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      SizedBox(
+                        width: 160,
+                        child: FloatingActionButton.extended(
+                          heroTag: 'istek',
+                          onPressed: () {
+                            setState(() => _fabAcik = false);
+                            Navigator.push(context, CupertinoPageRoute(
+                              builder: (_) => IlanFormScreen(tip: IlanTip.istek),
+                            ));
+                          },
+                          backgroundColor: const Color(0xFF9575CD),
+                          elevation: 3,
+                          label: Text('İstek İlanı Ver',
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white)),
+                          icon: const Icon(Icons.shopping_bag_outlined,
+                              color: Colors.white, size: 18),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: 160,
+                        child: FloatingActionButton.extended(
+                          heroTag: 'gelen',
+                          onPressed: () {
+                            setState(() => _fabAcik = false);
+                            Navigator.push(context, CupertinoPageRoute(
+                              builder: (_) => const GelenlerFormScreen(),
+                            ));
+                          },
+                          backgroundColor: const Color(0xFF9575CD),
+                          elevation: 3,
+                          label: Text('Gelen İlanı Ver',
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white)),
+                          icon: const Icon(Icons.flight_takeoff_outlined,
+                              color: Colors.white, size: 18),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            FloatingActionButton(
+              heroTag: 'main',
+              onPressed: _ilanVer,
+              backgroundColor: const Color(0xFF66BB6A),
+              elevation: 4,
+              child: AnimatedRotation(
+                turns: _fabAcik ? 0.125 : 0,
+                duration: const Duration(milliseconds: 200),
+                child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+              ),
+            ),
+          ],
+        )
+        : null,
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         bottomNavigationBar: Container(
           height: 62 + bottomPadding,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: Colors.white,
-            border: Border(
-                top: BorderSide(color: Color(0xFFEEEEEE), width: 0.5)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 20,
+                offset: const Offset(0, -4),
+              ),
+            ],
           ),
           child: SafeArea(
             child: SizedBox(
               height: 62,
               child: Row(
                 children: [
-                  // ── Anasayfa ────────────────────────────────────────────
-                  _XNavItem(
+                  _NavItem(
                     secili: _selectedIndex == 0,
-                    onTap: () => setState(() => _selectedIndex = 0),
+                    onTap: () => setState(() { _selectedIndex = 0; _fabAcik = false; }),
                     label: 'İstekler',
-                    icon: _selectedIndex == 0
-                        ? Icons.home_rounded
-                        : Icons.home_outlined,
-                  ),
-
-                  // ── Gelenler ────────────────────────────────────────────
-                  _XNavItem(
-                    secili: _selectedIndex == 1,
-                    onTap: () => setState(() => _selectedIndex = 1),
-                    label: 'Gelenler',
-                    icon: Icons.flight_land_rounded,
-                  ),
-
-                  // ── İlan Ver — siyah yükseltilmiş ──────────────────────
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: _ilanVer,
-                      behavior: HitTestBehavior.opaque,
-                      child: Center(
-                        child: _AnimatedPressWidget(
-                          child: Container(
-                            width: 54,
-                            height: 54,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1A1A1A),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                  color: Colors.white, width: 3),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.3),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: const Icon(Icons.add_rounded,
-                                color: Colors.white, size: 28),
-                          ),
-                        ),
-                      ),
+                    child: Icon(
+                      _selectedIndex == 0
+                          ? Icons.home_rounded
+                          : Icons.home_outlined,
+                      size: 24,
+                      color: _selectedIndex == 0
+                          ? AppColors.red
+                          : AppColors.textSecondary,
                     ),
                   ),
-
-                  // ── Bildirimler ─────────────────────────────────────────
-                  _XNavItem(
-                    secili: _selectedIndex == 3,
-                    onTap: () => setState(() => _selectedIndex = 3),
-                    label: 'Bildirim',
-                    icon: _selectedIndex == 3
-                        ? Icons.notifications_rounded
-                        : Icons.notifications_outlined,
-                    badge: okunmamisBildirim > 0 ? okunmamisBildirim : null,
+                  _NavItem(
+                    secili: _selectedIndex == 1,
+                    onTap: () => setState(() { _selectedIndex = 1; _fabAcik = false; }),
+                    label: 'Gelenler',
+                    child: Icon(
+                      _selectedIndex == 1
+                          ? Icons.flight_land_rounded
+                          : Icons.flight_land_outlined,
+                      size: 24,
+                      color: _selectedIndex == 1
+                          ? AppColors.red
+                          : AppColors.textSecondary,
+                    ),
                   ),
-
-                  // ── Mesajlar ────────────────────────────────────────────
-                  _XNavItem(
+                  _NavItem(
                     secili: _selectedIndex == 2,
-                    onTap: () => setState(() => _selectedIndex = 2),
-                    label: 'Mesajlar',
-                    icon: _selectedIndex == 2
-                        ? Icons.chat_bubble_rounded
-                        : Icons.chat_bubble_outline_rounded,
-                    badge: toplamOkunmamis > 0 ? toplamOkunmamis : null,
+    onTap: () => setState(() { _selectedIndex = 2; _fabAcik = false; }),
+    label: 'Mesajlar',
+                    child: uid == null || toplamOkunmamis == 0
+                        ? Icon(
+                            _selectedIndex == 2
+                                ? Icons.chat_bubble
+                                : Icons.chat_bubble_outline,
+                            size: 24,
+                            color: _selectedIndex == 2
+                                ? AppColors.red
+                                : AppColors.textSecondary,
+                          )
+                        : Badge(
+                            label: Text(
+                              toplamOkunmamis > 99
+                                  ? '99+'
+                                  : '$toplamOkunmamis',
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 10,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                            backgroundColor: AppColors.red,
+                            child: Icon(
+                              _selectedIndex == 2
+                                  ? Icons.chat_bubble
+                                  : Icons.chat_bubble_outline,
+                              size: 24,
+                              color: _selectedIndex == 2
+                                  ? AppColors.red
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                  ),
+                  _NavItem(
+                    secili: _selectedIndex == 3,
+                    onTap: () => setState(() { _selectedIndex = 3; _fabAcik = false; }),
+                    label: 'Profil',
+                    child: Icon(
+                      _selectedIndex == 3
+                          ? Icons.person_rounded
+                          : Icons.person_outline,
+                      size: 24,
+                      color: _selectedIndex == 3
+                          ? AppColors.red
+                          : AppColors.textSecondary,
+                    ),
+                  ),
+                  _NavItem(
+                    secili: _selectedIndex == 4,
+                    onTap: () => setState(() { _selectedIndex = 4; _fabAcik = false; }),
+                    label: 'Keşfet',
+                    child: Icon(
+                      _selectedIndex == 4
+                          ? Icons.explore_rounded
+                          : Icons.explore_outlined,
+                      size: 24,
+                      color: _selectedIndex == 4
+                          ? AppColors.red
+                          : AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -220,13 +290,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-// ── Lazy IndexedStack ─────────────────────────────────────────────────────────
+// ── Lazy IndexedStack — sadece ziyaret edilen sayfaları render eder ───────────
 
 class _LazyIndexedStack extends StatefulWidget {
   final int index;
   final List<Widget> children;
 
-  const _LazyIndexedStack({required this.index, required this.children});
+  const _LazyIndexedStack({
+    required this.index,
+    required this.children,
+  });
 
   @override
   State<_LazyIndexedStack> createState() => _LazyIndexedStackState();
@@ -238,6 +311,7 @@ class _LazyIndexedStackState extends State<_LazyIndexedStack> {
   @override
   void initState() {
     super.initState();
+    // Sadece aktif tab build edilir, diğerleri ilk ziyarette build edilir
     _initialized = List.generate(
       widget.children.length,
       (i) => i == widget.index,
@@ -258,13 +332,15 @@ class _LazyIndexedStackState extends State<_LazyIndexedStack> {
       index: widget.index,
       children: List.generate(
         widget.children.length,
-        (i) => _initialized[i] ? widget.children[i] : const SizedBox.shrink(),
+        (i) => _initialized[i]
+            ? widget.children[i]
+            : const SizedBox.shrink(),
       ),
     );
   }
 }
 
-// ── İstekler wrapper ──────────────────────────────────────────────────────────
+// ── İstekler sayfası wrapper ──────────────────────────────────────────────────
 
 class _IsteklerSayfa extends StatelessWidget {
   const _IsteklerSayfa();
@@ -273,21 +349,19 @@ class _IsteklerSayfa extends StatelessWidget {
   Widget build(BuildContext context) => const IsteklerIcEkran();
 }
 
-// ── X stili nav item ──────────────────────────────────────────────────────────
+// ── Nav Item ──────────────────────────────────────────────────────────────────
 
-class _XNavItem extends StatelessWidget {
+class _NavItem extends StatelessWidget {
   final bool secili;
   final VoidCallback onTap;
-  final IconData icon;
+  final Widget child;
   final String label;
-  final int? badge;
 
-  const _XNavItem({
+  const _NavItem({
     required this.secili,
     required this.onTap,
-    required this.icon,
+    required this.child,
     required this.label,
-    this.badge,
   });
 
   @override
@@ -296,109 +370,126 @@ class _XNavItem extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
-        child: _AnimatedPressWidget(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Icon(
-                    icon,
-                    size: 24,
-                    color: secili ? AppColors.red : AppColors.textSecondary,
-                  ),
-                  if (badge != null)
-                    Positioned(
-                      top: -4,
-                      right: -6,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 4, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: AppColors.red,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.white, width: 1.5),
-                        ),
-                        child: Text(
-                          badge! > 99 ? '99+' : '$badge',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 9,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                    ),
-                ],
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            child,
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: GoogleFonts.dmSans(
+                fontSize: 10,
+                fontWeight: secili ? FontWeight.w700 : FontWeight.w400,
+                color: secili ? AppColors.red : AppColors.textSecondary,
               ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: GoogleFonts.dmSans(
-                  fontSize: 10,
-                  fontWeight: secili ? FontWeight.w600 : FontWeight.w400,
-                  color: secili ? AppColors.red : const Color(0xFF9E9E9E),
-                ),
-              ),
-              const SizedBox(height: 2),
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: secili ? 4 : 0,
-                height: 3,
-                decoration: BoxDecoration(
-                  color: AppColors.red,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-// ── Basınca büyüme animasyonu ─────────────────────────────────────────────────
+// ── İlan Ver nav item ────────────────────────────────────────────────────────
 
-class _AnimatedPressWidget extends StatefulWidget {
-  final Widget child;
-  const _AnimatedPressWidget({required this.child});
-
-  @override
-  State<_AnimatedPressWidget> createState() => _AnimatedPressWidgetState();
-}
-
-class _AnimatedPressWidgetState extends State<_AnimatedPressWidget>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 120),
-      reverseDuration: const Duration(milliseconds: 200),
-    );
-    _scale = Tween<double>(begin: 1.0, end: 1.25).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
+class _IlanVerItem extends StatelessWidget {
+  final VoidCallback onTap;
+  const _IlanVerItem({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Listener(
-      onPointerDown: (_) => _ctrl.forward(),
-      onPointerUp: (_) => _ctrl.reverse(),
-      onPointerCancel: (_) => _ctrl.reverse(),
-      child: ScaleTransition(scale: _scale, child: widget.child),
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.add_circle_rounded,
+                size: 24, color: Color(0xFF66BB6A)),
+            const SizedBox(height: 3),
+            Text(
+              'İlan Ver',
+              style: GoogleFonts.dmSans(
+                fontSize: 10,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF66BB6A),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── İlan tip seçim kartı ─────────────────────────────────────────────────────
+
+class _IlanTipKarti extends StatelessWidget {
+  final IconData icon;
+  final Color renk;
+  final String baslik;
+  final String aciklama;
+  final VoidCallback onTap;
+
+  const _IlanTipKarti({
+    required this.icon,
+    required this.renk,
+    required this.baslik,
+    required this.aciklama,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.divider, width: 0.5),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: renk.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: renk, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    baslik,
+                    style: GoogleFonts.dmSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    aciklama,
+                    style: GoogleFonts.dmSans(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: AppColors.textHint, size: 20),
+          ],
+        ),
+      ),
     );
   }
 }

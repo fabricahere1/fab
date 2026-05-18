@@ -42,7 +42,10 @@ abstract class IlanModel with _$IlanModel {
     @Default([]) List<String> resimUrller,
     @Default('') String urunLinki,
     @Default(0) int favoriSayisi,
-    @Default('hepsi') String tasimaTercihi, // ✅
+    @Default('hepsi') String tasimaTercihi,
+    @Default(0.0) double kullaniciPuan,
+    @Default('') String anaKategori,
+    @Default([]) List<String> kategoriYolu,
   }) = _IlanModel;
 
   factory IlanModel.fromFirestore(DocumentSnapshot doc) {
@@ -65,7 +68,10 @@ abstract class IlanModel with _$IlanModel {
       resimUrller:     List<String>.from(data['resimUrller'] ?? []),
       urunLinki:       data['urunLinki']    as String? ?? '',
       favoriSayisi:    (data['favoriSayisi'] as num?)?.toInt() ?? 0,
-      tasimaTercihi:   data['tasimaTercihi'] as String? ?? 'hepsi', // ✅
+      tasimaTercihi:   data['tasimaTercihi'] as String? ?? 'hepsi',
+      kullaniciPuan:   (data['kullaniciPuan'] as num?)?.toDouble() ?? 0.0,
+      anaKategori:     data['anaKategori']   as String? ?? '',
+      kategoriYolu:    List<String>.from(data['kategoriYolu'] ?? []),
     );
   }
 
@@ -92,7 +98,10 @@ extension IlanModelX on IlanModel {
     'kullaniciId':     kullaniciId,
     'kullaniciAd':     kullaniciAd,
     'aktif':           aktif,
-    'tasimaTercihi':   tasimaTercihi, // ✅
+    'tasimaTercihi':   tasimaTercihi,
+    'kullaniciPuan':   kullaniciPuan,
+    'anaKategori':     anaKategori,
+    'kategoriYolu':    kategoriYolu,
     if (tarih != null) 'tarih': Timestamp.fromDate(tarih!),
     'olusturmaTarihi': FieldValue.serverTimestamp(),
     if (resimUrl.isNotEmpty) 'resimUrl': resimUrl,
