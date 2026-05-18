@@ -32,6 +32,7 @@ class IlanDetayScreen extends ConsumerStatefulWidget {
 class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
   int _aktifResim = 0;
   final _pageController = PageController();
+  bool _otuzGunKontrolEdildi = false;
 
   @override
   void dispose() {
@@ -40,6 +41,8 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
   }
 
   Future<void> _otuzGunKontrol(IlanModel ilan) async {
+    if (_otuzGunKontrolEdildi) return;
+    _otuzGunKontrolEdildi = true;
     final tarih = ilan.olusturmaTarihi;
     if (tarih == null) return;
     final fark = DateTime.now().difference(tarih).inDays;
@@ -49,6 +52,22 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
   }
 
   String get _benimUid => ref.read(currentUserProvider)?.uid ?? '';
+
+  Future<void> _favorToggle(IlanModel ilan, bool favorideMi) async {
+    final uid = _benimUid;
+    if (uid.isEmpty) return;
+    if (favorideMi) {
+      await ref.read(ilanRepositoryProvider)
+          .favoridanCikar(kullaniciId: uid, ilanId: ilan.id);
+      ref.read(istekIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilan.id, -1);
+      ref.read(tasiyiciIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilan.id, -1);
+    } else {
+      await ref.read(ilanRepositoryProvider)
+          .favoriyeEkle(kullaniciId: uid, ilan: ilan);
+      ref.read(istekIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilan.id, 1);
+      ref.read(tasiyiciIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilan.id, 1);
+    }
+  }
 
   void _mesajGonder(IlanModel ilan) {
     if (_benimUid.isEmpty) return;
@@ -221,17 +240,32 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: sebepler
-                .map((s) => RadioListTile<String>(
-                      value: s,
-                      groupValue: seciliSebep,
-                      title: Text(s, style: GoogleFonts.dmSans(fontSize: AppLayout.fs(context, 14))),
-                      fillColor: WidgetStateProperty.resolveWith(
-                        (states) => states.contains(WidgetState.selected)
-                            ? AppColors.red
-                            : null,
+                .map((s) => InkWell(
+                      onTap: () => setS(() => seciliSebep = s),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          children: [
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              width: 20, height: 20,
+                              margin: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: seciliSebep == s ? AppColors.red : AppColors.divider,
+                                  width: 2,
+                                ),
+                                color: seciliSebep == s ? AppColors.red : Colors.white,
+                              ),
+                              child: seciliSebep == s
+                                  ? const Icon(Icons.check, size: 12, color: Colors.white)
+                                  : null,
+                            ),
+                            Text(s, style: GoogleFonts.dmSans(fontSize: AppLayout.fs(context, 14))),
+                          ],
+                        ),
                       ),
-                      contentPadding: EdgeInsets.zero,
-                      onChanged: (v) => setS(() => seciliSebep = v),
                     ))
                 .toList(),
           ),
@@ -312,9 +346,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
   }
 
   Widget _detayScaffold(BuildContext context, IlanModel ilan) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _otuzGunKontrol(ilan);
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _otuzGunKontrol(ilan));
     return _IlanDetayIcerik(
       ilan: ilan,
       aktifResim: _aktifResim,
@@ -322,6 +354,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
       onResimDegis: (i) => setState(() => _aktifResim = i),
       onMesajGonder: () => _mesajGonder(ilan),
       onUcNokta: () => _ucNoktaMenu(ilan),
+      onFavorToggle: (favorideMi) => _favorToggle(ilan, favorideMi),
     );
   }
 }
@@ -335,6 +368,7 @@ class _IlanDetayIcerik extends ConsumerWidget {
   final ValueChanged<int> onResimDegis;
   final VoidCallback onMesajGonder;
   final VoidCallback onUcNokta;
+  final ValueChanged<bool> onFavorToggle;
 
   const _IlanDetayIcerik({
     required this.ilan,
@@ -343,6 +377,7 @@ class _IlanDetayIcerik extends ConsumerWidget {
     required this.onResimDegis,
     required this.onMesajGonder,
     required this.onUcNokta,
+    required this.onFavorToggle,
   });
 
   @override
@@ -387,23 +422,7 @@ class _IlanDetayIcerik extends ConsumerWidget {
                 _FavoriButon(
                   favorideMi: favorideMi,
                   favoriSayisi: favoriSayisi,
-                  onTap: () async {
-                    if (favorideMi) {
-                      await ref.read(ilanRepositoryProvider)
-                          .favoridanCikar(kullaniciId: uid, ilanId: ilan.id);
-                      ref.read(istekIlanlarProvider.notifier)
-                          .ilanFavoriSayisiGuncelle(ilan.id, -1);
-                      ref.read(tasiyiciIlanlarProvider.notifier)
-                          .ilanFavoriSayisiGuncelle(ilan.id, -1);
-                    } else {
-                      await ref.read(ilanRepositoryProvider)
-                          .favoriyeEkle(kullaniciId: uid, ilan: ilan);
-                      ref.read(istekIlanlarProvider.notifier)
-                          .ilanFavoriSayisiGuncelle(ilan.id, 1);
-                      ref.read(tasiyiciIlanlarProvider.notifier)
-                          .ilanFavoriSayisiGuncelle(ilan.id, 1);
-                    }
-                  },
+                  onTap: () => onFavorToggle(favorideMi),
                 ),
               _CircleIconButton(icon: Icons.more_vert, onTap: onUcNokta),
             ],
@@ -715,23 +734,7 @@ class _IlanDetayIcerik extends ConsumerWidget {
               child: Row(
                 children: [
                   GestureDetector(
-                    onTap: () async {
-                      if (favorideMi) {
-                        await ref.read(ilanRepositoryProvider)
-                            .favoridanCikar(kullaniciId: uid, ilanId: ilan.id);
-                        ref.read(istekIlanlarProvider.notifier)
-                            .ilanFavoriSayisiGuncelle(ilan.id, -1);
-                        ref.read(tasiyiciIlanlarProvider.notifier)
-                            .ilanFavoriSayisiGuncelle(ilan.id, -1);
-                      } else {
-                        await ref.read(ilanRepositoryProvider)
-                            .favoriyeEkle(kullaniciId: uid, ilan: ilan);
-                        ref.read(istekIlanlarProvider.notifier)
-                            .ilanFavoriSayisiGuncelle(ilan.id, 1);
-                        ref.read(tasiyiciIlanlarProvider.notifier)
-                            .ilanFavoriSayisiGuncelle(ilan.id, 1);
-                      }
-                    },
+                    onTap: () => onFavorToggle(favorideMi),
                     child: Container(
                       width: 48, height: 48,
                       decoration: BoxDecoration(
@@ -830,14 +833,12 @@ class _GuzergahSatiri extends StatelessWidget {
 class _BilgiSatiri extends StatelessWidget {
   final IconData icon;
   final String label;
-  final bool bold;
   final bool small;
   final Color? color;
 
   const _BilgiSatiri({
     required this.icon,
     required this.label,
-    this.bold = false,
     this.small = false,
     this.color,
   });
@@ -858,7 +859,6 @@ class _BilgiSatiri extends StatelessWidget {
             label,
             style: GoogleFonts.dmSans(
               fontSize: fontSize,
-              fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
               color: textColor,
               height: 1.4,
             ),

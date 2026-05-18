@@ -1,19 +1,17 @@
 // lib/features/ilanlar/presentation/gelenler_screen.dart
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../domain/ilan_model.dart';
 import '../providers/ilan_provider.dart';
-import '../presentation/ilan_detay_screen.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart' as app_constants;
 import '../../../core/cache/app_cache_manager.dart';
 import '../../../shared/widgets/bildirim_cani_widget.dart';
+import '../../../shared/widgets/neden_iste_bar.dart';
 import 'package:go_router/go_router.dart';
 import '../../../router/app_router.dart';
 
@@ -77,7 +75,9 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
       setState(() => _aramaGizli = false);
     }
     if (pos.pixels >= pos.maxScrollExtent - 400) {
-      ref.read(tasiyiciIlanlarProvider.notifier).dahaFazlaYukle();
+      if (!ref.read(tasiyiciIlanlarProvider).yukleniyor) {
+        ref.read(tasiyiciIlanlarProvider.notifier).dahaFazlaYukle();
+      }
     }
   }
 
@@ -139,6 +139,11 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
   }
 
   void _filtreAc() {
+    // Mevcut değerlerin kopyası — modal kapanana kadar ana state'e dokunulmaz
+    var modalKategoriYolu = List<String>.from(_seciliKategoriYolu);
+    var modalSiralama     = _siralama;
+    var modalSehir        = _seciliSehir;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -148,8 +153,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
       ),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
-          // Lokal state — modal içinde gezinme yolu
-          List<String> gezinmeYolu = List<String>.from(_seciliKategoriYolu);
+          List<String> gezinmeYolu = List<String>.from(modalKategoriYolu);
           if (gezinmeYolu.isNotEmpty) gezinmeYolu = gezinmeYolu.sublist(0, gezinmeYolu.length - 1);
 
           return StatefulBuilder(
@@ -224,11 +228,13 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                                   color: AppColors.textPrimary),
                             ),
                             const Spacer(),
-                            if (_seciliKategoriYolu.isNotEmpty)
+                            if (modalKategoriYolu.isNotEmpty)
                               GestureDetector(
                                 onTap: () {
-                                  setModalState(() => _seciliKategoriYolu = []);
-                                  setInnerState(() => gezinmeYolu = []);
+                                  setModalState(() {
+                                    modalKategoriYolu = [];
+                                    gezinmeYolu = [];
+                                  });
                                 },
                                 child: Text('Temizle',
                                     style: GoogleFonts.dmSans(
@@ -261,26 +267,25 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                           shrinkWrap: true,
                           padding: EdgeInsets.zero,
                           children: [
-                            // Tüm X seçeneği
                             if (gezinmeYolu.isNotEmpty)
                               _FiltreKategoriSatiri(
                                 ad: 'Tüm "${seviyeBasligi()}" Ürünleri',
-                                secili: _seciliKategoriYolu.isNotEmpty &&
-                                    _seciliKategoriYolu.last == gezinmeYolu.last,
+                                secili: modalKategoriYolu.isNotEmpty &&
+                                    modalKategoriYolu.last == gezinmeYolu.last,
                                 vurgulu: true,
                                 onTap: () {
-                                  setModalState(() => _seciliKategoriYolu = List<String>.from(gezinmeYolu));
+                                  setModalState(() => modalKategoriYolu = List<String>.from(gezinmeYolu));
                                 },
                               ),
                             ...mevcutNodes().map((node) => _FiltreKategoriSatiri(
                               ad: node.emoji.isNotEmpty
                                   ? '${node.emoji}  ${node.ad}'
                                   : node.ad,
-                              secili: _seciliKategoriYolu.contains(node.key),
+                              secili: modalKategoriYolu.contains(node.key),
                               derinlikOku: !node.yaprakMi,
                               onTap: () {
                                 if (node.yaprakMi) {
-                                  setModalState(() => _seciliKategoriYolu = [...gezinmeYolu, node.key]);
+                                  setModalState(() => modalKategoriYolu = [...gezinmeYolu, node.key]);
                                 } else {
                                   setInnerState(() => gezinmeYolu = [...gezinmeYolu, node.key]);
                                 }
@@ -307,16 +312,16 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                           children: [
                             _FiltreChip(
                               label: 'En Yeni',
-                              secili: _siralama == GelenlerSiralama.enYeni,
+                              secili: modalSiralama == GelenlerSiralama.enYeni,
                               onTap: () => setModalState(
-                                  () => _siralama = GelenlerSiralama.enYeni),
+                                  () => modalSiralama = GelenlerSiralama.enYeni),
                             ),
                             const SizedBox(width: 8),
                             _FiltreChip(
                               label: 'En Eski',
-                              secili: _siralama == GelenlerSiralama.enEski,
+                              secili: modalSiralama == GelenlerSiralama.enEski,
                               onTap: () => setModalState(
-                                  () => _siralama = GelenlerSiralama.enEski),
+                                  () => modalSiralama = GelenlerSiralama.enEski),
                             ),
                           ],
                         ),
@@ -341,13 +346,13 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                           children: [
                             _FiltreChip(
                               label: 'Tümü',
-                              secili: _seciliSehir == null,
-                              onTap: () => setModalState(() => _seciliSehir = null),
+                              secili: modalSehir == null,
+                              onTap: () => setModalState(() => modalSehir = null),
                             ),
                             ..._kSehirler.map((sehir) => _FiltreChip(
                               label: sehir,
-                              secili: _seciliSehir == sehir,
-                              onTap: () => setModalState(() => _seciliSehir = sehir),
+                              secili: modalSehir == sehir,
+                              onTap: () => setModalState(() => modalSehir = sehir),
                             )),
                           ],
                         ),
@@ -355,14 +360,18 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
 
                       const SizedBox(height: 24),
 
-                      // ── Uygula ──
+                      // ── Uygula — sadece burada ana state güncellenir ──
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: () {
-                              setState(() {});
+                              setState(() {
+                                _seciliKategoriYolu = modalKategoriYolu;
+                                _siralama           = modalSiralama;
+                                _seciliSehir        = modalSehir;
+                              });
                               Navigator.pop(ctx);
                             },
                             style: ElevatedButton.styleFrom(
@@ -735,7 +744,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
           ),
 
         // ── Neden İSTE barı ──
-        const SizedBox(height: 28, child: _NedenIsteBar()),
+        const SizedBox(height: 28, child: NedenIsteBar()),
 
         Container(height: 0.5, color: AppColors.divider),
       ],
@@ -854,118 +863,6 @@ class _FiltreKategoriSatiri extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-// ── Neden İSTE barı ───────────────────────────────────────────────────────────
-
-class _NedenIsteBar extends StatefulWidget {
-  const _NedenIsteBar();
-
-  @override
-  State<_NedenIsteBar> createState() => _NedenIsteBarState();
-}
-
-class _NedenIsteBarState extends State<_NedenIsteBar>
-    with SingleTickerProviderStateMixin {
-  late final ScrollController _ctrl;
-  late final Ticker _ticker;
-  double _offset = 0;
-  double _contentWidth = 0;
-
-  static const _hiz = 0.6;
-  static const _maddeler = [
-    'Güvenli alışveriş',
-    'Onaylı taşıyıcılar',
-    'Uygun fiyat',
-    'Kolay iade',
-    'Hızlı teslimat',
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = ScrollController();
-    final reduceMotion = SchedulerBinding
-        .instance.platformDispatcher.accessibilityFeatures.reduceMotion;
-    _ticker = createTicker(_onTick);
-    if (!reduceMotion) _ticker.start();
-  }
-
-  void _onTick(Duration elapsed) {
-    if (!_ctrl.hasClients) return;
-    if (_contentWidth == 0) return;
-    _offset += _hiz;
-    if (_offset >= _contentWidth) _offset = 0;
-    _ctrl.jumpTo(_offset);
-  }
-
-  @override
-  void dispose() {
-    _ticker.dispose();
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFFC8E6C9),
-      height: 28,
-      child: LayoutBuilder(builder: (context, constraints) {
-        _contentWidth = _maddeler.length * 120.0 + _maddeler.length * 16.0;
-        return SingleChildScrollView(
-          controller: _ctrl,
-          scrollDirection: Axis.horizontal,
-          physics: const NeverScrollableScrollPhysics(),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              for (var r = 0; r < 3; r++) ...[
-                for (final m in _maddeler) ...[
-                  const SizedBox(width: 16),
-                  _NedenItem(metin: m),
-                  _NedenAyrac(),
-                ],
-              ],
-            ],
-          ),
-        );
-      }),
-    );
-  }
-}
-
-class _NedenItem extends StatelessWidget {
-  final String metin;
-  const _NedenItem({required this.metin});
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF388E3C)),
-        const SizedBox(width: 4),
-        Text(metin,
-            style: GoogleFonts.dmSans(
-                fontSize: 11, fontWeight: FontWeight.w600,
-                color: const Color(0xFF1B5E20))),
-      ],
-    );
-  }
-}
-
-class _NedenAyrac extends StatelessWidget {
-  const _NedenAyrac();
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 3, height: 3,
-      margin: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: const BoxDecoration(
-          color: Color(0xFF4CAF50), shape: BoxShape.circle),
     );
   }
 }

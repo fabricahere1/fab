@@ -327,7 +327,7 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
                   child: Transform(
                     alignment: Alignment.bottomCenter,
                     transform: Matrix4.identity()
-                      ..translate(x, y * 0.3)
+                      ..translateByDouble(x, y * 0.3, 0, 1)
                       ..rotateZ(rotasyon),
                     child: _OnKart(
                       ilan:        mevcut,

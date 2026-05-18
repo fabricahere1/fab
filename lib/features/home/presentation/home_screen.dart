@@ -30,6 +30,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   DateTime? _sonGeriTusu;
   bool _fabAcik = false;
 
+  bool get _fabGoster =>
+      _selectedIndex <= 1 &&
+      !(_selectedIndex == 0 &&
+          ref.read(gridTercihiProvider) == GoruntulemeModeli.swipe);
+
   void _ilanVer() {
     setState(() => _fabAcik = !_fabAcik);
   }
@@ -88,7 +93,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
           ],
         ),
-        floatingActionButton: _selectedIndex <= 1 && !(_selectedIndex == 0 && ref.watch(gridTercihiProvider) == GoruntulemeModeli.swipe) ? Column(
+        floatingActionButton: _fabGoster ? Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -288,56 +293,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-// ── Lazy IndexedStack — sadece ziyaret edilen sayfaları render eder ───────────
-
-class _LazyIndexedStack extends StatefulWidget {
-  final int index;
-  final List<Widget> children;
-
-  const _LazyIndexedStack({
-    required this.index,
-    required this.children,
-  });
-
-  @override
-  State<_LazyIndexedStack> createState() => _LazyIndexedStackState();
-}
-
-class _LazyIndexedStackState extends State<_LazyIndexedStack> {
-  late final List<bool> _initialized;
-
-  @override
-  void initState() {
-    super.initState();
-    // Sadece aktif tab build edilir, diğerleri ilk ziyarette build edilir
-    _initialized = List.generate(
-      widget.children.length,
-      (i) => i == widget.index,
-    );
-  }
-
-  @override
-  void didUpdateWidget(_LazyIndexedStack old) {
-    super.didUpdateWidget(old);
-    if (!_initialized[widget.index]) {
-      _initialized[widget.index] = true;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return IndexedStack(
-      index: widget.index,
-      children: List.generate(
-        widget.children.length,
-        (i) => _initialized[i]
-            ? widget.children[i]
-            : const SizedBox.shrink(),
-      ),
-    );
-  }
-}
-
 // ── İstekler sayfası wrapper ──────────────────────────────────────────────────
 
 class _IsteklerSayfa extends StatelessWidget {
@@ -388,106 +343,3 @@ class _NavItem extends StatelessWidget {
   }
 }
 
-// ── İlan Ver nav item ────────────────────────────────────────────────────────
-
-class _IlanVerItem extends StatelessWidget {
-  final VoidCallback onTap;
-  const _IlanVerItem({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.add_circle_rounded,
-                size: 24, color: Color(0xFF66BB6A)),
-            const SizedBox(height: 3),
-            Text(
-              'İlan Ver',
-              style: GoogleFonts.dmSans(
-                fontSize: 10,
-                fontWeight: FontWeight.w400,
-                color: Color(0xFF66BB6A),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── İlan tip seçim kartı ─────────────────────────────────────────────────────
-
-class _IlanTipKarti extends StatelessWidget {
-  final IconData icon;
-  final Color renk;
-  final String baslik;
-  final String aciklama;
-  final VoidCallback onTap;
-
-  const _IlanTipKarti({
-    required this.icon,
-    required this.renk,
-    required this.baslik,
-    required this.aciklama,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.divider, width: 0.5),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: renk.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: renk, size: 22),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    baslik,
-                    style: GoogleFonts.dmSans(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    aciklama,
-                    style: GoogleFonts.dmSans(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right, color: AppColors.textHint, size: 20),
-          ],
-        ),
-      ),
-    );
-  }
-}

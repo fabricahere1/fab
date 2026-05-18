@@ -16,6 +16,8 @@ import '../../../../shared/utils/app_layout.dart';
 import '../ilan_detay_screen.dart';
 import '../../../../shared/constants/app_constants.dart';
 
+const kResimYukseklikleri = [120.0, 150.0, 105.0, 135.0, 165.0, 112.0];
+
 // ── Grid Kartı ────────────────────────────────────────────────────────────────
 
 class IlanKarti extends ConsumerWidget {
@@ -141,12 +143,9 @@ class IlanKarti extends ConsumerWidget {
               ],
             ),
             Padding(
-              padding: EdgeInsets.fromLTRB(
-  kolonSayisi == 3 ? 5 : 10,
-  kolonSayisi == 3 ? 5 : 9,
-  kolonSayisi == 3 ? 5 : 10,
-  kolonSayisi == 3 ? 5 : 10,
-),
+              padding: kolonSayisi == 3
+                  ? const EdgeInsets.all(5)
+                  : const EdgeInsets.fromLTRB(10, 9, 10, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -204,142 +203,11 @@ class IlanKarti extends ConsumerWidget {
   }
 }
 
-// ── Liste Kartı ───────────────────────────────────────────────────────────────
-
-class IlanListeKarti extends ConsumerWidget {
-  final IlanModel ilan;
-  const IlanListeKarti({super.key, required this.ilan});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final resimler      = ilan.tumResimler;
-    final uid           = ref.watch(currentUserProvider)?.uid;
-    final gosterFavori  = uid != null && uid != ilan.kullaniciId;
-    final favoriliIdler = ref.watch(favoriliIlanIdlerProvider);
-    final favorideMi    = gosterFavori && favoriliIdler.contains(ilan.id);
-
-    return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        CupertinoPageRoute(
-          builder: (_) => IlanDetayScreen(ilanId: ilan.id, ilan: ilan),
-        ),
-      ),
-      child: Container(
-        color: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: SizedBox(
-                width: 72, height: 72,
-                child: resimler.isNotEmpty
-                    ? CachedNetworkImage(
-                        cacheManager: AppCacheManager.instance,
-                        imageUrl: resimler.first,
-                        fit: BoxFit.cover,
-                        fadeInDuration: Duration.zero,
-                        fadeOutDuration: Duration.zero,
-                        memCacheWidth: 200,
-                        errorWidget: (_, _, _) => Container(
-                          color: AppColors.surface,
-                          child: const Center(
-                            child: Icon(Icons.image_outlined,
-                                color: AppColors.textHint, size: 24),
-                          ),
-                        ),
-                      )
-                    : Container(
-                        color: AppColors.surface,
-                        child: const Center(
-                          child: Icon(Icons.image_outlined,
-                              color: AppColors.textHint, size: 24),
-                        ),
-                      ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
-                    style: GoogleFonts.dmSans(
-                      fontSize: AppLayout.fs(context, 14),
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 3),
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on_outlined,
-                          size: 11, color: AppColors.textSecondary),
-                      const SizedBox(width: 3),
-                      Expanded(
-                        child: Text(
-                          '${ilan.nereden} → ${ilan.nereye}',
-                          style: GoogleFonts.dmSans(
-                              fontSize: AppLayout.fs(context, 11),
-                              color: AppColors.textSecondary),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (ilan.notlar.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      ilan.notlar,
-                      style: GoogleFonts.dmSans(
-                          fontSize: AppLayout.fs(context, 11),
-                          color: AppColors.textHint),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            if (gosterFavori)
-              GestureDetector(
-                onTap: () async {
-                  if (favorideMi) {
-                    await ref.read(ilanRepositoryProvider)
-                        .favoridanCikar(kullaniciId: uid, ilanId: ilan.id);
-                  } else {
-                    await ref.read(ilanRepositoryProvider)
-                        .favoriyeEkle(kullaniciId: uid, ilan: ilan);
-                  }
-                },
-                child: Icon(
-                  favorideMi ? Icons.favorite : Icons.favorite_border,
-                  color: favorideMi ? AppColors.red : AppColors.textHint,
-                  size: 20,
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 // ── Shimmer Grid ──────────────────────────────────────────────────────────────
 
 class ShimmerGrid extends StatelessWidget {
   final int kolonSayisi;
   const ShimmerGrid({super.key, this.kolonSayisi = 2});
-
-  static const _yukseklikler = [120.0, 150.0, 105.0, 135.0, 165.0, 112.0];
 
   @override
   Widget build(BuildContext context) {
@@ -355,7 +223,7 @@ class ShimmerGrid extends StatelessWidget {
         physics: const NeverScrollableScrollPhysics(),
         itemCount: 6,
         itemBuilder: (context, index) {
-          final h = _yukseklikler[index % _yukseklikler.length];
+          final h = kResimYukseklikleri[index % kResimYukseklikleri.length];
           return Container(
             decoration: BoxDecoration(
               color: Colors.white,

@@ -534,7 +534,7 @@ class _AdimUrunIcerik extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _FormEtiket('Ürün adı *'),
+        _formEtiket('Ürün adı *'),
         const SizedBox(height: 8),
         TextField(
           controller: urunCtrl,
@@ -543,7 +543,7 @@ class _AdimUrunIcerik extends StatelessWidget {
           decoration: _inputDeko('Örn: iPhone 15 Pro, Nike Air Max...'),
         ),
         const SizedBox(height: 20),
-        _FormEtiket('Kategori *'),
+        _formEtiket('Kategori *'),
         const SizedBox(height: 8),
         GestureDetector(
           onTap: onKategoriSec,
@@ -594,7 +594,7 @@ class _AdimGuzergahIcerik extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _FormEtiket('Nereden *'),
+        _formEtiket('Nereden *'),
         const SizedBox(height: 8),
         if (!neredenFarketmez)
           _AutocompleteAlan(
@@ -632,7 +632,7 @@ class _AdimGuzergahIcerik extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 20),
-        _FormEtiket('Nereye *'),
+        _formEtiket('Nereye *'),
         const SizedBox(height: 8),
         _AutocompleteAlan(
           controller: nereyeCtrl,
@@ -656,7 +656,7 @@ class _AdimTarihIcerik extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _FormEtiket('Seyahat tarihi'),
+        _formEtiket('Seyahat tarihi'),
         const SizedBox(height: 8),
         GestureDetector(
           onTap: onTarihSec,
@@ -720,7 +720,7 @@ class _AdimDetayIcerik extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _FormEtiket('Notlar'),
+        _formEtiket('Notlar'),
         const SizedBox(height: 8),
         TextField(
           controller: notlarCtrl,
@@ -732,7 +732,7 @@ class _AdimDetayIcerik extends StatelessWidget {
         const SizedBox(height: 20),
         Row(
           children: [
-            _FormEtiket('Fotoğraflar'),
+            _formEtiket('Fotoğraflar'),
             const Spacer(),
             Text('$toplam / ${Pagination.maxResimSayisi}',
                 style: GoogleFonts.dmSans(
@@ -875,7 +875,7 @@ class _ResimKutu extends StatelessWidget {
 
 // ── Yardımcı ─────────────────────────────────────────────────────────────────
 
-Widget _FormEtiket(String label) => Text(label,
+Widget _formEtiket(String label) => Text(label,
     style: GoogleFonts.dmSans(
         fontSize: 13, fontWeight: FontWeight.w600,
         color: AppColors.textPrimary));

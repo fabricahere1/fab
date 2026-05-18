@@ -14,9 +14,6 @@ class IlanListeState {
   final bool dahaFazlaVar;
   final DateTime? sonTarih;
   final String siralama;
-  final String? filtreKategori;
-  final String filtreNereye;
-  final String filtreArama;
   final List<String> engellenenler;
 
   const IlanListeState({
@@ -25,9 +22,6 @@ class IlanListeState {
     this.dahaFazlaVar = true,
     this.sonTarih,
     this.siralama = 'tarih',
-    this.filtreKategori,
-    this.filtreNereye = '',
-    this.filtreArama = '',
     this.engellenenler = const [],
   });
 
@@ -37,10 +31,6 @@ class IlanListeState {
     bool? dahaFazlaVar,
     DateTime? sonTarih,
     String? siralama,
-    String? filtreKategori,
-    bool clearFiltreKategori = false,
-    String? filtreNereye,
-    String? filtreArama,
     List<String>? engellenenler,
   }) =>
       IlanListeState(
@@ -49,37 +39,12 @@ class IlanListeState {
         dahaFazlaVar: dahaFazlaVar ?? this.dahaFazlaVar,
         sonTarih: sonTarih ?? this.sonTarih,
         siralama: siralama ?? this.siralama,
-        filtreKategori: clearFiltreKategori
-            ? null
-            : (filtreKategori ?? this.filtreKategori),
-        filtreNereye: filtreNereye ?? this.filtreNereye,
-        filtreArama: filtreArama ?? this.filtreArama,
         engellenenler: engellenenler ?? this.engellenenler,
       );
 
   List<IlanModel> get filtrelenmis {
-    var liste = ilanlar;
-    if (engellenenler.isNotEmpty) {
-      liste = liste.where((i) => !engellenenler.contains(i.kullaniciId)).toList();
-    }
-    if (filtreKategori != null) {
-      liste = liste.where((i) => i.kategori == filtreKategori).toList();
-    }
-    if (filtreNereye.isNotEmpty) {
-      final q = filtreNereye.toLowerCase();
-      liste = liste.where((i) => i.nereye.toLowerCase().contains(q)).toList();
-    }
-    if (filtreArama.isNotEmpty) {
-      final q = filtreArama.toLowerCase();
-      liste = liste.where((i) =>
-        i.urun.toLowerCase().contains(q) ||
-        i.nereden.toLowerCase().contains(q) ||
-        i.nereye.toLowerCase().contains(q) ||
-        i.notlar.toLowerCase().contains(q) ||
-        i.kullaniciAd.toLowerCase().contains(q)
-      ).toList();
-    }
-    return liste;
+    if (engellenenler.isEmpty) return ilanlar;
+    return ilanlar.where((i) => !engellenenler.contains(i.kullaniciId)).toList();
   }
 }
 
@@ -150,19 +115,6 @@ class IstekIlanlar extends _$IstekIlanlar {
     }
   }
 
-  void filtreKategoriGuncelle(String? kategori) {
-    state = state.copyWith(
-      filtreKategori: kategori,
-      clearFiltreKategori: kategori == null,
-    );
-  }
-
-  void filtreNereyeGuncelle(String nereye) =>
-      state = state.copyWith(filtreNereye: nereye);
-
-  void filtreAramaGuncelle(String arama) =>
-      state = state.copyWith(filtreArama: arama);
-
   void ilanFavoriSayisiGuncelle(String ilanId, int delta) {
     state = state.copyWith(
       ilanlar: state.ilanlar.map((i) {
@@ -173,10 +125,6 @@ class IstekIlanlar extends _$IstekIlanlar {
         return i;
       }).toList(),
     );
-  }
-
-  void filtreleriTemizle() {
-    state = state.copyWith(filtreNereye: '', clearFiltreKategori: true);
   }
 
   void engellenenlerGuncelle(List<String> engellenenler) {
@@ -259,12 +207,6 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
     state = IlanListeState(siralama: yeniSiralama);
     await _ilkYukle();
   }
-
-  void filtreNereyeGuncelle(String nereye) =>
-      state = state.copyWith(filtreNereye: nereye);
-
-  void filtreAramaGuncelle(String arama) =>
-      state = state.copyWith(filtreArama: arama);
 
   void ilanFavoriSayisiGuncelle(String ilanId, int delta) {
     state = state.copyWith(

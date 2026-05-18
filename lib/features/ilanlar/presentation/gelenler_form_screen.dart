@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,6 +9,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart';
 import 'ilan_form_screen.dart' show KategoriSecimSheet;
+import '../../../shared/widgets/autocomplete_alan.dart';
 
 class GelenlerFormScreen extends ConsumerStatefulWidget {
   const GelenlerFormScreen({super.key});
@@ -334,7 +335,7 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
                   children: [
                     _FormEtiket('Nereden *'),
                     const SizedBox(height: 8),
-                    _AutocompleteAlan(
+                    AutocompleteAlan(
                       controller: _neredenCtrl,
                       hint: 'Ülke veya şehir ara...',
                       icon: Icons.flight_takeoff_outlined,
@@ -367,7 +368,7 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
                     const SizedBox(height: 16),
                     _FormEtiket('Nereye *'),
                     const SizedBox(height: 8),
-                    _AutocompleteAlan(
+                    AutocompleteAlan(
                       controller: _nereyeCtrl,
                       hint: 'Ülke veya şehir ara...',
                       icon: Icons.flight_land_outlined,
@@ -776,137 +777,5 @@ class _FormEtiket extends StatelessWidget {
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: AppColors.textSecondary));
-  }
-}
-
-class _AutocompleteAlan extends StatefulWidget {
-  final TextEditingController controller;
-  final String hint;
-  final IconData icon;
-  final List<String> secenekler;
-
-  const _AutocompleteAlan({
-    required this.controller,
-    required this.hint,
-    required this.icon,
-    required this.secenekler,
-  });
-
-  @override
-  State<_AutocompleteAlan> createState() => _AutocompleteAlanState();
-}
-
-class _AutocompleteAlanState extends State<_AutocompleteAlan> {
-  List<String> _filtreli = [];
-  bool _acik = false;
-
-  void _filtrele(String q) {
-    if (q.isEmpty) {
-      setState(() => _acik = false);
-      return;
-    }
-    final ql = q.toLowerCase();
-    final baslayan = widget.secenekler
-        .where((s) => s.toLowerCase().startsWith(ql))
-        .toList();
-    final icerenler = widget.secenekler
-        .where((s) =>
-            !s.toLowerCase().startsWith(ql) &&
-            s.toLowerCase().contains(ql))
-        .toList();
-    setState(() {
-      _acik    = true;
-      _filtreli = [...baslayan, ...icerenler].take(8).toList();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        TextField(
-          controller: widget.controller,
-          onChanged: _filtrele,
-          style: GoogleFonts.dmSans(fontSize: 14),
-          decoration: InputDecoration(
-            hintText: widget.hint,
-            hintStyle: GoogleFonts.dmSans(
-                color: AppColors.textHint, fontSize: 14),
-            prefixIcon: Icon(widget.icon,
-                color: AppColors.textSecondary, size: 20),
-            suffixIcon: widget.controller.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.close,
-                        size: 16, color: AppColors.textSecondary),
-                    onPressed: () {
-                      widget.controller.clear();
-                      setState(() => _acik = false);
-                    },
-                  )
-                : null,
-            filled: true,
-            fillColor: AppColors.surface,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AppColors.divider),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AppColors.divider),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(
-                  color: AppColors.primary, width: 1.5),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12, vertical: 14),
-          ),
-        ),
-        if (_acik && _filtreli.isNotEmpty)
-          Container(
-            margin: const EdgeInsets.only(top: 4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.divider),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              children: _filtreli.map((s) {
-                return InkWell(
-                  borderRadius: BorderRadius.circular(10),
-                  onTap: () {
-                    widget.controller.text = s;
-                    setState(() => _acik = false);
-                    FocusScope.of(context).unfocus();
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.location_on_outlined,
-                            size: 16, color: AppColors.red),
-                        const SizedBox(width: 10),
-                        Text(s,
-                            style: GoogleFonts.dmSans(
-                                fontSize: 14,
-                                color: AppColors.textPrimary)),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-      ],
-    );
   }
 }

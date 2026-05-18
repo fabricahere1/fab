@@ -49,6 +49,12 @@ class MesajRepository {
     return await ref.getDownloadURL();
   }
 
+  Future<Map<String, dynamic>?> sohbetGetir(String sohbetId) async {
+    final snap = await _sohbetler.doc(sohbetId).get();
+    if (!snap.exists) return null;
+    return snap.data() as Map<String, dynamic>;
+  }
+
   Future<void> mesajGonder({
     required String sohbetId,
     required String gondereId,
@@ -181,7 +187,6 @@ class MesajRepository {
       await _mesajlar(sohbetId).doc(mesajId).delete();
 
       // Silinen mesaj son mesajsa güncelle — metin yerine sonMesajId ile kontrol
-      final sonGondereId = sohbetData?['sonGondereId'] as String?;
       final sonMesaj = sohbetData?['sonMesaj'] as String?;
       if (sohbetSnap.exists && sonMesaj == metin) {
         final onceki = await _mesajlar(sohbetId)

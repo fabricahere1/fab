@@ -720,7 +720,7 @@ class _IslemDurumuTetikleyiciState
         builder: (_, child) => Transform(
           alignment: Alignment.centerRight,
           transform: Matrix4.identity()
-            ..scale(_scaleX.value, _scaleY.value, 1.0),
+            ..scaleByDouble(_scaleX.value, _scaleY.value, 1.0, 1.0),
           child: child,
         ),
         child: Container(

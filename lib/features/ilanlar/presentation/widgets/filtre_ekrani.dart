@@ -381,9 +381,9 @@ class FiltreBosBekran extends StatelessWidget {
   }
 }
 
-class BosEkran extends StatelessWidget {
+class IlanBosEkran extends StatelessWidget {
   final VoidCallback onYenile;
-  const BosEkran({super.key, required this.onYenile});
+  const IlanBosEkran({super.key, required this.onYenile});
 
   @override
   Widget build(BuildContext context) {

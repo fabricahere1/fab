@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,6 +7,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../mesajlar/presentation/sohbet_screen.dart';
 import '../../degerlendirme/presentation/degerlendirme_screen.dart';
 import '../../degerlendirme/data/degerlendirme_repository.dart';
+import '../../mesajlar/data/mesaj_repository.dart';
 import '../../../shared/constants/app_colors.dart';
 
 class BildirimlerScreen extends ConsumerStatefulWidget {
@@ -150,13 +150,8 @@ class _BildirimSatiri extends ConsumerWidget {
 
       if (karsiId.isEmpty) return;
 
-      final sohbetDoc = await FirebaseFirestore.instance
-          .collection('sohbetler')
-          .doc(sohbetId)
-          .get();
-      if (!sohbetDoc.exists) return;
-
-      final d = sohbetDoc.data() as Map<String, dynamic>;
+      final d = await ref.read(mesajRepositoryProvider).sohbetGetir(sohbetId);
+      if (d == null) return;
       final ilanId     = d['ilanId']     as String? ?? '';
       final ilanBaslik = d['ilanBaslik'] as String? ?? '';
       final ilanTip    = d['ilanTip']    as String? ?? 'istek';

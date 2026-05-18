@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -6,6 +6,7 @@ import '../../profil/providers/profil_provider.dart';
 import '../../profil/data/kullanici_repository.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart' show kDunyaUlkeleri, kTurkiyeSehirleri;
+import '../../../shared/widgets/autocomplete_alan.dart';
  
 class ProfilDuzenleScreen extends ConsumerStatefulWidget {
   const ProfilDuzenleScreen({super.key});
@@ -103,19 +104,19 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
  
   @override
   Widget build(BuildContext context) {
-    final benimProfilAsync = ref.watch(benimKullaniciProfilProvider);
- 
-    // Profil yüklenince alanları doldur
-    benimProfilAsync.whenData((profil) {
-      if (profil != null && !_veriYuklendi) {
-        _adSoyadCtrl.text = profil.adSoyad;
-        _telefonCtrl.text = profil.telefon ?? '';
-        _hakkindaCtrl.text = profil.hakkinda;
+    // initState'te provider henüz yüklenmediyse, ilk data gelince doldur
+    ref.listen(benimKullaniciProfilProvider, (_, next) {
+      if (_veriYuklendi) return;
+      next.whenData((profil) {
+        if (profil == null) return;
+        _adSoyadCtrl.text      = profil.adSoyad;
+        _telefonCtrl.text      = profil.telefon ?? '';
+        _hakkindaCtrl.text     = profil.hakkinda;
         _yasadigiUlkeCtrl.text = profil.yasadigiUlke;
         _bulunduguSehirCtrl.text = profil.bulunduguSehir;
         _telefonGizli = profil.telefonGizli;
-        _veriYuklendi = true;
-      }
+        setState(() => _veriYuklendi = true);
+      });
     });
  
     return Scaffold(
@@ -255,7 +256,7 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
                   children: [
                     _Etiket('Yaşadığım Ülke'),
                     const SizedBox(height: 8),
-                    _AutocompleteAlan(
+                    AutocompleteAlan(
                       controller: _yasadigiUlkeCtrl,
                       hint: 'Ülke ara...',
                       icon: Icons.public_outlined,
@@ -264,7 +265,7 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
                     const SizedBox(height: 16),
                     _Etiket('Türkiye\'deki Şehrim'),
                     const SizedBox(height: 8),
-                    _AutocompleteAlan(
+                    AutocompleteAlan(
                       controller: _bulunduguSehirCtrl,
                       hint: 'Şehir ara...',
                       icon: Icons.location_on_outlined,
@@ -398,138 +399,6 @@ class _Alan extends StatelessWidget {
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       ),
-    );
-  }
-}
- 
-class _AutocompleteAlan extends StatefulWidget {
-  final TextEditingController controller;
-  final String hint;
-  final IconData icon;
-  final List<String> secenekler;
- 
-  const _AutocompleteAlan({
-    required this.controller,
-    required this.hint,
-    required this.icon,
-    required this.secenekler,
-  });
- 
-  @override
-  State<_AutocompleteAlan> createState() => _AutocompleteAlanState();
-}
- 
-class _AutocompleteAlanState extends State<_AutocompleteAlan> {
-  List<String> _filtreli = [];
-  bool _acik = false;
- 
-  void _filtrele(String q) {
-    if (q.isEmpty) {
-      setState(() => _acik = false);
-      return;
-    }
-    final ql = q.toLowerCase();
-    final baslayan = widget.secenekler
-        .where((s) => s.toLowerCase().startsWith(ql))
-        .toList();
-    final icerenler = widget.secenekler
-        .where((s) =>
-            !s.toLowerCase().startsWith(ql) &&
-            s.toLowerCase().contains(ql))
-        .toList();
-    setState(() {
-      _acik = true;
-      _filtreli = [...baslayan, ...icerenler].take(8).toList();
-    });
-  }
- 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        TextField(
-          controller: widget.controller,
-          onChanged: _filtrele,
-          style: GoogleFonts.dmSans(fontSize: 14),
-          decoration: InputDecoration(
-            hintText: widget.hint,
-            hintStyle: GoogleFonts.dmSans(
-                color: AppColors.textHint, fontSize: 14),
-            prefixIcon: Icon(widget.icon,
-                color: AppColors.textSecondary, size: 20),
-            suffixIcon: widget.controller.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.close,
-                        size: 16, color: AppColors.textSecondary),
-                    onPressed: () {
-                      widget.controller.clear();
-                      setState(() => _acik = false);
-                    },
-                  )
-                : null,
-            filled: true,
-            fillColor: AppColors.surface,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.divider),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.divider),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(
-                  color: AppColors.primary, width: 1.5),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12, vertical: 14),
-          ),
-        ),
-        if (_acik && _filtreli.isNotEmpty)
-          Container(
-            margin: const EdgeInsets.only(top: 4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.divider),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              children: _filtreli.map((s) {
-                return InkWell(
-                  onTap: () {
-                    widget.controller.text = s;
-                    setState(() => _acik = false);
-                    FocusScope.of(context).unfocus();
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.location_on_outlined,
-                            size: 16,
-                            color: AppColors.textSecondary),
-                        const SizedBox(width: 10),
-                        Text(s,
-                            style: GoogleFonts.dmSans(
-                                fontSize: 14,
-                                color: AppColors.textPrimary)),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-      ],
     );
   }
 }
