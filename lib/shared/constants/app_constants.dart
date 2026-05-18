@@ -744,11 +744,17 @@ String kategoriYoluMetni(List<String> yol) {
 
 /// Verilen key'in tüm alt keylerini döndürür (filtreleme için)
 Set<String> tumAltKeyler(String key, [List<KategoriNode>? liste]) {
-  final node = kategoriNodeBul(key, liste ?? kKategoriAgaci);
-  if (node == null) return {key};
-  final result = <String>{key};
-  for (final alt in node.altlar) {
-    result.addAll(tumAltKeyler(alt.key));
+  final result = <String>{};
+  final kuyruk = <String>[key];
+  while (kuyruk.isNotEmpty) {
+    final k = kuyruk.removeLast();
+    result.add(k);
+    final node = kategoriNodeBul(k);
+    if (node != null) {
+      for (final alt in node.altlar) {
+        kuyruk.add(alt.key);
+      }
+    }
   }
   return result;
 }
@@ -775,9 +781,13 @@ final Map<String, String> kKategoriler = () {
   final map = <String, String>{};
   void ekle(KategoriNode node) {
     map[node.key] = node.emoji.isNotEmpty ? '${node.emoji} ${node.ad}' : node.ad;
-    for (final alt in node.altlar) ekle(alt);
+    for (final alt in node.altlar) {
+      ekle(alt);
+    }
   }
-  for (final node in kKategoriAgaci) ekle(node);
+  for (final node in kKategoriAgaci) {
+    ekle(node);
+  }
   return map;
 }();
 

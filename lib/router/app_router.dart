@@ -9,6 +9,7 @@ import '../features/auth/presentation/profil_tamamla_screen.dart';
 import '../features/home/presentation/home_screen.dart';
 import '../features/ilanlar/domain/ilan_model.dart';
 import '../features/ilanlar/presentation/ilan_detay_screen.dart';
+import '../features/ilanlar/presentation/gelenler_screen.dart';
 import '../features/auth/providers/auth_provider.dart';
 import '../features/profil/providers/profil_provider.dart';
 
@@ -24,8 +25,13 @@ abstract class AppRoutes {
   static const profilTamamla = '/profil-tamamla';
   static const home          = '/home';
   static const ilanDetay     = '/ilan/:ilanId';
+  static const gelenler      = '/gelenler';
 
   static String ilanDetayPath(String ilanId) => '/ilan/$ilanId';
+  static String gelenlerPath({List<String> kategoriYolu = const []}) {
+    if (kategoriYolu.isEmpty) return gelenler;
+    return '$gelenler?kategori=${kategoriYolu.join(',')}';
+  }
 }
 
 class _AppStateNotifier extends ChangeNotifier {
@@ -111,10 +117,18 @@ GoRouter router(Ref ref) {
         path: AppRoutes.ilanDetay,
         builder: (_, state) {
           final ilanId = state.pathParameters['ilanId']!;
-          // extra varsa (normal navigasyon) direkt göster — loading yok
-          // extra yoksa (deep link / FCM) Firestore'dan çek
           final ilan = state.extra as IlanModel?;
           return IlanDetayScreen(ilanId: ilanId, ilan: ilan);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.gelenler,
+        builder: (_, state) {
+          final kategoriParam = state.uri.queryParameters['kategori'] ?? '';
+          final kategoriYolu = kategoriParam.isNotEmpty
+              ? kategoriParam.split(',')
+              : <String>[];
+          return GelenlerDetayScreen(kategoriYolu: kategoriYolu);
         },
       ),
     ],

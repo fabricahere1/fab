@@ -56,6 +56,14 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.listen<List<String>>(breadcrumbKategoriFiltresiProvider, (prev, next) {
+        if (next.isNotEmpty) {
+          setState(() => _seciliKategoriYolu = List<String>.from(next));
+          ref.read(breadcrumbKategoriFiltresiProvider.notifier).temizle();
+        }
+      });
+    });
   }
 
   void _onScroll() {

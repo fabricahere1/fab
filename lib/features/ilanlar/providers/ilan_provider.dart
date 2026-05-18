@@ -380,6 +380,26 @@ Stream<int> ilanFavoriSayisi(Ref ref, String ilanId) {
   return ref.watch(ilanRepositoryProvider).favoriSayisiStream(ilanId);
 }
 
+// ── Breadcrumb navigasyon provider'ı ─────────────────────────────────────────
+
+@riverpod
+class BreadcrumbIlanTipi extends _$BreadcrumbIlanTipi {
+  @override
+  String build() => '';
+
+  void set(String tip) => state = tip;
+  void temizle() => state = '';
+}
+
+@riverpod
+class BreadcrumbKategoriFiltresi extends _$BreadcrumbKategoriFiltresi {
+  @override
+  List<String> build() => [];
+
+  void set(List<String> yol) => state = yol;
+  void temizle() => state = [];
+}
+
 @riverpod
 Set<String> favoriliIlanIdler(Ref ref) {
   final fav = ref.watch(favorilerProvider);

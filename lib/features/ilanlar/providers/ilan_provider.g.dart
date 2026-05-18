@@ -509,6 +509,113 @@ final class IlanFavoriSayisiFamily extends $Family
   String toString() => r'ilanFavoriSayisiProvider';
 }
 
+@ProviderFor(BreadcrumbIlanTipi)
+final breadcrumbIlanTipiProvider = BreadcrumbIlanTipiProvider._();
+
+final class BreadcrumbIlanTipiProvider
+    extends $NotifierProvider<BreadcrumbIlanTipi, String> {
+  BreadcrumbIlanTipiProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'breadcrumbIlanTipiProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$breadcrumbIlanTipiHash();
+
+  @$internal
+  @override
+  BreadcrumbIlanTipi create() => BreadcrumbIlanTipi();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(String value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<String>(value),
+    );
+  }
+}
+
+String _$breadcrumbIlanTipiHash() =>
+    r'4e290bcb51baabe96a24bc01ecb9794b8a78c9dc';
+
+abstract class _$BreadcrumbIlanTipi extends $Notifier<String> {
+  String build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<String, String>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<String, String>,
+              String,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
+@ProviderFor(BreadcrumbKategoriFiltresi)
+final breadcrumbKategoriFiltresiProvider =
+    BreadcrumbKategoriFiltresiProvider._();
+
+final class BreadcrumbKategoriFiltresiProvider
+    extends $NotifierProvider<BreadcrumbKategoriFiltresi, List<String>> {
+  BreadcrumbKategoriFiltresiProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'breadcrumbKategoriFiltresiProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$breadcrumbKategoriFiltresiHash();
+
+  @$internal
+  @override
+  BreadcrumbKategoriFiltresi create() => BreadcrumbKategoriFiltresi();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(List<String> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<List<String>>(value),
+    );
+  }
+}
+
+String _$breadcrumbKategoriFiltresiHash() =>
+    r'0eb767c7360362aa66bf18e36804691eda81066a';
+
+abstract class _$BreadcrumbKategoriFiltresi extends $Notifier<List<String>> {
+  List<String> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<List<String>, List<String>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<List<String>, List<String>>,
+              List<String>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
 @ProviderFor(favoriliIlanIdler)
 final favoriliIlanIdlerProvider = FavoriliIlanIdlerProvider._();
 

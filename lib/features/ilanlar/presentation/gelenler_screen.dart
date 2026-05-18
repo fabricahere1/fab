@@ -14,6 +14,8 @@ import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart' as app_constants;
 import '../../../core/cache/app_cache_manager.dart';
 import '../../../shared/widgets/bildirim_cani_widget.dart';
+import 'package:go_router/go_router.dart';
+import '../../../router/app_router.dart';
 
 // ── Sıralama ──────────────────────────────────────────────────────────────────
 
@@ -28,7 +30,8 @@ const _kSehirler = [
 
 class GelenlerScreen extends ConsumerStatefulWidget {
   final bool embedded;
-  const GelenlerScreen({super.key, this.embedded = false});
+  final List<String> initialKategoriYolu;
+  const GelenlerScreen({super.key, this.embedded = false, this.initialKategoriYolu = const []});
 
   @override
   ConsumerState<GelenlerScreen> createState() => _GelenlerScreenState();
@@ -49,10 +52,13 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
   @override
   bool get wantKeepAlive => true;
 
-  @override
+@override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    if (widget.initialKategoriYolu.isNotEmpty) {
+      _seciliKategoriYolu = List<String>.from(widget.initialKategoriYolu);
+    }
   }
 
   @override
@@ -1000,14 +1006,8 @@ class _GelenKarti extends StatelessWidget {
     final kategori     = app_constants.kategoriAdi(ilan.kategori);
 
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        CupertinoPageRoute(
-          builder: (_) => IlanDetayScreen(ilanId: ilan.id, ilan: ilan),
-        ),
-      ),
+      onTap: () => context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan),
       child: Container(
-        height: 88,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
@@ -1049,13 +1049,31 @@ class _GelenKarti extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      ilan.urun,
-                      style: GoogleFonts.dmSans(
-                        fontSize: 13, fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                    if (ilan.urun.isNotEmpty)
+                      Text(
+                        ilan.urun,
+                        style: GoogleFonts.dmSans(
+                          fontSize: 13, fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                        maxLines: 1, overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1, overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            kategori.replaceAll(RegExp(r'^[^ ]+ '), ''),
+                            style: GoogleFonts.dmSans(
+                                fontSize: 10, color: AppColors.textSecondary),
+                          ),
+                        ),
+                      ],
                     ),
                     Row(
                       children: [
@@ -1077,19 +1095,6 @@ class _GelenKarti extends StatelessWidget {
                     ),
                     Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            kategori.replaceAll(RegExp(r'^[^ ]+ '), ''),
-                            style: GoogleFonts.dmSans(
-                                fontSize: 10, color: AppColors.textSecondary),
-                          ),
-                        ),
                         const Spacer(),
                         if (gelisYazisi != null)
                           Container(
@@ -1191,6 +1196,101 @@ class _BosEkran extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+// ── Gelenler Detay Ekranı — breadcrumb navigasyonu için ──────────────────────
+// Doğrudan route ile açılır: /gelenler?kategori=elektronik,telefon
+
+class GelenlerDetayScreen extends ConsumerStatefulWidget {
+  final List<String> kategoriYolu;
+  const GelenlerDetayScreen({super.key, required this.kategoriYolu});
+
+  @override
+  ConsumerState<GelenlerDetayScreen> createState() => _GelenlerDetayScreenState();
+}
+
+class _GelenlerDetayScreenState extends ConsumerState<GelenlerDetayScreen> {
+  final _scrollController = ScrollController();
+  List<String> _seciliKategoriYolu = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _seciliKategoriYolu = List<String>.from(widget.kategoriYolu);
+  }
+
+  List<IlanModel> _filtrele(List<IlanModel> liste) {
+    if (_seciliKategoriYolu.isEmpty) return liste;
+    final sonKey = _seciliKategoriYolu.last;
+    final gecerliKeyler = app_constants.tumAltKeyler(sonKey);
+    return liste.where((i) =>
+        gecerliKeyler.contains(i.kategori) ||
+        i.kategoriYolu.any((k) => gecerliKeyler.contains(k))).toList();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(tasiyiciIlanlarProvider);
+    final ilanlar = _filtrele(state.filtrelenmis)
+      ..sort((a, b) => (b.olusturmaTarihi ?? DateTime(0))
+          .compareTo(a.olusturmaTarihi ?? DateTime(0)));
+
+    final baslik = _seciliKategoriYolu.isNotEmpty
+        ? app_constants.kategoriYoluMetni(_seciliKategoriYolu)
+        : 'Gelenler';
+
+    return Scaffold(
+      backgroundColor: AppColors.surface,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new,
+              size: 18, color: AppColors.textPrimary),
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          baslik,
+          style: GoogleFonts.dmSans(
+              fontSize: 16, fontWeight: FontWeight.w700),
+        ),
+      ),
+      body: state.yukleniyor && ilanlar.isEmpty
+          ? const Center(
+              child: CircularProgressIndicator(
+                  color: AppColors.red, strokeWidth: 2))
+          : ilanlar.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.flight_land_outlined,
+                          size: 64, color: AppColors.divider),
+                      const SizedBox(height: 16),
+                      Text('Bu kategoride ilan yok',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 15,
+                              color: AppColors.textSecondary)),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 80),
+                  itemCount: ilanlar.length,
+                  itemBuilder: (context, index) =>
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _GelenKarti(ilan: ilanlar[index]),
+                      ),
+                ),
     );
   }
 }

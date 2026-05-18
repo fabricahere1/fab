@@ -44,7 +44,7 @@ class FavorilerScreen extends ConsumerWidget {
               loading: () => const Center(
                   child: CircularProgressIndicator(
                       color: AppColors.red, strokeWidth: 2)),
-              error: (_, __) => Center(
+              error: (_, _) => Center(
                 child: Text('Bir hata oluştu.',
                     style: GoogleFonts.dmSans(
                         color: AppColors.textSecondary)),
@@ -205,11 +205,11 @@ class _FavoriKarti extends ConsumerWidget {
                         fit: BoxFit.cover,
                         fadeInDuration: Duration.zero,
                         memCacheWidth: 200,
-                        placeholder: (_, __) => Container(
+                        placeholder: (_, _) => Container(
                           height: _resimYuksekligi(),
                           color: AppColors.surface,
                         ),
-                        errorWidget: (_, __, ___) => Container(
+                        errorWidget: (_, _, _) => Container(
                           height: _resimYuksekligi(),
                           color: AppColors.surface,
                           child: const Center(

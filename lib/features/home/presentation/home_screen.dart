@@ -40,14 +40,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final toplamOkunmamis = ref.watch(okunmamisSayiProvider);
     final bottomPadding   = MediaQuery.of(context).padding.bottom;
 
-    final pages = [
-  const _IsteklerSayfa(),
-  const GelenlerScreen(embedded: true),
-  const MesajlarScreen(),
-  const ProfilScreen(),
-  const KesfetScreen(),
-];
-
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) async {
@@ -73,9 +65,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Scaffold(
         body: Stack(
           children: [
-            _LazyIndexedStack(
+            IndexedStack(
               index: _selectedIndex,
-              children: pages,
+              children: const [
+                _IsteklerSayfa(),
+                GelenlerScreen(embedded: true),
+                MesajlarScreen(),
+                ProfilScreen(),
+                KesfetScreen(),
+              ],
             ),
             if (_fabAcik)
               GestureDetector(

@@ -369,6 +369,7 @@ class _IlanDetayIcerik extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       body: CustomScrollView(
+        primary: false,
         slivers: [
           SliverAppBar(
             pinned: true,
@@ -376,7 +377,7 @@ class _IlanDetayIcerik extends ConsumerWidget {
             foregroundColor: AppColors.textPrimary,
             elevation: 0,
             scrolledUnderElevation: 0,
-            forceMaterialTransparency: false,
+            forceMaterialTransparency: true,
             leading: _CircleIconButton(
               icon: Icons.arrow_back_ios_new,
               onTap: () => context.pop(),
@@ -515,18 +516,9 @@ class _IlanDetayIcerik extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Breadcrumb
+                      // Breadcrumb
                       if (ilan.kategoriYolu.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: Text(
-                            app_constants.kategoriYoluMetni(ilan.kategoriYolu),
-                            style: GoogleFonts.dmSans(
-                              fontSize: AppLayout.fs(context, 11),
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ),
+                        _BreadcrumbWidget(kategoriYolu: ilan.kategoriYolu, ilanTip: ilan.tip),
                       Row(
                         children: [
                           if (kategoriAdiStr.isNotEmpty)
@@ -909,7 +901,7 @@ class _IlanSahibiKarti extends ConsumerWidget {
               height: 56,
               child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
             ),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
             data: (profil) {
               final puan = profil?.ortalamaPuan ?? 0.0;
               final sayi = profil?.degerlendirmeSayisi ?? 0;
@@ -939,8 +931,8 @@ class _IlanSahibiKarti extends ConsumerWidget {
                             ? CachedNetworkImage(
                                 imageUrl: fotoUrl,
                                 fit: BoxFit.cover,
-                                placeholder: (_, __) => Container(color: AppColors.surface),
-                                errorWidget: (_, __, ___) => _AvatarHarf(ad: kullaniciAd),
+                                placeholder: (_, _) => Container(color: AppColors.surface),
+                                errorWidget: (_, _, _) => _AvatarHarf(ad: kullaniciAd),
                               )
                             : _AvatarHarf(ad: kullaniciAd),
                       ),
@@ -1057,8 +1049,8 @@ class _BenzerIlanKarti extends StatelessWidget {
                       imageUrl: resimler.first,
                       width: 130, height: 90, fit: BoxFit.cover,
                       fadeInDuration: Duration.zero, memCacheWidth: 260,
-                      placeholder: (_, __) => Container(height: 90, color: AppColors.divider),
-                      errorWidget: (_, __, ___) => Container(height: 90, color: AppColors.divider,
+                      placeholder: (_, _) => Container(height: 90, color: AppColors.divider),
+                      errorWidget: (_, _, _) => Container(height: 90, color: AppColors.divider,
                           child: const Icon(Icons.image_outlined, color: AppColors.textHint)))
                   : Container(width: 130, height: 90, color: AppColors.divider,
                       child: const Icon(Icons.image_outlined, color: AppColors.textHint)),
@@ -1171,8 +1163,8 @@ class _ResimWidget extends StatelessWidget {
         fadeInDuration: Duration.zero,
         fadeOutDuration: Duration.zero,
         memCacheWidth: MediaQuery.of(context).size.width.toInt(),
-        placeholder: (_, __) => Container(color: const Color(0xFFF5F5F5)),
-        errorWidget: (_, __, ___) => Container(color: const Color(0xFFF5F5F5),
+        placeholder: (_, _) => Container(color: const Color(0xFFF5F5F5)),
+        errorWidget: (_, _, _) => Container(color: const Color(0xFFF5F5F5),
             child: const Icon(Icons.image_outlined, color: AppColors.textHint, size: 48)),
       ),
     );
@@ -1252,14 +1244,62 @@ class _ResimBuyukEkranState extends State<_ResimBuyukEkran> {
                 imageUrl: widget.resimler[i],
                 fit: BoxFit.contain,
                 fadeInDuration: Duration.zero,
-                placeholder: (_, __) => const CircularProgressIndicator(
+                placeholder: (_, _) => const CircularProgressIndicator(
                     color: Colors.white, strokeWidth: 2),
-                errorWidget: (_, __, ___) => const Icon(
+                errorWidget: (_, _, _) => const Icon(
                     Icons.broken_image_outlined, color: Colors.white54, size: 64),
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _BreadcrumbWidget extends StatelessWidget {
+  final List<String> kategoriYolu;
+  final String ilanTip;
+  const _BreadcrumbWidget({required this.kategoriYolu, required this.ilanTip});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          for (int i = 0; i < kategoriYolu.length; i++) ...[
+            InkWell(
+              onTap: () {
+                final yol = kategoriYolu.sublist(0, i + 1);
+                context.push(AppRoutes.gelenlerPath(kategoriYolu: yol));
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+                child: Text(
+                  app_constants.kategoriNodeBul(kategoriYolu[i])?.ad ?? kategoriYolu[i],
+                  style: GoogleFonts.dmSans(
+                    fontSize: 11,
+                    color: const Color(0xFF1976D2),
+                    fontWeight: FontWeight.w500,
+                    decoration: TextDecoration.underline,
+                    decorationColor: const Color(0xFF1976D2),
+                  ),
+                ),
+              ),
+            ),
+            if (i < kategoriYolu.length - 1)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text('›',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    )),
+              ),
+          ],
+        ],
       ),
     );
   }

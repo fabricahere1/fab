@@ -19,6 +19,7 @@ class GelenlerFormScreen extends ConsumerStatefulWidget {
 }
 
 class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
+  final _ilanAdiCtrl = TextEditingController();
   final _neredenCtrl = TextEditingController();
   final _nereyeCtrl  = TextEditingController();
   final _notlarCtrl  = TextEditingController();
@@ -40,6 +41,7 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
 
   @override
   void dispose() {
+    _ilanAdiCtrl.dispose();
     _neredenCtrl.dispose();
     _nereyeCtrl.dispose();
     _notlarCtrl.dispose();
@@ -126,6 +128,7 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
     final ilan = IlanModel(
       id:           '',
       tip:          IlanTip.tasiyici,
+      urun:         _ilanAdiCtrl.text.trim(),
       nereden:      _neredenCtrl.text.trim(),
       nereye:       _nereyeCtrl.text.trim(),
       ucret:        '',
@@ -230,6 +233,94 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
                       ),
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // ── İlan Adı ──────────────────────────────
+              _Bolum(
+                baslik: 'İlan Adı',
+                ikon: Icons.label_outline,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: _ilanAdiCtrl,
+                      maxLength: 60,
+                      style: GoogleFonts.dmSans(fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: 'Örn: Elektronik, Kozmetik, Giyim...',
+                        hintStyle: GoogleFonts.dmSans(
+                            color: AppColors.textHint, fontSize: 14),
+                        prefixIcon: const Icon(Icons.label_outline,
+                            color: AppColors.textSecondary, size: 20),
+                        filled: true,
+                        fillColor: AppColors.surface,
+                        counterText: '',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: AppColors.divider),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: AppColors.divider),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(
+                              color: AppColors.primary, width: 1.5),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 14),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // ── Kategori ─────────────────────────────
+              _Bolum(
+                baslik: 'Kategori',
+                ikon: Icons.category_outlined,
+                child: GestureDetector(
+                  onTap: _kategoriSec,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: _kategoriYolu.isNotEmpty
+                          ? AppColors.red.withValues(alpha: 0.05)
+                          : AppColors.surface,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: _kategoriYolu.isNotEmpty
+                            ? AppColors.red.withValues(alpha: 0.3)
+                            : AppColors.divider,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _kategoriYolu.isNotEmpty
+                                ? _kategoriGorunumAdi
+                                : 'Kategori seç... (opsiyonel)',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 14,
+                              color: _kategoriYolu.isNotEmpty
+                                  ? AppColors.textPrimary
+                                  : AppColors.textHint,
+                            ),
+                          ),
+                        ),
+                        Icon(Icons.chevron_right,
+                            color: _kategoriYolu.isNotEmpty
+                                ? AppColors.red
+                                : AppColors.textSecondary),
+                      ],
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -409,52 +500,6 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
                       );
                     }),
                   ],
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              // ── Kategori ─────────────────────────────
-              _Bolum(
-                baslik: 'Kategori',
-                ikon: Icons.category_outlined,
-                child: GestureDetector(
-                  onTap: _kategoriSec,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: _kategoriYolu.isNotEmpty
-                          ? AppColors.red.withValues(alpha: 0.05)
-                          : AppColors.surface,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: _kategoriYolu.isNotEmpty
-                            ? AppColors.red.withValues(alpha: 0.3)
-                            : AppColors.divider,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            _kategoriYolu.isNotEmpty
-                                ? _kategoriGorunumAdi
-                                : 'Kategori seç... (opsiyonel)',
-                            style: GoogleFonts.dmSans(
-                              fontSize: 14,
-                              color: _kategoriYolu.isNotEmpty
-                                  ? AppColors.textPrimary
-                                  : AppColors.textHint,
-                            ),
-                          ),
-                        ),
-                        Icon(Icons.chevron_right,
-                            color: _kategoriYolu.isNotEmpty
-                                ? AppColors.red
-                                : AppColors.textSecondary),
-                      ],
-                    ),
-                  ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -709,7 +754,7 @@ class _Bolum extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary)),
               ),
-              if (trailing != null) trailing!,
+              ?trailing,
             ],
           ),
           const SizedBox(height: 16),
