@@ -179,33 +179,29 @@ class MesajRepository {
     required String mesajId,
     required String metin,
   }) async {
-    try {
-      final sohbetRef = _sohbetler.doc(sohbetId);
-      final sohbetSnap = await sohbetRef.get();
-      final sohbetData = sohbetSnap.data() as Map<String, dynamic>?;
+    final sohbetRef = _sohbetler.doc(sohbetId);
+    final sohbetSnap = await sohbetRef.get();
+    final sohbetData = sohbetSnap.data() as Map<String, dynamic>?;
 
-      await _mesajlar(sohbetId).doc(mesajId).delete();
+    await _mesajlar(sohbetId).doc(mesajId).delete();
 
-      // Silinen mesaj son mesajsa güncelle — metin yerine sonMesajId ile kontrol
-      final sonMesaj = sohbetData?['sonMesaj'] as String?;
-      if (sohbetSnap.exists && sonMesaj == metin) {
-        final onceki = await _mesajlar(sohbetId)
-            .orderBy('zaman', descending: true)
-            .limit(1)
-            .get();
-        final yeniSonMesaj = onceki.docs.isNotEmpty
-            ? (onceki.docs.first.data() as Map<String, dynamic>)['metin'] ?? ''
-            : '';
-        final yeniGondereId = onceki.docs.isNotEmpty
-            ? (onceki.docs.first.data() as Map<String, dynamic>)['gondereId'] ?? ''
-            : '';
-        await sohbetRef.update({
-          'sonMesaj': yeniSonMesaj,
-          'sonGondereId': yeniGondereId,
-        });
-      }
-    } catch (e) {
-      debugPrint('[MesajRepository] mesajSil hatası: $e');
+    // Silinen mesaj son mesajsa güncelle — metin yerine sonMesajId ile kontrol
+    final sonMesaj = sohbetData?['sonMesaj'] as String?;
+    if (sohbetSnap.exists && sonMesaj == metin) {
+      final onceki = await _mesajlar(sohbetId)
+          .orderBy('zaman', descending: true)
+          .limit(1)
+          .get();
+      final yeniSonMesaj = onceki.docs.isNotEmpty
+          ? (onceki.docs.first.data() as Map<String, dynamic>)['metin'] ?? ''
+          : '';
+      final yeniGondereId = onceki.docs.isNotEmpty
+          ? (onceki.docs.first.data() as Map<String, dynamic>)['gondereId'] ?? ''
+          : '';
+      await sohbetRef.update({
+        'sonMesaj': yeniSonMesaj,
+        'sonGondereId': yeniGondereId,
+      });
     }
   }
 

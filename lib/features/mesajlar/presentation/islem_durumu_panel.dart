@@ -708,9 +708,15 @@ class _IslemDurumuTetikleyiciState
     final durumlari =
         ref.watch(islemDurumuProvider(widget.sohbetId)).value ?? {};
     final adimlar   = IlanTipiAdimlar.forTip(widget.ilanTip);
-    final tamamlanan = adimlar
-        .where((d) => durumlari[d.firestoreKey] == true)
-        .length;
+    final tamamlanan = adimlar.where((d) {
+      if (d.ikiTarafliMi) {
+        final onaylar = durumlari.entries
+            .where((e) => e.key.startsWith('anlasildi_') && e.value == true)
+            .length;
+        return onaylar >= 2;
+      }
+      return durumlari[d.firestoreKey] == true;
+    }).length;
     final toplam = adimlar.length;
 
     return GestureDetector(

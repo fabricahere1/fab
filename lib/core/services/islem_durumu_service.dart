@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'banner_service.dart';
 import '../../features/mesajlar/domain/islem_durumu.dart';
+import '../../shared/constants/app_constants.dart';
 
 /// Sohbet işlem durumlarını dinler, in-app banner gösterir
 /// ve bildirimler collection'a yazar.
@@ -44,7 +45,7 @@ class IslemDurumuService {
     if (user == null) return;
 
     _sohbetlerSub = _firestore
-        .collection('sohbetler')
+        .collection(Collections.sohbetler)
         .where('kullanicilar', arrayContains: user.uid)
         .snapshots()
         .listen((snap) {
@@ -55,7 +56,7 @@ class IslemDurumuService {
         bool ilkSnapshot = true;
 
         final sub = _firestore
-            .collection('sohbetler')
+            .collection(Collections.sohbetler)
             .doc(sohbetId)
             .snapshots()
             .listen((sohbetDoc) {
@@ -91,35 +92,12 @@ class IslemDurumuService {
 
                 if (karsiUid.isNotEmpty) {
                   final ilanBaslik = d['ilanBaslik'] as String? ?? 'İlan';
-
-                  _firestore
-                      .collection('kullanicilar')
-                      .doc(user.uid)
-                      .get()
-                      .then((benimDoc) {
-                    if (!benimDoc.exists) return;
-                    final benimAd =
-                        (benimDoc.data()?['adSoyad'] as String?) ?? 'Karşı taraf';
-                    final icerik = '"$ilanBaslik" ilanı için anlaşma önerdi!';
-
-                    BannerService.instance.goster(
-                      baslik: benimAd,
-                      icerik: icerik,
-                      tip: 'islem',
-                    );
-
-                    _firestore.collection('bildirimler').add({
-                      'kullaniciId': karsiUid,
-                      'tip':         'anlasildi',
-                      'baslik':      benimAd,
-                      'icerik':      icerik,
-                      'okundu':      false,
-                      'tarih':       FieldValue.serverTimestamp(),
-                      'hedefId':     sohbetId,
-                      'gondereId':   user.uid,
-                      'gondereAd':   benimAd,
-                    });
-                  });
+                  _anlasildibildirimiGonder(
+                    benimUid: user.uid,
+                    karsiUid: karsiUid,
+                    ilanBaslik: ilanBaslik,
+                    sohbetId: sohbetId,
+                  );
                 }
               }
               continue;
@@ -140,45 +118,13 @@ class IslemDurumuService {
 
               if (karsiUid.isNotEmpty) {
                 final ilanBaslik = d['ilanBaslik'] as String? ?? 'İlan';
-
-                _firestore
-                    .collection('kullanicilar')
-                    .doc(karsiUid)
-                    .get()
-                    .then((karsiDoc) {
-                  if (!karsiDoc.exists) return;
-                  final karsiAd =
-                      (karsiDoc.data()?['adSoyad'] as String?) ??
-                          'Karşı taraf';
-
-                  final icerik =
-                      '"$ilanBaslik" ilanınızı ${durum.gecmisDonusu}';
-
-                  // Banner göster
-                  BannerService.instance.goster(
-                    baslik: karsiAd,
-                    icerik: icerik,
-                    tip: 'islem',
-                  );
-
-                  // Bildirim collection'a yaz (iletisimBasladi hariç)
-                  if (_bildirimYazilacakDurumlar.contains(durum)) {
-                    final bildirimTip = durum == IslemDurumu.anlasildi
-                        ? 'anlasildi'
-                        : 'sistem';
-                    _firestore.collection('bildirimler').add({
-                      'kullaniciId': user.uid,
-                      'tip':         bildirimTip,
-                      'baslik':      karsiAd,
-                      'icerik':      icerik,
-                      'okundu':      false,
-                      'tarih':       FieldValue.serverTimestamp(),
-                      'hedefId':     sohbetId,
-                      'gondereId':   karsiUid,
-                      'gondereAd':   karsiAd,
-                    });
-                  }
-                });
+                _durumBildirimiGonder(
+                  benimUid: user.uid,
+                  karsiUid: karsiUid,
+                  ilanBaslik: ilanBaslik,
+                  sohbetId: sohbetId,
+                  durum: durum,
+                );
               }
             }
           }
@@ -190,6 +136,71 @@ class IslemDurumuService {
         _islemListeners[sohbetId] = sub;
       }
     });
+  }
+
+  Future<void> _anlasildibildirimiGonder({
+    required String benimUid,
+    required String karsiUid,
+    required String ilanBaslik,
+    required String sohbetId,
+  }) async {
+    try {
+      final benimDoc = await _firestore
+          .collection(Collections.kullanicilar)
+          .doc(benimUid)
+          .get();
+      if (!benimDoc.exists) return;
+      final benimAd = (benimDoc.data()?['adSoyad'] as String?) ?? 'Karşı taraf';
+      final icerik = '"$ilanBaslik" ilanı için anlaşma önerdi!';
+
+      BannerService.instance.goster(baslik: benimAd, icerik: icerik, tip: 'islem');
+
+      await _firestore.collection(Collections.bildirimler).add({
+        'kullaniciId': karsiUid,
+        'tip':         'anlasildi',
+        'baslik':      benimAd,
+        'icerik':      icerik,
+        'okundu':      false,
+        'tarih':       FieldValue.serverTimestamp(),
+        'hedefId':     sohbetId,
+        'gondereId':   benimUid,
+        'gondereAd':   benimAd,
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _durumBildirimiGonder({
+    required String benimUid,
+    required String karsiUid,
+    required String ilanBaslik,
+    required String sohbetId,
+    required IslemDurumu durum,
+  }) async {
+    try {
+      final karsiDoc = await _firestore
+          .collection(Collections.kullanicilar)
+          .doc(karsiUid)
+          .get();
+      if (!karsiDoc.exists) return;
+      final karsiAd = (karsiDoc.data()?['adSoyad'] as String?) ?? 'Karşı taraf';
+      final icerik = '"$ilanBaslik" ilanınızı ${durum.gecmisDonusu}';
+
+      BannerService.instance.goster(baslik: karsiAd, icerik: icerik, tip: 'islem');
+
+      if (_bildirimYazilacakDurumlar.contains(durum)) {
+        await _firestore.collection(Collections.bildirimler).add({
+          'kullaniciId': benimUid,
+          'tip':         durum == IslemDurumu.anlasildi ? 'anlasildi' : 'sistem',
+          'baslik':      karsiAd,
+          'icerik':      icerik,
+          'okundu':      false,
+          'tarih':       FieldValue.serverTimestamp(),
+          'hedefId':     sohbetId,
+          'gondereId':   karsiUid,
+          'gondereAd':   karsiAd,
+        });
+      }
+    } catch (_) {}
   }
 
   void dispose() {

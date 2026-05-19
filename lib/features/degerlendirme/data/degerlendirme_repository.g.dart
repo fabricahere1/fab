@@ -55,4 +55,4 @@ final class DegerlendirmeRepositoryProvider
 }
 
 String _$degerlendirmeRepositoryHash() =>
-    r'46dc4cc0b30244997ede9c6f2c96a02bdc180528';
+    r'a3a82409b3898dd185249087991ebce64a56aaa5';

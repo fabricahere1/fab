@@ -42,7 +42,11 @@ class BannerService {
 
     overlay.insert(_mevcutBanner!);
 
-    Future.delayed(const Duration(seconds: 4), _kapat);
+    // Capture the specific entry — delayed callback must not close a newer banner
+    final entry = _mevcutBanner!;
+    Future.delayed(const Duration(seconds: 4), () {
+      if (_mevcutBanner == entry) _kapat();
+    });
   }
 
   void _kapat() {

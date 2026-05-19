@@ -24,6 +24,20 @@ class _AutocompleteAlanState extends State<AutocompleteAlan> {
   List<String> _filtreli = [];
   bool _acik = false;
 
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_rebuild);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_rebuild);
+    super.dispose();
+  }
+
+  void _rebuild() => setState(() {});
+
   void _filtrele(String q) {
     if (q.isEmpty) {
       setState(() => _acik = false);
@@ -114,7 +128,7 @@ class _AutocompleteAlanState extends State<AutocompleteAlan> {
                         horizontal: 16, vertical: 12),
                     child: Row(
                       children: [
-                        const Icon(Icons.location_on_outlined,
+                        Icon(widget.icon,
                             size: 16, color: AppColors.textSecondary),
                         const SizedBox(width: 10),
                         Text(s,

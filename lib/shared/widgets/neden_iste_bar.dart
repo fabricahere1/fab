@@ -56,7 +56,8 @@ class _NedenIsteBarState extends State<NedenIsteBar>
       color: const Color(0xFFC8E6C9),
       height: 28,
       child: LayoutBuilder(builder: (context, constraints) {
-        _contentWidth = _maddeler.length * 120.0 + _maddeler.length * 16.0;
+        // 1 tekrar bloğunun genişliği: ikon(12) + boşluk(4) + metin(≈80) + ayraç(23) + sol margin(16)
+        _contentWidth = _maddeler.length * 135.0;
         return SingleChildScrollView(
           controller: _ctrl,
           scrollDirection: Axis.horizontal,

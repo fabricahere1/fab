@@ -2,16 +2,33 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../../shared/constants/app_constants.dart';
 
 part 'degerlendirme_repository.g.dart';
 
 @riverpod
 DegerlendirmeRepository degerlendirmeRepository(Ref ref) {
-  return DegerlendirmeRepository();
+  return DegerlendirmeRepository(firestore: FirebaseFirestore.instance);
 }
 
 class DegerlendirmeRepository {
-  final _db = FirebaseFirestore.instance;
+  final FirebaseFirestore _db;
+
+  DegerlendirmeRepository({required FirebaseFirestore firestore})
+      : _db = firestore;
+
+  int _tariheGoreSirala(dynamic tA, dynamic tB) {
+    if (tA == null && tB == null) return 0;
+    if (tA == null) return 1;
+    if (tB == null) return -1;
+    try {
+      final dtA = (tA as Timestamp).toDate();
+      final dtB = (tB as Timestamp).toDate();
+      return dtB.compareTo(dtA);
+    } catch (_) {
+      return 0;
+    }
+  }
 
   Future<void> degerlendirmeGonder({
     required String sohbetId,
@@ -22,8 +39,8 @@ class DegerlendirmeRepository {
     String ilanBaslik = '',
   }) async {
     await _db.runTransaction((tx) async {
-      final userRef = _db.collection('kullanicilar').doc(hedefKullaniciId);
-      final degRef  = _db.collection('degerlendirmeler').doc();
+      final userRef = _db.collection(Collections.kullanicilar).doc(hedefKullaniciId);
+      final degRef  = _db.collection(Collections.degerlendirmeler).doc();
       final snap    = await tx.get(userRef);
 
       tx.set(degRef, {
@@ -54,7 +71,7 @@ class DegerlendirmeRepository {
     required String sohbetId,
     required String kullaniciId,
   }) async {
-    await _db.collection('sohbetler').doc(sohbetId).update({
+    await _db.collection(Collections.sohbetler).doc(sohbetId).update({
       'degerlendirmeYapildi_$kullaniciId': true,
     });
   }
@@ -63,7 +80,7 @@ class DegerlendirmeRepository {
     required String sohbetId,
     required String kullaniciId,
   }) async {
-    final snap = await _db.collection('sohbetler').doc(sohbetId).get();
+    final snap = await _db.collection(Collections.sohbetler).doc(sohbetId).get();
     if (!snap.exists) return false;
     final d = snap.data() as Map<String, dynamic>;
     return d['degerlendirmeYapildi_$kullaniciId'] == true;
@@ -74,7 +91,7 @@ class DegerlendirmeRepository {
     required String kullaniciId,
   }) async {
     await _db
-        .collection('kullanicilar')
+        .collection(Collections.kullanicilar)
         .doc(kullaniciId)
         .collection('bekleyenDegerlendirmeler')
         .doc(sohbetId)
@@ -89,27 +106,14 @@ class DegerlendirmeRepository {
   Stream<List<Map<String, dynamic>>> kullaniciDegerlendirmeleriStream(
       String hedefKullaniciId) {
     return _db
-        .collection('degerlendirmeler')
+        .collection(Collections.degerlendirmeler)
         .where('hedefKullaniciId', isEqualTo: hedefKullaniciId)
         .snapshots()
         .map((snap) {
       final liste = snap.docs
           .map((doc) => {'id': doc.id, ...doc.data()})
           .toList();
-      liste.sort((a, b) {
-        final tA = a['tarih'];
-        final tB = b['tarih'];
-        if (tA == null && tB == null) return 0;
-        if (tA == null) return 1;
-        if (tB == null) return -1;
-        try {
-          final dtA = (tA as dynamic).toDate() as DateTime;
-          final dtB = (tB as dynamic).toDate() as DateTime;
-          return dtB.compareTo(dtA);
-        } catch (_) {
-          return 0;
-        }
-      });
+      liste.sort((a, b) => _tariheGoreSirala(a['tarih'], b['tarih']));
       return liste;
     });
   }
@@ -118,7 +122,7 @@ class DegerlendirmeRepository {
   Stream<List<Map<String, dynamic>>> bekleyenDegerlendirmelerStream(
       String kullaniciId) {
     return _db
-        .collection('kullanicilar')
+        .collection(Collections.kullanicilar)
         .doc(kullaniciId)
         .collection('bekleyenDegerlendirmeler')
         .where('tamamlandi', isEqualTo: false)
@@ -127,21 +131,7 @@ class DegerlendirmeRepository {
       final liste = snap.docs
           .map((doc) => {'id': doc.id, ...doc.data()})
           .toList();
-      // Client-side tarihe göre sırala
-      liste.sort((a, b) {
-        final tA = a['tarih'];
-        final tB = b['tarih'];
-        if (tA == null && tB == null) return 0;
-        if (tA == null) return 1;
-        if (tB == null) return -1;
-        try {
-          final dtA = (tA as dynamic).toDate() as DateTime;
-          final dtB = (tB as dynamic).toDate() as DateTime;
-          return dtB.compareTo(dtA);
-        } catch (_) {
-          return 0;
-        }
-      });
+      liste.sort((a, b) => _tariheGoreSirala(a['tarih'], b['tarih']));
       return liste;
     });
   }
@@ -151,7 +141,7 @@ class DegerlendirmeRepository {
     required String kullaniciId,
   }) async {
     await _db
-        .collection('kullanicilar')
+        .collection(Collections.kullanicilar)
         .doc(kullaniciId)
         .collection('bekleyenDegerlendirmeler')
         .doc(sohbetId)

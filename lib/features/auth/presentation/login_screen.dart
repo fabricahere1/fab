@@ -201,15 +201,21 @@ class _GoogleIkon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
       width: 22,
       height: 22,
-      child: Image.network(
-        'https://www.google.com/favicon.ico',
-        errorBuilder: (_, _, _) => const Icon(
-          Icons.g_mobiledata,
-          color: Colors.grey,
-          size: 22,
+      decoration: const BoxDecoration(
+        color: Color(0xFF4285F4),
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: const Text(
+        'G',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          height: 1,
         ),
       ),
     );

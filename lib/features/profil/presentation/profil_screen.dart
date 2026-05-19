@@ -9,7 +9,7 @@ import 'ayarlar_screen.dart';
 import 'profil_duzenle_screen.dart';
 import '../../degerlendirme/presentation/degerlendirmeler_liste_screen.dart';
 import '../../degerlendirme/data/degerlendirme_repository.dart';
-import '../../mesajlar/data/mesaj_repository.dart';
+import '../../degerlendirme/providers/degerlendirme_provider.dart';
 import '../../degerlendirme/presentation/degerlendirme_screen.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/widgets/avatar_widget.dart';
@@ -426,16 +426,6 @@ class _SatirOge extends StatelessWidget {
 
 // ── Bekleyen Değerlendirmeler ─────────────────────────────
 
-final _sohbetDurumuProvider = StreamProvider.autoDispose
-    .family<Map<String, dynamic>, String>((ref, sohbetId) =>
-        ref.read(mesajRepositoryProvider).sohbetDurumuStream(sohbetId));
-
-final _bekleyenDegerlendirmelerProvider =
-    StreamProvider.autoDispose.family<List<Map<String, dynamic>>, String>(
-        (ref, kullaniciId) => ref
-            .read(degerlendirmeRepositoryProvider)
-            .bekleyenDegerlendirmelerStream(kullaniciId));
-
 class _BekleyenDegerlendirmelerScreen extends ConsumerWidget {
   final String kullaniciId;
   const _BekleyenDegerlendirmelerScreen({required this.kullaniciId});
@@ -443,7 +433,7 @@ class _BekleyenDegerlendirmelerScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bekleyenlerAsync =
-        ref.watch(_bekleyenDegerlendirmelerProvider(kullaniciId));
+        ref.watch(bekleyenDegerlendirmelerProvider(kullaniciId));
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -530,7 +520,7 @@ class _BekleyenKarti extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sohbetAsync = ref.watch(_sohbetDurumuProvider(sohbetId));
+    final sohbetAsync = ref.watch(sohbetDurumuProvider(sohbetId));
 
     return sohbetAsync.when(
       loading: () => const SizedBox(height: 72),

@@ -6,6 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 
 import 'banner_service.dart';
+import '../../shared/constants/app_constants.dart';
 
 /// Tüm FCM sorumluluğu bu sınıftadır.
 /// - İzin isteme
@@ -82,7 +83,7 @@ class FcmService {
   Future<void> _tokenKaydet(String uid, String token) async {
     try {
       await _firestore
-          .collection('kullanicilar')
+          .collection(Collections.kullanicilar)
           .doc(uid)
           .set({'fcmToken': token}, SetOptions(merge: true));
       debugPrint('[FCM] Token kaydedildi: $token');
@@ -98,7 +99,7 @@ class FcmService {
     if (uid == null) return;
     try {
       await _firestore
-          .collection('kullanicilar')
+          .collection(Collections.kullanicilar)
           .doc(uid)
           .update({'fcmToken': FieldValue.delete()});
       debugPrint('[FCM] Token silindi');
@@ -120,11 +121,12 @@ class FcmService {
     BannerService.instance.goster(
       baslik: baslik,
       icerik: icerik,
-      tip: tip == 'mesaj'
-          ? 'mesaj'
-          : tip == 'degerlendirme'
-              ? 'degerlendirme'
-              : 'bilgi',
+      tip: switch (tip) {
+        'mesaj'         => 'mesaj',
+        'degerlendirme' => 'degerlendirme',
+        'islem'         => 'islem',
+        _               => 'bilgi',
+      },
       onTap: () => onBildirimAc(message),
     );
   }

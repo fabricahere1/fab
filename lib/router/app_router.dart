@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import 'package:firebase_auth/firebase_auth.dart';
+
 import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
 import '../features/auth/presentation/profil_tamamla_screen.dart';
@@ -36,18 +38,18 @@ abstract class AppRoutes {
 
 class _AppStateNotifier extends ChangeNotifier {
   _AppStateNotifier(this._ref) {
-    _sub = _ref.listen(authStateProvider, (_, _) => notifyListeners());
-    _ref.listen(benimKullaniciProfilProvider, (_, _) {
-      notifyListeners();
-    });
+    _authSub   = _ref.listen(authStateProvider, (_, _) => notifyListeners());
+    _profilSub = _ref.listen(benimKullaniciProfilProvider, (_, _) => notifyListeners());
   }
 
   final Ref _ref;
-  late final ProviderSubscription _sub;
+  late final ProviderSubscription _authSub;
+  late final ProviderSubscription _profilSub;
 
   @override
   void dispose() {
-    _sub.close();
+    _authSub.close();
+    _profilSub.close();
     super.dispose();
   }
 }
@@ -135,18 +137,18 @@ GoRouter router(Ref ref) {
   );
 }
 
-String _hedefBelirle(Ref ref, dynamic user) {
+String _hedefBelirle(Ref ref, User user) {
   final profilAsync = ref.read(benimKullaniciProfilProvider);
   if (profilAsync.isLoading) return AppRoutes.splash;
 
-  final providerData = user.providerData as List;
   final emailKullanicisi =
-      providerData.any((p) => p.providerId == 'password');
+      user.providerData.any((p) => p.providerId == 'password');
   final googleKullanicisi =
-      providerData.any((p) => p.providerId == 'google.com');
+      user.providerData.any((p) => p.providerId == 'google.com');
   final telefonKullanicisi =
-      providerData.any((p) => p.providerId == 'phone');
+      user.providerData.any((p) => p.providerId == 'phone');
 
+  // Sadece email/password kullananlar profil tamamlama adımını atlar
   if (emailKullanicisi && !googleKullanicisi && !telefonKullanicisi) {
     return AppRoutes.home;
   }
