@@ -11,6 +11,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../../../core/cache/app_cache_manager.dart';
+import '../../../shared/utils/app_snackbar.dart';
 
 class IlanFormScreen extends ConsumerStatefulWidget {
   final String tip;
@@ -181,10 +182,7 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
       );
       if (!mounted) return;
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('İlan güncellendi!', style: GoogleFonts.dmSans()),
-        backgroundColor: AppColors.green, behavior: SnackBarBehavior.floating,
-      ));
+      AppSnackBar.basari(context, 'İlan güncellendi!');
       ref.read(istekIlanlarProvider.notifier).yenile();
     } else {
       final ilan = IlanModel(
@@ -206,10 +204,7 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
       if (!mounted) return;
       if (id != null) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('İlan başarıyla yayınlandı!', style: GoogleFonts.dmSans()),
-          backgroundColor: AppColors.green, behavior: SnackBarBehavior.floating,
-        ));
+        AppSnackBar.basari(context, 'İlan başarıyla yayınlandı!');
         ref.read(istekIlanlarProvider.notifier).yenile();
       } else {
         _snack('İlan yayınlanamadı. Tekrar deneyin.');
@@ -217,10 +212,7 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
     }
   }
 
-  void _snack(String m) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-    content: Text(m, style: GoogleFonts.dmSans()),
-    backgroundColor: AppColors.red, behavior: SnackBarBehavior.floating,
-  ));
+  void _snack(String m) => AppSnackBar.hata(context, m);
 
   Future<void> _tarihSec() async {
     final s = await showDatePicker(
@@ -1026,7 +1018,7 @@ class _KategoriSecimSheetState extends State<KategoriSecimSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final nodes     = _mevcutSeviyeNodes();
+    final nodes      = _mevcutSeviyeNodes();
     final breadcrumb = _breadcrumb();
 
     return SizedBox(

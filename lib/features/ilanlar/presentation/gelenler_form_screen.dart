@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,6 +8,7 @@ import '../providers/ilan_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart';
+import '../../../shared/utils/app_snackbar.dart';
 import 'ilan_form_screen.dart' show KategoriSecimSheet;
 import '../../../shared/widgets/autocomplete_alan.dart';
 
@@ -151,29 +152,14 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
 
     if (id != null) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('İlan başarıyla yayınlandı!',
-              style: GoogleFonts.dmSans()),
-          backgroundColor: AppColors.green,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppSnackBar.basari(context, 'İlan başarıyla yayınlandı!');
       ref.read(tasiyiciIlanlarProvider.notifier).yenile();
     } else {
       _snack('İlan yayınlanamadı. Tekrar deneyin.');
     }
   }
 
-  void _snack(String mesaj) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(mesaj, style: GoogleFonts.dmSans()),
-        backgroundColor: AppColors.red,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
+  void _snack(String mesaj) => AppSnackBar.hata(context, mesaj);
 
   @override
   Widget build(BuildContext context) {

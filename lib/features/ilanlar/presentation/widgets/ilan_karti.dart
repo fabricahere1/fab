@@ -81,10 +81,10 @@ class IlanKarti extends ConsumerWidget {
         ),
         clipBehavior: Clip.hardEdge,
         child: Column(
-  crossAxisAlignment: CrossAxisAlignment.start,
-  mainAxisSize: MainAxisSize.min,
-  children: [
-    Stack(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
               children: [
                 SizedBox(
                   height: _resimYuksekligi(context),
@@ -113,31 +113,14 @@ class IlanKarti extends ConsumerWidget {
                           ),
                         ),
                 ),
+                // ── Optimistic favori butonu ──────────────────────────────
                 if (gosterFavori)
                   Positioned(
                     top: 6, right: 6,
-                    child: GestureDetector(
-                      onTap: () async {
-                        if (favorideMi) {
-                          await ref.read(ilanRepositoryProvider)
-                              .favoridanCikar(kullaniciId: uid, ilanId: guncelIlan.id);
-                        } else {
-                          await ref.read(ilanRepositoryProvider)
-                              .favoriyeEkle(kullaniciId: uid, ilan: guncelIlan);
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.45),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          favorideMi ? Icons.favorite : Icons.favorite_border,
-                          color: favorideMi ? AppColors.red : Colors.white,
-                          size: 16,
-                        ),
-                      ),
+                    child: _FavoriButon(
+                      ilan: guncelIlan,
+                      uid: uid,
+                      baslangicDurumu: favorideMi,
                     ),
                   ),
               ],
@@ -197,6 +180,116 @@ class IlanKarti extends ConsumerWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Optimistic Favori Butonu ──────────────────────────────────────────────────
+//
+// Tıklanınca UI'ı ANINDA günceller (optimistic), arkada Firestore'a yazar.
+// Firestore stream gelince zaten doğru değer yansır — kullanıcı farkı görmez.
+
+class _FavoriButon extends ConsumerStatefulWidget {
+  final IlanModel ilan;
+  final String uid;
+  final bool baslangicDurumu;
+
+  const _FavoriButon({
+    required this.ilan,
+    required this.uid,
+    required this.baslangicDurumu,
+  });
+
+  @override
+  ConsumerState<_FavoriButon> createState() => _FavoriButonState();
+}
+
+class _FavoriButonState extends ConsumerState<_FavoriButon>
+    with SingleTickerProviderStateMixin {
+  late bool _localFavori;
+  bool _islem = false; // çift tıklamayı önle
+  late AnimationController _ctrl;
+  late Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _localFavori = widget.baslangicDurumu;
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _scale = Tween<double>(begin: 1.0, end: 1.35).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack),
+    );
+  }
+
+  // Firestore stream'den gelen gerçek durum değişirse senkronize et
+  @override
+  void didUpdateWidget(_FavoriButon old) {
+    super.didUpdateWidget(old);
+    // Sadece islem yokken senkronize et — islem varken kullanıcının
+    // tıkladığı değeri koruyoruz
+    if (!_islem && old.baslangicDurumu != widget.baslangicDurumu) {
+      _localFavori = widget.baslangicDurumu;
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _toglle() async {
+    if (_islem) return;
+    _islem = true;
+
+    // 1. UI'ı anında güncelle
+    setState(() => _localFavori = !_localFavori);
+
+    // 2. Scale animasyonu
+    _ctrl.forward().then((_) => _ctrl.reverse());
+
+    // 3. Arkada Firestore'a yaz
+    try {
+      final repo = ref.read(ilanRepositoryProvider);
+      if (_localFavori) {
+        await repo.favoriyeEkle(kullaniciId: widget.uid, ilan: widget.ilan);
+      } else {
+        await repo.favoridanCikar(kullaniciId: widget.uid, ilanId: widget.ilan.id);
+      }
+    } catch (_) {
+      // Hata olursa geri al
+      if (mounted) setState(() => _localFavori = !_localFavori);
+    } finally {
+      _islem = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _toglle,
+      child: ScaleTransition(
+        scale: _scale,
+        child: Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.22),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.25),
+              width: 0.5,
+            ),
+          ),
+          child: Icon(
+            _localFavori ? Icons.favorite : Icons.favorite_border,
+            color: _localFavori ? AppColors.red : Colors.white.withValues(alpha: 0.9),
+            size: 16,
+          ),
         ),
       ),
     );

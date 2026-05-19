@@ -6,33 +6,34 @@ import '../../profil/providers/profil_provider.dart';
 import '../../profil/data/kullanici_repository.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart' show kDunyaUlkeleri, kTurkiyeSehirleri;
+import '../../../shared/utils/app_snackbar.dart';
 import '../../../shared/widgets/autocomplete_alan.dart';
- 
+
 class ProfilDuzenleScreen extends ConsumerStatefulWidget {
   const ProfilDuzenleScreen({super.key});
- 
+
   @override
   ConsumerState<ProfilDuzenleScreen> createState() =>
       _ProfilDuzenleScreenState();
 }
- 
+
 class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
-  final _adSoyadCtrl = TextEditingController();
-  final _telefonCtrl = TextEditingController();
-  final _hakkindaCtrl = TextEditingController();
-  final _yasadigiUlkeCtrl = TextEditingController();
+  final _adSoyadCtrl       = TextEditingController();
+  final _telefonCtrl       = TextEditingController();
+  final _hakkindaCtrl      = TextEditingController();
+  final _yasadigiUlkeCtrl  = TextEditingController();
   final _bulunduguSehirCtrl = TextEditingController();
- 
-  bool _telefonGizli = false;
-  bool _yukleniyor = false;
-  bool _veriYuklendi = false;
- 
+
+  bool _telefonGizli  = false;
+  bool _yukleniyor    = false;
+  bool _veriYuklendi  = false;
+
   @override
   void initState() {
     super.initState();
     _verileriYukle();
   }
- 
+
   @override
   void dispose() {
     _adSoyadCtrl.dispose();
@@ -42,66 +43,54 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
     _bulunduguSehirCtrl.dispose();
     super.dispose();
   }
- 
+
   void _verileriYukle() {
     final profil = ref.read(benimKullaniciProfilProvider).value;
     if (profil != null) {
-      _adSoyadCtrl.text = profil.adSoyad;
-      _telefonCtrl.text = profil.telefon ?? '';
-      _hakkindaCtrl.text = profil.hakkinda;
-      _yasadigiUlkeCtrl.text = profil.yasadigiUlke;
+      _adSoyadCtrl.text        = profil.adSoyad;
+      _telefonCtrl.text        = profil.telefon ?? '';
+      _hakkindaCtrl.text       = profil.hakkinda;
+      _yasadigiUlkeCtrl.text   = profil.yasadigiUlke;
       _bulunduguSehirCtrl.text = profil.bulunduguSehir;
-      _telefonGizli = profil.telefonGizli;
+      _telefonGizli            = profil.telefonGizli;
       setState(() => _veriYuklendi = true);
     }
   }
- 
+
   Future<void> _kaydet() async {
     final uid = ref.read(currentUserProvider)?.uid;
     if (uid == null) return;
- 
+
     if (_adSoyadCtrl.text.trim().isEmpty) {
-      _snack('Ad soyad boş bırakılamaz.');
+      AppSnackBar.hata(context, 'Ad soyad boş bırakılamaz.');
       return;
     }
- 
+
     setState(() => _yukleniyor = true);
- 
+
     try {
       await ref.read(kullaniciRepositoryProvider).profilGuncelle(
         uid: uid,
         data: {
-          'adSoyad': _adSoyadCtrl.text.trim(),
-          'telefon': _telefonCtrl.text.trim(),
-          'hakkinda': _hakkindaCtrl.text.trim(),
-          'yasadigiUlke': _yasadigiUlkeCtrl.text.trim(),
-          'bulunduguSehir': _bulunduguSehirCtrl.text.trim(),
-          'telefonGizli': _telefonGizli,
+          'adSoyad':         _adSoyadCtrl.text.trim(),
+          'telefon':         _telefonCtrl.text.trim(),
+          'hakkinda':        _hakkindaCtrl.text.trim(),
+          'yasadigiUlke':    _yasadigiUlkeCtrl.text.trim(),
+          'bulunduguSehir':  _bulunduguSehirCtrl.text.trim(),
+          'telefonGizli':    _telefonGizli,
         },
       );
- 
+
       if (!mounted) return;
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Profil güncellendi!', style: GoogleFonts.dmSans()),
-        backgroundColor: AppColors.green,
-        behavior: SnackBarBehavior.floating,
-      ));
+      AppSnackBar.basari(context, 'Profil güncellendi!');
     } catch (e) {
-      if (mounted) _snack('Bir hata oluştu. Tekrar dene.');
+      if (mounted) AppSnackBar.hata(context, 'Bir hata oluştu. Tekrar dene.');
     } finally {
       if (mounted) setState(() => _yukleniyor = false);
     }
   }
- 
-  void _snack(String mesaj) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(mesaj, style: GoogleFonts.dmSans()),
-      backgroundColor: AppColors.red,
-      behavior: SnackBarBehavior.floating,
-    ));
-  }
- 
+
   @override
   Widget build(BuildContext context) {
     // initState'te provider henüz yüklenmediyse, ilk data gelince doldur
@@ -109,16 +98,16 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
       if (_veriYuklendi) return;
       next.whenData((profil) {
         if (profil == null) return;
-        _adSoyadCtrl.text      = profil.adSoyad;
-        _telefonCtrl.text      = profil.telefon ?? '';
-        _hakkindaCtrl.text     = profil.hakkinda;
-        _yasadigiUlkeCtrl.text = profil.yasadigiUlke;
+        _adSoyadCtrl.text        = profil.adSoyad;
+        _telefonCtrl.text        = profil.telefon ?? '';
+        _hakkindaCtrl.text       = profil.hakkinda;
+        _yasadigiUlkeCtrl.text   = profil.yasadigiUlke;
         _bulunduguSehirCtrl.text = profil.bulunduguSehir;
-        _telefonGizli = profil.telefonGizli;
+        _telefonGizli            = profil.telefonGizli;
         setState(() => _veriYuklendi = true);
       });
     });
- 
+
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
@@ -136,8 +125,7 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
             onPressed: _yukleniyor ? null : _kaydet,
             child: _yukleniyor
                 ? const SizedBox(
-                    width: 20,
-                    height: 20,
+                    width: 20, height: 20,
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: AppColors.red))
                 : Text('Kaydet',
@@ -154,7 +142,7 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
           child: Column(
             children: [
               const SizedBox(height: 8),
- 
+
               // ── Kişisel Bilgiler ───────────────────────
               _Bolum(
                 baslik: 'Kişisel Bilgiler',
@@ -184,9 +172,9 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
                   ],
                 ),
               ),
- 
+
               const SizedBox(height: 8),
- 
+
               // ── İletişim ───────────────────────────────
               _Bolum(
                 baslik: 'İletişim',
@@ -209,8 +197,7 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
                         children: [
                           AnimatedContainer(
                             duration: const Duration(milliseconds: 150),
-                            width: 44,
-                            height: 24,
+                            width: 44, height: 24,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(12),
                               color: _telefonGizli
@@ -223,10 +210,8 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
                                   ? Alignment.centerRight
                                   : Alignment.centerLeft,
                               child: Container(
-                                margin: const EdgeInsets.symmetric(
-                                    horizontal: 3),
-                                width: 18,
-                                height: 18,
+                                margin: const EdgeInsets.symmetric(horizontal: 3),
+                                width: 18, height: 18,
                                 decoration: const BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: Colors.white,
@@ -245,9 +230,9 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
                   ],
                 ),
               ),
- 
+
               const SizedBox(height: 8),
- 
+
               // ── Konum ──────────────────────────────────
               _Bolum(
                 baslik: 'Konum',
@@ -274,7 +259,7 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
                   ],
                 ),
               ),
- 
+
               const SizedBox(height: 40),
             ],
           ),
@@ -282,15 +267,14 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
       ),
     );
   }
- 
+
   InputDecoration _inputDecoration({
     required String hint,
     required IconData icon,
   }) {
     return InputDecoration(
       hintText: hint,
-      hintStyle:
-          GoogleFonts.dmSans(color: AppColors.textHint, fontSize: 14),
+      hintStyle: GoogleFonts.dmSans(color: AppColors.textHint, fontSize: 14),
       prefixIcon: Icon(icon, color: AppColors.textSecondary, size: 20),
       filled: true,
       fillColor: AppColors.surface,
@@ -304,22 +288,20 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide:
-            const BorderSide(color: AppColors.primary, width: 1.5),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
       ),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
     );
   }
 }
- 
+
 // ── Yardımcı Widget'lar ────────────────────────────────────
- 
+
 class _Bolum extends StatelessWidget {
   final String baslik;
   final Widget child;
   const _Bolum({required this.baslik, required this.child});
- 
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -342,11 +324,11 @@ class _Bolum extends StatelessWidget {
     );
   }
 }
- 
+
 class _Etiket extends StatelessWidget {
   final String text;
   const _Etiket(this.text);
- 
+
   @override
   Widget build(BuildContext context) {
     return Text(text,
@@ -356,20 +338,20 @@ class _Etiket extends StatelessWidget {
             color: AppColors.textPrimary));
   }
 }
- 
+
 class _Alan extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final IconData icon;
   final TextInputType klavye;
- 
+
   const _Alan({
     required this.controller,
     required this.hint,
     required this.icon,
     this.klavye = TextInputType.text,
   });
- 
+
   @override
   Widget build(BuildContext context) {
     return TextField(
@@ -378,8 +360,7 @@ class _Alan extends StatelessWidget {
       style: GoogleFonts.dmSans(fontSize: 14),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle:
-            GoogleFonts.dmSans(color: AppColors.textHint, fontSize: 14),
+        hintStyle: GoogleFonts.dmSans(color: AppColors.textHint, fontSize: 14),
         prefixIcon: Icon(icon, color: AppColors.textSecondary, size: 20),
         filled: true,
         fillColor: AppColors.surface,
@@ -393,11 +374,9 @@ class _Alan extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide:
-              const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       ),
     );
   }

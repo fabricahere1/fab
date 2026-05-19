@@ -8,6 +8,7 @@ import '../../auth/data/auth_repository.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../profil/data/kullanici_repository.dart';
 import '../../../shared/constants/app_colors.dart';
+import '../../../shared/utils/app_snackbar.dart';
 import '../../../shared/widgets/avatar_widget.dart';
 
 class AyarlarScreen extends ConsumerStatefulWidget {
@@ -18,9 +19,9 @@ class AyarlarScreen extends ConsumerStatefulWidget {
 }
 
 class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
-  bool _ilanBildirimleri = true;
-  bool _mesajBildirimleri = true;
-  bool _sistemBildirimleri = true;
+  bool _ilanBildirimleri    = true;
+  bool _mesajBildirimleri   = true;
+  bool _sistemBildirimleri  = true;
   bool _bildirimlerYuklendi = false;
 
   @override
@@ -32,8 +33,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
   Future<void> _bildirimlerYukle() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _ilanBildirimleri = prefs.getBool('bildirim_ilan') ?? true;
-      _mesajBildirimleri = prefs.getBool('bildirim_mesaj') ?? true;
+      _ilanBildirimleri   = prefs.getBool('bildirim_ilan')   ?? true;
+      _mesajBildirimleri  = prefs.getBool('bildirim_mesaj')  ?? true;
       _sistemBildirimleri = prefs.getBool('bildirim_sistem') ?? true;
       _bildirimlerYuklendi = true;
     });
@@ -46,8 +47,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(currentUserProvider);
-    final benimProfilAsync = ref.watch(benimKullaniciProfilProvider);
+    final user               = ref.watch(currentUserProvider);
+    final benimProfilAsync   = ref.watch(benimKullaniciProfilProvider);
     final engellenenlerAsync = ref.watch(engellenenlerProvider);
 
     return Scaffold(
@@ -199,9 +200,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 iconColor: AppColors.textSecondary,
                 label: 'Tüm Değerlendirmelerim',
                 onTap: () {
-                  final uid =
-                      ref.read(currentUserProvider)?.uid ?? '';
-                  final ad = ref
+                  final uid = ref.read(currentUserProvider)?.uid ?? '';
+                  final ad  = ref
                           .read(benimKullaniciProfilProvider)
                           .value
                           ?.adSoyad ??
@@ -255,7 +255,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
 
           const SizedBox(height: 32),
           Center(
-            child: Text('İSTE v2.0',
+            child: Text('İSTE v3.0',
                 style: GoogleFonts.dmSans(
                     fontSize: 12,
                     color: AppColors.textHint,
@@ -271,8 +271,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Şifre Sıfırla',
             style: GoogleFonts.dmSans(
                 fontSize: 16, fontWeight: FontWeight.w600)),
@@ -294,31 +293,22 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text('İptal',
-                style:
-                    GoogleFonts.dmSans(color: AppColors.textSecondary)),
+                style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
               if (email != null) {
-                await ref
-                    .read(authProvider.notifier)
-                    .sifreSifirla(email);
+                await ref.read(authProvider.notifier).sifreSifirla(email);
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(
-                        'Şifre sıfırlama e-postası gönderildi.',
-                        style: GoogleFonts.dmSans()),
-                    backgroundColor: AppColors.green,
-                    behavior: SnackBarBehavior.floating,
-                  ));
+                  AppSnackBar.basari(
+                      context, 'Şifre sıfırlama e-postası gönderildi.');
                 }
               }
             },
             child: Text('Gönder',
                 style: GoogleFonts.dmSans(
-                    color: AppColors.red,
-                    fontWeight: FontWeight.w600)),
+                    color: AppColors.red, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -328,15 +318,13 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
   Future<void> _telefonGuncelleDialog(String mevcutTelefon) async {
     final ctrl = TextEditingController(text: mevcutTelefon);
     bool gizli =
-        ref.read(benimKullaniciProfilProvider).value?.telefonGizli ??
-            false;
+        ref.read(benimKullaniciProfilProvider).value?.telefonGizli ?? false;
 
     await showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text('Telefon Numarası',
               style: GoogleFonts.dmSans(
                   fontSize: 16, fontWeight: FontWeight.w600)),
@@ -357,13 +345,11 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                   fillColor: AppColors.surface,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide:
-                        const BorderSide(color: AppColors.divider),
+                    borderSide: const BorderSide(color: AppColors.divider),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide:
-                        const BorderSide(color: AppColors.divider),
+                    borderSide: const BorderSide(color: AppColors.divider),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -381,13 +367,10 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                   children: [
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 150),
-                      width: 44,
-                      height: 24,
+                      width: 44, height: 24,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
-                        color: gizli
-                            ? AppColors.primary
-                            : AppColors.divider,
+                        color: gizli ? AppColors.primary : AppColors.divider,
                       ),
                       child: AnimatedAlign(
                         duration: const Duration(milliseconds: 150),
@@ -395,10 +378,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                             ? Alignment.centerRight
                             : Alignment.centerLeft,
                         child: Container(
-                          margin: const EdgeInsets.symmetric(
-                              horizontal: 3),
-                          width: 18,
-                          height: 18,
+                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          width: 18, height: 18,
                           decoration: const BoxDecoration(
                             shape: BoxShape.circle,
                             color: Colors.white,
@@ -409,8 +390,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                     const SizedBox(width: 10),
                     Text('Telefon numaramı gizle',
                         style: GoogleFonts.dmSans(
-                            fontSize: 13,
-                            color: AppColors.textSecondary)),
+                            fontSize: 13, color: AppColors.textSecondary)),
                   ],
                 ),
               ),
@@ -420,17 +400,14 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: Text('İptal',
-                  style: GoogleFonts.dmSans(
-                      color: AppColors.textSecondary)),
+                  style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
             ),
             TextButton(
               onPressed: () async {
                 Navigator.pop(ctx);
                 final uid = ref.read(currentUserProvider)?.uid;
                 if (uid == null) return;
-                await ref
-                    .read(kullaniciRepositoryProvider)
-                    .profilGuncelle(
+                await ref.read(kullaniciRepositoryProvider).profilGuncelle(
                   uid: uid,
                   data: {
                     'telefon': ctrl.text.trim(),
@@ -438,18 +415,12 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                   },
                 );
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text('Telefon numarası güncellendi.',
-                        style: GoogleFonts.dmSans()),
-                    backgroundColor: AppColors.green,
-                    behavior: SnackBarBehavior.floating,
-                  ));
+                  AppSnackBar.basari(context, 'Telefon numarası güncellendi.');
                 }
               },
               child: Text('Kaydet',
                   style: GoogleFonts.dmSans(
-                      color: AppColors.red,
-                      fontWeight: FontWeight.w600)),
+                      color: AppColors.red, fontWeight: FontWeight.w600)),
             ),
           ],
         ),
@@ -469,14 +440,13 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
   }
 
   Future<void> _iletisimDialog() async {
-    final konuCtrl = TextEditingController();
+    final konuCtrl  = TextEditingController();
     final mesajCtrl = TextEditingController();
 
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Bize Ulaşın',
             style: GoogleFonts.dmSans(
                 fontSize: 16, fontWeight: FontWeight.w600)),
@@ -494,12 +464,10 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 fillColor: AppColors.surface,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide:
-                        const BorderSide(color: AppColors.divider)),
+                    borderSide: const BorderSide(color: AppColors.divider)),
                 enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide:
-                        const BorderSide(color: AppColors.divider)),
+                    borderSide: const BorderSide(color: AppColors.divider)),
                 focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(
@@ -521,12 +489,10 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 fillColor: AppColors.surface,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide:
-                        const BorderSide(color: AppColors.divider)),
+                    borderSide: const BorderSide(color: AppColors.divider)),
                 enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide:
-                        const BorderSide(color: AppColors.divider)),
+                    borderSide: const BorderSide(color: AppColors.divider)),
                 focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(
@@ -540,8 +506,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text('İptal',
-                style: GoogleFonts.dmSans(
-                    color: AppColors.textSecondary)),
+                style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () {
@@ -550,17 +515,11 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 return;
               }
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text('Mesajınız iletildi, teşekkürler!',
-                    style: GoogleFonts.dmSans()),
-                backgroundColor: AppColors.green,
-                behavior: SnackBarBehavior.floating,
-              ));
+              AppSnackBar.basari(context, 'Mesajınız iletildi, teşekkürler!');
             },
             child: Text('Gönder',
                 style: GoogleFonts.dmSans(
-                    color: AppColors.red,
-                    fontWeight: FontWeight.w600)),
+                    color: AppColors.red, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -579,8 +538,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     final onay = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Hesabı Sil',
             style: GoogleFonts.dmSans(
                 fontSize: 16, fontWeight: FontWeight.w600)),
@@ -593,15 +551,13 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text('İptal',
-                style: GoogleFonts.dmSans(
-                    color: AppColors.textSecondary)),
+                style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text('Devam Et',
                 style: GoogleFonts.dmSans(
-                    color: AppColors.red,
-                    fontWeight: FontWeight.w700)),
+                    color: AppColors.red, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -622,8 +578,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     final onay = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Kimliğini Doğrula',
             style: GoogleFonts.dmSans(
                 fontSize: 16, fontWeight: FontWeight.w600)),
@@ -648,12 +603,10 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 fillColor: AppColors.surface,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide:
-                        const BorderSide(color: AppColors.divider)),
+                    borderSide: const BorderSide(color: AppColors.divider)),
                 enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide:
-                        const BorderSide(color: AppColors.divider)),
+                    borderSide: const BorderSide(color: AppColors.divider)),
                 focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(
@@ -668,15 +621,13 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text('İptal',
-                style: GoogleFonts.dmSans(
-                    color: AppColors.textSecondary)),
+                style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text('Hesabı Sil',
                 style: GoogleFonts.dmSans(
-                    color: AppColors.red,
-                    fontWeight: FontWeight.w700)),
+                    color: AppColors.red, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -694,20 +645,11 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           );
       await ref.read(authRepositoryProvider).hesapSil();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content:
-              Text('Hesabın silindi.', style: GoogleFonts.dmSans()),
-          behavior: SnackBarBehavior.floating,
-        ));
+        AppSnackBar.bilgi(context, 'Hesabın silindi.');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Hata: Şifre yanlış veya bir sorun oluştu.',
-              style: GoogleFonts.dmSans()),
-          backgroundColor: AppColors.red,
-          behavior: SnackBarBehavior.floating,
-        ));
+        AppSnackBar.hata(context, 'Hata: Şifre yanlış veya bir sorun oluştu.');
       }
     }
     sifreCtrl.dispose();
@@ -717,8 +659,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     final onay = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Kimliğini Doğrula',
             style: GoogleFonts.dmSans(
                 fontSize: 16, fontWeight: FontWeight.w600)),
@@ -731,15 +672,13 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text('İptal',
-                style: GoogleFonts.dmSans(
-                    color: AppColors.textSecondary)),
+                style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text('Google ile Doğrula',
                 style: GoogleFonts.dmSans(
-                    color: AppColors.red,
-                    fontWeight: FontWeight.w700)),
+                    color: AppColors.red, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -751,20 +690,11 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       await ref.read(authRepositoryProvider).googleIleYenidenGiris();
       await ref.read(authRepositoryProvider).hesapSil();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content:
-              Text('Hesabın silindi.', style: GoogleFonts.dmSans()),
-          behavior: SnackBarBehavior.floating,
-        ));
+        AppSnackBar.bilgi(context, 'Hesabın silindi.');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Hata oluştu. Tekrar dene.',
-              style: GoogleFonts.dmSans()),
-          backgroundColor: AppColors.red,
-          behavior: SnackBarBehavior.floating,
-        ));
+        AppSnackBar.hata(context, 'Hata oluştu. Tekrar dene.');
       }
     }
   }
@@ -814,9 +744,8 @@ class _EngellenenlerScreen extends ConsumerWidget {
               separatorBuilder: (_, _) =>
                   const Divider(height: 1, indent: 72),
               itemBuilder: (context, index) {
-                final hedefUid = engellenenUidler[index];
-                final profilAsync =
-                    ref.watch(kullaniciBilgiProvider(hedefUid));
+                final hedefUid    = engellenenUidler[index];
+                final profilAsync = ref.watch(kullaniciBilgiProvider(hedefUid));
 
                 return profilAsync.when(
                   loading: () => const ListTile(
@@ -837,44 +766,36 @@ class _EngellenenlerScreen extends ConsumerWidget {
                       leading: AvatarWidget(isim: ad, radius: 24),
                       title: Text(ad,
                           style: GoogleFonts.dmSans(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500)),
+                              fontSize: 15, fontWeight: FontWeight.w500)),
                       trailing: TextButton(
                         onPressed: () async {
                           final onay = await showDialog<bool>(
                             context: context,
                             builder: (c) => AlertDialog(
                               shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(12)),
+                                  borderRadius: BorderRadius.circular(12)),
                               title: Text('Engeli Kaldır',
                                   style: GoogleFonts.dmSans(
                                       fontSize: 16,
-                                      fontWeight:
-                                          FontWeight.w600)),
+                                      fontWeight: FontWeight.w600)),
                               content: Text(
                                   '$ad adlı kullanıcının engelini kaldırmak istiyor musun?',
                                   style: GoogleFonts.dmSans(
                                       fontSize: 14,
-                                      color:
-                                          AppColors.textSecondary)),
+                                      color: AppColors.textSecondary)),
                               actions: [
                                 TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(c, false),
+                                  onPressed: () => Navigator.pop(c, false),
                                   child: Text('İptal',
                                       style: GoogleFonts.dmSans(
-                                          color: AppColors
-                                              .textSecondary)),
+                                          color: AppColors.textSecondary)),
                                 ),
                                 TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(c, true),
+                                  onPressed: () => Navigator.pop(c, true),
                                   child: Text('Kaldır',
                                       style: GoogleFonts.dmSans(
                                           color: AppColors.red,
-                                          fontWeight:
-                                              FontWeight.w700)),
+                                          fontWeight: FontWeight.w700)),
                                 ),
                               ],
                             ),
@@ -887,13 +808,8 @@ class _EngellenenlerScreen extends ConsumerWidget {
                                   hedefUid: hedefUid,
                                 );
                             if (context.mounted) {
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(SnackBar(
-                                content: Text(
-                                    '$ad engeli kaldırıldı.',
-                                    style: GoogleFonts.dmSans()),
-                                behavior: SnackBarBehavior.floating,
-                              ));
+                              AppSnackBar.bilgi(
+                                  context, '$ad engeli kaldırıldı.');
                             }
                           }
                         },
@@ -978,10 +894,10 @@ class _SatirOge extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
-    this.iconColor = AppColors.textSecondary,
+    this.iconColor  = AppColors.textSecondary,
     this.labelColor = AppColors.textPrimary,
     this.trailing,
-    this.showArrow = true,
+    this.showArrow  = true,
   });
 
   @override
@@ -990,13 +906,11 @@ class _SatirOge extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Padding(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
             Container(
-              width: 36,
-              height: 36,
+              width: 36, height: 36,
               decoration: BoxDecoration(
                 color: iconColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
@@ -1042,14 +956,12 @@ class _SwitchSatir extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 36, height: 36,
             decoration: BoxDecoration(
               color: AppColors.textSecondary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child:
-                Icon(icon, color: AppColors.textSecondary, size: 20),
+            child: Icon(icon, color: AppColors.textSecondary, size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(

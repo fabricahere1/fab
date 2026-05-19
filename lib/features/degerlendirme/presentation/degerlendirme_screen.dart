@@ -7,6 +7,7 @@ import '../data/degerlendirme_repository.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
+import '../../../shared/utils/app_snackbar.dart';
 
 class DegerlendirmeModal extends ConsumerStatefulWidget {
   final String sohbetId;
@@ -84,34 +85,24 @@ class _DegerlendirmeModalState extends ConsumerState<DegerlendirmeModal> {
       );
       if (mounted) {
         Navigator.pop(context, true);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Değerlendirmen gönderildi!',
-              style: GoogleFonts.dmSans()),
-          backgroundColor: const Color(0xFF43A047),
-          behavior: SnackBarBehavior.floating,
-        ));
+        AppSnackBar.basari(context, 'Değerlendirmen gönderildi!');
       }
     } catch (e) {
       if (mounted) {
         setState(() => _gonderiyor = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Hata: $e', style: GoogleFonts.dmSans()),
-          backgroundColor: AppColors.red,
-          behavior: SnackBarBehavior.floating,
-        ));
+        AppSnackBar.hata(context, 'Hata: $e');
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final profil    = ref.watch(kullaniciBilgiProvider(widget.hedefKullaniciId));
+    final profil     = ref.watch(kullaniciBilgiProvider(widget.hedefKullaniciId));
     final mevcutPuan = profil.value?.ortalamaPuan ?? 0.0;
     final mevcutSayi = profil.value?.degerlendirmeSayisi ?? 0;
 
     return Padding(
-      padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         decoration: const BoxDecoration(
           color: Colors.white,
