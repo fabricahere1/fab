@@ -35,6 +35,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       !(_selectedIndex == 0 &&
           ref.read(gridTercihiProvider) == GoruntulemeModeli.swipe);
 
+  @override
+  void initState() {
+    super.initState();
+  }
+
   void _ilanVer() {
     setState(() => _fabAcik = !_fabAcik);
   }
@@ -221,8 +226,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   _NavItem(
                     secili: _selectedIndex == 2,
-    onTap: () => setState(() { _selectedIndex = 2; _fabAcik = false; }),
-    label: 'Mesajlar',
+                    onTap: () => setState(() { _selectedIndex = 2; _fabAcik = false; }),
+                    label: 'Mesajlar',
                     child: uid == null || toplamOkunmamis == 0
                         ? Icon(
                             _selectedIndex == 2
@@ -342,4 +347,3 @@ class _NavItem extends StatelessWidget {
     );
   }
 }
-

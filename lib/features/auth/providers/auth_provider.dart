@@ -11,7 +11,6 @@ Stream<User?> authState(Ref ref) {
 
 @riverpod
 User? currentUser(Ref ref) {
-  // authStateProvider stream'inden gelir — FirebaseAuth direkt erişim yok
   return ref.watch(authStateProvider).value;
 }
 
@@ -108,11 +107,13 @@ class AuthNotifier extends _$AuthNotifier {
     required String telefon,
     required void Function(String) onKodGonderildi,
     required void Function(String) onHata,
+    void Function(String smsKodu)? onOtomatikGiris,
   }) async {
     await _repo.telefonKoduGonder(
       telefon: telefon,
       onKodGonderildi: onKodGonderildi,
       onHata: onHata,
+      onOtomatikGiris: onOtomatikGiris,
     );
   }
 

@@ -50,7 +50,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 28),
             child: Column(
               children: [
-                // ── Logo ───────────────────────────────────
                 const Spacer(flex: 3),
                 Image.asset(
                   'assets/images/logo_seffaf.png',
@@ -69,7 +68,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const Spacer(flex: 3),
 
-                // ── Hata mesajı ────────────────────────────
                 if (_hata.isNotEmpty) ...[
                   Row(
                     children: [
@@ -90,7 +88,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 12),
                 ],
 
-                // ── Google butonu ──────────────────────────
                 _GirisButonu(
                   onTap: yukleniyor ? null : _googleIleGiris,
                   yukleniyor: yukleniyor,
@@ -101,7 +98,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // ── Telefon butonu ─────────────────────────
                 _GirisButonu(
                   onTap: yukleniyor ? null : _telefonIleGiris,
                   yukleniyor: false,
@@ -112,7 +108,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   yaziRengi: Colors.white,
                 ),
 
-                // ── Alt bilgi ──────────────────────────────
                 const SizedBox(height: 32),
                 Text(
                   'Devam ederek Kullanım Koşulları\'nı ve\nGizlilik Politikası\'nı kabul etmiş olursun.',
@@ -229,16 +224,17 @@ class _TelefonGirisSheet extends ConsumerStatefulWidget {
   const _TelefonGirisSheet({required this.onHata});
 
   @override
-  ConsumerState<_TelefonGirisSheet> createState() => _TelefonGirisSheetState();
+  ConsumerState<_TelefonGirisSheet> createState() =>
+      _TelefonGirisSheetState();
 }
 
 class _TelefonGirisSheetState extends ConsumerState<_TelefonGirisSheet> {
   final _telefonCtrl = TextEditingController();
-  final _kodCtrl = TextEditingController();
+  final _kodCtrl     = TextEditingController();
 
-  bool _kodAsamasi = false;
-  bool _yukleniyor = false;
-  String _hata = '';
+  bool   _kodAsamasi  = false;
+  bool   _yukleniyor  = false;
+  String _hata        = '';
   String _verificationId = '';
 
   @override
@@ -248,13 +244,113 @@ class _TelefonGirisSheetState extends ConsumerState<_TelefonGirisSheet> {
     super.dispose();
   }
 
+  // Android otomatik SMS okuyunca kodu alana yapıştırma sorusu
+  Future<void> _otomatikGirisDialog(String smsKodu) async {
+    if (!mounted) return;
+
+    await Future.delayed(const Duration(milliseconds: 400));
+    if (!mounted) return;
+
+    final yapistir = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18)),
+        title: Text(
+          'SMS Kodu Alındı',
+          style: GoogleFonts.dmSans(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Doğrulama kodun hazır. Kodu alana yapıştıralım mı?',
+              style: GoogleFonts.dmSans(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                  vertical: 12, horizontal: 16),
+              decoration: BoxDecoration(
+                color: AppColors.red.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                    color: AppColors.red.withValues(alpha: 0.2)),
+              ),
+              child: Text(
+                smsKodu,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.dmSans(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 10,
+                  color: AppColors.red,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              'Hayır',
+              style: GoogleFonts.dmSans(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(ctx, true),
+            icon: const Icon(Icons.edit_rounded, size: 16),
+            label: Text(
+              'Evet, Yapıştır',
+              style: GoogleFonts.dmSans(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+              elevation: 0,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (yapistir == true && mounted) {
+      setState(() {
+        _kodCtrl.text = smsKodu;
+        _kodAsamasi = true;
+      });
+    }
+  }
+
   Future<void> _kodGonder() async {
     final numara = _telefonCtrl.text.trim().replaceAll(' ', '');
     if (numara.length < 10) {
       setState(() => _hata = 'Geçerli bir telefon numarası gir.');
       return;
     }
-    setState(() { _yukleniyor = true; _hata = ''; });
+    setState(() {
+      _yukleniyor = true;
+      _hata = '';
+    });
 
     await ref.read(authProvider.notifier).telefonKoduGonder(
       telefon: '+90$numara',
@@ -262,13 +358,22 @@ class _TelefonGirisSheetState extends ConsumerState<_TelefonGirisSheet> {
         if (mounted) {
           setState(() {
             _verificationId = vId;
-            _kodAsamasi = true;
-            _yukleniyor = false;
+            _kodAsamasi     = true;
+            _yukleniyor     = false;
           });
         }
       },
+      onOtomatikGiris: (smsKodu) {
+        // Android otomatik okuduysa dialog göster
+        _otomatikGirisDialog(smsKodu);
+      },
       onHata: (msg) {
-        if (mounted) setState(() { _hata = msg; _yukleniyor = false; });
+        if (mounted) {
+          setState(() {
+            _hata       = msg;
+            _yukleniyor = false;
+          });
+        }
       },
     );
   }
@@ -278,11 +383,14 @@ class _TelefonGirisSheetState extends ConsumerState<_TelefonGirisSheet> {
       setState(() => _hata = '6 haneli kodu eksiksiz gir.');
       return;
     }
-    setState(() { _yukleniyor = true; _hata = ''; });
+    setState(() {
+      _yukleniyor = true;
+      _hata       = '';
+    });
 
     final sonuc = await ref.read(authProvider.notifier).telefonIleGiris(
       verificationId: _verificationId,
-      smsKodu: _kodCtrl.text.trim(),
+      smsKodu:        _kodCtrl.text.trim(),
     );
 
     if (!mounted) return;
@@ -303,7 +411,7 @@ class _TelefonGirisSheetState extends ConsumerState<_TelefonGirisSheet> {
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(28),
+          topLeft:  Radius.circular(28),
           topRight: Radius.circular(28),
         ),
       ),
@@ -315,7 +423,8 @@ class _TelefonGirisSheetState extends ConsumerState<_TelefonGirisSheet> {
           // Handle
           Center(
             child: Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               decoration: BoxDecoration(
                 color: AppColors.divider,
                 borderRadius: BorderRadius.circular(2),
@@ -328,7 +437,8 @@ class _TelefonGirisSheetState extends ConsumerState<_TelefonGirisSheet> {
             children: [
               if (_kodAsamasi)
                 GestureDetector(
-                  onTap: () => setState(() { _kodAsamasi = false; _hata = ''; }),
+                  onTap: () =>
+                      setState(() { _kodAsamasi = false; _hata = ''; }),
                   child: const Padding(
                     padding: EdgeInsets.only(right: 12),
                     child: Icon(Icons.arrow_back_rounded,
@@ -367,25 +477,33 @@ class _TelefonGirisSheetState extends ConsumerState<_TelefonGirisSheet> {
               style: GoogleFonts.dmSans(fontSize: 16),
               decoration: InputDecoration(
                 prefixIcon: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text('🇹🇷', style: TextStyle(fontSize: 18)),
+                      const Text('🇹🇷',
+                          style: TextStyle(fontSize: 18)),
                       const SizedBox(width: 8),
-                      Text('+90',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.textPrimary,
-                          )),
+                      Text(
+                        '+90',
+                        style: GoogleFonts.dmSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
                       const SizedBox(width: 8),
-                      Container(width: 1, height: 20, color: AppColors.divider),
+                      Container(
+                          width: 1,
+                          height: 20,
+                          color: AppColors.divider),
                     ],
                   ),
                 ),
                 hintText: '5XX XXX XX XX',
-                hintStyle: GoogleFonts.dmSans(color: AppColors.textHint),
+                hintStyle:
+                    GoogleFonts.dmSans(color: AppColors.textHint),
               ),
             )
           else
@@ -422,9 +540,11 @@ class _TelefonGirisSheetState extends ConsumerState<_TelefonGirisSheet> {
                     color: AppColors.red, size: 14),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: Text(_hata,
-                      style: GoogleFonts.dmSans(
-                          color: AppColors.red, fontSize: 12)),
+                  child: Text(
+                    _hata,
+                    style: GoogleFonts.dmSans(
+                        color: AppColors.red, fontSize: 12),
+                  ),
                 ),
               ],
             ),
@@ -449,12 +569,15 @@ class _TelefonGirisSheetState extends ConsumerState<_TelefonGirisSheet> {
               ),
               child: _yukleniyor
                   ? const SizedBox(
-                      width: 20, height: 20,
+                      width: 20,
+                      height: 20,
                       child: CircularProgressIndicator(
                           color: Colors.white, strokeWidth: 2),
                     )
                   : Text(
-                      _kodAsamasi ? 'Doğrula ve Giriş Yap' : 'Kod Gönder',
+                      _kodAsamasi
+                          ? 'Doğrula ve Giriş Yap'
+                          : 'Kod Gönder',
                       style: GoogleFonts.dmSans(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,

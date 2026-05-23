@@ -3,9 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../shared/constants/app_constants.dart';
- 
+
 part 'auth_repository.g.dart';
- 
+
 @riverpod
 AuthRepository authRepository(Ref ref) {
   return AuthRepository(
@@ -13,17 +13,17 @@ AuthRepository authRepository(Ref ref) {
     firestore: FirebaseFirestore.instance,
   );
 }
- 
+
 class AuthRepository {
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
   final _googleSignIn = GoogleSignIn();
- 
+
   AuthRepository({required this.auth, required this.firestore});
- 
+
   Stream<User?> authStateChanges() => auth.authStateChanges();
   User? get currentUser => auth.currentUser;
- 
+
   Future<UserCredential> emailIleGiris({
     required String email,
     required String sifre,
@@ -41,7 +41,7 @@ class AuthRepository {
     }
     return credential;
   }
- 
+
   Future<UserCredential> emailIleKayit({
     required String adSoyad,
     required String email,
@@ -66,11 +66,11 @@ class AuthRepository {
     }
     return credential;
   }
- 
+
   Future<void> sifreSifirlamaGonder(String email) async {
     await auth.sendPasswordResetEmail(email: email.trim());
   }
- 
+
   Future<UserCredential> googleIleGiris() async {
     await _googleSignIn.signOut();
     final googleUser = await _googleSignIn.signIn();
@@ -80,16 +80,16 @@ class AuthRepository {
         message: 'Google girişi iptal edildi.',
       );
     }
- 
+
     final googleAuth = await googleUser.authentication;
     final credential = GoogleAuthProvider.credential(
       idToken: googleAuth.idToken,
       accessToken: googleAuth.accessToken,
     );
- 
+
     final userCredential = await auth.signInWithCredential(credential);
     final user = userCredential.user;
- 
+
     if (user != null) {
       final doc = await firestore
           .collection(Collections.kullanicilar)
@@ -112,38 +112,21 @@ class AuthRepository {
     }
     return userCredential;
   }
- 
- 
- 
+
   // ── Telefon Girişi ────────────────────────────────────────
 
   Future<void> telefonKoduGonder({
     required String telefon,
     required void Function(String verificationId) onKodGonderildi,
     required void Function(String hata) onHata,
+    void Function(String smsKodu)? onOtomatikGiris,
   }) async {
     await auth.verifyPhoneNumber(
       phoneNumber: telefon,
       verificationCompleted: (credential) async {
-        // Android otomatik doğrulama
-        final userCredential = await auth.signInWithCredential(credential);
-        final user = userCredential.user;
-        if (user != null) {
-          final doc = await firestore
-              .collection(Collections.kullanicilar)
-              .doc(user.uid)
-              .get();
-          if (!doc.exists) {
-            await firestore
-                .collection(Collections.kullanicilar)
-                .doc(user.uid)
-                .set({
-              'adSoyad':          user.displayName ?? '',
-              'telefon':          user.phoneNumber ?? '',
-              'profilTamamlandi': false,
-              'olusturmaTarihi':  FieldValue.serverTimestamp(),
-            });
-          }
+        final smsKodu = credential.smsCode ?? '';
+        if (smsKodu.isNotEmpty) {
+          onOtomatikGiris?.call(smsKodu);
         }
       },
       verificationFailed: (e) {
@@ -178,7 +161,10 @@ class AuthRepository {
             .doc(user.uid)
             .set({
           'adSoyad':          '',
+          'email':            '',
+          'sehir':            '',
           'telefon':          user.phoneNumber ?? '',
+          'telefonGizli':     false,
           'profilTamamlandi': false,
           'olusturmaTarihi':  FieldValue.serverTimestamp(),
         });
@@ -188,13 +174,12 @@ class AuthRepository {
   }
 
   Future<void> cikisYap() async {
-    // FCM token silme FcmService tarafından authStateChanges ile otomatik yapılır
     try { await _googleSignIn.signOut(); } catch (_) {}
     await auth.signOut();
   }
- 
+
   // ── Re-authentication ─────────────────────────────────
- 
+
   Future<void> emailIleYenidenGiris({
     required String email,
     required String sifre,
@@ -205,7 +190,7 @@ class AuthRepository {
     );
     await auth.currentUser!.reauthenticateWithCredential(credential);
   }
- 
+
   Future<void> googleIleYenidenGiris() async {
     await _googleSignIn.signOut();
     final googleUser = await _googleSignIn.signIn();
@@ -222,22 +207,19 @@ class AuthRepository {
     );
     await auth.currentUser!.reauthenticateWithCredential(credential);
   }
- 
+
   // ── Hesap Sil ─────────────────────────────────────────
- 
+
   Future<void> hesapSil() async {
     final user = auth.currentUser;
     if (user == null) return;
     final uid = user.uid;
- 
-    // 1. Firestore verilerini sil
+
     final batch = firestore.batch();
- 
-    // Kullanıcı profili
+
     batch.delete(
         firestore.collection(Collections.kullanicilar).doc(uid));
- 
-    // Kullanıcının ilanları
+
     final ilanlarSnap = await firestore
         .collection(Collections.ilanlar)
         .where('kullaniciId', isEqualTo: uid)
@@ -245,8 +227,7 @@ class AuthRepository {
     for (final doc in ilanlarSnap.docs) {
       batch.delete(doc.reference);
     }
- 
-    // Favoriler
+
     final favorilerSnap = await firestore
         .collection(Collections.favoriler)
         .where('kullaniciId', isEqualTo: uid)
@@ -254,14 +235,13 @@ class AuthRepository {
     for (final doc in favorilerSnap.docs) {
       batch.delete(doc.reference);
     }
- 
+
     await batch.commit();
- 
-    // 2. Firebase Auth'dan sil
+
     try { await _googleSignIn.signOut(); } catch (_) {}
     await user.delete();
   }
- 
+
   Future<bool> profilTamamlandiMi(String uid) async {
     final doc = await firestore
         .collection(Collections.kullanicilar)
@@ -269,7 +249,7 @@ class AuthRepository {
         .get();
     return doc.data()?['profilTamamlandi'] == true;
   }
- 
+
   static String hataMesaji(String code) {
     switch (code) {
       case 'user-not-found': return 'Bu e-posta ile kayıtlı kullanıcı bulunamadı.';

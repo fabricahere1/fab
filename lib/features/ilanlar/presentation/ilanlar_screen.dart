@@ -9,6 +9,7 @@ import '../domain/ilan_model.dart';
 import '../providers/ilan_provider.dart';
 import '../providers/grid_tercihi_notifier.dart';
 import '../../../shared/constants/app_colors.dart';
+import 'package:iste_v3/features/arama/presentation/arama_screen.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../../../shared/widgets/bildirim_cani_widget.dart';
 import '../../../shared/widgets/neden_iste_bar.dart';
@@ -143,8 +144,8 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
       barrierLabel: '',
       barrierColor: Colors.black54,
       transitionDuration: const Duration(milliseconds: 250),
-      pageBuilder: (_, _, _) => const SizedBox.shrink(),
-      transitionBuilder: (ctx, anim, _, _) {
+      pageBuilder: (_, __, ___) => const SizedBox.shrink(),
+      transitionBuilder: (ctx, anim, __, ___) {
         final slide = Tween<Offset>(
           begin: const Offset(1, 0), end: Offset.zero,
         ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic));
@@ -504,6 +505,18 @@ class _IsteklerHeader extends StatelessWidget {
                               child: TextField(
                                 controller: aramaCtrl,
                                 onChanged: onAramaChanged,
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    PageRouteBuilder(
+                                      pageBuilder: (_, __, ___) =>
+                                          const AramaScreen(),
+                                      transitionsBuilder: (_, anim, __, child) =>
+                                          FadeTransition(opacity: anim, child: child),
+                                      transitionDuration:
+                                          const Duration(milliseconds: 200),
+                                    ),
+                                  );
+                                },
                                 style: GoogleFonts.dmSans(
                                     fontSize: 13,
                                     color: AppColors.textPrimary,
@@ -684,35 +697,43 @@ class _IsteklerHeader extends StatelessWidget {
           if (filtrAktif)
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 2, 12, 4),
-              child: Row(children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.red.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Flexible(
-                      child: Text(
-                        filtreBadgeMetni,
-                        style: GoogleFonts.dmSans(
-                            fontSize: 12,
-                            color: AppColors.red,
-                            fontWeight: FontWeight.w500),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return Row(children: [
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                          maxWidth: constraints.maxWidth),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.red.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Flexible(
+                            child: Text(
+                              filtreBadgeMetni,
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 12,
+                                  color: AppColors.red,
+                                  fontWeight: FontWeight.w500),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          GestureDetector(
+                            onTap: onFiltreSifirla,
+                            child: const Icon(Icons.close_rounded,
+                                size: 13, color: AppColors.red),
+                          ),
+                        ]),
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    GestureDetector(
-                      onTap: onFiltreSifirla,
-                      child: const Icon(Icons.close_rounded,
-                          size: 13, color: AppColors.red),
-                    ),
-                  ]),
-                ),
-              ]),
+                  ]);
+                },
+              ),
             ),
 
           // Satır 5: Neden İSTE barı

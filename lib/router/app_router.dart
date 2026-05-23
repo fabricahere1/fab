@@ -137,9 +137,10 @@ GoRouter router(Ref ref) {
   );
 }
 
-String _hedefBelirle(Ref ref, User user) {
+String? _hedefBelirle(Ref ref, User user) {
   final profilAsync = ref.read(benimKullaniciProfilProvider);
-  if (profilAsync.isLoading) return AppRoutes.splash;
+  // Profil henüz yüklenmediyse bekle — router profil gelince tekrar tetiklenecek
+  if (profilAsync.isLoading) return null;
 
   final emailKullanicisi =
       user.providerData.any((p) => p.providerId == 'password');

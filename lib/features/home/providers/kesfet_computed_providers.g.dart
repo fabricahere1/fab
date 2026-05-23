@@ -91,7 +91,7 @@ final class YakinGelenIlanlarProvider
   }
 }
 
-String _$yakinGelenIlanlarHash() => r'3e41c66392b482010515349a59bc1fcb8a3c4bdc';
+String _$yakinGelenIlanlarHash() => r'737d3165644f5ad8a8a2a9cb51dcc303f37781c4';
 
 @ProviderFor(suAnHavadaIlanlar)
 final suAnHavadaIlanlarProvider = SuAnHavadaIlanlarProvider._();
@@ -181,7 +181,7 @@ final class PopulerGuzergahlarProvider
 }
 
 String _$populerGuzergahlarHash() =>
-    r'f63fd96f3c460a40d83ec40d368d8615b22b4310';
+    r'c0dbb485294611a9c7f621c462bc1e3a7c38e0b4';
 
 @ProviderFor(trendIstekler)
 final trendIsteklerProvider = TrendIsteklerProvider._();
@@ -265,7 +265,91 @@ final class SonAktivitelerProvider
   }
 }
 
-String _$sonAktivitelerHash() => r'503610645143ee7a892fa611f46eb564efc5434e';
+String _$sonAktivitelerHash() => r'c13a9cde5208d580d0f06b3a4f8c027f12d0946e';
+
+@ProviderFor(flashIlanlar)
+final flashIlanlarProvider = FlashIlanlarProvider._();
+
+final class FlashIlanlarProvider
+    extends
+        $FunctionalProvider<List<IlanModel>, List<IlanModel>, List<IlanModel>>
+    with $Provider<List<IlanModel>> {
+  FlashIlanlarProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'flashIlanlarProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$flashIlanlarHash();
+
+  @$internal
+  @override
+  $ProviderElement<List<IlanModel>> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  List<IlanModel> create(Ref ref) {
+    return flashIlanlar(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(List<IlanModel> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<List<IlanModel>>(value),
+    );
+  }
+}
+
+String _$flashIlanlarHash() => r'a1ab83418b19f19dce3ead51450bdbeda7ec69f7';
+
+@ProviderFor(sonAnlasmalar)
+final sonAnlasmalarProvider = SonAnlasmalarProvider._();
+
+final class SonAnlasmalarProvider
+    extends
+        $FunctionalProvider<List<IlanModel>, List<IlanModel>, List<IlanModel>>
+    with $Provider<List<IlanModel>> {
+  SonAnlasmalarProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'sonAnlasmalarProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$sonAnlasmalarHash();
+
+  @$internal
+  @override
+  $ProviderElement<List<IlanModel>> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  List<IlanModel> create(Ref ref) {
+    return sonAnlasmalar(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(List<IlanModel> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<List<IlanModel>>(value),
+    );
+  }
+}
+
+String _$sonAnlasmalarHash() => r'70cf9abfe4c4bb721340a82e7ae805de8af63e4c';
 
 @ProviderFor(kesfetIstatistik)
 final kesfetIstatistikProvider = KesfetIstatistikProvider._();
@@ -311,7 +395,7 @@ final class KesfetIstatistikProvider
   }
 }
 
-String _$kesfetIstatistikHash() => r'3b7fe43e94396eabd8cfbea427c590acb8eff822';
+String _$kesfetIstatistikHash() => r'84d6021c620a10a72df7c2f443c2679d960bcedb';
 
 @ProviderFor(ulkeIlanSayilari)
 final ulkeIlanSayilariProvider = UlkeIlanSayilariProvider._();
@@ -358,3 +442,91 @@ final class UlkeIlanSayilariProvider
 }
 
 String _$ulkeIlanSayilariHash() => r'5507e71c6a2a1b0fbd39b52a54e21903bf2e0407';
+
+@ProviderFor(trendKategoriler)
+final trendKategorilerProvider = TrendKategorilerProvider._();
+
+final class TrendKategorilerProvider
+    extends
+        $FunctionalProvider<
+          List<TrendKategori>,
+          List<TrendKategori>,
+          List<TrendKategori>
+        >
+    with $Provider<List<TrendKategori>> {
+  TrendKategorilerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'trendKategorilerProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$trendKategorilerHash();
+
+  @$internal
+  @override
+  $ProviderElement<List<TrendKategori>> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  List<TrendKategori> create(Ref ref) {
+    return trendKategoriler(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(List<TrendKategori> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<List<TrendKategori>>(value),
+    );
+  }
+}
+
+String _$trendKategorilerHash() => r'20d64c018d10ebcfccd1785f903deb871036b99b';
+
+@ProviderFor(spotlightIlan)
+final spotlightIlanProvider = SpotlightIlanProvider._();
+
+final class SpotlightIlanProvider
+    extends $FunctionalProvider<SpotlightIlan?, SpotlightIlan?, SpotlightIlan?>
+    with $Provider<SpotlightIlan?> {
+  SpotlightIlanProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'spotlightIlanProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$spotlightIlanHash();
+
+  @$internal
+  @override
+  $ProviderElement<SpotlightIlan?> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  SpotlightIlan? create(Ref ref) {
+    return spotlightIlan(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(SpotlightIlan? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<SpotlightIlan?>(value),
+    );
+  }
+}
+
+String _$spotlightIlanHash() => r'a38f4e001af6394073581b75fc22387915504fc5';

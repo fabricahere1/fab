@@ -1,0 +1,654 @@
+// lib/features/arama/presentation/arama_screen.dart
+
+import 'dart:async';
+
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+import 'package:iste_v3/shared/constants/app_colors.dart';
+import 'package:iste_v3/shared/constants/app_constants.dart';
+import 'package:iste_v3/core/cache/app_cache_manager.dart';
+import 'package:iste_v3/router/app_router.dart';
+import 'package:iste_v3/features/ilanlar/presentation/ilan_detay_screen.dart';
+
+const _kAlgoliaAppId     = 'NVHD1ZSPLZ';
+const _kAlgoliaSearchKey = '97de9ef489349d39ce0d256355b82952';
+const _kAlgoliaIndex     = 'ilanlar';
+
+class AramaSonucu {
+  final String objectID;
+  final String urun;
+  final String nereden;
+  final String nereye;
+  final String kategori;
+  final String tip;
+  final String? resimUrl;
+
+  const AramaSonucu({
+    required this.objectID,
+    required this.urun,
+    required this.nereden,
+    required this.nereye,
+    required this.kategori,
+    required this.tip,
+    this.resimUrl,
+  });
+
+  factory AramaSonucu.fromJson(Map<String, dynamic> json) => AramaSonucu(
+        objectID: json['objectID'] as String? ?? '',
+        urun:     json['urun']     as String? ?? '',
+        nereden:  json['nereden']  as String? ?? '',
+        nereye:   json['nereye']   as String? ?? '',
+        kategori: json['kategori'] as String? ?? '',
+        tip:      json['tip']      as String? ?? '',
+        resimUrl: json['resimUrl'] as String?,
+      );
+}
+
+Future<List<AramaSonucu>> _algoliaAra(String sorgu, {String? katFiltre}) async {
+  if (sorgu.trim().isEmpty && katFiltre == null) return [];
+
+  final url = Uri.parse(
+    'https://$_kAlgoliaAppId-dsn.algolia.net/1/indexes/$_kAlgoliaIndex/query',
+  );
+
+  final body = <String, dynamic>{
+    'query': sorgu,
+    'hitsPerPage': 30,
+    'attributesToRetrieve': [
+      'objectID', 'urun', 'nereden', 'nereye', 'kategori',
+      'tip', 'resimUrl', 'kategoriYolu',
+    ],
+  };
+
+  // Kategori filtresi — kategoriYolu dizisinde o key geçiyorsa göster
+  if (katFiltre != null) {
+    final altKeyler = tumAltKeyler(katFiltre);
+    final filterParts = altKeyler
+        .map((k) => 'kategoriYolu:$k OR kategori:$k')
+        .join(' OR ');
+    body['filters'] = filterParts;
+  }
+
+  final response = await http.post(
+    url,
+    headers: {
+      'X-Algolia-Application-Id': _kAlgoliaAppId,
+      'X-Algolia-API-Key': _kAlgoliaSearchKey,
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode(body),
+  );
+
+  if (response.statusCode != 200) return [];
+  final data = jsonDecode(response.body) as Map<String, dynamic>;
+  final hits = (data['hits'] as List<dynamic>? ?? []);
+  return hits.map((h) => AramaSonucu.fromJson(h as Map<String, dynamic>)).toList();
+}
+
+// Kategori key → Tabler ikon adı
+const Map<String, String> _katIkon = {
+  'elektronik': 'device-mobile',
+  'giyim':      'shirt',
+  'guzellik':   'sparkles',
+  'ev':         'home',
+  'spor':       'ball-football',
+  'kultur':     'book',
+  'gida':       'apple',
+  'diger':      'box',
+};
+
+class AramaScreen extends ConsumerStatefulWidget {
+  const AramaScreen({super.key});
+
+  @override
+  ConsumerState<AramaScreen> createState() => _AramaScreenState();
+}
+
+class _AramaScreenState extends ConsumerState<AramaScreen> {
+  final _ctrl  = TextEditingController();
+  final _focus = FocusNode();
+  Timer? _debounce;
+
+  List<AramaSonucu> _sonuclar   = [];
+  bool              _yukleniyor = false;
+  String            _sorgu      = '';
+  String?           _katFiltre;
+  final List<String> _sonAramalar = [];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _focus.requestFocus());
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _ctrl.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
+
+  void _sorguDegisti(String deger, {String? katFiltre}) {
+    _debounce?.cancel();
+    setState(() { _sorgu = deger; _katFiltre = katFiltre; });
+    if (deger.trim().isEmpty && katFiltre == null) {
+      setState(() { _sonuclar = []; _yukleniyor = false; });
+      return;
+    }
+    setState(() => _yukleniyor = true);
+    _debounce = Timer(const Duration(milliseconds: 350), () async {
+      final sonuclar = await _algoliaAra(deger.trim(), katFiltre: katFiltre);
+      if (mounted) setState(() { _sonuclar = sonuclar; _yukleniyor = false; });
+    });
+  }
+
+  void _sonAramaEkle(String s) {
+    if (s.trim().isEmpty) return;
+    _sonAramalar.remove(s);
+    _sonAramalar.insert(0, s);
+    if (_sonAramalar.length > 8) _sonAramalar.removeLast();
+  }
+
+  void _sonucaTikla(AramaSonucu s) {
+    _sonAramaEkle(_sorgu);
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (_, __, ___) => IlanDetayScreen(ilanId: s.objectID),
+        transitionsBuilder: (_, animation, __, child) =>
+            FadeTransition(opacity: animation, child: child),
+        transitionDuration: const Duration(milliseconds: 180),
+      ),
+    );
+  }
+
+  void _kategoriSec(String katKey) {
+    _ctrl.clear();
+    _sorguDegisti('', katFiltre: katKey);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final statusH = MediaQuery.of(context).padding.top;
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          SizedBox(height: statusH),
+
+          // ── Arama çubuğu — sadece alt çizgi ─────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _ctrl,
+                    focusNode: _focus,
+                    onChanged: (v) => _sorguDegisti(v),
+                    onSubmitted: _sonAramaEkle,
+                    cursorColor: AppColors.textSecondary,
+                    cursorWidth: 1.5,
+                    style: GoogleFonts.dmSans(
+                      fontSize: 17,
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w400,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Ara...',
+                      hintStyle: GoogleFonts.dmSans(
+                        fontSize: 17,
+                        color: AppColors.textHint,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      border: const UnderlineInputBorder(
+                        borderSide: BorderSide(color: Color(0xFFE0E0E0), width: 1),
+                      ),
+                      enabledBorder: const UnderlineInputBorder(
+                        borderSide: BorderSide(color: Color(0xFFE0E0E0), width: 1),
+                      ),
+                      focusedBorder: const UnderlineInputBorder(
+                        borderSide: BorderSide(color: Color(0xFFE0E0E0), width: 1),
+                      ),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.only(bottom: 8),
+                      suffixIcon: _sorgu.isNotEmpty
+                          ? GestureDetector(
+                              onTap: () { _ctrl.clear(); _sorguDegisti(''); },
+                              child: const Icon(Icons.close_rounded,
+                                  size: 18, color: AppColors.textHint),
+                            )
+                          : null,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                GestureDetector(
+                  onTap: () => context.pop(),
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      'İptal',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 14,
+                        color: AppColors.red,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 4),
+          Expanded(
+            child: _sorgu.isEmpty && _katFiltre == null
+                ? _BosHal(
+                    sonAramalar: _sonAramalar,
+                    onSonArama: (s) { _ctrl.text = s; _sorguDegisti(s); },
+                    onSonAramaSil: (s) => setState(() => _sonAramalar.remove(s)),
+                    onKategori: _kategoriSec,
+                  )
+                : _yukleniyor
+                    ? _YukleniyorHal()
+                    : _sonuclar.isEmpty
+                        ? _SonucYokHal(sorgu: _sorgu)
+                        : _SonucListesi(
+                            sonuclar: _sonuclar,
+                            sorgu: _sorgu,
+                            onTikla: _sonucaTikla,
+                          ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Boş hal ───────────────────────────────────────────────────────────────────
+
+class _BosHal extends StatelessWidget {
+  final List<String> sonAramalar;
+  final ValueChanged<String> onSonArama;
+  final ValueChanged<String> onSonAramaSil;
+  final ValueChanged<String> onKategori;
+
+  const _BosHal({
+    required this.sonAramalar,
+    required this.onSonArama,
+    required this.onSonAramaSil,
+    required this.onKategori,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        if (sonAramalar.isNotEmpty) ...[
+          _BolumBaslik(baslik: 'SON ARAMALAR'),
+          ...sonAramalar.map((s) => _SonAramaItem(
+                sorgu: s,
+                onTikla: () => onSonArama(s),
+                onSil: () => onSonAramaSil(s),
+              )),
+          const SizedBox(height: 8),
+        ],
+        _BolumBaslik(baslik: 'KATEGORİLER'),
+        ...kKategoriAgaci.map((kat) => _KategoriItem(
+              kat: kat,
+              onTikla: () => onKategori(kat.key),
+            )),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+}
+
+class _BolumBaslik extends StatelessWidget {
+  final String baslik;
+  const _BolumBaslik({required this.baslik});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+      child: Text(
+        baslik,
+        style: GoogleFonts.dmSans(
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+          color: AppColors.textHint,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+}
+
+class _SonAramaItem extends StatelessWidget {
+  final String sorgu;
+  final VoidCallback onTikla;
+  final VoidCallback onSil;
+  const _SonAramaItem({required this.sorgu, required this.onTikla, required this.onSil});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTikla,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            const Icon(Icons.history_rounded, size: 17, color: AppColors.textHint),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(sorgu,
+                  style: GoogleFonts.dmSans(fontSize: 14, color: AppColors.textPrimary)),
+            ),
+            GestureDetector(
+              onTap: onSil,
+              child: const Icon(Icons.close_rounded, size: 15, color: AppColors.textHint),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _KategoriItem extends StatelessWidget {
+  final KategoriNode kat;
+  final VoidCallback onTikla;
+  const _KategoriItem({required this.kat, required this.onTikla});
+
+  IconData _ikonBul(String key) {
+    switch (key) {
+      case 'elektronik': return Icons.phone_android_outlined;
+      case 'giyim':      return Icons.checkroom_outlined;
+      case 'guzellik':   return Icons.face_retouching_natural_outlined;
+      case 'ev':         return Icons.home_outlined;
+      case 'spor':       return Icons.sports_soccer_outlined;
+      case 'kultur':     return Icons.menu_book_outlined;
+      case 'gida':       return Icons.restaurant_outlined;
+      default:           return Icons.inventory_2_outlined;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTikla,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: Color(0xFFF5F5F5), width: 0.5)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 34, height: 34,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F5F5),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(_ikonBul(kat.key), size: 17, color: AppColors.textPrimary),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                kat.ad,
+                style: GoogleFonts.dmSans(
+                  fontSize: 14,
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.textHint),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Yükleniyor ────────────────────────────────────────────────────────────────
+
+class _YukleniyorHal extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.only(top: 8),
+      itemCount: 6,
+      separatorBuilder: (_, __) =>
+          const Divider(height: 1, indent: 76, color: Color(0xFFF5F5F5)),
+      itemBuilder: (_, __) => const _SkeletonItem(),
+    );
+  }
+}
+
+class _SkeletonItem extends StatelessWidget {
+  const _SkeletonItem();
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Container(width: 52, height: 52,
+              decoration: BoxDecoration(color: const Color(0xFFF5F5F5),
+                  borderRadius: BorderRadius.circular(10))),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Container(height: 13, width: 160, color: const Color(0xFFF5F5F5)),
+            const SizedBox(height: 6),
+            Container(height: 11, width: 100, color: const Color(0xFFF5F5F5)),
+          ])),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Sonuç yok ─────────────────────────────────────────────────────────────────
+
+class _SonucYokHal extends StatelessWidget {
+  final String sorgu;
+  const _SonucYokHal({required this.sorgu});
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        const Icon(Icons.search_off_rounded, size: 52, color: AppColors.textHint),
+        const SizedBox(height: 12),
+        Text('"$sorgu" için sonuç bulunamadı',
+            style: GoogleFonts.dmSans(fontSize: 15, color: AppColors.textSecondary),
+            textAlign: TextAlign.center),
+        const SizedBox(height: 6),
+        Text('Farklı bir kelime deneyin',
+            style: GoogleFonts.dmSans(fontSize: 13, color: AppColors.textHint)),
+      ]),
+    );
+  }
+}
+
+// ── Sonuç listesi ─────────────────────────────────────────────────────────────
+
+class _SonucListesi extends StatelessWidget {
+  final List<AramaSonucu> sonuclar;
+  final String sorgu;
+  final ValueChanged<AramaSonucu> onTikla;
+  const _SonucListesi({required this.sonuclar, required this.sorgu, required this.onTikla});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+          child: Text('${sonuclar.length} sonuç',
+              style: GoogleFonts.dmSans(fontSize: 12, color: AppColors.textHint)),
+        ),
+        Expanded(
+          child: ListView.separated(
+            padding: const EdgeInsets.only(bottom: 24),
+            itemCount: sonuclar.length,
+            separatorBuilder: (_, __) =>
+                const Divider(height: 1, indent: 76, color: Color(0xFFF5F5F5)),
+            itemBuilder: (_, i) => _SonucItem(
+              sonuc: sonuclar[i],
+              sorgu: sorgu,
+              onTikla: () => onTikla(sonuclar[i]),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SonucItem extends StatelessWidget {
+  final AramaSonucu sonuc;
+  final String sorgu;
+  final VoidCallback onTikla;
+  const _SonucItem({required this.sonuc, required this.sorgu, required this.onTikla});
+
+  @override
+  Widget build(BuildContext context) {
+    final isIstek = sonuc.tip == IlanTip.istek;
+    return InkWell(
+      onTap: onTikla,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: SizedBox(
+                width: 52, height: 52,
+                child: sonuc.resimUrl != null && sonuc.resimUrl!.isNotEmpty
+                    ? CachedNetworkImage(
+                        cacheManager: AppCacheManager.instance,
+                        imageUrl: sonuc.resimUrl!,
+                        fit: BoxFit.cover,
+                        fadeInDuration: Duration.zero,
+                        errorWidget: (_, __, ___) => _PlaceHolder(isIstek: isIstek),
+                      )
+                    : _PlaceHolder(isIstek: isIstek),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  Expanded(
+                    child: _HighlightText(
+                      text: sonuc.urun.isNotEmpty
+                          ? sonuc.urun
+                          : '${sonuc.nereden} → ${sonuc.nereye}',
+                      sorgu: sorgu,
+                      style: GoogleFonts.dmSans(
+                          fontSize: 14, fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary),
+                      highlightStyle: GoogleFonts.dmSans(
+                          fontSize: 14, fontWeight: FontWeight.w700,
+                          color: AppColors.red),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: isIstek ? AppColors.redLight : const Color(0xFFE3F2FD),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Text(
+                      isIstek ? 'İstek' : 'Taşıyıcı',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 10, fontWeight: FontWeight.w600,
+                        color: isIstek ? AppColors.red : const Color(0xFF1565C0),
+                      ),
+                    ),
+                  ),
+                ]),
+                if (sonuc.nereden.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Row(children: [
+                    const Icon(Icons.flight_takeoff_rounded,
+                        size: 12, color: AppColors.textHint),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text('${sonuc.nereden} → ${sonuc.nereye}',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 12, color: AppColors.textSecondary),
+                          overflow: TextOverflow.ellipsis),
+                    ),
+                  ]),
+                ],
+              ]),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PlaceHolder extends StatelessWidget {
+  final bool isIstek;
+  const _PlaceHolder({required this.isIstek});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: isIstek ? AppColors.redLight : const Color(0xFFE3F2FD),
+      child: Center(
+        child: Icon(
+          isIstek ? Icons.shopping_bag_outlined : Icons.flight_takeoff_rounded,
+          size: 22,
+          color: isIstek
+              ? AppColors.red.withValues(alpha: 0.4)
+              : const Color(0xFF1565C0).withValues(alpha: 0.4),
+        ),
+      ),
+    );
+  }
+}
+
+class _HighlightText extends StatelessWidget {
+  final String text;
+  final String sorgu;
+  final TextStyle style;
+  final TextStyle highlightStyle;
+  const _HighlightText({
+    required this.text, required this.sorgu,
+    required this.style, required this.highlightStyle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (sorgu.isEmpty) return Text(text, style: style, maxLines: 1, overflow: TextOverflow.ellipsis);
+    final lower = text.toLowerCase();
+    final idx   = lower.indexOf(sorgu.toLowerCase());
+    if (idx == -1) return Text(text, style: style, maxLines: 1, overflow: TextOverflow.ellipsis);
+    return RichText(
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      text: TextSpan(children: [
+        if (idx > 0) TextSpan(text: text.substring(0, idx), style: style),
+        TextSpan(text: text.substring(idx, idx + sorgu.length), style: highlightStyle),
+        if (idx + sorgu.length < text.length)
+          TextSpan(text: text.substring(idx + sorgu.length), style: style),
+      ]),
+    );
+  }
+}

@@ -1,9 +1,115 @@
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
+import { algoliasearch } from "algoliasearch";
 
 admin.initializeApp();
 
 const db = admin.firestore();
+
+// ── Algolia ───────────────────────────────────────────────────────────────────
+
+const ALGOLIA_APP_ID  = "NVHD1ZSPLZ";
+const ALGOLIA_API_KEY = "f5dc5bff05386fc3d86df1d1888d5bbd";
+const ALGOLIA_INDEX   = "ilanlar";
+
+const algoliaClient = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_API_KEY);
+
+// İlan eklenince → Algolia'ya ekle
+export const ilanEklendi = functions
+  .region("europe-west1")
+  .firestore.document("ilanlar/{ilanId}")
+  .onCreate(async (snap, context) => {
+    const data = snap.data();
+    if (!data) return;
+
+    await algoliaClient.saveObject({
+      indexName: ALGOLIA_INDEX,
+      body: {
+        objectID:        context.params.ilanId,
+        urun:            data.urun            ?? "",
+        nereden:         data.nereden         ?? "",
+        nereye:          data.nereye          ?? "",
+        kategori:        data.kategori        ?? "",
+        anaKategori:     data.anaKategori     ?? "",
+        kategoriYolu:    data.kategoriYolu    ?? [],
+        tip:             data.tip             ?? "",
+        aktif:           data.aktif           ?? true,
+        resimUrl:        (data.resimUrller && data.resimUrller.length > 0) ? data.resimUrller[0] : (data.resimUrl ?? ""),
+        olusturmaTarihi: data.olusturmaTarihi?.toMillis() ?? Date.now(),
+      },
+    });
+  });
+
+// İlan güncellenince → Algolia'yı güncelle
+export const ilanGuncellendi = functions
+  .region("europe-west1")
+  .firestore.document("ilanlar/{ilanId}")
+  .onUpdate(async (change, context) => {
+    const data = change.after.data();
+    if (!data) return;
+
+    await algoliaClient.saveObject({
+      indexName: ALGOLIA_INDEX,
+      body: {
+        objectID:        context.params.ilanId,
+        urun:            data.urun            ?? "",
+        nereden:         data.nereden         ?? "",
+        nereye:          data.nereye          ?? "",
+        kategori:        data.kategori        ?? "",
+        anaKategori:     data.anaKategori     ?? "",
+        kategoriYolu:    data.kategoriYolu    ?? [],
+        tip:             data.tip             ?? "",
+        aktif:           data.aktif           ?? true,
+        resimUrl:        (data.resimUrller && data.resimUrller.length > 0) ? data.resimUrller[0] : (data.resimUrl ?? ""),
+        olusturmaTarihi: data.olusturmaTarihi?.toMillis() ?? Date.now(),
+      },
+    });
+  });
+
+// İlan silinince → Algolia'dan sil
+export const ilanSilindi = functions
+  .region("europe-west1")
+  .firestore.document("ilanlar/{ilanId}")
+  .onDelete(async (snap, context) => {
+    await algoliaClient.deleteObject({
+      indexName: ALGOLIA_INDEX,
+      objectID:  context.params.ilanId,
+    });
+  });
+
+// Mevcut ilanları Algolia'ya toplu aktar (bir kez çalıştır)
+export const algoliaTopluAktar = functions
+  .region("europe-west1")
+  .https.onCall(async (_, context) => {
+    if (!context.auth) {
+      throw new functions.https.HttpsError("unauthenticated", "Giriş yapmalısın.");
+    }
+
+    const snap = await db.collection("ilanlar").get();
+    const records = snap.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        objectID:        doc.id,
+        urun:            data.urun            ?? "",
+        nereden:         data.nereden         ?? "",
+        nereye:          data.nereye          ?? "",
+        kategori:        data.kategori        ?? "",
+        anaKategori:     data.anaKategori     ?? "",
+        kategoriYolu:    data.kategoriYolu    ?? [],
+        tip:             data.tip             ?? "",
+        aktif:           data.aktif           ?? true,
+        resimUrl:        (data.resimUrller && data.resimUrller.length > 0) ? data.resimUrller[0] : (data.resimUrl ?? ""),
+        olusturmaTarihi: data.olusturmaTarihi?.toMillis() ?? Date.now(),
+      };
+    });
+
+    await algoliaClient.saveObjects({
+      indexName: ALGOLIA_INDEX,
+      objects:   records,
+    });
+
+    return { success: true, count: records.length };
+  });
 
 // ── Anlaşma Kabul ─────────────────────────────────────────────────────────────
 export const anlasmaKabul = functions
@@ -201,7 +307,7 @@ export const degerlendirmeBildirimiGonder = functions
     });
   });
 
-// ── Teslim Alındı Trigger — Her iki kullanıcıya bekleyen değerlendirme yaz ───
+// ── Teslim Alındı Trigger ─────────────────────────────────────────────────────
 export const teslimAlindiTrigger = functions
   .region("europe-west1")
   .firestore.document("sohbetler/{sohbetId}")
@@ -288,7 +394,7 @@ export const teslimAlindiTrigger = functions
     await batch.commit();
   });
 
-// ── İşlem Durumu FCM Trigger — Firestore değişince karşı tarafa push gönder ──
+// ── İşlem Durumu FCM Trigger ──────────────────────────────────────────────────
 export const islemDurumuFcmTrigger = functions
   .region("europe-west1")
   .firestore.document("sohbetler/{sohbetId}")
@@ -305,7 +411,6 @@ export const islemDurumuFcmTrigger = functions
     const kullanicilar: string[] = sonraki.kullanicilar ?? [];
     const sohbetId = context.params.sohbetId;
 
-    // Hangi durum yeni true oldu?
     const durumBilgileri: Record<string, { baslik: string; icerik: (ad: string) => string }> = {
       yolaCikti: {
         baslik: "Ürün yola çıktı! 🚀",
@@ -334,12 +439,6 @@ export const islemDurumuFcmTrigger = functions
       const yeniDeger = sonrakiDurumlar[key] === true;
 
       if (!eskiDeger && yeniDeger) {
-        // Kim değiştirdi? Bunu bilemeyiz ama sohbetteki iki kullanıcıdan
-        // değişikliği yapan değil, diğerine bildirim gönderiyoruz.
-        // Kimin yaptığını anlayamadığımız için her iki kullanıcıya da
-        // gönderip Flutter tarafında filtre bırakıyoruz (zaten bildirimler
-        // koleksiyonuna yazılmıyor bu triggerda — sadece FCM push).
-
         for (const uid of kullanicilar) {
           const kullaniciSnap = await db.collection("kullanicilar").doc(uid).get();
           if (!kullaniciSnap.exists) continue;
@@ -347,7 +446,6 @@ export const islemDurumuFcmTrigger = functions
           const fcmToken = kullaniciSnap.data()?.fcmToken as string | undefined;
           if (!fcmToken) continue;
 
-          // Karşı tarafın adını bul
           const karsiUid = kullanicilar.find((id) => id !== uid) ?? "";
           if (!karsiUid) continue;
 
@@ -378,7 +476,6 @@ export const islemDurumuFcmTrigger = functions
       }
     }
 
-    // anlasildi özel case
     for (const uid of kullanicilar) {
       const benimKey = `anlasildi_${uid}`;
       const eskiOnay = oncekiDurumlar[benimKey] === true;
