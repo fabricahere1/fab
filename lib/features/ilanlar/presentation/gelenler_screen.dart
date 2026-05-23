@@ -10,6 +10,7 @@ import '../providers/ilan_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart' as app_constants;
 import '../../../core/cache/app_cache_manager.dart';
+import 'package:iste_v3/features/arama/presentation/arama_screen.dart';
 import '../../../shared/widgets/bildirim_cani_widget.dart';
 import '../../../shared/widgets/neden_iste_bar.dart';
 import 'package:go_router/go_router.dart';
@@ -507,6 +508,21 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                               controller: _aramaCtrl,
                               onChanged: (v) =>
                                   setState(() => _aramaMetni = v),
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  PageRouteBuilder(
+                                    pageBuilder: (_, __, ___) =>
+                                        const AramaScreen(),
+                                    transitionsBuilder:
+                                        (_, anim, __, child) =>
+                                            FadeTransition(
+                                                opacity: anim,
+                                                child: child),
+                                    transitionDuration:
+                                        const Duration(milliseconds: 200),
+                                  ),
+                                );
+                              },
                               style: GoogleFonts.dmSans(
                                   fontSize: 13,
                                   color: AppColors.textPrimary,
