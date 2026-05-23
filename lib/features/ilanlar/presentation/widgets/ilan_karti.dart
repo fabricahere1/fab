@@ -91,21 +91,7 @@ class IlanKarti extends ConsumerWidget {
                   height: _resimYuksekligi(context),
                   width: double.infinity,
                   child: resimler.isNotEmpty
-                      ? CachedNetworkImage(
-                          cacheManager: AppCacheManager.instance,
-                          imageUrl: resimler.first,
-                          fit: BoxFit.cover,
-                          fadeInDuration: Duration.zero,
-                          fadeOutDuration: Duration.zero,
-                          memCacheWidth: MediaQuery.of(context).size.width.toInt(),
-                          errorWidget: (_, _, _) => Container(
-                            color: AppColors.surface,
-                            child: const Center(
-                              child: Icon(Icons.image_outlined,
-                                  color: AppColors.textHint, size: 28),
-                            ),
-                          ),
-                        )
+                      ? _IlanResim(url: resimler.first)
                       : Container(
                           color: AppColors.surface,
                           child: const Center(
@@ -181,6 +167,39 @@ class IlanKarti extends ConsumerWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── İlan Resim ────────────────────────────────────────────────────────────────
+
+class _IlanResim extends StatelessWidget {
+  final String url;
+
+  const _IlanResim({required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    final px = MediaQuery.devicePixelRatioOf(context);
+    final w = (MediaQuery.sizeOf(context).width / 2 * px).toInt();
+    return CachedNetworkImage(
+      cacheManager: AppCacheManager.instance,
+      imageUrl: url,
+      fit: BoxFit.cover,
+      memCacheWidth: w,
+      fadeInDuration: Duration.zero,
+      fadeOutDuration: Duration.zero,
+      placeholder: (_, __) => Shimmer.fromColors(
+        baseColor: Colors.grey[200]!,
+        highlightColor: Colors.grey[50]!,
+        child: Container(color: Colors.white),
+      ),
+      errorWidget: (_, _, _) => Container(
+        color: AppColors.surface,
+        child: const Center(
+          child: Icon(Icons.image_outlined, color: AppColors.textHint, size: 28),
         ),
       ),
     );

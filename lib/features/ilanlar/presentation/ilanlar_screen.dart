@@ -1,5 +1,6 @@
 // lib/features/ilanlar/presentation/ilanlar_screen.dart
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +10,7 @@ import '../domain/ilan_model.dart';
 import '../providers/ilan_provider.dart';
 import '../providers/grid_tercihi_notifier.dart';
 import '../../../shared/constants/app_colors.dart';
+import '../../../core/cache/app_cache_manager.dart';
 import 'package:iste_v3/features/arama/presentation/arama_screen.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../../../shared/widgets/bildirim_cani_widget.dart';
@@ -195,6 +197,21 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
       if (next.isNotEmpty) {
         setState(() => _seciliKategoriYolu = List<String>.from(next));
         ref.read(breadcrumbKategoriFiltresiProvider.notifier).temizle();
+      }
+    });
+
+    ref.listen<IlanListeState>(istekIlanlarProvider, (prev, next) {
+      // İlk yüklemede veya yeni ilanlar geldiğinde ilk 16 ilanın resmini önceden yükle
+      if (prev?.filtrelenmis.length != next.filtrelenmis.length) {
+        for (final ilan in next.filtrelenmis.take(16)) {
+          final url = ilan.tumResimler.isNotEmpty ? ilan.tumResimler.first : null;
+          if (url != null) {
+            precacheImage(
+              CachedNetworkImageProvider(url, cacheManager: AppCacheManager.instance),
+              context,
+            );
+          }
+        }
       }
     });
 
