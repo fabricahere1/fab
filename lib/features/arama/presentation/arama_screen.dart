@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -159,11 +160,8 @@ class _AramaScreenState extends ConsumerState<AramaScreen> {
   void _sonucaTikla(AramaSonucu s) {
     _sonAramaEkle(_sorgu);
     Navigator.of(context).push(
-      PageRouteBuilder(
-        pageBuilder: (_, __, ___) => IlanDetayScreen(ilanId: s.objectID),
-        transitionsBuilder: (_, animation, __, child) =>
-            FadeTransition(opacity: animation, child: child),
-        transitionDuration: const Duration(milliseconds: 180),
+      CupertinoPageRoute(
+        builder: (_) => IlanDetayScreen(ilanId: s.objectID),
       ),
     );
   }
