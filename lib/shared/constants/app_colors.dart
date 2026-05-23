@@ -6,33 +6,33 @@ class AppColors {
   AppColors._();
  
   // ── Ana Renkler ───────────────────────────────────────
-  static const primary     = Color(0xFF3C3C3C);
-  static const accent      = Color(0xFF5C5C5C);
+  static const primary     = Color(0xFF00C17C); // Dolap yeşili
+  static const accent      = Color(0xFF00A86B); // Dolap yeşili koyu
   static const red         = Color(0xFFE53935);
   static const orange      = Color(0xFFFF6B35);
  
   // ── Arka Plan ─────────────────────────────────────────
   static const white       = Color(0xFFFFFFFF);
-  static const surface     = Color(0xFFF5F5F5);
-  static const surfaceAlt  = Color(0xFFEEEEEE);
+  static const surface     = Color(0xFFF7F5F2);
+  static const surfaceAlt  = Color(0xFFEDE8E3);
  
   // ── Kenarlık & Ayraç ──────────────────────────────────
-  static const divider     = Color(0xFFE0E0E0);
+  static const divider     = Color(0xFFE8E3DE);
  
   // ── Metin ─────────────────────────────────────────────
-  static const textPrimary   = Color(0xFF212121);
+  static const textPrimary   = Color(0xFF1A1A1A);
   static const textSecondary = Color(0xFF757575);
-  static const textHint      = Color(0xFFBDBDBD);
+  static const textHint      = Color(0xFFBBBBBB);
  
   // ── Chip & Avatar ─────────────────────────────────────
-  static const avatarBg    = Color(0xFFEEEEEE);
-  static const chipBg      = Color(0xFFE8E8E8);
+  static const avatarBg    = Color(0xFFEDE8E3);
+  static const chipBg      = Color(0xFFEDE8E3);
  
   // ── Özel ──────────────────────────────────────────────
   static const yellow      = Color(0xFFFFB300);
   static const redLight    = Color(0xFFFFEBEE);
-  static const green       = Color(0xFF2E7D32);
-  static const greenLight  = Color(0xFFE8F5E9);
+  static const green       = Color(0xFF00C17C);
+  static const greenLight  = Color(0xFFE6F9F3);
  
   // ── Avatar Renkleri ───────────────────────────────────
   static const List<Color> avatarColors = [

@@ -16,10 +16,18 @@ import 'package:iste_v3/shared/constants/app_constants.dart';
 import 'package:iste_v3/core/cache/app_cache_manager.dart';
 import 'package:iste_v3/router/app_router.dart';
 import 'package:iste_v3/features/ilanlar/presentation/ilan_detay_screen.dart';
+import 'package:iste_v3/features/home/providers/son_goruntulenenler_provider.dart';
+import 'package:iste_v3/features/ilanlar/domain/ilan_model.dart';
 
 const _kAlgoliaAppId     = 'NVHD1ZSPLZ';
 const _kAlgoliaSearchKey = '97de9ef489349d39ce0d256355b82952';
 const _kAlgoliaIndex     = 'ilanlar';
+
+// Popüler arama terimleri — sabit liste
+const _kPopulerAramalar = [
+  'iPhone', 'Nike', 'Dyson', 'Zara', 'MacBook',
+  'Parfüm', 'Lego', 'PlayStation', 'Adidas', 'Vitamins',
+];
 
 class AramaSonucu {
   final String objectID;
@@ -67,7 +75,6 @@ Future<List<AramaSonucu>> _algoliaAra(String sorgu, {String? katFiltre}) async {
     ],
   };
 
-  // Kategori filtresi — kategoriYolu dizisinde o key geçiyorsa göster
   if (katFiltre != null) {
     final altKeyler = tumAltKeyler(katFiltre);
     final filterParts = altKeyler
@@ -92,18 +99,6 @@ Future<List<AramaSonucu>> _algoliaAra(String sorgu, {String? katFiltre}) async {
   return hits.map((h) => AramaSonucu.fromJson(h as Map<String, dynamic>)).toList();
 }
 
-// Kategori key → Tabler ikon adı
-const Map<String, String> _katIkon = {
-  'elektronik': 'device-mobile',
-  'giyim':      'shirt',
-  'guzellik':   'sparkles',
-  'ev':         'home',
-  'spor':       'ball-football',
-  'kultur':     'book',
-  'gida':       'apple',
-  'diger':      'box',
-};
-
 class AramaScreen extends ConsumerStatefulWidget {
   const AramaScreen({super.key});
 
@@ -120,7 +115,7 @@ class _AramaScreenState extends ConsumerState<AramaScreen> {
   bool              _yukleniyor = false;
   String            _sorgu      = '';
   String?           _katFiltre;
-  final List<String> _sonAramalar = [];
+  final List<String> _gecmisFiltreleri = []; // son aramalar = geçmiş filtreler
 
   @override
   void initState() {
@@ -150,15 +145,15 @@ class _AramaScreenState extends ConsumerState<AramaScreen> {
     });
   }
 
-  void _sonAramaEkle(String s) {
+  void _gecmisFiltreEkle(String s) {
     if (s.trim().isEmpty) return;
-    _sonAramalar.remove(s);
-    _sonAramalar.insert(0, s);
-    if (_sonAramalar.length > 8) _sonAramalar.removeLast();
+    _gecmisFiltreleri.remove(s);
+    _gecmisFiltreleri.insert(0, s);
+    if (_gecmisFiltreleri.length > 8) _gecmisFiltreleri.removeLast();
   }
 
   void _sonucaTikla(AramaSonucu s) {
-    _sonAramaEkle(_sorgu);
+    _gecmisFiltreEkle(_sorgu);
     Navigator.of(context).push(
       CupertinoPageRoute(
         builder: (_) => IlanDetayScreen(ilanId: s.objectID),
@@ -171,16 +166,40 @@ class _AramaScreenState extends ConsumerState<AramaScreen> {
     _sorguDegisti('', katFiltre: katKey);
   }
 
+  void _populerAramaYap(String terim) {
+    _ctrl.text = terim;
+    _sorguDegisti(terim);
+  }
+
+  // Son aramalara göre ilgili kategorileri bul
+  List<KategoriNode> _ilgiliKategoriler() {
+    if (_gecmisFiltreleri.isEmpty) return kKategoriAgaci.take(5).toList();
+    final Set<String> bulunanlar = {};
+    for (final arama in _gecmisFiltreleri) {
+      final q = arama.toLowerCase();
+      for (final kat in kKategoriAgaci) {
+        if (kat.ad.toLowerCase().contains(q) || q.contains(kat.key)) {
+          bulunanlar.add(kat.key);
+        }
+      }
+    }
+    final eslesen = kKategoriAgaci.where((k) => bulunanlar.contains(k.key)).toList();
+    final geri = kKategoriAgaci.where((k) => !bulunanlar.contains(k.key)).toList();
+    return [...eslesen, ...geri].take(5).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final statusH = MediaQuery.of(context).padding.top;
+    final sonGezilenler = ref.watch(sonGoruntulenenlerProvider);
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          SizedBox(height: statusH),
+          SizedBox(height: statusH + 8),
 
-          // ── Arama çubuğu — sadece alt çizgi ─────────────────────────────
+          // ── Arama çubuğu ─────────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: Row(
@@ -191,7 +210,7 @@ class _AramaScreenState extends ConsumerState<AramaScreen> {
                     controller: _ctrl,
                     focusNode: _focus,
                     onChanged: (v) => _sorguDegisti(v),
-                    onSubmitted: _sonAramaEkle,
+                    onSubmitted: (v) { _gecmisFiltreEkle(v); _sorguDegisti(v); },
                     cursorColor: AppColors.textSecondary,
                     cursorWidth: 1.5,
                     style: GoogleFonts.dmSans(
@@ -236,7 +255,7 @@ class _AramaScreenState extends ConsumerState<AramaScreen> {
                       'İptal',
                       style: GoogleFonts.dmSans(
                         fontSize: 14,
-                        color: AppColors.red,
+                        color: AppColors.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -250,10 +269,18 @@ class _AramaScreenState extends ConsumerState<AramaScreen> {
           Expanded(
             child: _sorgu.isEmpty && _katFiltre == null
                 ? _BosHal(
-                    sonAramalar: _sonAramalar,
-                    onSonArama: (s) { _ctrl.text = s; _sorguDegisti(s); },
-                    onSonAramaSil: (s) => setState(() => _sonAramalar.remove(s)),
+                    sonGezilenler: sonGezilenler,
+                    gecmisFiltreleri: _gecmisFiltreleri,
+                    ilgiliKategoriler: _ilgiliKategoriler(),
+                    onPopulerArama: _populerAramaYap,
+                    onGecmisFiltre: (s) { _ctrl.text = s; _sorguDegisti(s); },
+                    onGecmisFiltreSil: (s) => setState(() => _gecmisFiltreleri.remove(s)),
                     onKategori: _kategoriSec,
+                    onIlanTikla: (ilan) => Navigator.of(context).push(
+                      CupertinoPageRoute(
+                        builder: (_) => IlanDetayScreen(ilanId: ilan.id, ilan: ilan),
+                      ),
+                    ),
                   )
                 : _yukleniyor
                     ? _YukleniyorHal()
@@ -274,90 +301,189 @@ class _AramaScreenState extends ConsumerState<AramaScreen> {
 // ── Boş hal ───────────────────────────────────────────────────────────────────
 
 class _BosHal extends StatelessWidget {
-  final List<String> sonAramalar;
-  final ValueChanged<String> onSonArama;
-  final ValueChanged<String> onSonAramaSil;
+  final List<IlanModel> sonGezilenler;
+  final List<String> gecmisFiltreleri;
+  final List<KategoriNode> ilgiliKategoriler;
+  final ValueChanged<String> onPopulerArama;
+  final ValueChanged<String> onGecmisFiltre;
+  final ValueChanged<String> onGecmisFiltreSil;
   final ValueChanged<String> onKategori;
+  final ValueChanged<IlanModel> onIlanTikla;
 
   const _BosHal({
-    required this.sonAramalar,
-    required this.onSonArama,
-    required this.onSonAramaSil,
+    required this.sonGezilenler,
+    required this.gecmisFiltreleri,
+    required this.ilgiliKategoriler,
+    required this.onPopulerArama,
+    required this.onGecmisFiltre,
+    required this.onGecmisFiltreSil,
     required this.onKategori,
+    required this.onIlanTikla,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: EdgeInsets.zero,
+      padding: const EdgeInsets.only(bottom: 32),
       children: [
-        if (sonAramalar.isNotEmpty) ...[
-          _BolumBaslik(baslik: 'SON ARAMALAR'),
-          ...sonAramalar.map((s) => _SonAramaItem(
-                sorgu: s,
-                onTikla: () => onSonArama(s),
-                onSil: () => onSonAramaSil(s),
-              )),
-          const SizedBox(height: 8),
+
+        // ── Popüler Aramalar ──────────────────────────────────────────────
+        _BolumBaslik(baslik: 'Popüler Aramalar', ikon: Icons.local_fire_department_outlined),
+        SizedBox(
+          height: 40,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+            itemCount: _kPopulerAramalar.length,
+            itemBuilder: (_, i) => GestureDetector(
+              onTap: () => onPopulerArama(_kPopulerAramalar[i]),
+              child: Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFFAFA),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF888888), width: 0.3),
+                ),
+                child: Text(
+                  _kPopulerAramalar[i],
+                  style: GoogleFonts.dmSans(
+                    fontSize: 13,
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // ── Önceden Gezdiklerin ───────────────────────────────────────────
+        if (sonGezilenler.isNotEmpty) ...[
+          _BolumBaslik(baslik: 'Önceden Gezdiklerin', ikon: Icons.history_rounded),
+          SizedBox(
+            height: 100,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              itemCount: sonGezilenler.length,
+              itemBuilder: (_, i) {
+                final ilan = sonGezilenler[i];
+                final resimler = ilan.tumResimler;
+                return GestureDetector(
+                  onTap: () => onIlanTikla(ilan),
+                  child: Container(
+                    width: 80,
+                    margin: const EdgeInsets.only(right: 10),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.divider),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: resimler.isNotEmpty
+                          ? CachedNetworkImage(
+                              cacheManager: AppCacheManager.instance,
+                              imageUrl: resimler.first,
+                              fit: BoxFit.cover,
+                              fadeInDuration: Duration.zero,
+                              errorWidget: (_, __, ___) => _IlanPlaceholder(ilan: ilan),
+                            )
+                          : _IlanPlaceholder(ilan: ilan),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
         ],
-        _BolumBaslik(baslik: 'KATEGORİLER'),
-        ...kKategoriAgaci.map((kat) => _KategoriItem(
+
+        // ── Geçmiş Filtreler ─────────────────────────────────────────────
+        if (gecmisFiltreleri.isNotEmpty) ...[
+          _BolumBaslik(baslik: 'Geçmiş Filtreler', ikon: Icons.tune_rounded),
+          SizedBox(
+            height: 40,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              itemCount: _kPopulerAramalar.length,
+              itemBuilder: (_, i) => GestureDetector(
+                onTap: () => onPopulerArama(_kPopulerAramalar[i]),
+                child: Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFAFA),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFF888888), width: 0.3),
+                  ),
+                  child: Text(
+                    _kPopulerAramalar[i],
+                    style: GoogleFonts.dmSans(
+                      fontSize: 13,
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+
+        // ── İlgini Çekebilecek Kategoriler ───────────────────────────────
+        _BolumBaslik(baslik: 'İlgini Çekebilecek Kategoriler', ikon: Icons.category_outlined),
+        ...ilgiliKategoriler.map((kat) => _KategoriItem(
               kat: kat,
               onTikla: () => onKategori(kat.key),
             )),
-        const SizedBox(height: 24),
       ],
     );
   }
 }
 
-class _BolumBaslik extends StatelessWidget {
-  final String baslik;
-  const _BolumBaslik({required this.baslik});
-
+class _IlanPlaceholder extends StatelessWidget {
+  final IlanModel ilan;
+  const _IlanPlaceholder({required this.ilan});
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-      child: Text(
-        baslik,
-        style: GoogleFonts.dmSans(
-          fontSize: 11,
-          fontWeight: FontWeight.w500,
+    return Container(
+      color: AppColors.surface,
+      child: Center(
+        child: Icon(
+          ilan.tip == IlanTip.istek
+              ? Icons.shopping_bag_outlined
+              : Icons.flight_takeoff_outlined,
+          size: 20,
           color: AppColors.textHint,
-          letterSpacing: 0.5,
         ),
       ),
     );
   }
 }
 
-class _SonAramaItem extends StatelessWidget {
-  final String sorgu;
-  final VoidCallback onTikla;
-  final VoidCallback onSil;
-  const _SonAramaItem({required this.sorgu, required this.onTikla, required this.onSil});
+class _BolumBaslik extends StatelessWidget {
+  final String baslik;
+  final IconData ikon;
+  const _BolumBaslik({required this.baslik, required this.ikon});
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTikla,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: [
-            const Icon(Icons.history_rounded, size: 17, color: AppColors.textHint),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(sorgu,
-                  style: GoogleFonts.dmSans(fontSize: 14, color: AppColors.textPrimary)),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+      child: Row(
+        children: [
+          Icon(ikon, size: 16, color: AppColors.textSecondary),
+          const SizedBox(width: 6),
+          Text(
+            baslik,
+            style: GoogleFonts.dmSans(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
             ),
-            GestureDetector(
-              onTap: onSil,
-              child: const Icon(Icons.close_rounded, size: 15, color: AppColors.textHint),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -386,16 +512,16 @@ class _KategoriItem extends StatelessWidget {
     return InkWell(
       onTap: onTikla,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: Color(0xFFF5F5F5), width: 0.5)),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: AppColors.divider, width: 0.5)),
         ),
         child: Row(
           children: [
             Container(
               width: 34, height: 34,
               decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F5),
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(_ikonBul(kat.key), size: 17, color: AppColors.textPrimary),
@@ -403,7 +529,7 @@ class _KategoriItem extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                kat.ad,
+                '${kat.emoji}  ${kat.ad}',
                 style: GoogleFonts.dmSans(
                   fontSize: 14,
                   color: AppColors.textPrimary,
@@ -443,13 +569,13 @@ class _SkeletonItem extends StatelessWidget {
       child: Row(
         children: [
           Container(width: 52, height: 52,
-              decoration: BoxDecoration(color: const Color(0xFFF5F5F5),
+              decoration: BoxDecoration(color: AppColors.surface,
                   borderRadius: BorderRadius.circular(10))),
           const SizedBox(width: 12),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Container(height: 13, width: 160, color: const Color(0xFFF5F5F5)),
+            Container(height: 13, width: 160, color: AppColors.surface),
             const SizedBox(height: 6),
-            Container(height: 11, width: 100, color: const Color(0xFFF5F5F5)),
+            Container(height: 11, width: 100, color: AppColors.surface),
           ])),
         ],
       ),
@@ -560,21 +686,23 @@ class _SonucItem extends StatelessWidget {
                           color: AppColors.textPrimary),
                       highlightStyle: GoogleFonts.dmSans(
                           fontSize: 14, fontWeight: FontWeight.w700,
-                          color: AppColors.red),
+                          color: AppColors.primary),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                     decoration: BoxDecoration(
-                      color: isIstek ? AppColors.redLight : const Color(0xFFE3F2FD),
+                      color: isIstek
+                          ? AppColors.primary.withValues(alpha: 0.08)
+                          : const Color(0xFFE3F2FD),
                       borderRadius: BorderRadius.circular(5),
                     ),
                     child: Text(
                       isIstek ? 'İstek' : 'Taşıyıcı',
                       style: GoogleFonts.dmSans(
                         fontSize: 10, fontWeight: FontWeight.w600,
-                        color: isIstek ? AppColors.red : const Color(0xFF1565C0),
+                        color: isIstek ? AppColors.primary : const Color(0xFF1565C0),
                       ),
                     ),
                   ),
@@ -608,14 +736,12 @@ class _PlaceHolder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: isIstek ? AppColors.redLight : const Color(0xFFE3F2FD),
+      color: AppColors.surface,
       child: Center(
         child: Icon(
           isIstek ? Icons.shopping_bag_outlined : Icons.flight_takeoff_rounded,
           size: 22,
-          color: isIstek
-              ? AppColors.red.withValues(alpha: 0.4)
-              : const Color(0xFF1565C0).withValues(alpha: 0.4),
+          color: AppColors.primary.withValues(alpha: 0.4),
         ),
       ),
     );

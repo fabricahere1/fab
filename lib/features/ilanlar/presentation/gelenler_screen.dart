@@ -922,8 +922,9 @@ class _GelenKarti extends StatelessWidget {
       onTap: () => context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
+          color: const Color(0xFFFFFAFA),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFF888888), width: 0.3),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),

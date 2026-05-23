@@ -17,6 +17,7 @@ import '../../../router/app_router.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/utils/app_layout.dart';
 import '../../../shared/constants/app_constants.dart' as app_constants;
+import '../../../features/home/providers/son_goruntulenenler_provider.dart';
 import '../../../core/cache/app_cache_manager.dart';
 
 class IlanDetayScreen extends ConsumerStatefulWidget {
@@ -38,6 +39,16 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.ilan != null) {
+        ref.read(sonGoruntulenenlerProvider.notifier).kaydet(widget.ilan!);
+      }
+    });
   }
 
   Future<void> _otuzGunKontrol(IlanModel ilan) async {
@@ -346,7 +357,10 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
   }
 
   Widget _detayScaffold(BuildContext context, IlanModel ilan) {
-    WidgetsBinding.instance.addPostFrameCallback((_) => _otuzGunKontrol(ilan));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _otuzGunKontrol(ilan);
+      ref.read(sonGoruntulenenlerProvider.notifier).kaydet(ilan);
+    });
     return _IlanDetayIcerik(
       ilan: ilan,
       aktifResim: _aktifResim,

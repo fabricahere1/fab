@@ -16,7 +16,7 @@ import '../../../../shared/utils/app_layout.dart';
 import '../ilan_detay_screen.dart';
 import '../../../../shared/constants/app_constants.dart';
 
-const kResimYukseklikleri = [120.0, 150.0, 105.0, 135.0, 165.0, 112.0];
+const kResimYukseklikleri = [176.0, 208.0, 160.0, 192.0, 224.0, 168.0];
 
 // ── Grid Kartı ────────────────────────────────────────────────────────────────
 
@@ -68,8 +68,9 @@ class IlanKarti extends ConsumerWidget {
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          color: const Color(0xFFFFFAFA),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFF888888), width: 0.3),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
@@ -320,7 +321,7 @@ class ShimmerGrid extends StatelessWidget {
           return Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
