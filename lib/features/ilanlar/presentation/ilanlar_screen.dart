@@ -1,6 +1,7 @@
 // lib/features/ilanlar/presentation/ilanlar_screen.dart
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,6 +19,7 @@ import '../../../shared/widgets/neden_iste_bar.dart';
 import 'widgets/filtre_ekrani.dart';
 import 'widgets/ilan_karti.dart';
 import 'widgets/swipe_karti.dart';
+import 'package:iste_v3/features/ilanlar/presentation/favoriler_screen.dart';
 
 enum SiralamaTipi { enYeni, enEski, enCokFavorilenen, onayliIstekci }
 
@@ -482,6 +484,22 @@ class _IsteklerHeader extends StatelessWidget {
                   children: [
                     Image.asset('assets/images/logo.png', height: 48),
                     const Spacer(),
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).push(
+                        CupertinoPageRoute(
+                          builder: (_) => const FavorilerScreen(),
+                        ),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        child: const Icon(
+                          Icons.favorite_border,
+                          color: AppColors.textPrimary,
+                          size: 22,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 2),
                     const BildirimCaniWidget(),
                   ],
                 ),

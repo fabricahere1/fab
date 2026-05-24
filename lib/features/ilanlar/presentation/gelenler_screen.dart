@@ -1,9 +1,11 @@
 // lib/features/ilanlar/presentation/gelenler_screen.dart
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../domain/ilan_model.dart';
 import '../providers/ilan_provider.dart';
@@ -13,8 +15,17 @@ import '../../../core/cache/app_cache_manager.dart';
 import 'package:iste_v3/features/arama/presentation/arama_screen.dart';
 import '../../../shared/widgets/bildirim_cani_widget.dart';
 import '../../../shared/widgets/neden_iste_bar.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iste_v3/features/ilanlar/presentation/favoriler_screen.dart';
 import '../../../router/app_router.dart';
+import '../data/ilan_repository.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../../../core/cache/app_cache_manager.dart';
+import 'widgets/ilan_karti.dart';
+
+
+
 
 // ── Sıralama ──────────────────────────────────────────────────────────────────
 
@@ -51,7 +62,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
   @override
   bool get wantKeepAlive => true;
 
-@override
+  @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
@@ -90,7 +101,6 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
   List<IlanModel> _filtrele(List<IlanModel> liste) {
     var sonuc = liste;
 
-    // Kategori filtresi
     if (_seciliKategoriYolu.isNotEmpty) {
       final sonKey = _seciliKategoriYolu.last;
       final gecerliKeyler = app_constants.tumAltKeyler(sonKey);
@@ -99,13 +109,11 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
           i.kategoriYolu.any((k) => gecerliKeyler.contains(k))).toList();
     }
 
-    // Şehir filtresi
     if (_seciliSehir != null) {
       final sehir = _seciliSehir!.toLowerCase();
       sonuc = sonuc.where((i) => i.nereye.toLowerCase().contains(sehir)).toList();
     }
 
-    // Arama filtresi
     if (_aramaMetni.isNotEmpty) {
       final q = _aramaMetni.toLowerCase();
       sonuc = sonuc.where((i) =>
@@ -140,7 +148,6 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
   }
 
   void _filtreAc() {
-    // Mevcut değerlerin kopyası — modal kapanana kadar ana state'e dokunulmaz
     var modalKategoriYolu = List<String>.from(_seciliKategoriYolu);
     var modalSiralama     = _siralama;
     var modalSehir        = _seciliSehir;
@@ -195,7 +202,6 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Handle
                       Center(
                         child: Container(
                           width: 36, height: 4,
@@ -207,7 +213,6 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                         ),
                       ),
 
-                      // ── Kategori bölümü ──
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Row(
@@ -246,7 +251,6 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                         ),
                       ),
 
-                      // Breadcrumb
                       if (breadcrumb().isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
@@ -259,7 +263,6 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
 
                       const SizedBox(height: 10),
 
-                      // Kategori listesi
                       ConstrainedBox(
                         constraints: BoxConstraints(
                           maxHeight: MediaQuery.of(context).size.height * 0.3,
@@ -298,7 +301,6 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
 
                       const Divider(height: 24),
 
-                      // ── Sıralama ──
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Text('Sıralama',
@@ -330,7 +332,6 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
 
                       const Divider(height: 24),
 
-                      // ── Varış Şehri ──
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Text('Varış Şehri',
@@ -361,7 +362,6 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
 
                       const SizedBox(height: 24),
 
-                      // ── Uygula — sadece burada ana state güncellenir ──
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: SizedBox(
@@ -422,29 +422,21 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
         ),
       );
     } else {
-      listeWidget = SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            if (index == ilanlar.length) {
-              return state.dahaFazlaVar
-                  ? const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Center(child: SizedBox(
-                        width: 20, height: 20,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: AppColors.red),
-                      )),
-                    )
-                  : const SizedBox(height: 80);
-            }
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-              child: RepaintBoundary(
-                child: _GelenKarti(ilan: ilanlar[index]),
-              ),
-            );
-          },
-          childCount: ilanlar.length + 1,
+      listeWidget = SliverPadding(
+        padding: const EdgeInsets.all(10),
+        sliver: SliverMasonryGrid.count(
+          crossAxisCount: 2,
+          mainAxisSpacing: 10,
+          crossAxisSpacing: 10,
+          childCount: ilanlar.length,
+          itemBuilder: (context, index) => RepaintBoundary(
+            key: ValueKey(ilanlar[index].id),
+            child: IlanKarti(
+              ilan: ilanlar[index],
+              resimYukseklikleri: kResimYukseklikleri,
+              kolonSayisi: 2,
+            ),
+          ),
         ),
       );
     }
@@ -467,6 +459,22 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                 children: [
                   Image.asset('assets/images/logo.png', height: 48),
                   const Spacer(),
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).push(
+                      CupertinoPageRoute(
+                        builder: (_) => const FavorilerScreen(),
+                      ),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      child: const Icon(
+                        Icons.favorite_border,
+                        color: AppColors.textPrimary,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 2),
                   const BildirimCaniWidget(),
                 ],
               ),
@@ -605,96 +613,104 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
         ),
 
         // ── Satır 3: Kategori chip'leri ──
-        SizedBox(
-          height: 36,
-          child: ListView.builder(
-            controller: _kategoriScrollCtrl,
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
-            itemCount: app_constants.kKategoriAgaci.length + 1,
-            itemBuilder: (context, i) {
-              if (i == 0) {
-                final secili = _seciliAnaKey == null;
-                return GestureDetector(
-                  onTap: () => setState(() => _seciliKategoriYolu = []),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    margin: const EdgeInsets.only(right: 6),
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      gradient: secili
-                          ? const LinearGradient(
-                              colors: [Color(0xFFE53935), Color(0xFFEF5350)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            )
-                          : null,
-                      color: secili ? null : Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: secili
-                            ? Colors.transparent
-                            : const Color(0xFFEEEEEE),
-                        width: 1,
+        ClipRect(
+          child: AnimatedAlign(
+            duration: const Duration(milliseconds: 450),
+            curve: Curves.easeInOutCubic,
+            heightFactor: _aramaGizli ? 0.0 : 1.0,
+            alignment: Alignment.topCenter,
+            child: SizedBox(
+              height: 36,
+              child: ListView.builder(
+                controller: _kategoriScrollCtrl,
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+                itemCount: app_constants.kKategoriAgaci.length + 1,
+                itemBuilder: (context, i) {
+                  if (i == 0) {
+                    final secili = _seciliAnaKey == null;
+                    return GestureDetector(
+                      onTap: () => setState(() => _seciliKategoriYolu = []),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        margin: const EdgeInsets.only(right: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          gradient: secili
+                              ? const LinearGradient(
+                                  colors: [Color(0xFFE53935), Color(0xFFEF5350)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                )
+                              : null,
+                          color: secili ? null : Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: secili
+                                ? Colors.transparent
+                                : const Color(0xFFEEEEEE),
+                            width: 1,
+                          ),
+                          boxShadow: secili
+                              ? [BoxShadow(
+                                  color: const Color(0xFFE53935).withValues(alpha: 0.3),
+                                  blurRadius: 8, offset: const Offset(0, 2),
+                                )]
+                              : null,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text('Tümü',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: secili ? Colors.white : AppColors.textSecondary,
+                            )),
                       ),
-                      boxShadow: secili
-                          ? [BoxShadow(
-                              color: const Color(0xFFE53935).withValues(alpha: 0.3),
-                              blurRadius: 8, offset: const Offset(0, 2),
-                            )]
-                          : null,
+                    );
+                  }
+                  final kat    = app_constants.kKategoriAgaci[i - 1];
+                  final secili = _seciliAnaKey == kat.key;
+                  return GestureDetector(
+                    onTap: () => _anaKategoriSec(kat.key),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      margin: const EdgeInsets.only(right: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        gradient: secili
+                            ? const LinearGradient(
+                                colors: [Color(0xFFE53935), Color(0xFFEF5350)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              )
+                            : null,
+                        color: secili ? null : Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: secili
+                              ? Colors.transparent
+                              : const Color(0xFFEEEEEE),
+                          width: 1,
+                        ),
+                        boxShadow: secili
+                            ? [BoxShadow(
+                                color: const Color(0xFFE53935).withValues(alpha: 0.3),
+                                blurRadius: 8, offset: const Offset(0, 2),
+                              )]
+                            : null,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text('${kat.emoji} ${kat.ad}',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: secili ? Colors.white : AppColors.textPrimary,
+                          )),
                     ),
-                    alignment: Alignment.center,
-                    child: Text('Tümü',
-                        style: GoogleFonts.dmSans(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: secili ? Colors.white : AppColors.textSecondary,
-                        )),
-                  ),
-                );
-              }
-              final kat    = app_constants.kKategoriAgaci[i - 1];
-              final secili = _seciliAnaKey == kat.key;
-              return GestureDetector(
-                onTap: () => _anaKategoriSec(kat.key),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  margin: const EdgeInsets.only(right: 6),
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    gradient: secili
-                        ? const LinearGradient(
-                            colors: [Color(0xFFE53935), Color(0xFFEF5350)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          )
-                        : null,
-                    color: secili ? null : Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: secili
-                          ? Colors.transparent
-                          : const Color(0xFFEEEEEE),
-                      width: 1,
-                    ),
-                    boxShadow: secili
-                        ? [BoxShadow(
-                            color: const Color(0xFFE53935).withValues(alpha: 0.3),
-                            blurRadius: 8, offset: const Offset(0, 2),
-                          )]
-                        : null,
-                  ),
-                  alignment: Alignment.center,
-                  child: Text('${kat.emoji} ${kat.ad}',
-                      style: GoogleFonts.dmSans(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: secili ? Colors.white : AppColors.textPrimary,
-                      )),
-                ),
-              );
-            },
+                  );
+                },
+              ),
+            ),
           ),
         ),
 
@@ -760,7 +776,15 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
           ),
 
         // ── Neden İSTE barı ──
-        const SizedBox(height: 28, child: NedenIsteBar()),
+        ClipRect(
+          child: AnimatedAlign(
+            duration: const Duration(milliseconds: 450),
+            curve: Curves.easeInOutCubic,
+            heightFactor: _aramaGizli ? 0.0 : 1.0,
+            alignment: Alignment.topCenter,
+            child: const SizedBox(height: 28, child: NedenIsteBar()),
+          ),
+        ),
 
         Container(height: 0.5, color: AppColors.divider),
       ],
@@ -883,199 +907,6 @@ class _FiltreKategoriSatiri extends StatelessWidget {
   }
 }
 
-// ── Yatay Kart ────────────────────────────────────────────────────────────────
-
-class _GelenKarti extends StatelessWidget {
-  final IlanModel ilan;
-  const _GelenKarti({required this.ilan});
-
-  Color get _aciliyetRenk {
-    if (ilan.tarih == null) return AppColors.textSecondary;
-    final fark = ilan.tarih!
-        .difference(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day))
-        .inDays;
-    if (fark <= 1) return AppColors.red;
-    if (fark <= 3) return const Color(0xFFE65100);
-    return AppColors.green;
-  }
-
-  String? get _gelisYazisi {
-    if (ilan.tarih == null) return null;
-    final bugun = DateTime.now();
-    final fark = ilan.tarih!
-        .difference(DateTime(bugun.year, bugun.month, bugun.day))
-        .inDays;
-    if (fark < 0) return 'Geçti';
-    if (fark == 0) return 'Bugün';
-    if (fark == 1) return 'Yarın';
-    return '$fark gün';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final resimler     = ilan.tumResimler;
-    final gelisYazisi  = _gelisYazisi;
-    final aciliyetRenk = _aciliyetRenk;
-    final kategori     = app_constants.kategoriAdi(ilan.kategori);
-
-    return GestureDetector(
-      onTap: () => context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan),
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFFAFA),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFF888888), width: 0.3),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8, offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(14),
-                bottomLeft: Radius.circular(14),
-              ),
-              child: SizedBox(
-                width: 88, height: 88,
-                child: resimler.isNotEmpty
-                    ? CachedNetworkImage(
-                        cacheManager: AppCacheManager.instance,
-                        imageUrl: resimler.first,
-                        fit: BoxFit.cover,
-                        fadeInDuration: Duration.zero,
-                        fadeOutDuration: Duration.zero,
-                        memCacheWidth: 176,
-                        placeholder: (_, _) => _ResimPlaceholder(ilan: ilan),
-                        errorWidget: (_, _, _) => _ResimPlaceholder(ilan: ilan),
-                      )
-                    : _ResimPlaceholder(ilan: ilan),
-              ),
-            ),
-
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    if (ilan.urun.isNotEmpty)
-                      Text(
-                        ilan.urun,
-                        style: GoogleFonts.dmSans(
-                          fontSize: 13, fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                        maxLines: 1, overflow: TextOverflow.ellipsis,
-                      ),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            kategori.replaceAll(RegExp(r'^[^ ]+ '), ''),
-                            style: GoogleFonts.dmSans(
-                                fontSize: 10, color: AppColors.textSecondary),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        const Icon(Icons.flight_takeoff_rounded,
-                            size: 11, color: Color(0xFF64B5F6)),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            '${ilan.nereden} → ${ilan.nereye}',
-                            style: GoogleFonts.dmSans(
-                              fontSize: 11,
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 1, overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        const Spacer(),
-                        if (gelisYazisi != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: aciliyetRenk.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              gelisYazisi,
-                              style: GoogleFonts.dmSans(
-                                fontSize: 10, fontWeight: FontWeight.w700,
-                                color: aciliyetRenk,
-                              ),
-                            ),
-                          ),
-                        const SizedBox(width: 6),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const Padding(
-              padding: EdgeInsets.only(right: 8),
-              child: Icon(Icons.chevron_right, size: 18, color: AppColors.textHint),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Resim Placeholder ─────────────────────────────────────────────────────────
-
-class _ResimPlaceholder extends StatelessWidget {
-  final IlanModel ilan;
-  const _ResimPlaceholder({required this.ilan});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.surface,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.flight_takeoff_outlined,
-              color: Color(0xFF64B5F6), size: 24),
-          const SizedBox(height: 4),
-          Text(
-            ilan.nereden.length > 6
-                ? ilan.nereden.substring(0, 6)
-                : ilan.nereden,
-            style: GoogleFonts.dmSans(
-                fontSize: 9, color: AppColors.textSecondary,
-                fontWeight: FontWeight.w500),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 // ── Boş Ekran ─────────────────────────────────────────────────────────────────
 
 class _BosEkran extends StatelessWidget {
@@ -1113,8 +944,8 @@ class _BosEkran extends StatelessWidget {
     );
   }
 }
-// ── Gelenler Detay Ekranı — breadcrumb navigasyonu için ──────────────────────
-// Doğrudan route ile açılır: /gelenler?kategori=elektronik,telefon
+
+// ── Gelenler Detay Ekranı ─────────────────────────────────────────────────────
 
 class GelenlerDetayScreen extends ConsumerStatefulWidget {
   final List<String> kategoriYolu;
@@ -1202,7 +1033,11 @@ class _GelenlerDetayScreenState extends ConsumerState<GelenlerDetayScreen> {
                   itemBuilder: (context, index) =>
                       Padding(
                         padding: const EdgeInsets.only(bottom: 10),
-                        child: _GelenKarti(ilan: ilanlar[index]),
+                        child: IlanKarti(
+                          ilan: ilanlar[index],
+                          resimYukseklikleri: kResimYukseklikleri,
+                          kolonSayisi: 2,
+                        ),
                       ),
                 ),
     );

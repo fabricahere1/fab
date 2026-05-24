@@ -42,7 +42,7 @@ final class SonGoruntulenenlerProvider
 }
 
 String _$sonGoruntulenenlerHash() =>
-    r'f92284c8df7d927a444f090d6a01bdab5aab6108';
+    r'16150b00db55fd6ed3a233371615115b4ce3d36d';
 
 abstract class _$SonGoruntulenenler extends $Notifier<List<IlanModel>> {
   List<IlanModel> build();

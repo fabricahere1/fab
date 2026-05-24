@@ -337,6 +337,36 @@ class IlanRepository {
     await batch.commit();
   }
 
+  /// 12 saatlik throttle ile görüntülenme sayısını artırır.
+  /// Her kullanıcı–ilan çifti için subcollection kaydı tutulur.
+  Future<bool> goruntulenmeyiKaydet({
+    required String kullaniciId,
+    required String ilanId,
+  }) async {
+    final kayitRef = _col
+        .doc(ilanId)
+        .collection('goruntulenmeler')
+        .doc(kullaniciId);
+
+    bool sayildi = false;
+    await FirebaseFirestore.instance.runTransaction((txn) async {
+      final snap = await txn.get(kayitRef);
+      final simdi = DateTime.now();
+
+      if (snap.exists) {
+        final sonTarih = (snap.data()!['sonTarih'] as Timestamp).toDate();
+        if (simdi.difference(sonTarih).inHours < 12) return;
+      }
+
+      txn.set(kayitRef, {'sonTarih': Timestamp.fromDate(simdi)});
+      txn.update(_col.doc(ilanId), {
+        'goruntulenmeSayisi': FieldValue.increment(1),
+      });
+      sayildi = true;
+    });
+    return sayildi;
+  }
+
   Stream<List<Map<String, dynamic>>> favorilerStream(String kullaniciId) {
     return firestore
         .collection(Collections.favoriler)

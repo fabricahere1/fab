@@ -7,7 +7,6 @@ import '../../auth/providers/auth_provider.dart';
 
 part 'ilan_provider.g.dart';
 
-// DocumentSnapshot YOK — cursor olarak DateTime kullanılır
 class IlanListeState {
   final List<IlanModel> ilanlar;
   final bool yukleniyor;
@@ -127,6 +126,17 @@ class IstekIlanlar extends _$IstekIlanlar {
     );
   }
 
+  void ilanGoruntulenmeSayisiArttir(String ilanId) {
+    state = state.copyWith(
+      ilanlar: state.ilanlar.map((i) {
+        if (i.id == ilanId) {
+          return i.copyWith(goruntulenmeSayisi: i.goruntulenmeSayisi + 1);
+        }
+        return i;
+      }).toList(),
+    );
+  }
+
   void engellenenlerGuncelle(List<String> engellenenler) {
     state = state.copyWith(engellenenler: engellenenler);
   }
@@ -220,6 +230,17 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
     );
   }
 
+  void ilanGoruntulenmeSayisiArttir(String ilanId) {
+    state = state.copyWith(
+      ilanlar: state.ilanlar.map((i) {
+        if (i.id == ilanId) {
+          return i.copyWith(goruntulenmeSayisi: i.goruntulenmeSayisi + 1);
+        }
+        return i;
+      }).toList(),
+    );
+  }
+
   void engellenenlerGuncelle(List<String> engellenenler) {
     state = state.copyWith(engellenenler: engellenenler);
   }
@@ -284,10 +305,8 @@ class IlanOlustur extends _$IlanOlustur {
   }
 }
 
-// ── Tekil ilan stream — bildirimden açılırken kullanılır ──────────────────────
+// ── Tekil ilan stream ─────────────────────────────────────────────────────────
 
-/// Sadece ilanId ile Firestore'dan güncel ilan verisini izler.
-/// IlanDetayScreen bu provider'ı kullanır.
 @riverpod
 Stream<IlanModel?> ilanById(Ref ref, String ilanId) {
   return ref.watch(ilanRepositoryProvider).ilanStream(ilanId);
@@ -351,6 +370,6 @@ Set<String> favoriliIlanIdler(Ref ref) {
         .where((id) => id.isNotEmpty)
         .toSet(),
     loading: () => {},
-    error: (_, _) => {},
+    error: (_, __) => {},
   );
 }

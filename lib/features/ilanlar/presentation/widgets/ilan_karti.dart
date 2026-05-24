@@ -42,15 +42,24 @@ class IlanKarti extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final guncelIlan = ref.watch(
-      istekIlanlarProvider.select((s) {
+    final IlanModel guncelIlan;
+    if (ilan.tip == IlanTip.tasiyici) {
+      guncelIlan = ref.watch(tasiyiciIlanlarProvider.select((s) {
         try {
           return s.filtrelenmis.firstWhere((i) => i.id == ilan.id);
         } catch (_) {
           return ilan;
         }
-      }),
-    );
+      }));
+    } else {
+      guncelIlan = ref.watch(istekIlanlarProvider.select((s) {
+        try {
+          return s.filtrelenmis.firstWhere((i) => i.id == ilan.id);
+        } catch (_) {
+          return ilan;
+        }
+      }));
+    }
 
     final resimler       = guncelIlan.tumResimler;
     final kategoriAdiStr = kategoriAdi(guncelIlan.kategori);
@@ -91,7 +100,10 @@ class IlanKarti extends ConsumerWidget {
                   height: _resimYuksekligi(context),
                   width: double.infinity,
                   child: resimler.isNotEmpty
-                      ? _IlanResim(url: resimler.first)
+                      ? _IlanResimSlider(
+                          resimler: resimler,
+                          yukseklik: _resimYuksekligi(context),
+                        )
                       : Container(
                           color: AppColors.surface,
                           child: const Center(
@@ -163,6 +175,11 @@ class IlanKarti extends ConsumerWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                  const SizedBox(height: 5),
+                  _SayacWidget(
+                    goruntulenmeSayisi: guncelIlan.goruntulenmeSayisi,
+                    favoriSayisi: guncelIlan.favoriSayisi,
+                  ),
                 ],
               ),
             ),
@@ -173,35 +190,91 @@ class IlanKarti extends ConsumerWidget {
   }
 }
 
-// ── İlan Resim ────────────────────────────────────────────────────────────────
+// ── İlan Resim Slider (swipeable, tam boyut) ──────────────────────────────────
 
-class _IlanResim extends StatelessWidget {
-  final String url;
+class _IlanResimSlider extends StatefulWidget {
+  final List<String> resimler;
+  final double yukseklik;
 
-  const _IlanResim({required this.url});
+  const _IlanResimSlider({required this.resimler, required this.yukseklik});
+
+  @override
+  State<_IlanResimSlider> createState() => _IlanResimSliderState();
+}
+
+class _IlanResimSliderState extends State<_IlanResimSlider> {
+  final _pageCtrl = PageController();
+  int _aktif = 0;
+
+  @override
+  void dispose() {
+    _pageCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final px = MediaQuery.devicePixelRatioOf(context);
-    final w = (MediaQuery.sizeOf(context).width / 2 * px).toInt();
-    return CachedNetworkImage(
-      cacheManager: AppCacheManager.instance,
-      imageUrl: url,
-      fit: BoxFit.cover,
-      memCacheWidth: w,
-      fadeInDuration: Duration.zero,
-      fadeOutDuration: Duration.zero,
-      placeholder: (_, __) => Shimmer.fromColors(
-        baseColor: Colors.grey[200]!,
-        highlightColor: Colors.grey[50]!,
-        child: Container(color: Colors.white),
-      ),
-      errorWidget: (_, _, _) => Container(
-        color: AppColors.surface,
-        child: const Center(
-          child: Icon(Icons.image_outlined, color: AppColors.textHint, size: 28),
+    final w  = (MediaQuery.sizeOf(context).width / 2 * px).toInt();
+
+    return Stack(
+      children: [
+        // Fotoğraf PageView — karta dokunmayı absorbe etmesin
+        PageView.builder(
+          controller: _pageCtrl,
+          physics: widget.resimler.length > 1
+              ? const ClampingScrollPhysics()
+              : const NeverScrollableScrollPhysics(),
+          itemCount: widget.resimler.length,
+          onPageChanged: (i) => setState(() => _aktif = i),
+          itemBuilder: (_, i) => CachedNetworkImage(
+            cacheManager: AppCacheManager.instance,
+            imageUrl: widget.resimler[i],
+            fit: BoxFit.cover,
+            memCacheWidth: w,
+            fadeInDuration: Duration.zero,
+            fadeOutDuration: Duration.zero,
+            placeholder: (_, __) => Shimmer.fromColors(
+              baseColor: Colors.grey[200]!,
+              highlightColor: Colors.grey[50]!,
+              child: Container(color: Colors.white),
+            ),
+            errorWidget: (_, _, _) => Container(
+              color: AppColors.surface,
+              child: const Center(
+                child: Icon(Icons.image_outlined,
+                    color: AppColors.textHint, size: 28),
+              ),
+            ),
+          ),
         ),
-      ),
+
+        // Nokta indikatörü — sadece birden fazla fotoğraf varsa
+        if (widget.resimler.length > 1)
+          Positioned(
+            bottom: 6,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(widget.resimler.length, (i) {
+                final aktif = i == _aktif;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                  width: aktif ? 12 : 5,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: aktif
+                        ? Colors.white
+                        : Colors.white.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                );
+              }),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -273,13 +346,17 @@ class _FavoriButonState extends ConsumerState<_FavoriButon>
     // 2. Scale animasyonu
     _ctrl.forward().then((_) => _ctrl.reverse());
 
-    // 3. Arkada Firestore'a yaz
+    // 3. Arkada Firestore'a yaz ve provider state'i güncelle
     try {
       final repo = ref.read(ilanRepositoryProvider);
       if (_localFavori) {
         await repo.favoriyeEkle(kullaniciId: widget.uid, ilan: widget.ilan);
+        ref.read(istekIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(widget.ilan.id, 1);
+        ref.read(tasiyiciIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(widget.ilan.id, 1);
       } else {
         await repo.favoridanCikar(kullaniciId: widget.uid, ilanId: widget.ilan.id);
+        ref.read(istekIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(widget.ilan.id, -1);
+        ref.read(tasiyiciIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(widget.ilan.id, -1);
       }
     } catch (_) {
       // Hata olursa geri al
@@ -362,6 +439,130 @@ class ShimmerGrid extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+// ── Animasyonlu Görüntülenme / Favori Sayacı ─────────────────────────────────
+
+class _SayacWidget extends StatefulWidget {
+  final int goruntulenmeSayisi;
+  final int favoriSayisi;
+
+  const _SayacWidget({
+    required this.goruntulenmeSayisi,
+    required this.favoriSayisi,
+  });
+
+  @override
+  State<_SayacWidget> createState() => _SayacWidgetState();
+}
+
+class _SayacWidgetState extends State<_SayacWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<Offset> _slideOut;
+  late Animation<Offset> _slideIn;
+  bool _gosterGoruntulenme = true;
+  static const _interval = Duration(seconds: 3);
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _slideOut = Tween<Offset>(
+      begin: Offset.zero,
+      end: const Offset(0, -1),
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeIn));
+    _slideIn = Tween<Offset>(
+      begin: const Offset(0, 1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+
+    Future.delayed(_interval, _toggle);
+  }
+
+  void _toggle() {
+    if (!mounted) return;
+    _ctrl.forward().then((_) {
+      if (!mounted) return;
+      setState(() => _gosterGoruntulenme = !_gosterGoruntulenme);
+      _ctrl.reset();
+      Future.delayed(_interval, _toggle);
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sayiStr = _gosterGoruntulenme
+        ? '${widget.goruntulenmeSayisi}'
+        : '${widget.favoriSayisi}';
+    final ikon = _gosterGoruntulenme
+        ? Icons.remove_red_eye_outlined
+        : Icons.favorite_border;
+
+    return ClipRect(
+      child: SizedBox(
+        height: 16,
+        child: Stack(
+          children: [
+            // Çıkan
+            SlideTransition(
+              position: _slideOut,
+              child: _SayacSatir(
+                ikon: ikon,
+                sayi: sayiStr,
+              ),
+            ),
+            // Giren
+            SlideTransition(
+              position: _slideIn,
+              child: _SayacSatir(
+                ikon: _gosterGoruntulenme
+                    ? Icons.favorite_border
+                    : Icons.remove_red_eye_outlined,
+                sayi: _gosterGoruntulenme
+                    ? '${widget.favoriSayisi}'
+                    : '${widget.goruntulenmeSayisi}',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SayacSatir extends StatelessWidget {
+  final IconData ikon;
+  final String sayi;
+  const _SayacSatir({required this.ikon, required this.sayi});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(ikon, size: 10, color: AppColors.textHint),
+        const SizedBox(width: 3),
+        Text(
+          sayi,
+          style: GoogleFonts.dmSans(
+            fontSize: 10,
+            color: AppColors.textHint,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }

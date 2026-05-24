@@ -12,6 +12,7 @@ import '../features/home/presentation/home_screen.dart';
 import '../features/ilanlar/domain/ilan_model.dart';
 import '../features/ilanlar/presentation/ilan_detay_screen.dart';
 import '../features/ilanlar/presentation/gelenler_screen.dart';
+import '../features/ilanlar/presentation/favoriler_screen.dart';
 import '../features/auth/providers/auth_provider.dart';
 import '../features/profil/providers/profil_provider.dart';
 
@@ -28,6 +29,7 @@ abstract class AppRoutes {
   static const home          = '/home';
   static const ilanDetay     = '/ilan/:ilanId';
   static const gelenler      = '/gelenler';
+  static const favoriler     = '/favoriler';
 
   static String ilanDetayPath(String ilanId) => '/ilan/$ilanId';
   static String gelenlerPath({List<String> kategoriYolu = const []}) {
@@ -122,6 +124,10 @@ GoRouter router(Ref ref) {
           final ilan = state.extra as IlanModel?;
           return IlanDetayScreen(ilanId: ilanId, ilan: ilan);
         },
+      ), // GoRoute
+      GoRoute(
+        path: AppRoutes.favoriler,
+        builder: (_, __) => const FavorilerScreen(),
       ),
       GoRoute(
         path: AppRoutes.gelenler,

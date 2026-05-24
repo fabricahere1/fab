@@ -35,6 +35,9 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
   final _pageController = PageController();
   bool _otuzGunKontrolEdildi = false;
 
+  // Oturumda hangi ilanlar sayıldı — çift sayımı önler
+  static final _sayilanlar = <String>{};
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -47,6 +50,19 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.ilan != null) {
         ref.read(sonGoruntulenenlerProvider.notifier).kaydet(widget.ilan!);
+      }
+      final uid = ref.read(currentUserProvider)?.uid;
+      final ilanSahibiId = widget.ilan?.kullaniciId;
+      if (uid != null && uid != ilanSahibiId && !_sayilanlar.contains(widget.ilanId)) {
+        // Optimistic: UI'ı hemen güncelle
+        _sayilanlar.add(widget.ilanId);
+        ref.read(istekIlanlarProvider.notifier).ilanGoruntulenmeSayisiArttir(widget.ilanId);
+        ref.read(tasiyiciIlanlarProvider.notifier).ilanGoruntulenmeSayisiArttir(widget.ilanId);
+        // Arka planda Firestore'a kaydet (12 saatlik throttle)
+        ref.read(ilanRepositoryProvider).goruntulenmeyiKaydet(
+          kullaniciId: uid,
+          ilanId: widget.ilanId,
+        );
       }
     });
   }
@@ -1192,9 +1208,12 @@ class _ResimBuyukEkran extends StatefulWidget {
   State<_ResimBuyukEkran> createState() => _ResimBuyukEkranState();
 }
 
-class _ResimBuyukEkranState extends State<_ResimBuyukEkran> {
+class _ResimBuyukEkranState extends State<_ResimBuyukEkran>
+    with TickerProviderStateMixin {
   late int _aktif;
   late TransformationController _transformController;
+  AnimationController? _zoomCtrl;
+  Animation<Matrix4>? _zoomAnim;
 
   @override
   void initState() {
@@ -1205,19 +1224,39 @@ class _ResimBuyukEkranState extends State<_ResimBuyukEkran> {
 
   @override
   void dispose() {
+    _zoomCtrl?.dispose();
     _transformController.dispose();
     super.dispose();
   }
 
   void _doubleTapZoom(TapDownDetails details) {
-    if (_transformController.value != Matrix4.identity()) {
-      _transformController.value = Matrix4.identity();
+    _zoomCtrl?.stop();
+    _zoomCtrl?.dispose();
+
+    final isZoomedIn = _transformController.value != Matrix4.identity();
+    final begin = _transformController.value;
+    final Matrix4 end;
+
+    if (isZoomedIn) {
+      end = Matrix4.identity();
     } else {
       final p = details.localPosition;
-      _transformController.value = Matrix4.identity()
+      end = Matrix4.identity()
         ..translateByDouble(-p.dx * 1.5, -p.dy * 1.5, 0, 1)
         ..scaleByDouble(2.5, 2.5, 1, 1);
     }
+
+    _zoomCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _zoomAnim = Matrix4Tween(begin: begin, end: end).animate(
+      CurvedAnimation(parent: _zoomCtrl!, curve: Curves.easeInOutCubic),
+    )..addListener(() {
+        _transformController.value = _zoomAnim!.value;
+      });
+
+    _zoomCtrl!.forward();
   }
 
   @override

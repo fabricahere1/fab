@@ -41,7 +41,7 @@ final class IstekIlanlarProvider
   }
 }
 
-String _$istekIlanlarHash() => r'3a89cc2394ae2483b063d23a8241b3b31ab09aa0';
+String _$istekIlanlarHash() => r'6e17e094ad40a43f6bf469265b39a76475c68f5b';
 
 abstract class _$IstekIlanlar extends $Notifier<IlanListeState> {
   IlanListeState build();
@@ -93,7 +93,7 @@ final class TasiyiciIlanlarProvider
   }
 }
 
-String _$tasiyiciIlanlarHash() => r'9037353a5fcdedadd4392fcfcfedf8233e2a338a';
+String _$tasiyiciIlanlarHash() => r'5dfff157a9a9913828caae5a17570bb684570325';
 
 abstract class _$TasiyiciIlanlar extends $Notifier<IlanListeState> {
   IlanListeState build();
@@ -165,14 +165,8 @@ abstract class _$IlanOlustur extends $Notifier<IlanOlusturState> {
   }
 }
 
-/// Sadece ilanId ile Firestore'dan güncel ilan verisini izler.
-/// IlanDetayScreen bu provider'ı kullanır.
-
 @ProviderFor(ilanById)
 final ilanByIdProvider = IlanByIdFamily._();
-
-/// Sadece ilanId ile Firestore'dan güncel ilan verisini izler.
-/// IlanDetayScreen bu provider'ı kullanır.
 
 final class IlanByIdProvider
     extends
@@ -182,8 +176,6 @@ final class IlanByIdProvider
           Stream<IlanModel?>
         >
     with $FutureModifier<IlanModel?>, $StreamProvider<IlanModel?> {
-  /// Sadece ilanId ile Firestore'dan güncel ilan verisini izler.
-  /// IlanDetayScreen bu provider'ı kullanır.
   IlanByIdProvider._({
     required IlanByIdFamily super.from,
     required String super.argument,
@@ -229,9 +221,6 @@ final class IlanByIdProvider
 
 String _$ilanByIdHash() => r'8d240a8d24b31e8adc4a01b60f7877f170ffc24d';
 
-/// Sadece ilanId ile Firestore'dan güncel ilan verisini izler.
-/// IlanDetayScreen bu provider'ı kullanır.
-
 final class IlanByIdFamily extends $Family
     with $FunctionalFamilyOverride<Stream<IlanModel?>, String> {
   IlanByIdFamily._()
@@ -242,9 +231,6 @@ final class IlanByIdFamily extends $Family
         $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
-
-  /// Sadece ilanId ile Firestore'dan güncel ilan verisini izler.
-  /// IlanDetayScreen bu provider'ı kullanır.
 
   IlanByIdProvider call(String ilanId) =>
       IlanByIdProvider._(argument: ilanId, from: this);
@@ -655,4 +641,4 @@ final class FavoriliIlanIdlerProvider
   }
 }
 
-String _$favoriliIlanIdlerHash() => r'a18c9f8fac3da1192de2351098dcbea327a3aaaf';
+String _$favoriliIlanIdlerHash() => r'07a4587619f6cc61ec5bfc0c319dcabca274e856';

@@ -181,7 +181,7 @@ final class PopulerGuzergahlarProvider
 }
 
 String _$populerGuzergahlarHash() =>
-    r'c0dbb485294611a9c7f621c462bc1e3a7c38e0b4';
+    r'f349c1e2d2800e297b80787697d0099d6ad92d6e';
 
 @ProviderFor(trendIstekler)
 final trendIsteklerProvider = TrendIsteklerProvider._();
