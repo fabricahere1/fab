@@ -39,6 +39,7 @@ abstract class IlanModel with _$IlanModel {
     @TimestampConverter() DateTime? tarih,
     @TimestampConverter() DateTime? olusturmaTarihi,
     @Default('') String resimUrl,
+    @Default('') String resimThumbUrl,
     @Default([]) List<String> resimUrller,
     @Default('') String urunLinki,
     @Default(0) int favoriSayisi,
@@ -67,7 +68,8 @@ abstract class IlanModel with _$IlanModel {
       aktif:           data['aktif']        as bool?   ?? true,
       tarih:           (data['tarih']       as Timestamp?)?.toDate(),
       olusturmaTarihi: (data['olusturmaTarihi'] as Timestamp?)?.toDate(),
-      resimUrl:        data['resimUrl']     as String? ?? '',
+      resimUrl:        data['resimUrl']      as String? ?? '',
+      resimThumbUrl:   data['resimThumbUrl'] as String? ?? '',
       resimUrller:     List<String>.from(data['resimUrller'] ?? []),
       urunLinki:       data['urunLinki']    as String? ?? '',
       favoriSayisi:         (data['favoriSayisi']         as num?)?.toInt() ?? 0,
@@ -86,6 +88,14 @@ abstract class IlanModel with _$IlanModel {
 }
 
 extension IlanModelX on IlanModel {
+  /// Grid/liste görünümleri için küçük resim. Thumbnail varsa onu döner.
+  String get gridResim {
+    if (resimThumbUrl.isNotEmpty) return resimThumbUrl;
+    if (resimUrl.isNotEmpty) return resimUrl;
+    if (resimUrller.isNotEmpty) return resimUrller.first;
+    return '';
+  }
+
   List<String> get tumResimler {
     if (resimUrller.isNotEmpty) return resimUrller;
     if (resimUrl.isNotEmpty) return [resimUrl];
@@ -112,7 +122,8 @@ extension IlanModelX on IlanModel {
     if (beden.isNotEmpty)    'beden':    beden,
     if (tarih != null) 'tarih': Timestamp.fromDate(tarih!),
     'olusturmaTarihi': FieldValue.serverTimestamp(),
-    if (resimUrl.isNotEmpty) 'resimUrl': resimUrl,
-    if (resimUrller.isNotEmpty) 'resimUrller': resimUrller,
+    if (resimUrl.isNotEmpty)      'resimUrl':      resimUrl,
+    if (resimThumbUrl.isNotEmpty) 'resimThumbUrl': resimThumbUrl,
+    if (resimUrller.isNotEmpty)   'resimUrller':   resimUrller,
   };
 }

@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../domain/ilan_model.dart';
-import '../data/ilan_repository.dart';
 import '../providers/ilan_provider.dart';
 import '../presentation/ilan_form_screen.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -59,7 +58,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
         ref.read(istekIlanlarProvider.notifier).ilanGoruntulenmeSayisiArttir(widget.ilanId);
         ref.read(tasiyiciIlanlarProvider.notifier).ilanGoruntulenmeSayisiArttir(widget.ilanId);
         // Arka planda Firestore'a kaydet (12 saatlik throttle)
-        ref.read(ilanRepositoryProvider).goruntulenmeyiKaydet(
+        ref.read(ilanIslemleriProvider.notifier).goruntulemeKaydet(
           kullaniciId: uid,
           ilanId: widget.ilanId,
         );
@@ -74,25 +73,18 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
     if (tarih == null) return;
     final fark = DateTime.now().difference(tarih).inDays;
     if (fark >= 30 && ilan.aktif) {
-      await ref.read(ilanRepositoryProvider).ilanPasifYap(ilan.id);
+      await ref.read(ilanIslemleriProvider.notifier).pasifYap(ilan.id);
     }
   }
 
   String get _benimUid => ref.read(currentUserProvider)?.uid ?? '';
 
   Future<void> _favorToggle(IlanModel ilan, bool favorideMi) async {
-    final uid = _benimUid;
-    if (uid.isEmpty) return;
+    if (_benimUid.isEmpty) return;
     if (favorideMi) {
-      await ref.read(ilanRepositoryProvider)
-          .favoridanCikar(kullaniciId: uid, ilanId: ilan.id);
-      ref.read(istekIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilan.id, -1);
-      ref.read(tasiyiciIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilan.id, -1);
+      await ref.read(favoriProvider.notifier).cikar(ilan.id);
     } else {
-      await ref.read(ilanRepositoryProvider)
-          .favoriyeEkle(kullaniciId: uid, ilan: ilan);
-      ref.read(istekIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilan.id, 1);
-      ref.read(tasiyiciIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilan.id, 1);
+      await ref.read(favoriProvider.notifier).ekle(ilan);
     }
   }
 
@@ -203,7 +195,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
       onayMetin: 'Sil',
     );
     if (onay == true && mounted) {
-      await ref.read(ilanRepositoryProvider).ilanSil(ilanId);
+      await ref.read(ilanIslemleriProvider.notifier).sil(ilanId);
       if (mounted) context.pop();
     }
   }

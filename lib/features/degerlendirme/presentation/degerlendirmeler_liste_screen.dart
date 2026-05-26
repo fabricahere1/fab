@@ -1,17 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../data/degerlendirme_repository.dart';
+import '../providers/degerlendirme_provider.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
-
-// ── Provider ──────────────────────────────────────────────
-
-final kullaniciDegerlendirmeleriProvider = StreamProvider.autoDispose
-    .family<List<Map<String, dynamic>>, String>(
-        (ref, kullaniciId) => ref
-            .read(degerlendirmeRepositoryProvider)
-            .kullaniciDegerlendirmeleriStream(kullaniciId));
 
 // ── Ekran ─────────────────────────────────────────────────
 

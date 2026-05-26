@@ -10,7 +10,6 @@ import '../../../../shared/constants/app_colors.dart';
 import '../../../../core/cache/app_cache_manager.dart';
 import '../../domain/ilan_model.dart';
 import '../../providers/ilan_provider.dart';
-import '../../data/ilan_repository.dart';
 import '../../../auth/providers/auth_provider.dart';
 import '../ilan_detay_screen.dart';
 
@@ -253,17 +252,12 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
   // ── Favori ───────────────────────────────────────────────────────────────
 
   Future<void> _favToggle(IlanModel ilan) async {
-    final uid = ref.read(currentUserProvider)?.uid;
-    if (uid == null) return;
+    if (ref.read(currentUserProvider) == null) return;
     final isFav = ref.read(favoriliIlanIdlerProvider).contains(ilan.id);
     if (isFav) {
-      await ref
-          .read(ilanRepositoryProvider)
-          .favoridanCikar(kullaniciId: uid, ilanId: ilan.id);
+      await ref.read(favoriProvider.notifier).cikar(ilan.id);
     } else {
-      await ref
-          .read(ilanRepositoryProvider)
-          .favoriyeEkle(kullaniciId: uid, ilan: ilan);
+      await ref.read(favoriProvider.notifier).ekle(ilan);
       _favCtrl.forward(from: 0).then((_) {
         if (mounted) _favCtrl.reverse();
       });

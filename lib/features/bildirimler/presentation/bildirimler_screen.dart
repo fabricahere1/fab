@@ -6,8 +6,8 @@ import '../providers/bildirim_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../mesajlar/presentation/sohbet_screen.dart';
 import '../../degerlendirme/presentation/degerlendirme_screen.dart';
-import '../../degerlendirme/data/degerlendirme_repository.dart';
-import '../../mesajlar/data/mesaj_repository.dart';
+import '../../degerlendirme/providers/degerlendirme_provider.dart';
+import '../../mesajlar/providers/mesaj_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 
 class BildirimlerScreen extends ConsumerStatefulWidget {
@@ -150,7 +150,7 @@ class _BildirimSatiri extends ConsumerWidget {
 
       if (karsiId.isEmpty) return;
 
-      final d = await ref.read(mesajRepositoryProvider).sohbetGetir(sohbetId);
+      final d = await ref.read(sohbetIslemleriProvider.notifier).getir(sohbetId);
       if (d == null) return;
       final ilanId     = d['ilanId']     as String? ?? '';
       final ilanBaslik = d['ilanBaslik'] as String? ?? '';
@@ -185,8 +185,7 @@ class _BildirimSatiri extends ConsumerWidget {
       final benimUid = ref.read(currentUserProvider)?.uid ?? '';
       if (benimUid.isEmpty) return;
 
-      final repo = ref.read(degerlendirmeRepositoryProvider);
-      final zaten = await repo.zatenDegerlendirdimMi(
+      final zaten = await ref.read(degerlendirmeIslemleriProvider.notifier).zatenYaptimMi(
         sohbetId: sohbetId,
         kullaniciId: benimUid,
       );
@@ -211,7 +210,7 @@ class _BildirimSatiri extends ConsumerWidget {
       );
 
       if (tamamlandi && context.mounted) {
-        await repo.bekleyenDegerlendirmeTamamla(
+        await ref.read(degerlendirmeIslemleriProvider.notifier).bekleyenTamamla(
           sohbetId: sohbetId,
           kullaniciId: benimUid,
         );

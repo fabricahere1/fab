@@ -336,3 +336,46 @@ Stream<Map<String, dynamic>?> benimProfil(Ref ref) {
   if (uid == null) return const Stream.empty();
   return ref.watch(kullaniciRepositoryProvider).kullaniciDataStream(uid);
 }
+
+// ── İşlem durumu işlemleri ────────────────────────────────────────────────────
+
+@riverpod
+class IslemDurumuIslemleri extends _$IslemDurumuIslemleri {
+  @override
+  AsyncValue<void> build(String sohbetId) => const AsyncData(null);
+
+  MesajRepository get _repo => ref.read(mesajRepositoryProvider);
+
+  Future<void> guncelle(String durum) async {
+    await _repo.islemDurumuGuncelle(sohbetId: sohbetId, durum: durum);
+  }
+
+  Future<void> anlasildiIsaretle(String benimUid) async {
+    await _repo.anlasildiIsaretle(sohbetId: sohbetId, benimUid: benimUid);
+  }
+
+  Future<void> teslimTamamla() async {
+    await _repo.teslimTamamla(sohbetId: sohbetId);
+  }
+}
+
+// ── Sohbet işlemleri ──────────────────────────────────────────────────────────
+
+@riverpod
+class SohbetIslemleri extends _$SohbetIslemleri {
+  @override
+  AsyncValue<void> build() => const AsyncData(null);
+
+  MesajRepository get _repo => ref.read(mesajRepositoryProvider);
+
+  Future<void> gizle({
+    required String sohbetId,
+    required String kullaniciId,
+  }) async {
+    await _repo.sohbetiGizle(sohbetId: sohbetId, kullaniciId: kullaniciId);
+  }
+
+  Future<Map<String, dynamic>?> getir(String sohbetId) async {
+    return _repo.sohbetGetir(sohbetId);
+  }
+}

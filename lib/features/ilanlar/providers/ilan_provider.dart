@@ -62,7 +62,7 @@ class IstekIlanlar extends _$IstekIlanlar {
 
   IlanRepository get _repo => ref.read(ilanRepositoryProvider);
 
-  Future<void> _ilkYukle() async {
+  Future<void> _ilkYukle({int deneme = 0}) async {
     state = state.copyWith(yukleniyor: true);
     try {
       final sonuc = await _repo.istekIlanlariniGetir();
@@ -74,7 +74,12 @@ class IstekIlanlar extends _$IstekIlanlar {
       );
     } catch (e) {
       debugPrint('İstek ilanları yükleme hatası: $e');
-      state = state.copyWith(yukleniyor: false);
+      if (deneme < 2) {
+        await Future.delayed(const Duration(seconds: 2));
+        _ilkYukle(deneme: deneme + 1);
+      } else {
+        state = state.copyWith(yukleniyor: false);
+      }
     }
   }
 
@@ -157,7 +162,7 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
 
   IlanRepository get _repo => ref.read(ilanRepositoryProvider);
 
-  Future<void> _ilkYukle() async {
+  Future<void> _ilkYukle({int deneme = 0}) async {
     state = state.copyWith(yukleniyor: true);
     try {
       final sonuc = await _repo.tasiyiciIlanlariniGetir(
@@ -171,7 +176,12 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
       );
     } catch (e) {
       debugPrint('Taşıyıcı ilanları yükleme hatası: $e');
-      state = state.copyWith(yukleniyor: false);
+      if (deneme < 2) {
+        await Future.delayed(const Duration(seconds: 2));
+        _ilkYukle(deneme: deneme + 1);
+      } else {
+        state = state.copyWith(yukleniyor: false);
+      }
     }
   }
 
@@ -372,4 +382,60 @@ Set<String> favoriliIlanIdler(Ref ref) {
     loading: () => {},
     error: (_, _) => {},
   );
+}
+
+// ── Favori işlemleri ──────────────────────────────────────────────────────────
+
+@riverpod
+class FavoriNotifier extends _$FavoriNotifier {
+  @override
+  AsyncValue<void> build() => const AsyncData(null);
+
+  IlanRepository get _repo => ref.read(ilanRepositoryProvider);
+  String get _uid => ref.read(currentUserProvider)?.uid ?? '';
+
+  Future<void> ekle(IlanModel ilan) async {
+    final uid = _uid;
+    if (uid.isEmpty) return;
+    await _repo.favoriyeEkle(kullaniciId: uid, ilan: ilan);
+    ref.read(istekIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilan.id, 1);
+    ref.read(tasiyiciIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilan.id, 1);
+  }
+
+  Future<void> cikar(String ilanId) async {
+    final uid = _uid;
+    if (uid.isEmpty) return;
+    await _repo.favoridanCikar(kullaniciId: uid, ilanId: ilanId);
+    ref.read(istekIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilanId, -1);
+    ref.read(tasiyiciIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilanId, -1);
+  }
+}
+
+// ── İlan işlemleri ────────────────────────────────────────────────────────────
+
+@riverpod
+class IlanIslemleri extends _$IlanIslemleri {
+  @override
+  AsyncValue<void> build() => const AsyncData(null);
+
+  IlanRepository get _repo => ref.read(ilanRepositoryProvider);
+
+  Future<void> pasifYap(String ilanId) async {
+    await _repo.ilanPasifYap(ilanId);
+  }
+
+  Future<void> sil(String ilanId) async {
+    await _repo.ilanSil(ilanId);
+  }
+
+  Future<void> goruntulemeKaydet({
+    required String kullaniciId,
+    required String ilanId,
+  }) async {
+    await _repo.goruntulenmeyiKaydet(kullaniciId: kullaniciId, ilanId: ilanId);
+  }
+
+  Future<void> guncelle(String ilanId, Map<String, dynamic> data) async {
+    await _repo.ilanGuncelle(ilanId, data);
+  }
 }

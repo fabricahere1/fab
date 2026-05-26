@@ -5,13 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/mesaj_provider.dart';
-import '../data/mesaj_repository.dart';
 import '../domain/mesaj_model.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import 'islem_durumu_panel.dart';
-import '../../degerlendirme/data/degerlendirme_repository.dart';
 import '../../degerlendirme/presentation/degerlendirme_screen.dart';
 import '../../degerlendirme/providers/degerlendirme_provider.dart';
 
@@ -65,10 +63,8 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
 
   Future<void> _iletisimBasladiIsaretle() async {
     try {
-      await ref.read(mesajRepositoryProvider).islemDurumuGuncelle(
-        sohbetId: _sohbetId,
-        durum: 'iletisimBasladi',
-      );
+      await ref.read(islemDurumuIslemleriProvider(_sohbetId).notifier)
+          .guncelle('iletisimBasladi');
     } catch (_) {}
   }
 
@@ -165,12 +161,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
             hedefKullaniciAd: widget.karsiKullaniciAd,
           );
         } else if (sonuc == false) {
-          final repo = ref.read(degerlendirmeRepositoryProvider);
-          await repo.bekleyenDegerlendirmeKaydet(
-            sohbetId: _sohbetId,
-            kullaniciId: benimUid,
-          );
-          await repo.sohbetDegerlendirmeyiIsaretle(
+          await ref.read(degerlendirmeIslemleriProvider.notifier).bekleyenKaydet(
             sohbetId: _sohbetId,
             kullaniciId: benimUid,
           );
@@ -278,7 +269,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                   ),
                 );
                 if (onay == true && mounted) {
-                  await ref.read(mesajRepositoryProvider).sohbetiGizle(
+                  await ref.read(sohbetIslemleriProvider.notifier).gizle(
                       sohbetId: sid, kullaniciId: benimUid);
                   if (mounted) Navigator.pop(context);
                 }

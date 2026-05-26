@@ -368,7 +368,7 @@ class _BosHal extends StatelessWidget {
               itemCount: sonGezilenler.length,
               itemBuilder: (_, i) {
                 final ilan = sonGezilenler[i];
-                final resimler = ilan.tumResimler;
+                final gridResim = ilan.gridResim;
                 return GestureDetector(
                   onTap: () => onIlanTikla(ilan),
                   child: Container(
@@ -380,12 +380,13 @@ class _BosHal extends StatelessWidget {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: resimler.isNotEmpty
+                      child: gridResim.isNotEmpty
                           ? CachedNetworkImage(
                               cacheManager: AppCacheManager.instance,
-                              imageUrl: resimler.first,
+                              imageUrl: gridResim,
                               fit: BoxFit.cover,
                               fadeInDuration: Duration.zero,
+                              memCacheWidth: 200,
                               errorWidget: (_, _, _) => _IlanPlaceholder(ilan: ilan),
                             )
                           : _IlanPlaceholder(ilan: ilan),
@@ -665,6 +666,8 @@ class _SonucItem extends StatelessWidget {
                         imageUrl: sonuc.resimUrl!,
                         fit: BoxFit.cover,
                         fadeInDuration: Duration.zero,
+                        memCacheWidth: 104,
+                        memCacheHeight: 104,
                         errorWidget: (_, _, _) => _PlaceHolder(isIstek: isIstek),
                       )
                     : _PlaceHolder(isIstek: isIstek),

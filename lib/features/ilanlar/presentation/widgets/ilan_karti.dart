@@ -8,7 +8,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../domain/ilan_model.dart';
 import '../../providers/ilan_provider.dart';
-import '../../data/ilan_repository.dart';
 import '../../../auth/providers/auth_provider.dart';
 import '../../../../core/cache/app_cache_manager.dart';
 import '../../../../shared/constants/app_colors.dart';
@@ -61,12 +60,14 @@ class IlanKarti extends ConsumerWidget {
       }));
     }
 
-    final resimler       = guncelIlan.tumResimler;
+    // Kart görünümü: ilk resim thumbnail (varsa), geri kalanlar full
+    final resimler = guncelIlan.resimThumbUrl.isNotEmpty
+        ? [guncelIlan.resimThumbUrl, ...guncelIlan.resimUrller.skip(1)]
+        : guncelIlan.tumResimler;
     final kategoriAdiStr = kategoriAdi(guncelIlan.kategori);
     final uid            = ref.watch(currentUserProvider)?.uid;
     final gosterFavori   = uid != null && uid != guncelIlan.kullaniciId;
-    final favoriliIdler  = ref.watch(favoriliIlanIdlerProvider);
-    final favorideMi     = gosterFavori && favoriliIdler.contains(guncelIlan.id);
+    ref.watch(favoriliIlanIdlerProvider);
 
     return GestureDetector(
       onTap: () => Navigator.push(
@@ -355,15 +356,10 @@ class _FavoriButonState extends ConsumerState<_FavoriButon>
     _ctrl.forward().then((_) => _ctrl.reverse());
 
     try {
-      final repo = ref.read(ilanRepositoryProvider);
       if (yeniDurum) {
-        await repo.favoriyeEkle(kullaniciId: widget.uid, ilan: widget.ilan);
-        ref.read(istekIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(widget.ilan.id, 1);
-        ref.read(tasiyiciIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(widget.ilan.id, 1);
+        await ref.read(favoriProvider.notifier).ekle(widget.ilan);
       } else {
-        await repo.favoridanCikar(kullaniciId: widget.uid, ilanId: widget.ilan.id);
-        ref.read(istekIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(widget.ilan.id, -1);
-        ref.read(tasiyiciIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(widget.ilan.id, -1);
+        await ref.read(favoriProvider.notifier).cikar(widget.ilan.id);
       }
     } catch (e) {
       debugPrint('Favori işlemi hatası: $e');

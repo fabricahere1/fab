@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../mesajlar/providers/mesaj_provider.dart';
-import '../../mesajlar/data/mesaj_repository.dart';
 import '../../mesajlar/domain/mesaj_model.dart';
 import '../../mesajlar/presentation/sohbet_screen.dart';
 import '../../profil/providers/profil_provider.dart';
@@ -158,7 +157,7 @@ class _SohbetKarti extends ConsumerWidget {
     );
 
     if (onay == true && context.mounted) {
-      await ref.read(mesajRepositoryProvider).sohbetiGizle(
+      await ref.read(sohbetIslemleriProvider.notifier).gizle(
             sohbetId: sohbet.id,
             kullaniciId: benimUid,
           );

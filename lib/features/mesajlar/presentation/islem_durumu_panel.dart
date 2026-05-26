@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../domain/islem_durumu.dart';
 import '../data/mesaj_repository.dart';
+import '../providers/mesaj_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 
@@ -218,22 +219,17 @@ class IslemDurumuPanel extends ConsumerWidget {
   }
 
   Future<void> _anlasildiIsaretle(WidgetRef ref, String benimUid) async {
-    await ref.read(mesajRepositoryProvider).anlasildiIsaretle(
-          sohbetId: sohbetId,
-          benimUid: benimUid,
-        );
+    await ref.read(islemDurumuIslemleriProvider(sohbetId).notifier)
+        .anlasildiIsaretle(benimUid);
   }
 
   Future<void> _adimIsaretle(WidgetRef ref, IslemDurumu durum) async {
     if (durum == IslemDurumu.teslimAlindi) {
-      await ref
-          .read(mesajRepositoryProvider)
-          .teslimTamamla(sohbetId: sohbetId);
+      await ref.read(islemDurumuIslemleriProvider(sohbetId).notifier)
+          .teslimTamamla();
     } else {
-      await ref.read(mesajRepositoryProvider).islemDurumuGuncelle(
-            sohbetId: sohbetId,
-            durum: durum.firestoreKey,
-          );
+      await ref.read(islemDurumuIslemleriProvider(sohbetId).notifier)
+          .guncelle(durum.firestoreKey);
     }
   }
 }

@@ -803,9 +803,10 @@ String kategoriAdi(String? key) {
 /// Firebase Storage klasörleri.
 class StoragePaths {
   StoragePaths._();
-  static const String ilanResimleri  = 'ilan_resimleri';
-  static const String profilFotolari = 'profil_fotograflari';
-  static const String mesajResimleri = 'mesaj_resimleri';
+  static const String ilanResimleri     = 'ilan_resimleri';
+  static const String ilanThumbnailleri = 'ilan_thumbnailleri';
+  static const String profilFotolari    = 'profil_fotograflari';
+  static const String mesajResimleri    = 'mesaj_resimleri';
 }
 
 /// Sayfalama sabitleri.

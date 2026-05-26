@@ -41,7 +41,7 @@ final class IstekIlanlarProvider
   }
 }
 
-String _$istekIlanlarHash() => r'6e17e094ad40a43f6bf469265b39a76475c68f5b';
+String _$istekIlanlarHash() => r'3b45c9d75db06f6f952812e85be010f32a1c6970';
 
 abstract class _$IstekIlanlar extends $Notifier<IlanListeState> {
   IlanListeState build();
@@ -93,7 +93,7 @@ final class TasiyiciIlanlarProvider
   }
 }
 
-String _$tasiyiciIlanlarHash() => r'5dfff157a9a9913828caae5a17570bb684570325';
+String _$tasiyiciIlanlarHash() => r'50a1e1c10480b6d99ca47f731edd6766df1796f9';
 
 abstract class _$TasiyiciIlanlar extends $Notifier<IlanListeState> {
   IlanListeState build();
@@ -642,3 +642,107 @@ final class FavoriliIlanIdlerProvider
 }
 
 String _$favoriliIlanIdlerHash() => r'a18c9f8fac3da1192de2351098dcbea327a3aaaf';
+
+@ProviderFor(FavoriNotifier)
+final favoriProvider = FavoriNotifierProvider._();
+
+final class FavoriNotifierProvider
+    extends $NotifierProvider<FavoriNotifier, AsyncValue<void>> {
+  FavoriNotifierProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'favoriProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$favoriNotifierHash();
+
+  @$internal
+  @override
+  FavoriNotifier create() => FavoriNotifier();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AsyncValue<void> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AsyncValue<void>>(value),
+    );
+  }
+}
+
+String _$favoriNotifierHash() => r'acf9c4eca2bc807bc3f564124d6e96f437789db9';
+
+abstract class _$FavoriNotifier extends $Notifier<AsyncValue<void>> {
+  AsyncValue<void> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<void>, AsyncValue<void>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<void>, AsyncValue<void>>,
+              AsyncValue<void>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
+@ProviderFor(IlanIslemleri)
+final ilanIslemleriProvider = IlanIslemleriProvider._();
+
+final class IlanIslemleriProvider
+    extends $NotifierProvider<IlanIslemleri, AsyncValue<void>> {
+  IlanIslemleriProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'ilanIslemleriProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$ilanIslemleriHash();
+
+  @$internal
+  @override
+  IlanIslemleri create() => IlanIslemleri();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AsyncValue<void> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AsyncValue<void>>(value),
+    );
+  }
+}
+
+String _$ilanIslemleriHash() => r'2e5fd37f316269be1446756b0c7887944de02367';
+
+abstract class _$IlanIslemleri extends $Notifier<AsyncValue<void>> {
+  AsyncValue<void> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<void>, AsyncValue<void>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<void>, AsyncValue<void>>,
+              AsyncValue<void>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}

@@ -21,6 +21,7 @@ _IlanModel _$IlanModelFromJson(Map<String, dynamic> json) => _IlanModel(
   tarih: const TimestampConverter().fromJson(json['tarih']),
   olusturmaTarihi: const TimestampConverter().fromJson(json['olusturmaTarihi']),
   resimUrl: json['resimUrl'] as String? ?? '',
+  resimThumbUrl: json['resimThumbUrl'] as String? ?? '',
   resimUrller:
       (json['resimUrller'] as List<dynamic>?)
           ?.map((e) => e as String)
@@ -59,6 +60,7 @@ Map<String, dynamic> _$IlanModelToJson(_IlanModel instance) =>
         instance.olusturmaTarihi,
       ),
       'resimUrl': instance.resimUrl,
+      'resimThumbUrl': instance.resimThumbUrl,
       'resimUrller': instance.resimUrller,
       'urunLinki': instance.urunLinki,
       'favoriSayisi': instance.favoriSayisi,

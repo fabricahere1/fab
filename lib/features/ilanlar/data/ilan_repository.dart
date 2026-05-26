@@ -175,8 +175,7 @@ class IlanRepository {
         .map((snap) => snap.docs.map(IlanModel.fromFirestore).toList());
   }
 
-  /// Resmi yüklemeden önce sıkıştırır.
-  /// Çıktı: max 1200px, %85 kalite → genellikle 200-500 KB arası
+  /// Full resim: max 1200px, %85 kalite → 200-500 KB
   Future<File> _resimSikistir(File dosya, int index) async {
     final tempDir = await getTemporaryDirectory();
     final hedefYol =
@@ -192,6 +191,22 @@ class IlanRepository {
     return sonuc != null ? File(sonuc.path) : dosya;
   }
 
+  /// Thumbnail: max 400px, %70 kalite → 20-40 KB (grid görünümü için)
+  Future<File> _thumbnailOlustur(File dosya) async {
+    final tempDir = await getTemporaryDirectory();
+    final hedefYol =
+        '${tempDir.path}/ilan_thumb_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final sonuc = await FlutterImageCompress.compressAndGetFile(
+      dosya.absolute.path,
+      hedefYol,
+      quality: 70,
+      minWidth: 400,
+      minHeight: 400,
+      format: CompressFormat.jpeg,
+    );
+    return sonuc != null ? File(sonuc.path) : dosya;
+  }
+
   Future<String> ilanOlustur({
     required IlanModel ilan,
     List<File> resimler = const [],
@@ -200,20 +215,32 @@ class IlanRepository {
     final user = auth.currentUser;
     if (user == null) throw Exception('Giriş yapılmamış');
     final List<String> resimUrller = [];
+    String thumbUrl = '';
+    final ts = DateTime.now().millisecondsSinceEpoch;
     for (int i = 0; i < resimler.length; i++) {
       onProgress?.call(i, 0.0);
-      // Yüklemeden önce sıkıştır
       final sikistirilmis = await _resimSikistir(resimler[i], i);
       final ref = storage
           .ref()
           .child(StoragePaths.ilanResimleri)
-          .child('${user.uid}_${DateTime.now().millisecondsSinceEpoch}_$i.jpg');
+          .child('${user.uid}_${ts}_$i.jpg');
       final task = ref.putFile(sikistirilmis);
       task.snapshotEvents.listen((snap) {
         onProgress?.call(i, snap.bytesTransferred / snap.totalBytes);
       });
       await task;
       resimUrller.add(await ref.getDownloadURL());
+
+      // Sadece ilk resim için thumbnail üret ve yükle
+      if (i == 0) {
+        final thumb = await _thumbnailOlustur(resimler[i]);
+        final thumbRef = storage
+            .ref()
+            .child(StoragePaths.ilanThumbnailleri)
+            .child('${user.uid}_${ts}_thumb.jpg');
+        await thumbRef.putFile(thumb);
+        thumbUrl = await thumbRef.getDownloadURL();
+      }
     }
     // Kullanıcının güncel puanını çek
     final kullaniciDoc = await firestore
@@ -224,8 +251,9 @@ class IlanRepository {
 
     final ilanData = ilan.copyWith(kullaniciPuan: kullaniciPuan).toFirestore();
     if (resimUrller.isNotEmpty) {
-      ilanData['resimUrl'] = resimUrller.first;
-      ilanData['resimUrller'] = resimUrller;
+      ilanData['resimUrl']      = resimUrller.first;
+      ilanData['resimUrller']   = resimUrller;
+      if (thumbUrl.isNotEmpty) ilanData['resimThumbUrl'] = thumbUrl;
     }
     final ref = await _col.add(ilanData);
     return ref.id;

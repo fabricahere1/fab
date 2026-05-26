@@ -164,3 +164,135 @@ final class BekleyenDegerlendirmelerFamily extends $Family
   @override
   String toString() => r'bekleyenDegerlendirmelerProvider';
 }
+
+@ProviderFor(kullaniciDegerlendirmeleri)
+final kullaniciDegerlendirmeleriProvider = KullaniciDegerlendirmeleriFamily._();
+
+final class KullaniciDegerlendirmeleriProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<Map<String, dynamic>>>,
+          List<Map<String, dynamic>>,
+          Stream<List<Map<String, dynamic>>>
+        >
+    with
+        $FutureModifier<List<Map<String, dynamic>>>,
+        $StreamProvider<List<Map<String, dynamic>>> {
+  KullaniciDegerlendirmeleriProvider._({
+    required KullaniciDegerlendirmeleriFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'kullaniciDegerlendirmeleriProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$kullaniciDegerlendirmeleriHash();
+
+  @override
+  String toString() {
+    return r'kullaniciDegerlendirmeleriProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<Map<String, dynamic>>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<Map<String, dynamic>>> create(Ref ref) {
+    final argument = this.argument as String;
+    return kullaniciDegerlendirmeleri(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is KullaniciDegerlendirmeleriProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$kullaniciDegerlendirmeleriHash() =>
+    r'c257c3a1f03bb88739b3692ac525ac32fa975020';
+
+final class KullaniciDegerlendirmeleriFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<Map<String, dynamic>>>, String> {
+  KullaniciDegerlendirmeleriFamily._()
+    : super(
+        retry: null,
+        name: r'kullaniciDegerlendirmeleriProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  KullaniciDegerlendirmeleriProvider call(String kullaniciId) =>
+      KullaniciDegerlendirmeleriProvider._(argument: kullaniciId, from: this);
+
+  @override
+  String toString() => r'kullaniciDegerlendirmeleriProvider';
+}
+
+@ProviderFor(DegerlendirmeIslemleri)
+final degerlendirmeIslemleriProvider = DegerlendirmeIslemleriProvider._();
+
+final class DegerlendirmeIslemleriProvider
+    extends $NotifierProvider<DegerlendirmeIslemleri, AsyncValue<void>> {
+  DegerlendirmeIslemleriProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'degerlendirmeIslemleriProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$degerlendirmeIslemleriHash();
+
+  @$internal
+  @override
+  DegerlendirmeIslemleri create() => DegerlendirmeIslemleri();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AsyncValue<void> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AsyncValue<void>>(value),
+    );
+  }
+}
+
+String _$degerlendirmeIslemleriHash() =>
+    r'32bdca04cc01e585c3300906c257fb6a45187de8';
+
+abstract class _$DegerlendirmeIslemleri extends $Notifier<AsyncValue<void>> {
+  AsyncValue<void> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<void>, AsyncValue<void>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<void>, AsyncValue<void>>,
+              AsyncValue<void>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}

@@ -216,14 +216,7 @@ class _FavoriKartiState extends ConsumerState<_FavoriKarti>
     _islem = true;
     _ctrl.forward().then((_) => _ctrl.reverse());
     try {
-      await ref.read(ilanRepositoryProvider).favoridanCikar(
-            kullaniciId: widget.uid,
-            ilanId: widget.ilan.id,
-          );
-      ref.read(istekIlanlarProvider.notifier)
-          .ilanFavoriSayisiGuncelle(widget.ilan.id, -1);
-      ref.read(tasiyiciIlanlarProvider.notifier)
-          .ilanFavoriSayisiGuncelle(widget.ilan.id, -1);
+      await ref.read(favoriProvider.notifier).cikar(widget.ilan.id);
     } finally {
       _islem = false;
     }

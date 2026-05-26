@@ -6,7 +6,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../domain/ilan_model.dart';
 import '../providers/ilan_provider.dart';
-import '../data/ilan_repository.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart';
@@ -247,7 +246,7 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
         : _beden;
 
     if (_duzenlemeModuMu) {
-      await ref.read(ilanRepositoryProvider).ilanGuncelle(
+      await ref.read(ilanIslemleriProvider.notifier).guncelle(
         widget.duzenlenecekIlan!.id,
         {
           'nereden':      _neredenFarketmez ? 'Farketmez' : _neredenCtrl.text.trim(),
@@ -1102,7 +1101,7 @@ class BedenCinsiyetBolum extends StatelessWidget {
   final ValueChanged<String> onPantolonBelDegis;
   final ValueChanged<String> onPantolonBoyDegis;
 
-  const BedenCinsiyetBolum({
+  const BedenCinsiyetBolum({super.key, 
     required this.tip,
     required this.cinsiyet,
     required this.beden,
@@ -1236,7 +1235,7 @@ class DropdownBeden extends StatelessWidget {
   final List<String> secenekler;
   final ValueChanged<String> onDegis;
 
-  const DropdownBeden({
+  const DropdownBeden({super.key, 
     required this.hint,
     required this.secili,
     required this.secenekler,

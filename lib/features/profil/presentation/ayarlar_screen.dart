@@ -4,9 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../degerlendirme/presentation/degerlendirmeler_liste_screen.dart';
-import '../../auth/data/auth_repository.dart';
 import '../../profil/providers/profil_provider.dart';
-import '../../profil/data/kullanici_repository.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/utils/app_snackbar.dart';
 import '../../../shared/widgets/avatar_widget.dart';
@@ -407,7 +405,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 Navigator.pop(ctx);
                 final uid = ref.read(currentUserProvider)?.uid;
                 if (uid == null) return;
-                await ref.read(kullaniciRepositoryProvider).profilGuncelle(
+                await ref.read(profilDuzenleProvider.notifier).profilGuncelle(
                   uid: uid,
                   data: {
                     'telefon': ctrl.text.trim(),
@@ -639,13 +637,16 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     }
 
     try {
-      await ref.read(authRepositoryProvider).emailIleYenidenGiris(
-            email: email,
-            sifre: sifreCtrl.text.trim(),
-          );
-      await ref.read(authRepositoryProvider).hesapSil();
+      final yenidenGiris = await ref.read(authProvider.notifier)
+          .emailIleYenidenGiris(email: email, sifre: sifreCtrl.text.trim());
+      if (!yenidenGiris.basarili) throw Exception(yenidenGiris.hata);
+      final silSonuc = await ref.read(authProvider.notifier).hesapSil();
       if (mounted) {
-        AppSnackBar.bilgi(context, 'Hesabın silindi.');
+        if (silSonuc.basarili) {
+          AppSnackBar.bilgi(context, 'Hesabın silindi.');
+        } else {
+          AppSnackBar.hata(context, silSonuc.hata ?? 'Hesap silinemedi.');
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -687,10 +688,16 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     if (onay != true || !mounted) return;
 
     try {
-      await ref.read(authRepositoryProvider).googleIleYenidenGiris();
-      await ref.read(authRepositoryProvider).hesapSil();
+      final yenidenGiris = await ref.read(authProvider.notifier)
+          .googleIleYenidenGiris();
+      if (!yenidenGiris.basarili) throw Exception(yenidenGiris.hata);
+      final silSonuc = await ref.read(authProvider.notifier).hesapSil();
       if (mounted) {
-        AppSnackBar.bilgi(context, 'Hesabın silindi.');
+        if (silSonuc.basarili) {
+          AppSnackBar.bilgi(context, 'Hesabın silindi.');
+        } else {
+          AppSnackBar.hata(context, silSonuc.hata ?? 'Hesap silinemedi.');
+        }
       }
     } catch (e) {
       if (mounted) {

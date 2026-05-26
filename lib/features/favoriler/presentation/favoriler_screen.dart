@@ -172,7 +172,7 @@ class _FavoriKarti extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final resimler = ilan.tumResimler;
+    final gridResim = ilan.gridResim;
     final kategoriAdi_ = kategoriAdi(ilan.kategori);
 
     return GestureDetector(
@@ -196,10 +196,10 @@ class _FavoriKarti extends ConsumerWidget {
             // ── Resim + favori çıkar butonu ──────────────────────────────
             Stack(
               children: [
-                resimler.isNotEmpty
+                gridResim.isNotEmpty
                     ? CachedNetworkImage(
                         cacheManager: AppCacheManager.instance,
-                        imageUrl: resimler.first,
+                        imageUrl: gridResim,
                         width: double.infinity,
                         height: _resimYuksekligi(),
                         fit: BoxFit.cover,

@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../data/degerlendirme_repository.dart';
+import '../providers/degerlendirme_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
@@ -69,29 +69,21 @@ class _DegerlendirmeModalState extends ConsumerState<DegerlendirmeModal> {
     if (benimUid.isEmpty) return;
 
     setState(() => _gonderiyor = true);
-    try {
-      final repo = ref.read(degerlendirmeRepositoryProvider);
-      await repo.degerlendirmeGonder(
-        sohbetId:          widget.sohbetId,
-        degerlendireninId: benimUid,
-        hedefKullaniciId:  widget.hedefKullaniciId,
-        puan:              _secilenYildiz.toDouble(),
-        yorum:             _yorumCtrl.text.trim(),
-        ilanBaslik:        widget.ilanBaslik,
-      );
-      await repo.sohbetDegerlendirmeyiIsaretle(
-        sohbetId:    widget.sohbetId,
-        kullaniciId: benimUid,
-      );
-      if (mounted) {
-        Navigator.pop(context, true);
-        AppSnackBar.basari(context, 'Değerlendirmen gönderildi!');
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _gonderiyor = false);
-        AppSnackBar.hata(context, 'Hata: $e');
-      }
+    final basarili = await ref.read(degerlendirmeIslemleriProvider.notifier).gonder(
+      sohbetId:          widget.sohbetId,
+      degerlendireninId: benimUid,
+      hedefKullaniciId:  widget.hedefKullaniciId,
+      puan:              _secilenYildiz.toDouble(),
+      yorum:             _yorumCtrl.text.trim(),
+      ilanBaslik:        widget.ilanBaslik,
+    );
+    if (!mounted) return;
+    if (basarili) {
+      Navigator.pop(context, true);
+      AppSnackBar.basari(context, 'Değerlendirmen gönderildi!');
+    } else {
+      setState(() => _gonderiyor = false);
+      AppSnackBar.hata(context, 'Bir hata oluştu. Tekrar dene.');
     }
   }
 

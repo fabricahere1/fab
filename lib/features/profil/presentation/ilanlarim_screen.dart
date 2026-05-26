@@ -179,8 +179,8 @@ class _IstekKarti extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final resimler = ilan.tumResimler;
-    final varResim = resimler.isNotEmpty;
+    final gridResim = ilan.gridResim;
+    final varResim = gridResim.isNotEmpty;
 
     return GestureDetector(
       onTap: () => _detayaGit(context),
@@ -222,7 +222,7 @@ class _IstekKarti extends StatelessWidget {
                     child: varResim
                         ? CachedNetworkImage(
                             cacheManager: AppCacheManager.instance,
-                            imageUrl: resimler.first,
+                            imageUrl: gridResim,
                             fit: BoxFit.cover,
                             fadeInDuration: Duration.zero,
                             memCacheWidth: 300,

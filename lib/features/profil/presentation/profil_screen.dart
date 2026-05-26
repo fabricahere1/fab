@@ -8,7 +8,6 @@ import 'ilanlarim_screen.dart';
 import 'ayarlar_screen.dart';
 import 'profil_duzenle_screen.dart';
 import '../../degerlendirme/presentation/degerlendirmeler_liste_screen.dart';
-import '../../degerlendirme/data/degerlendirme_repository.dart';
 import '../../degerlendirme/providers/degerlendirme_provider.dart';
 import '../../degerlendirme/presentation/degerlendirme_screen.dart';
 import '../../../shared/constants/app_colors.dart';
@@ -605,8 +604,8 @@ class _BekleyenKarti extends ConsumerWidget {
                     );
                     if (tamamlandi && context.mounted) {
                       await ref
-                          .read(degerlendirmeRepositoryProvider)
-                          .bekleyenDegerlendirmeTamamla(
+                          .read(degerlendirmeIslemleriProvider.notifier)
+                          .bekleyenTamamla(
                             sohbetId: sohbetId,
                             kullaniciId: kullaniciId,
                           );

@@ -388,3 +388,153 @@ final class BenimProfilProvider
 }
 
 String _$benimProfilHash() => r'4391d383b930a8c55321342f716c9083ad2a7053';
+
+@ProviderFor(IslemDurumuIslemleri)
+final islemDurumuIslemleriProvider = IslemDurumuIslemleriFamily._();
+
+final class IslemDurumuIslemleriProvider
+    extends $NotifierProvider<IslemDurumuIslemleri, AsyncValue<void>> {
+  IslemDurumuIslemleriProvider._({
+    required IslemDurumuIslemleriFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'islemDurumuIslemleriProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$islemDurumuIslemleriHash();
+
+  @override
+  String toString() {
+    return r'islemDurumuIslemleriProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  IslemDurumuIslemleri create() => IslemDurumuIslemleri();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AsyncValue<void> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AsyncValue<void>>(value),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is IslemDurumuIslemleriProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$islemDurumuIslemleriHash() =>
+    r'462d237148cc4c202f8f167d8465d914857a5089';
+
+final class IslemDurumuIslemleriFamily extends $Family
+    with
+        $ClassFamilyOverride<
+          IslemDurumuIslemleri,
+          AsyncValue<void>,
+          AsyncValue<void>,
+          AsyncValue<void>,
+          String
+        > {
+  IslemDurumuIslemleriFamily._()
+    : super(
+        retry: null,
+        name: r'islemDurumuIslemleriProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  IslemDurumuIslemleriProvider call(String sohbetId) =>
+      IslemDurumuIslemleriProvider._(argument: sohbetId, from: this);
+
+  @override
+  String toString() => r'islemDurumuIslemleriProvider';
+}
+
+abstract class _$IslemDurumuIslemleri extends $Notifier<AsyncValue<void>> {
+  late final _$args = ref.$arg as String;
+  String get sohbetId => _$args;
+
+  AsyncValue<void> build(String sohbetId);
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<void>, AsyncValue<void>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<void>, AsyncValue<void>>,
+              AsyncValue<void>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, () => build(_$args));
+  }
+}
+
+@ProviderFor(SohbetIslemleri)
+final sohbetIslemleriProvider = SohbetIslemleriProvider._();
+
+final class SohbetIslemleriProvider
+    extends $NotifierProvider<SohbetIslemleri, AsyncValue<void>> {
+  SohbetIslemleriProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'sohbetIslemleriProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$sohbetIslemleriHash();
+
+  @$internal
+  @override
+  SohbetIslemleri create() => SohbetIslemleri();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AsyncValue<void> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AsyncValue<void>>(value),
+    );
+  }
+}
+
+String _$sohbetIslemleriHash() => r'c54a0b2a85d6270b333fc9a30f4ea2938ff7c6e5';
+
+abstract class _$SohbetIslemleri extends $Notifier<AsyncValue<void>> {
+  AsyncValue<void> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<void>, AsyncValue<void>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<void>, AsyncValue<void>>,
+              AsyncValue<void>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}

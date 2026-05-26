@@ -141,6 +141,38 @@ class AuthNotifier extends _$AuthNotifier {
   Future<void> cikisYap() async {
     await _repo.cikisYap();
   }
+
+  Future<AuthSonuc> emailIleYenidenGiris({
+    required String email,
+    required String sifre,
+  }) async {
+    try {
+      await _repo.emailIleYenidenGiris(email: email, sifre: sifre);
+      return AuthSonuc.basarili('');
+    } on FirebaseAuthException catch (e) {
+      return AuthSonuc.hata(AuthRepository.hataMesaji(e.code));
+    } catch (_) {
+      return AuthSonuc.hata('Kimlik doğrulama başarısız.');
+    }
+  }
+
+  Future<AuthSonuc> googleIleYenidenGiris() async {
+    try {
+      await _repo.googleIleYenidenGiris();
+      return AuthSonuc.basarili('');
+    } catch (_) {
+      return AuthSonuc.hata('Google doğrulama başarısız.');
+    }
+  }
+
+  Future<AuthSonuc> hesapSil() async {
+    try {
+      await _repo.hesapSil();
+      return AuthSonuc.basarili('');
+    } catch (_) {
+      return AuthSonuc.hata('Hesap silinemedi.');
+    }
+  }
 }
 
 class AuthSonuc {

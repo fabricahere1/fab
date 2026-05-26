@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
-import '../../profil/data/kullanici_repository.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart' show kDunyaUlkeleri, kTurkiyeSehirleri;
 import '../../../shared/utils/app_snackbar.dart';
@@ -69,7 +68,7 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
     setState(() => _yukleniyor = true);
 
     try {
-      await ref.read(kullaniciRepositoryProvider).profilGuncelle(
+      await ref.read(profilDuzenleProvider.notifier).profilGuncelle(
         uid: uid,
         data: {
           'adSoyad':         _adSoyadCtrl.text.trim(),

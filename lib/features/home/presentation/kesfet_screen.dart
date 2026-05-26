@@ -11,7 +11,6 @@ import 'package:iste_v3/shared/constants/app_colors.dart';
 import 'package:iste_v3/shared/constants/app_constants.dart';
 import 'package:iste_v3/features/ilanlar/domain/ilan_model.dart';
 import 'package:iste_v3/features/ilanlar/providers/ilan_provider.dart';
-import 'package:iste_v3/features/ilanlar/data/ilan_repository.dart';
 import 'package:iste_v3/features/auth/providers/auth_provider.dart';
 import 'package:iste_v3/features/home/providers/son_goruntulenenler_provider.dart';
 import 'package:iste_v3/router/app_router.dart';
@@ -196,11 +195,10 @@ class _IlanKartState extends ConsumerState<_IlanKart>
     _heartCtrl.forward(from: 0);
 
     try {
-      final repo = ref.read(ilanRepositoryProvider);
       if (_localFavori) {
-        await repo.favoriyeEkle(kullaniciId: uid, ilan: widget.ilan);
+        await ref.read(favoriProvider.notifier).ekle(widget.ilan);
       } else {
-        await repo.favoridanCikar(kullaniciId: uid, ilanId: widget.ilan.id);
+        await ref.read(favoriProvider.notifier).cikar(widget.ilan.id);
       }
     } catch (_) {
       if (mounted) setState(() => _localFavori = !_localFavori);
@@ -218,7 +216,7 @@ class _IlanKartState extends ConsumerState<_IlanKart>
   Widget build(BuildContext context) {
     final size    = MediaQuery.of(context).size;
     final ilan    = widget.ilan;
-    final resimler = ilan.tumResimler;
+    final gridResim = ilan.gridResim;
     final katAdi  = kategoriAdi(ilan.kategori);
     final uid     = ref.watch(currentUserProvider)?.uid;
     final kendi   = uid == ilan.kullaniciId;
@@ -233,12 +231,13 @@ class _IlanKartState extends ConsumerState<_IlanKart>
           children: [
 
             // ── Arka plan resim ───────────────────────────────────────────
-            resimler.isNotEmpty
+            gridResim.isNotEmpty
                 ? CachedNetworkImage(
                     cacheManager: AppCacheManager.instance,
-                    imageUrl: resimler.first,
+                    imageUrl: gridResim,
                     fit: BoxFit.cover,
                     fadeInDuration: Duration.zero,
+                    memCacheWidth: MediaQuery.sizeOf(context).width.toInt(),
                     errorWidget: (_, _, _) => _DegiskenArkaplan(ilan: ilan),
                   )
                 : _DegiskenArkaplan(ilan: ilan),

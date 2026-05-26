@@ -206,7 +206,7 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
       // İlk yüklemede veya yeni ilanlar geldiğinde ilk 16 ilanın resmini önceden yükle
       if (prev?.filtrelenmis.length != next.filtrelenmis.length) {
         for (final ilan in next.filtrelenmis.take(16)) {
-          final url = ilan.tumResimler.isNotEmpty ? ilan.tumResimler.first : null;
+          final url = ilan.gridResim.isNotEmpty ? ilan.gridResim : null;
           if (url != null) {
             precacheImage(
               CachedNetworkImageProvider(url, cacheManager: AppCacheManager.instance),
