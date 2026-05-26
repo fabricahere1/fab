@@ -54,11 +54,11 @@ service cloud.firestore {
               'resimUrller', 'kategori', 'urunLinki', 'tasimaTercihi', 'favoriSayisi'
             ]);
 
-      // Başkası sadece favoriSayisi güncelleyebilir (favori ekle/çıkar)
+      // Başkası favoriSayisi veya goruntulenmeSayisi güncelleyebilir
       allow update: if girisYapilmis()
         && resource.data.kullaniciId != request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['favoriSayisi']);
+            .hasOnly(['favoriSayisi', 'goruntulenmeSayisi']);
 
       allow delete: if girisYapilmis()
         && resource.data.kullaniciId == request.auth.uid;
@@ -104,6 +104,16 @@ service cloud.firestore {
         allow delete: if girisYapilmis()
           && resource.data.gondereId == request.auth.uid;
       }
+    }
+
+    match /goruntulenmeler/{kayitId} {
+      // Transaction read: doküman henüz yoksa resource null olur, bu yüzden
+      // authenticated her kullanıcı kendi kaydını okuyabilmeli
+      allow read: if girisYapilmis();
+
+      allow write: if girisYapilmis()
+        && request.resource.data.kullaniciId == request.auth.uid
+        && request.resource.data.keys().hasAll(['kullaniciId', 'ilanId', 'sonTarih']);
     }
 
     match /favoriler/{favoriId} {

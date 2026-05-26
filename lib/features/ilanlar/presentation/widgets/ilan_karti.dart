@@ -162,14 +162,14 @@ class IlanKarti extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppColors.chipBg,
+                        color: const Color(0xFF757575),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         kategoriAdiStr,
                         style: GoogleFonts.dmSans(
                             fontSize: AppLayout.fs(context, 9),
-                            color: AppColors.textSecondary),
+                            color: Colors.white),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -492,37 +492,33 @@ class _SayacWidgetState extends State<_SayacWidget>
 
   @override
   Widget build(BuildContext context) {
-    final sayiStr = _gosterGoruntulenme
-        ? '${widget.goruntulenmeSayisi}'
-        : '${widget.favoriSayisi}';
+    final metin = _gosterGoruntulenme
+        ? '${widget.goruntulenmeSayisi} kişi görüntüledi'
+        : '${widget.favoriSayisi} kişi favoriledi';
     final ikon = _gosterGoruntulenme
         ? Icons.remove_red_eye_outlined
         : Icons.favorite_border;
 
+    final metin2 = _gosterGoruntulenme
+        ? '${widget.favoriSayisi} kişi favoriledi'
+        : '${widget.goruntulenmeSayisi} kişi görüntüledi';
+    final ikon2 = _gosterGoruntulenme
+        ? Icons.favorite_border
+        : Icons.remove_red_eye_outlined;
+
     return ClipRect(
       child: SizedBox(
-        height: 16,
+        height: 14,
+        width: double.infinity,
         child: Stack(
           children: [
-            // Çıkan
             SlideTransition(
               position: _slideOut,
-              child: _SayacSatir(
-                ikon: ikon,
-                sayi: sayiStr,
-              ),
+              child: _SayacSatir(ikon: ikon, metin: metin),
             ),
-            // Giren
             SlideTransition(
               position: _slideIn,
-              child: _SayacSatir(
-                ikon: _gosterGoruntulenme
-                    ? Icons.favorite_border
-                    : Icons.remove_red_eye_outlined,
-                sayi: _gosterGoruntulenme
-                    ? '${widget.favoriSayisi}'
-                    : '${widget.goruntulenmeSayisi}',
-              ),
+              child: _SayacSatir(ikon: ikon2, metin: metin2),
             ),
           ],
         ),
@@ -533,22 +529,42 @@ class _SayacWidgetState extends State<_SayacWidget>
 
 class _SayacSatir extends StatelessWidget {
   final IconData ikon;
-  final String sayi;
-  const _SayacSatir({required this.ikon, required this.sayi});
+  final String metin;
+  const _SayacSatir({required this.ikon, required this.metin});
+
+  // "5 kişi tarafından görüntülendi" → sayı kısmı bold, geri kalanı normal
+  List<InlineSpan> _spans(String metin) {
+    final bosluk = metin.indexOf(' ');
+    if (bosluk == -1) {
+      return [TextSpan(text: metin)];
+    }
+    final sayi = metin.substring(0, bosluk);
+    final kalan = metin.substring(bosluk);
+    return [
+      TextSpan(text: sayi, style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.red)),
+      TextSpan(text: kalan),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(ikon, size: 10, color: AppColors.textHint),
+        Icon(ikon, size: 10, color: Colors.black87),
         const SizedBox(width: 3),
-        Text(
-          sayi,
-          style: GoogleFonts.dmSans(
-            fontSize: 10,
-            color: AppColors.textHint,
-            fontWeight: FontWeight.w500,
+        Flexible(
+          child: RichText(
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            text: TextSpan(
+              style: GoogleFonts.dmSans(
+                fontSize: 10,
+                color: Colors.black87,
+                fontWeight: FontWeight.w400,
+              ),
+              children: _spans(metin),
+            ),
           ),
         ),
       ],

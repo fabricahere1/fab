@@ -8,6 +8,7 @@ class Collections {
   static const String sohbetler        = 'sohbetler';
   static const String mesajlar         = 'mesajlar';
   static const String favoriler        = 'favoriler';
+  static const String goruntulenmeler  = 'goruntulenmeler';
   static const String degerlendirmeler = 'degerlendirmeler';
   static const String sikayetler       = 'sikayetler';
   static const String bildirimler      = 'bildirimler';

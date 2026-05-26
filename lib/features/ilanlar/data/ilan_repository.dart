@@ -71,15 +71,7 @@ class IlanRepository {
         .limit(limit);
     if (kategori != null) q = q.where('kategori', isEqualTo: kategori);
 
-    QuerySnapshot snap;
-    try {
-      snap = await q.get(const GetOptions(source: Source.cache));
-      if (snap.docs.isEmpty) {
-        snap = await q.get(const GetOptions(source: Source.server));
-      }
-    } catch (_) {
-      snap = await q.get(const GetOptions(source: Source.server));
-    }
+    final snap = await q.get(const GetOptions(source: Source.server));
 
     final ilanlar = snap.docs.map(IlanModel.fromFirestore).toList();
     return IlanSayfasi(
@@ -112,19 +104,8 @@ class IlanRepository {
           .orderBy('tarih', descending: true)
           .limit(10);
 
-      QuerySnapshot gelecek;
-      QuerySnapshot gecmis;
-      try {
-        gelecek = await gelecekQ.get(const GetOptions(source: Source.cache));
-        gecmis  = await gecmisQ.get(const GetOptions(source: Source.cache));
-        if (gelecek.docs.isEmpty && gecmis.docs.isEmpty) {
-          gelecek = await gelecekQ.get(const GetOptions(source: Source.server));
-          gecmis  = await gecmisQ.get(const GetOptions(source: Source.server));
-        }
-      } catch (_) {
-        gelecek = await gelecekQ.get(const GetOptions(source: Source.server));
-        gecmis  = await gecmisQ.get(const GetOptions(source: Source.server));
-      }
+      final gelecek = await gelecekQ.get(const GetOptions(source: Source.server));
+      final gecmis  = await gecmisQ.get(const GetOptions(source: Source.server));
 
       final ilanlar = [
         ...gelecek.docs.map(IlanModel.fromFirestore),
@@ -143,15 +124,7 @@ class IlanRepository {
         .orderBy('olusturmaTarihi', descending: true)
         .limit(limit);
 
-    QuerySnapshot snap;
-    try {
-      snap = await q.get(const GetOptions(source: Source.cache));
-      if (snap.docs.isEmpty) {
-        snap = await q.get(const GetOptions(source: Source.server));
-      }
-    } catch (_) {
-      snap = await q.get(const GetOptions(source: Source.server));
-    }
+    final snap = await q.get(const GetOptions(source: Source.server));
 
     final ilanlar = snap.docs.map(IlanModel.fromFirestore).toList();
     return IlanSayfasi(
@@ -338,18 +311,17 @@ class IlanRepository {
   }
 
   /// 12 saatlik throttle ile görüntülenme sayısını artırır.
-  /// Her kullanıcı–ilan çifti için subcollection kaydı tutulur.
+  /// favoriler koleksiyonuyla aynı pattern: üst seviye koleksiyon + deterministik ID.
   Future<bool> goruntulenmeyiKaydet({
     required String kullaniciId,
     required String ilanId,
   }) async {
-    final kayitRef = _col
-        .doc(ilanId)
-        .collection('goruntulenmeler')
-        .doc(kullaniciId);
+    final kayitRef = firestore
+        .collection(Collections.goruntulenmeler)
+        .doc('${kullaniciId}_$ilanId');
 
     bool sayildi = false;
-    await FirebaseFirestore.instance.runTransaction((txn) async {
+    await firestore.runTransaction((txn) async {
       final snap = await txn.get(kayitRef);
       final simdi = DateTime.now();
 
@@ -358,7 +330,11 @@ class IlanRepository {
         if (simdi.difference(sonTarih).inHours < 12) return;
       }
 
-      txn.set(kayitRef, {'sonTarih': Timestamp.fromDate(simdi)});
+      txn.set(kayitRef, {
+        'kullaniciId': kullaniciId,
+        'ilanId':      ilanId,
+        'sonTarih':    Timestamp.fromDate(simdi),
+      });
       txn.update(_col.doc(ilanId), {
         'goruntulenmeSayisi': FieldValue.increment(1),
       });

@@ -186,6 +186,33 @@ class _FavoriKartiState extends ConsumerState<_FavoriKarti>
 
   Future<void> _favoridanCikar() async {
     if (_islem) return;
+    final onay = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Text('Favorilerden Çıkar',
+            style: GoogleFonts.dmSans(
+                fontSize: 16, fontWeight: FontWeight.w600)),
+        content: Text(
+            '"${widget.ilan.urun.isNotEmpty ? widget.ilan.urun : 'Bu ilan'}" favorilerden çıkarılsın mı?',
+            style: GoogleFonts.dmSans(
+                fontSize: 14, color: AppColors.textSecondary)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('İptal',
+                style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Çıkar',
+                style: GoogleFonts.dmSans(
+                    color: AppColors.red, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    if (onay != true) return;
     _islem = true;
     _ctrl.forward().then((_) => _ctrl.reverse());
     try {
