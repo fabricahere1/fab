@@ -148,8 +148,8 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
       barrierLabel: '',
       barrierColor: Colors.black54,
       transitionDuration: const Duration(milliseconds: 250),
-      pageBuilder: (_, __, ___) => const SizedBox.shrink(),
-      transitionBuilder: (ctx, anim, __, ___) {
+      pageBuilder: (_, _, _) => const SizedBox.shrink(),
+      transitionBuilder: (ctx, anim, _, _) {
         final slide = Tween<Offset>(
           begin: const Offset(1, 0), end: Offset.zero,
         ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic));
@@ -543,9 +543,9 @@ class _IsteklerHeader extends StatelessWidget {
                                 onTap: () {
                                   Navigator.of(context).push(
                                     PageRouteBuilder(
-                                      pageBuilder: (_, __, ___) =>
+                                      pageBuilder: (_, _, _) =>
                                           const AramaScreen(),
-                                      transitionsBuilder: (_, anim, __, child) =>
+                                      transitionsBuilder: (_, anim, _, child) =>
                                           FadeTransition(opacity: anim, child: child),
                                       transitionDuration:
                                           const Duration(milliseconds: 200),

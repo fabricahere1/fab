@@ -370,6 +370,6 @@ Set<String> favoriliIlanIdler(Ref ref) {
         .where((id) => id.isNotEmpty)
         .toSet(),
     loading: () => {},
-    error: (_, __) => {},
+    error: (_, _) => {},
   );
 }

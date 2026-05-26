@@ -119,7 +119,6 @@ class IlanKarti extends ConsumerWidget {
                     child: _FavoriButon(
                       ilan: guncelIlan,
                       uid: uid,
-                      baslangicDurumu: favorideMi,
                     ),
                   ),
               ],
@@ -234,7 +233,7 @@ class _IlanResimSliderState extends State<_IlanResimSlider> {
             memCacheWidth: w,
             fadeInDuration: Duration.zero,
             fadeOutDuration: Duration.zero,
-            placeholder: (_, __) => Shimmer.fromColors(
+            placeholder: (_, _) => Shimmer.fromColors(
               baseColor: Colors.grey[200]!,
               highlightColor: Colors.grey[50]!,
               child: Container(color: Colors.white),
@@ -287,12 +286,10 @@ class _IlanResimSliderState extends State<_IlanResimSlider> {
 class _FavoriButon extends ConsumerStatefulWidget {
   final IlanModel ilan;
   final String uid;
-  final bool baslangicDurumu;
 
   const _FavoriButon({
     required this.ilan,
     required this.uid,
-    required this.baslangicDurumu,
   });
 
   @override
@@ -301,15 +298,15 @@ class _FavoriButon extends ConsumerStatefulWidget {
 
 class _FavoriButonState extends ConsumerState<_FavoriButon>
     with SingleTickerProviderStateMixin {
-  late bool _localFavori;
-  bool _islem = false; // çift tıklamayı önle
+  // Optimistic local state — sadece işlem süresince kullanılır
+  bool? _localFavori;
+  bool _islem = false;
   late AnimationController _ctrl;
   late Animation<double> _scale;
 
   @override
   void initState() {
     super.initState();
-    _localFavori = widget.baslangicDurumu;
     _ctrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 200),
@@ -319,37 +316,23 @@ class _FavoriButonState extends ConsumerState<_FavoriButon>
     );
   }
 
-  // Firestore stream'den gelen gerçek durum değişirse senkronize et
-  @override
-  void didUpdateWidget(_FavoriButon old) {
-    super.didUpdateWidget(old);
-    // Sadece islem yokken senkronize et — islem varken kullanıcının
-    // tıkladığı değeri koruyoruz
-    if (!_islem && old.baslangicDurumu != widget.baslangicDurumu) {
-      _localFavori = widget.baslangicDurumu;
-    }
-  }
-
   @override
   void dispose() {
     _ctrl.dispose();
     super.dispose();
   }
 
-  Future<void> _toglle() async {
+  Future<void> _toglle(bool mevcutDurum) async {
     if (_islem) return;
     _islem = true;
 
-    // 1. UI'ı anında güncelle
-    setState(() => _localFavori = !_localFavori);
-
-    // 2. Scale animasyonu
+    final yeniDurum = !mevcutDurum;
+    setState(() => _localFavori = yeniDurum);
     _ctrl.forward().then((_) => _ctrl.reverse());
 
-    // 3. Arkada Firestore'a yaz ve provider state'i güncelle
     try {
       final repo = ref.read(ilanRepositoryProvider);
-      if (_localFavori) {
+      if (yeniDurum) {
         await repo.favoriyeEkle(kullaniciId: widget.uid, ilan: widget.ilan);
         ref.read(istekIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(widget.ilan.id, 1);
         ref.read(tasiyiciIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(widget.ilan.id, 1);
@@ -358,18 +341,24 @@ class _FavoriButonState extends ConsumerState<_FavoriButon>
         ref.read(istekIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(widget.ilan.id, -1);
         ref.read(tasiyiciIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(widget.ilan.id, -1);
       }
-    } catch (_) {
-      // Hata olursa geri al
-      if (mounted) setState(() => _localFavori = !_localFavori);
+    } catch (e) {
+      debugPrint('Favori işlemi hatası: $e');
+      if (mounted) setState(() => _localFavori = mevcutDurum);
     } finally {
-      _islem = false;
+      if (mounted) setState(() => _islem = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final favoriliIdler = ref.watch(favoriliIlanIdlerProvider);
+    // İşlem süresince optimistic state'i göster, aksi halde stream'den al
+    final gosterilen = _islem
+        ? (_localFavori ?? favoriliIdler.contains(widget.ilan.id))
+        : favoriliIdler.contains(widget.ilan.id);
+
     return GestureDetector(
-      onTap: _toglle,
+      onTap: () => _toglle(gosterilen),
       child: ScaleTransition(
         scale: _scale,
         child: Container(
@@ -383,8 +372,8 @@ class _FavoriButonState extends ConsumerState<_FavoriButon>
             ),
           ),
           child: Icon(
-            _localFavori ? Icons.favorite : Icons.favorite_border,
-            color: _localFavori ? AppColors.red : Colors.white.withValues(alpha: 0.9),
+            gosterilen ? Icons.favorite : Icons.favorite_border,
+            color: gosterilen ? AppColors.red : Colors.white.withValues(alpha: 0.9),
             size: 16,
           ),
         ),

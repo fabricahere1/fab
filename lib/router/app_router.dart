@@ -127,7 +127,7 @@ GoRouter router(Ref ref) {
       ), // GoRoute
       GoRoute(
         path: AppRoutes.favoriler,
-        builder: (_, __) => const FavorilerScreen(),
+        builder: (_, _) => const FavorilerScreen(),
       ),
       GoRoute(
         path: AppRoutes.gelenler,

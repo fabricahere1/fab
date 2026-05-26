@@ -1,6 +1,5 @@
 // lib/features/ilanlar/presentation/gelenler_screen.dart
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -11,17 +10,11 @@ import '../domain/ilan_model.dart';
 import '../providers/ilan_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart' as app_constants;
-import '../../../core/cache/app_cache_manager.dart';
 import 'package:iste_v3/features/arama/presentation/arama_screen.dart';
 import '../../../shared/widgets/bildirim_cani_widget.dart';
 import '../../../shared/widgets/neden_iste_bar.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iste_v3/features/ilanlar/presentation/favoriler_screen.dart';
-import '../../../router/app_router.dart';
-import '../data/ilan_repository.dart';
-import '../../auth/providers/auth_provider.dart';
-import '../../../core/cache/app_cache_manager.dart';
 import 'widgets/ilan_karti.dart';
 
 
@@ -519,10 +512,10 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                               onTap: () {
                                 Navigator.of(context).push(
                                   PageRouteBuilder(
-                                    pageBuilder: (_, __, ___) =>
+                                    pageBuilder: (_, _, _) =>
                                         const AramaScreen(),
                                     transitionsBuilder:
-                                        (_, anim, __, child) =>
+                                        (_, anim, _, child) =>
                                             FadeTransition(
                                                 opacity: anim,
                                                 child: child),

@@ -14,7 +14,6 @@ import 'dart:convert';
 import 'package:iste_v3/shared/constants/app_colors.dart';
 import 'package:iste_v3/shared/constants/app_constants.dart';
 import 'package:iste_v3/core/cache/app_cache_manager.dart';
-import 'package:iste_v3/router/app_router.dart';
 import 'package:iste_v3/features/ilanlar/presentation/ilan_detay_screen.dart';
 import 'package:iste_v3/features/home/providers/son_goruntulenenler_provider.dart';
 import 'package:iste_v3/features/ilanlar/domain/ilan_model.dart';
@@ -387,7 +386,7 @@ class _BosHal extends StatelessWidget {
                               imageUrl: resimler.first,
                               fit: BoxFit.cover,
                               fadeInDuration: Duration.zero,
-                              errorWidget: (_, __, ___) => _IlanPlaceholder(ilan: ilan),
+                              errorWidget: (_, _, _) => _IlanPlaceholder(ilan: ilan),
                             )
                           : _IlanPlaceholder(ilan: ilan),
                     ),
@@ -553,9 +552,9 @@ class _YukleniyorHal extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.only(top: 8),
       itemCount: 6,
-      separatorBuilder: (_, __) =>
+      separatorBuilder: (_, _) =>
           const Divider(height: 1, indent: 76, color: Color(0xFFF5F5F5)),
-      itemBuilder: (_, __) => const _SkeletonItem(),
+      itemBuilder: (_, _) => const _SkeletonItem(),
     );
   }
 }
@@ -627,7 +626,7 @@ class _SonucListesi extends StatelessWidget {
           child: ListView.separated(
             padding: const EdgeInsets.only(bottom: 24),
             itemCount: sonuclar.length,
-            separatorBuilder: (_, __) =>
+            separatorBuilder: (_, _) =>
                 const Divider(height: 1, indent: 76, color: Color(0xFFF5F5F5)),
             itemBuilder: (_, i) => _SonucItem(
               sonuc: sonuclar[i],
@@ -666,7 +665,7 @@ class _SonucItem extends StatelessWidget {
                         imageUrl: sonuc.resimUrl!,
                         fit: BoxFit.cover,
                         fadeInDuration: Duration.zero,
-                        errorWidget: (_, __, ___) => _PlaceHolder(isIstek: isIstek),
+                        errorWidget: (_, _, _) => _PlaceHolder(isIstek: isIstek),
                       )
                     : _PlaceHolder(isIstek: isIstek),
               ),
