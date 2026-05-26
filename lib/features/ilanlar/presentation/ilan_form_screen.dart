@@ -39,6 +39,10 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
   final _notlarCtrl  = TextEditingController();
 
   List<String> _kategoriYolu = [];
+  String _cinsiyet = '';
+  String _beden = '';
+  String _pantolonBel = '';
+  String _pantolonBoy = '';
   bool _neredenFarketmez = false;
   DateTime? _seciliTarih;
   final List<File> _yeniResimler   = [];
@@ -85,6 +89,15 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
       } else if (ilan.kategori.isNotEmpty) {
         _kategoriYolu = [ilan.kategori];
       }
+      _cinsiyet = ilan.cinsiyet;
+      final tipi = bedenTipiGetir(_kategoriYolu);
+      if (tipi == BedenTipi.pantolon && ilan.beden.contains('/')) {
+        final parcalar = ilan.beden.split('/');
+        _pantolonBel = parcalar[0];
+        _pantolonBoy = parcalar[1];
+      } else {
+        _beden = ilan.beden;
+      }
     }
   }
 
@@ -112,6 +125,18 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
     if (_istekMi && adim == 0) {
       if (_urunCtrl.text.trim().isEmpty) { _snack('Ürün adını girin.'); return false; }
       if (_kategoriYolu.isEmpty) { _snack('Kategori seçin.'); return false; }
+      final tipi = bedenTipiGetir(_kategoriYolu);
+      if (tipi != BedenTipi.yok) {
+        if (_cinsiyet.isEmpty) { _snack('Cinsiyet seçin.'); return false; }
+        if (tipi == BedenTipi.pantolon) {
+          if (_pantolonBel.isEmpty || _pantolonBoy.isEmpty) {
+            _snack('Bel ve boy değerlerini seçin.'); return false;
+          }
+        } else if (_beden.isEmpty) {
+          _snack(tipi == BedenTipi.ayakkabi ? 'Numara seçin.' : 'Beden seçin.');
+          return false;
+        }
+      }
     }
     if ((!_istekMi && adim == 0) || (_istekMi && adim == 1)) {
       if (!_neredenFarketmez && _neredenCtrl.text.trim().isEmpty) {
@@ -166,6 +191,13 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
     final user = ref.read(currentUserProvider);
     if (user == null) { _snack('Giriş yapmanız gerekiyor.'); return; }
 
+    final tipi = bedenTipiGetir(_kategoriYolu);
+    final bedenDeger = tipi == BedenTipi.pantolon
+        ? (_pantolonBel.isNotEmpty && _pantolonBoy.isNotEmpty
+            ? '$_pantolonBel/$_pantolonBoy'
+            : '')
+        : _beden;
+
     if (_duzenlemeModuMu) {
       await ref.read(ilanRepositoryProvider).ilanGuncelle(
         widget.duzenlenecekIlan!.id,
@@ -178,6 +210,8 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
           'kategoriYolu': _kategoriYolu,
           if (_istekMi) 'urun': _urunCtrl.text.trim(),
           if (_seciliTarih != null) 'tarih': _seciliTarih,
+          'cinsiyet': _cinsiyet,
+          'beden':    bedenDeger,
         },
       );
       if (!mounted) return;
@@ -197,6 +231,8 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
         kullaniciId:  user.uid,
         kullaniciAd:  user.displayName ?? user.email ?? '',
         tarih:        _seciliTarih,
+        cinsiyet:     _cinsiyet,
+        beden:        bedenDeger,
       );
       final id = await ref.read(ilanOlusturProvider.notifier).olustur(
         ilan: ilan, resimler: _yeniResimler,
@@ -240,7 +276,13 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
       builder: (ctx) => KategoriSecimSheet(
         seciliYol: _kategoriYolu,
         onSecildi: (yol) {
-          setState(() => _kategoriYolu = yol);
+          setState(() {
+            _kategoriYolu = yol;
+            _beden = '';
+            _pantolonBel = '';
+            _pantolonBoy = '';
+            _cinsiyet = cinsiyetTahminiGetir(yol);
+          });
           Navigator.pop(ctx);
         },
       ),
@@ -454,11 +496,28 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
   Widget _adimIcerigi(bool yukleniyor, double progress) {
     if (_istekMi) {
       switch (_adim) {
-        case 0: return _AdimUrunIcerik(
-          urunCtrl: _urunCtrl,
-          kategoriAdi: _kategoriGorunumAdi,
-          onKategoriSec: _kategoriSec,
-        );
+        case 0:
+          final tipi = bedenTipiGetir(_kategoriYolu);
+          return Column(
+            children: [
+              _AdimUrunIcerik(
+                urunCtrl: _urunCtrl,
+                kategoriAdi: _kategoriGorunumAdi,
+                onKategoriSec: _kategoriSec,
+              ),
+              if (tipi != BedenTipi.yok) BedenCinsiyetBolum(
+                tip: tipi,
+                cinsiyet: _cinsiyet,
+                beden: _beden,
+                pantolonBel: _pantolonBel,
+                pantolonBoy: _pantolonBoy,
+                onCinsiyetDegis: (v) => setState(() => _cinsiyet = v),
+                onBedenDegis: (v) => setState(() => _beden = v),
+                onPantolonBelDegis: (v) => setState(() => _pantolonBel = v),
+                onPantolonBoyDegis: (v) => setState(() => _pantolonBoy = v),
+              ),
+            ],
+          );
         case 1: return _AdimGuzergahIcerik(
           neredenCtrl: _neredenCtrl,
           nereyeCtrl: _nereyeCtrl,
@@ -942,6 +1001,187 @@ class _AutocompleteAlan extends StatelessWidget {
               },
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Beden / Cinsiyet Seçici ───────────────────────────────────────────────────
+
+class BedenCinsiyetBolum extends StatelessWidget {
+  final BedenTipi tip;
+  final String cinsiyet;
+  final String beden;
+  final String pantolonBel;
+  final String pantolonBoy;
+  final ValueChanged<String> onCinsiyetDegis;
+  final ValueChanged<String> onBedenDegis;
+  final ValueChanged<String> onPantolonBelDegis;
+  final ValueChanged<String> onPantolonBoyDegis;
+
+  const BedenCinsiyetBolum({
+    required this.tip,
+    required this.cinsiyet,
+    required this.beden,
+    required this.pantolonBel,
+    required this.pantolonBoy,
+    required this.onCinsiyetDegis,
+    required this.onBedenDegis,
+    required this.onPantolonBelDegis,
+    required this.onPantolonBoyDegis,
+  });
+
+  List<String> get _cinsiyetler => tip == BedenTipi.cocuk
+      ? ['Kız', 'Erkek', 'Unisex']
+      : ['Kadın', 'Erkek', 'Unisex'];
+
+  List<String> get _bedenler {
+    switch (tip) {
+      case BedenTipi.standart: return kBedenStandart;
+      case BedenTipi.ayakkabi: return kBedenAyakkabi;
+      case BedenTipi.cocuk:    return kBedenCocuk;
+      default:                 return [];
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Cinsiyet
+        _formEtiket('Cinsiyet *'),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          children: _cinsiyetler.map((c) {
+            final secili = cinsiyet == c;
+            return GestureDetector(
+              onTap: () => onCinsiyetDegis(secili ? '' : c),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: secili ? AppColors.textPrimary : Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: secili ? AppColors.textPrimary : AppColors.divider,
+                  ),
+                ),
+                child: Text(
+                  c,
+                  style: GoogleFonts.dmSans(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: secili ? Colors.white : AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 20),
+
+        // Beden — Pantolon ise bel + boy
+        if (tip == BedenTipi.pantolon) ...[
+          _formEtiket('Beden (Bel / Boy) *'),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: DropdownBeden(
+                  hint: 'Bel',
+                  secili: pantolonBel,
+                  secenekler: kBedenPantolonBel,
+                  onDegis: onPantolonBelDegis,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DropdownBeden(
+                  hint: 'Boy',
+                  secili: pantolonBoy,
+                  secenekler: kBedenPantolonBoy,
+                  onDegis: onPantolonBoyDegis,
+                ),
+              ),
+            ],
+          ),
+        ] else ...[
+          _formEtiket(tip == BedenTipi.ayakkabi ? 'Numara *' : 'Beden *'),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _bedenler.map((b) {
+              final secili = beden == b;
+              return GestureDetector(
+                onTap: () => onBedenDegis(secili ? '' : b),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: secili ? AppColors.textPrimary : Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: secili ? AppColors.textPrimary : AppColors.divider,
+                    ),
+                  ),
+                  child: Text(
+                    b,
+                    style: GoogleFonts.dmSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: secili ? Colors.white : AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+        const SizedBox(height: 8),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+}
+
+class DropdownBeden extends StatelessWidget {
+  final String hint;
+  final String secili;
+  final List<String> secenekler;
+  final ValueChanged<String> onDegis;
+
+  const DropdownBeden({
+    required this.hint,
+    required this.secili,
+    required this.secenekler,
+    required this.onDegis,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.divider),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: secili.isEmpty ? null : secili,
+          hint: Text(hint,
+              style: GoogleFonts.dmSans(
+                  fontSize: 14, color: AppColors.textHint)),
+          isExpanded: true,
+          style: GoogleFonts.dmSans(
+              fontSize: 14, color: AppColors.textPrimary),
+          items: secenekler
+              .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+              .toList(),
+          onChanged: (v) => onDegis(v ?? ''),
         ),
       ),
     );

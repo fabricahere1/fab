@@ -9,7 +9,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../../../shared/utils/app_snackbar.dart';
-import 'ilan_form_screen.dart' show KategoriSecimSheet;
+import 'ilan_form_screen.dart' show KategoriSecimSheet, BedenCinsiyetBolum;
 import '../../../shared/widgets/autocomplete_alan.dart';
 
 class GelenlerFormScreen extends ConsumerStatefulWidget {
@@ -31,6 +31,10 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
   List<String> _kategoriYolu   = [];
   String       _tasimaTercihi  = 'istekler';
   final List<File> _resimler   = [];
+  String _cinsiyet = '';
+  String _beden    = '';
+  String _pantolonBel = '';
+  String _pantolonBoy = '';
 
   String get _kayitKategoriKey =>
       _kategoriYolu.isNotEmpty ? _kategoriYolu.last : 'diger';
@@ -62,6 +66,18 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
     if (_seyahatTarihi == null) {
       _snack('Seyahat tarihini seçin.');
       return false;
+    }
+    final tipi = bedenTipiGetir(_kategoriYolu);
+    if (tipi != BedenTipi.yok) {
+      if (_cinsiyet.isEmpty) { _snack('Cinsiyet seçin.'); return false; }
+      if (tipi == BedenTipi.pantolon) {
+        if (_pantolonBel.isEmpty || _pantolonBoy.isEmpty) {
+          _snack('Bel ve boy değerlerini seçin.'); return false;
+        }
+      } else if (_beden.isEmpty) {
+        _snack(tipi == BedenTipi.ayakkabi ? 'Numara seçin.' : 'Beden seçin.');
+        return false;
+      }
     }
     return true;
   }
@@ -111,7 +127,13 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
       builder: (ctx) => KategoriSecimSheet(
         seciliYol: _kategoriYolu,
         onSecildi: (yol) {
-          setState(() => _kategoriYolu = yol);
+          setState(() {
+            _kategoriYolu = yol;
+            _beden = '';
+            _pantolonBel = '';
+            _pantolonBoy = '';
+            _cinsiyet = cinsiyetTahminiGetir(yol);
+          });
           Navigator.pop(ctx);
         },
       ),
@@ -127,6 +149,13 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
       return;
     }
 
+    final tipi = bedenTipiGetir(_kategoriYolu);
+    final bedenDeger = tipi == BedenTipi.pantolon
+        ? (_pantolonBel.isNotEmpty && _pantolonBoy.isNotEmpty
+            ? '$_pantolonBel/$_pantolonBoy'
+            : '')
+        : _beden;
+
     final ilan = IlanModel(
       id:           '',
       tip:          IlanTip.tasiyici,
@@ -141,6 +170,8 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
       kullaniciId:  user.uid,
       kullaniciAd:  user.displayName ?? user.email ?? '',
       tarih:        _seyahatTarihi,
+      cinsiyet:     _cinsiyet,
+      beden:        bedenDeger,
     );
 
     final id = await ref.read(ilanOlusturProvider.notifier).olustur(
@@ -310,6 +341,28 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 8),
+
+              // ── Beden / Cinsiyet ──────────────────────
+              Builder(builder: (context) {
+                final tipi = bedenTipiGetir(_kategoriYolu);
+                if (tipi == BedenTipi.yok) return const SizedBox.shrink();
+                return _Bolum(
+                  baslik: tipi == BedenTipi.ayakkabi ? 'Numara & Cinsiyet' : 'Beden & Cinsiyet',
+                  ikon: Icons.straighten_outlined,
+                  child: BedenCinsiyetBolum(
+                    tip: tipi,
+                    cinsiyet: _cinsiyet,
+                    beden: _beden,
+                    pantolonBel: _pantolonBel,
+                    pantolonBoy: _pantolonBoy,
+                    onCinsiyetDegis: (v) => setState(() => _cinsiyet = v),
+                    onBedenDegis: (v) => setState(() => _beden = v),
+                    onPantolonBelDegis: (v) => setState(() => _pantolonBel = v),
+                    onPantolonBoyDegis: (v) => setState(() => _pantolonBoy = v),
+                  ),
+                );
+              }),
               const SizedBox(height: 8),
 
               // ── Güzergah ─────────────────────────────

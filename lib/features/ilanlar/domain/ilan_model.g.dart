@@ -37,6 +37,8 @@ _IlanModel _$IlanModelFromJson(Map<String, dynamic> json) => _IlanModel(
           ?.map((e) => e as String)
           .toList() ??
       const [],
+  cinsiyet: json['cinsiyet'] as String? ?? '',
+  beden: json['beden'] as String? ?? '',
 );
 
 Map<String, dynamic> _$IlanModelToJson(_IlanModel instance) =>
@@ -65,4 +67,6 @@ Map<String, dynamic> _$IlanModelToJson(_IlanModel instance) =>
       'kullaniciPuan': instance.kullaniciPuan,
       'anaKategori': instance.anaKategori,
       'kategoriYolu': instance.kategoriYolu,
+      'cinsiyet': instance.cinsiyet,
+      'beden': instance.beden,
     };

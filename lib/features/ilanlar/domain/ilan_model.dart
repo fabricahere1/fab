@@ -47,6 +47,8 @@ abstract class IlanModel with _$IlanModel {
     @Default(0.0) double kullaniciPuan,
     @Default('') String anaKategori,
     @Default([]) List<String> kategoriYolu,
+    @Default('') String cinsiyet,
+    @Default('') String beden,
   }) = _IlanModel;
 
   factory IlanModel.fromFirestore(DocumentSnapshot doc) {
@@ -74,6 +76,8 @@ abstract class IlanModel with _$IlanModel {
       kullaniciPuan:   (data['kullaniciPuan'] as num?)?.toDouble() ?? 0.0,
       anaKategori:     data['anaKategori']   as String? ?? '',
       kategoriYolu:    List<String>.from(data['kategoriYolu'] ?? []),
+      cinsiyet:        data['cinsiyet']      as String? ?? '',
+      beden:           data['beden']         as String? ?? '',
     );
   }
 
@@ -104,6 +108,8 @@ extension IlanModelX on IlanModel {
     'kullaniciPuan':   kullaniciPuan,
     'anaKategori':     anaKategori,
     'kategoriYolu':    kategoriYolu,
+    if (cinsiyet.isNotEmpty) 'cinsiyet': cinsiyet,
+    if (beden.isNotEmpty)    'beden':    beden,
     if (tarih != null) 'tarih': Timestamp.fromDate(tarih!),
     'olusturmaTarihi': FieldValue.serverTimestamp(),
     if (resimUrl.isNotEmpty) 'resimUrl': resimUrl,

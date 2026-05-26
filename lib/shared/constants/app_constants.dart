@@ -895,3 +895,107 @@ const List<String> kDunyaSehirleri = [
   'Beirut', 'Amman', 'Baghdad', 'Damascus', 'Muscat', 'Abu Dhabi',
   'Islamabad', 'Dhaka', 'Colombo', 'Kathmandu',
 ];
+
+// ── Beden Sistemi ─────────────────────────────────────────────────────────────
+
+enum BedenTipi { yok, standart, pantolon, ayakkabi, cocuk }
+
+const _kAyakkabiKeys = {
+  'ayakkabi',
+  'kadin_ayakkabi', 'kadin_spor_ayakkabi', 'kadin_topuklu', 'kadin_bot',
+  'kadin_sandalet', 'kadin_loafer',
+  'erkek_ayakkabi', 'erkek_spor_ayakkabi', 'erkek_klasik', 'erkek_bot',
+  'erkek_sandalet',
+  'spor_ayakkabi_cat', 'kadin_spor_ay', 'erkek_spor_ay',
+};
+
+const _kCocukAyakkabiKeys = {
+  'cocuk_ayakkabi', 'cocuk_spor_ayakkabi', 'cocuk_gunluk_ayakkabi',
+  'bebek_ayakkabi', 'cocuk_spor_ay',
+};
+
+const _kPantolonKeys = {
+  'kadin_pantolon', 'erkek_pantolon', 'erkek_kot',
+  'kadin_sort', 'erkek_sort', 'erkek_esofman_alt', 'kadin_tayt',
+};
+
+const _kCocukGiyimKeys = {
+  'cocuk_giyim', 'bebek_giyim', 'kiz_cocuk', 'erkek_cocuk',
+  'bebek_tulum', 'bebek_ust', 'bebek_alt',
+  'kiz_ust', 'kiz_alt', 'kiz_elbise', 'kiz_dis',
+  'erkek_c_ust', 'erkek_c_alt', 'erkek_c_dis',
+  'cocuk_spor_giyim',
+};
+
+const _kStandartBedenKeys = {
+  'giyim',
+  'kadin_giyim', 'kadin_ust', 'kadin_dis', 'kadin_elbise', 'kadin_spor',
+  'kadin_ic', 'kadin_tesettur',
+  'kadin_tisort', 'kadin_bluz', 'kadin_gomlek', 'kadin_kazak', 'kadin_hirka',
+  'kadin_sweat', 'kadin_mont', 'kadin_trenc', 'kadin_yagmurluk',
+  'kadin_deri_ceket', 'kadin_blazer', 'kadin_gunluk_elbise', 'kadin_abiye',
+  'kadin_tulum', 'kadin_spor_tayt', 'kadin_spor_ust', 'kadin_spor_esofman',
+  'kadin_sutyen', 'kadin_kilot', 'kadin_pijama',
+  'kadin_tesettur_elbise', 'kadin_tesettur_ust', 'kadin_esarp',
+  'erkek_giyim', 'erkek_ust', 'erkek_dis', 'erkek_takim', 'erkek_spor',
+  'erkek_ic',
+  'erkek_tisort', 'erkek_gomlek', 'erkek_kazak', 'erkek_sweat', 'erkek_polo',
+  'erkek_mont', 'erkek_yagmurluk', 'erkek_deri_ceket', 'erkek_blazer',
+  'erkek_takim_elbise', 'erkek_yelek',
+  'erkek_spor_sort', 'erkek_spor_ust', 'erkek_esofman',
+  'erkek_ic_camasir', 'erkek_pijama', 'erkek_atlet',
+  'spor_giyim', 'kadin_spor_giyim', 'erkek_spor_giyim',
+};
+
+/// Seçilen kategori yoluna göre hangi beden tipinin gösterileceğini döndürür.
+BedenTipi bedenTipiGetir(List<String> yol) {
+  if (yol.isEmpty) return BedenTipi.yok;
+  // Çocuk ayakkabısı önce kontrol edilmeli
+  for (final k in yol) {
+    if (_kCocukAyakkabiKeys.contains(k)) return BedenTipi.ayakkabi;
+  }
+  for (final k in yol) {
+    if (_kAyakkabiKeys.contains(k)) return BedenTipi.ayakkabi;
+  }
+  for (final k in yol) {
+    if (_kPantolonKeys.contains(k)) return BedenTipi.pantolon;
+  }
+  for (final k in yol) {
+    if (_kCocukGiyimKeys.contains(k)) return BedenTipi.cocuk;
+  }
+  for (final k in yol) {
+    if (_kStandartBedenKeys.contains(k)) return BedenTipi.standart;
+  }
+  return BedenTipi.yok;
+}
+
+/// Kategori yolundan cinsiyet tahmini üretir.
+String cinsiyetTahminiGetir(List<String> yol) {
+  for (final k in yol) {
+    if (k.startsWith('kadin_')) return 'Kadın';
+    if (k == 'kadin_giyim' || k == 'kadin_ayakkabi') return 'Kadın';
+    if (k.startsWith('kiz_') || k == 'kiz_cocuk') return 'Kız';
+    if (k.startsWith('bebek_') || k == 'bebek_giyim') return 'Unisex';
+    if (k.startsWith('erkek_c_') || k == 'erkek_cocuk') return 'Erkek';
+    if (k.startsWith('erkek_')) return 'Erkek';
+  }
+  return '';
+}
+
+/// Beden seçenekleri
+const kBedenStandart = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'];
+const kBedenAyakkabi = [
+  '34', '35', '36', '37', '38', '39', '40',
+  '41', '42', '43', '44', '45', '46', '47', '48',
+];
+const kBedenPantolonBel = [
+  '26', '28', '30', '32', '34', '36', '38', '40', '42', '44', '46',
+];
+const kBedenPantolonBoy = [
+  '28', '29', '30', '31', '32', '33', '34', '36',
+];
+const kBedenCocuk = [
+  '0-6 ay', '6-12 ay', '12-18 ay', '18-24 ay',
+  '2-3 yaş', '3-4 yaş', '4-5 yaş', '5-6 yaş',
+  '6-8 yaş', '8-10 yaş', '10-12 yaş', '12-14 yaş',
+];
