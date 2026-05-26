@@ -49,7 +49,7 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
   List<String>     _mevcutResimler = [];
   final _picker = ImagePicker();
 
-  static const _sheetYukseklikleri = [0.45, 0.60, 0.78];
+  static const _sheetYukseklikleri = [0.45, 0.60, 0.60];
 
   bool get _istekMi         => widget.tip == IlanTip.istek;
   bool get _duzenlemeModuMu => widget.duzenlenecekIlan != null;
@@ -172,18 +172,66 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
       _snack('En fazla ${Pagination.maxResimSayisi} resim ekleyebilirsin.');
       return;
     }
-    final picked = await _picker.pickMultiImage(
-      imageQuality: 80,
-      limit: Pagination.maxResimSayisi - toplam,
+
+    final kaynak = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 32, height: 3, margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.divider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt_outlined),
+                title: Text('Kamera', style: GoogleFonts.dmSans(fontSize: 15)),
+                onTap: () => Navigator.pop(ctx, ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: Text('Galeri', style: GoogleFonts.dmSans(fontSize: 15)),
+                onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
-    if (picked.isNotEmpty) {
-      setState(() {
-        for (final img in picked) {
-          if (_mevcutResimler.length + _yeniResimler.length < Pagination.maxResimSayisi) {
-            _yeniResimler.add(File(img.path));
+
+    if (kaynak == null) return;
+
+    if (kaynak == ImageSource.camera) {
+      final picked = await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80,
+      );
+      if (picked != null) {
+        setState(() => _yeniResimler.add(File(picked.path)));
+      }
+    } else {
+      final picked = await _picker.pickMultiImage(
+        imageQuality: 80,
+        limit: Pagination.maxResimSayisi - toplam,
+      );
+      if (picked.isNotEmpty) {
+        setState(() {
+          for (final img in picked) {
+            if (_mevcutResimler.length + _yeniResimler.length < Pagination.maxResimSayisi) {
+              _yeniResimler.add(File(img.path));
+            }
           }
-        }
-      });
+        });
+      }
     }
   }
 
@@ -249,6 +297,41 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
   }
 
   void _snack(String m) => AppSnackBar.hata(context, m);
+
+  List<Widget> _adimAciklamalari(int adim) {
+    const style = TextStyle(
+      fontSize: 13,
+      fontStyle: FontStyle.italic,
+      color: Color(0x55000000),
+      height: 1.5,
+    );
+    final satirlar = <String>[];
+    if (_istekMi) {
+      switch (adim) {
+        case 0:
+          satirlar.add('Ürün adı, istediğiniz ürünün uygulamada görünen adıdır.');
+        case 1:
+          satirlar.add('İstediğiniz ürünün özellikle bir ülkeden isterseniz seçim yapabilirsiniz.');
+        case 2:
+          satirlar.add('İstediğiniz ürün ile alakalı vermek istediğiniz detayları burada ifade edebilirsiniz.');
+          satirlar.add('İstediğiniz ürüne dair ürün fotoğraflarının net ve temiz fonda olmasına özen gösteriniz.');
+      }
+    } else {
+      switch (adim) {
+        case 0:
+          satirlar.add('Güzergahınızı girerek hangi rotada seyahat ettiğinizi belirtin.');
+        case 1:
+          satirlar.add('Seyahat tarihinizi belirterek alıcıların size ulaşabileceği zaman dilimini gösterin.');
+        case 2:
+          satirlar.add('Getirmeyi düşündüğünüz ürünler veya kargo tercihiniz hakkında ek bilgi verebilirsiniz.');
+          satirlar.add('Ürün fotoğraflarının net ve temiz fonda olmasına özen gösteriniz.');
+      }
+    }
+    return satirlar.map((s) => Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Text(s, textAlign: TextAlign.center, style: style),
+    )).toList();
+  }
 
   Future<void> _tarihSec() async {
     final s = await showDatePicker(
@@ -333,27 +416,33 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
                   ),
                 ),
                 const SizedBox(height: 40),
-                Column(
-                  children: [
-                    Text(
-                      '${_adim + 1} / 3',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.dmSans(
-                        fontSize: 48,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary.withValues(alpha: 0.08),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        '${_adim + 1} / 3',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.dmSans(
+                          fontSize: 48,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary.withValues(alpha: 0.35),
+                        ),
                       ),
-                    ),
-                    Text(
-                      adimlar[_adim],
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.dmSans(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary.withValues(alpha: 0.15),
+                      Text(
+                        adimlar[_adim],
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.dmSans(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary.withValues(alpha: 0.45),
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 10),
+                      ..._adimAciklamalari(_adim),
+                    ],
+                  ),
                 ),
               ],
             ),

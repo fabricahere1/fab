@@ -158,26 +158,50 @@ class IlanKarti extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 5),
-                  if (kategoriAdiStr.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF757575),
-                        borderRadius: BorderRadius.circular(8),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (kategoriAdiStr.isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF757575),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  kategoriAdiStr,
+                                  style: GoogleFonts.dmSans(
+                                      fontSize: AppLayout.fs(context, 9),
+                                      color: Colors.white),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            const SizedBox(height: 5),
+                            _SayacWidget(
+                              goruntulenmeSayisi: guncelIlan.goruntulenmeSayisi,
+                              favoriSayisi: guncelIlan.favoriSayisi,
+                            ),
+                          ],
+                        ),
                       ),
-                      child: Text(
-                        kategoriAdiStr,
-                        style: GoogleFonts.dmSans(
-                            fontSize: AppLayout.fs(context, 9),
-                            color: Colors.white),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  const SizedBox(height: 5),
-                  _SayacWidget(
-                    goruntulenmeSayisi: guncelIlan.goruntulenmeSayisi,
-                    favoriSayisi: guncelIlan.favoriSayisi,
+                      if (guncelIlan.beden.isNotEmpty || guncelIlan.cinsiyet.isNotEmpty)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            if (guncelIlan.cinsiyet.isNotEmpty)
+                              _BedenChip(label: guncelIlan.cinsiyet),
+                            if (guncelIlan.cinsiyet.isNotEmpty && guncelIlan.beden.isNotEmpty)
+                              const SizedBox(height: 4),
+                            if (guncelIlan.beden.isNotEmpty)
+                              _BedenChip(label: guncelIlan.beden),
+                          ],
+                        ),
+                    ],
                   ),
                 ],
               ),
@@ -573,6 +597,32 @@ class _SayacSatir extends StatelessWidget {
 }
 
 // ── Shimmer Liste ─────────────────────────────────────────────────────────────
+
+class _BedenChip extends StatelessWidget {
+  final String label;
+  const _BedenChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE8F0FE),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.dmSans(
+          fontSize: 9,
+          fontWeight: FontWeight.w600,
+          color: const Color(0xFF1A56DB),
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+}
 
 class ShimmerListe extends StatelessWidget {
   const ShimmerListe({super.key});
