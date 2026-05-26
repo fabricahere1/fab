@@ -332,32 +332,28 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${_adim + 1} / 3',
-                        style: GoogleFonts.dmSans(
-                          fontSize: 48,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary.withValues(alpha: 0.08),
-                          height: 1,
-                        ),
+                const SizedBox(height: 40),
+                Column(
+                  children: [
+                    Text(
+                      '${_adim + 1} / 3',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.dmSans(
+                        fontSize: 48,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary.withValues(alpha: 0.08),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        adimlar[_adim],
-                        style: GoogleFonts.dmSans(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary.withValues(alpha: 0.15),
-                        ),
+                    ),
+                    Text(
+                      adimlar[_adim],
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.dmSans(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary.withValues(alpha: 0.15),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -739,9 +735,6 @@ class _AdimTarihIcerik extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 10),
-        Text('İsteğe bağlı — belirtmeden de devam edebilirsin.',
-            style: GoogleFonts.dmSans(fontSize: 12, color: AppColors.textHint)),
         const SizedBox(height: 20),
       ],
     );
