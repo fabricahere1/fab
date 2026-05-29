@@ -335,10 +335,11 @@ class _NavItem extends StatelessWidget {
             const SizedBox(height: 3),
             Text(
               label,
-              style: GoogleFonts.dmSans(
+              style: GoogleFonts.raleway(
                 fontSize: 10,
-                fontWeight: secili ? FontWeight.w700 : FontWeight.w400,
+                fontWeight: secili ? FontWeight.w700 : FontWeight.w500,
                 color: secili ? AppColors.red : AppColors.textSecondary,
+                letterSpacing: 0.3,
               ),
             ),
           ],

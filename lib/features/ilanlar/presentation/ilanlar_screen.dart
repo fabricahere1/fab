@@ -557,7 +557,7 @@ class _IsteklerHeader extends StatelessWidget {
                                     color: AppColors.textPrimary,
                                     fontWeight: FontWeight.w500),
                                 decoration: InputDecoration(
-                                  hintText: 'Ne getirmemizi istersin?',
+                                  hintText: 'Ne gelsin istersin ?',
                                   hintStyle: GoogleFonts.dmSans(
                                       color: const Color(0xFFCCCCCC),
                                       fontSize: 13),
