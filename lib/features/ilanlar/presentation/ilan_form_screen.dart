@@ -1291,7 +1291,12 @@ class _KategoriSecimSheetState extends State<KategoriSecimSheet> {
   @override
   void initState() {
     super.initState();
-    _yol = List<String>.from(widget.seciliYol);
+    final yol = List<String>.from(widget.seciliYol);
+    if (yol.isNotEmpty) {
+      final lastNode = kategoriNodeBul(yol.last);
+      if (lastNode == null || lastNode.yaprakMi) yol.removeLast();
+    }
+    _yol = yol;
   }
 
   List<KategoriNode> _mevcutSeviyeNodes() {

@@ -71,7 +71,7 @@ class IlanRepository {
         .limit(limit);
     if (kategori != null) q = q.where('kategori', isEqualTo: kategori);
 
-    final snap = await q.get(const GetOptions(source: Source.server));
+    final snap = await q.get();
 
     final ilanlar = snap.docs.map(IlanModel.fromFirestore).toList();
     return IlanSayfasi(
@@ -104,8 +104,8 @@ class IlanRepository {
           .orderBy('tarih', descending: true)
           .limit(10);
 
-      final gelecek = await gelecekQ.get(const GetOptions(source: Source.server));
-      final gecmis  = await gecmisQ.get(const GetOptions(source: Source.server));
+      final gelecek = await gelecekQ.get();
+      final gecmis  = await gecmisQ.get();
 
       final ilanlar = [
         ...gelecek.docs.map(IlanModel.fromFirestore),
@@ -124,7 +124,7 @@ class IlanRepository {
         .orderBy('olusturmaTarihi', descending: true)
         .limit(limit);
 
-    final snap = await q.get(const GetOptions(source: Source.server));
+    final snap = await q.get();
 
     final ilanlar = snap.docs.map(IlanModel.fromFirestore).toList();
     return IlanSayfasi(

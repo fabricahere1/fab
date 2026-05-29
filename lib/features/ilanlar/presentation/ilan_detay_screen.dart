@@ -455,8 +455,8 @@ class _IlanDetayIcerik extends ConsumerWidget {
             SliverToBoxAdapter(
               child: Column(
                 children: [
-                  SizedBox(
-                    height: 300,
+                  AspectRatio(
+                    aspectRatio: 1.0,
                     child: Stack(
                       children: [
                         PageView.builder(
@@ -1177,15 +1177,21 @@ class _ResimWidget extends StatelessWidget {
             FadeTransition(opacity: anim, child: child),
         transitionDuration: const Duration(milliseconds: 200),
       )),
-      child: CachedNetworkImage(
-        cacheManager: AppCacheManager.instance,
-        imageUrl: url, fit: BoxFit.cover, width: double.infinity,
-        fadeInDuration: Duration.zero,
-        fadeOutDuration: Duration.zero,
-        memCacheWidth: MediaQuery.of(context).size.width.toInt(),
-        placeholder: (_, _) => Container(color: const Color(0xFFF5F5F5)),
-        errorWidget: (_, _, _) => Container(color: const Color(0xFFF5F5F5),
-            child: const Icon(Icons.image_outlined, color: AppColors.textHint, size: 48)),
+      child: Container(
+        color: const Color(0xFFF2F2F2),
+        child: CachedNetworkImage(
+          cacheManager: AppCacheManager.instance,
+          imageUrl: url,
+          fit: BoxFit.contain,
+          width: double.infinity,
+          height: double.infinity,
+          fadeInDuration: Duration.zero,
+          fadeOutDuration: Duration.zero,
+          memCacheWidth: MediaQuery.of(context).size.width.toInt(),
+          placeholder: (_, _) => const SizedBox.shrink(),
+          errorWidget: (_, _, _) => const Icon(Icons.image_outlined,
+              color: AppColors.textHint, size: 48),
+        ),
       ),
     );
   }

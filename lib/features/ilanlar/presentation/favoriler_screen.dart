@@ -257,24 +257,22 @@ class _FavoriKartiState extends ConsumerState<_FavoriKarti>
             // Fotoğraf + favori butonu
             Stack(
               children: [
-                SizedBox(
+                Container(
                   height: 160,
                   width: double.infinity,
+                  color: const Color(0xFFF2F2F2),
                   child: resimler.isNotEmpty
                       ? CachedNetworkImage(
                           cacheManager: AppCacheManager.instance,
                           imageUrl: resimler.first,
-                          fit: BoxFit.cover,
+                          fit: BoxFit.contain,
                           fadeInDuration: Duration.zero,
                           fadeOutDuration: Duration.zero,
                           placeholder: (_, _) =>
-                              Container(color: AppColors.surface),
-                          errorWidget: (_, _, _) => Container(
-                            color: AppColors.surface,
-                            child: const Center(
-                              child: Icon(Icons.image_outlined,
-                                  color: AppColors.textHint, size: 28),
-                            ),
+                              const SizedBox.shrink(),
+                          errorWidget: (_, _, _) => const Center(
+                            child: Icon(Icons.image_outlined,
+                                color: AppColors.textHint, size: 28),
                           ),
                         )
                       : Container(

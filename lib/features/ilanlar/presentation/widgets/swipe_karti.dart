@@ -769,7 +769,7 @@ class _KartArkaplan extends StatelessWidget {
       return CachedNetworkImage(
         cacheManager: AppCacheManager.instance,
         imageUrl: resimler.first,
-        fit: BoxFit.cover,
+        fit: BoxFit.contain,
         fadeInDuration: Duration.zero,
         fadeOutDuration: Duration.zero,
         placeholder: (_, _) => placeholder,

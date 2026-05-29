@@ -97,20 +97,18 @@ class IlanKarti extends ConsumerWidget {
           children: [
             Stack(
               children: [
-                SizedBox(
+                Container(
                   height: _resimYuksekligi(context),
                   width: double.infinity,
+                  color: const Color(0xFFF2F2F2),
                   child: resimler.isNotEmpty
                       ? _IlanResimSlider(
                           resimler: resimler,
                           yukseklik: _resimYuksekligi(context),
                         )
-                      : Container(
-                          color: AppColors.surface,
-                          child: const Center(
-                            child: Icon(Icons.image_outlined,
-                                color: AppColors.textHint, size: 28),
-                          ),
+                      : const Center(
+                          child: Icon(Icons.image_outlined,
+                              color: AppColors.textHint, size: 28),
                         ),
                 ),
                 // ── Optimistic favori butonu ──────────────────────────────
@@ -124,88 +122,11 @@ class IlanKarti extends ConsumerWidget {
                   ),
               ],
             ),
-            Padding(
-              padding: kolonSayisi == 3
-                  ? const EdgeInsets.all(5)
-                  : const EdgeInsets.fromLTRB(10, 9, 10, 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    guncelIlan.urun.isNotEmpty ? guncelIlan.urun : 'İlan',
-                    style: GoogleFonts.dmSans(
-                        fontSize: AppLayout.fs(context, 12),
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textPrimary),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 3),
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on_outlined,
-                          size: 10, color: AppColors.textSecondary),
-                      const SizedBox(width: 2),
-                      Expanded(
-                        child: Text(
-                          '${guncelIlan.nereden} → ${guncelIlan.nereye}',
-                          style: GoogleFonts.dmSans(
-                              fontSize: AppLayout.fs(context, 10),
-                              color: AppColors.textSecondary),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 5),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (kategoriAdiStr.isNotEmpty)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF757575),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  kategoriAdiStr,
-                                  style: GoogleFonts.dmSans(
-                                      fontSize: AppLayout.fs(context, 9),
-                                      color: Colors.white),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            const SizedBox(height: 5),
-                            _SayacWidget(
-                              goruntulenmeSayisi: guncelIlan.goruntulenmeSayisi,
-                              favoriSayisi: guncelIlan.favoriSayisi,
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (guncelIlan.beden.isNotEmpty || guncelIlan.cinsiyet.isNotEmpty)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            if (guncelIlan.cinsiyet.isNotEmpty)
-                              _BedenChip(label: guncelIlan.cinsiyet),
-                            if (guncelIlan.cinsiyet.isNotEmpty && guncelIlan.beden.isNotEmpty)
-                              const SizedBox(height: 4),
-                            if (guncelIlan.beden.isNotEmpty)
-                              _BedenChip(label: guncelIlan.beden),
-                          ],
-                        ),
-                    ],
-                  ),
-                ],
-              ),
+            _IlanKartiIcerik(
+              ilan: guncelIlan,
+              kolonSayisi: kolonSayisi,
+              kategoriAdiStr: kategoriAdiStr,
+              sabitYukseklik: kolonSayisi == 3,
             ),
           ],
         ),
@@ -254,7 +175,7 @@ class _IlanResimSliderState extends State<_IlanResimSlider> {
           itemBuilder: (_, i) => CachedNetworkImage(
             cacheManager: AppCacheManager.instance,
             imageUrl: widget.resimler[i],
-            fit: BoxFit.cover,
+            fit: BoxFit.contain,
             memCacheWidth: w,
             fadeInDuration: Duration.zero,
             fadeOutDuration: Duration.zero,
@@ -660,5 +581,121 @@ class ShimmerListe extends StatelessWidget {
         )),
       ),
     );
+  }
+}
+
+// ── Kart İçerik Alanı ─────────────────────────────────────────────────────────
+// 3'lü grid'de (sabitYukseklik=true) Expanded kullanır — kalan alanı doldurur,
+// overflow'u önler. 2'li masonry'de (sabitYukseklik=false) kendi boyutunu alır.
+
+class _IlanKartiIcerik extends StatelessWidget {
+  final IlanModel ilan;
+  final int kolonSayisi;
+  final String kategoriAdiStr;
+  final bool sabitYukseklik;
+
+  const _IlanKartiIcerik({
+    required this.ilan,
+    required this.kolonSayisi,
+    required this.kategoriAdiStr,
+    required this.sabitYukseklik,
+  });
+
+  Widget _icerik(BuildContext context) {
+    return Padding(
+      padding: kolonSayisi == 3
+          ? const EdgeInsets.all(5)
+          : const EdgeInsets.fromLTRB(10, 9, 10, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
+            style: GoogleFonts.dmSans(
+                fontSize: AppLayout.fs(context, 12),
+                fontWeight: FontWeight.w500,
+                color: AppColors.textPrimary),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 3),
+          Row(
+            children: [
+              const Icon(Icons.location_on_outlined,
+                  size: 10, color: AppColors.textSecondary),
+              const SizedBox(width: 2),
+              Expanded(
+                child: Text(
+                  '${ilan.nereden} → ${ilan.nereye}',
+                  style: GoogleFonts.dmSans(
+                      fontSize: AppLayout.fs(context, 10),
+                      color: AppColors.textSecondary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 5),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (kategoriAdiStr.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF757575),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          kategoriAdiStr,
+                          style: GoogleFonts.dmSans(
+                              fontSize: AppLayout.fs(context, 9),
+                              color: Colors.white),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    const SizedBox(height: 5),
+                    _SayacWidget(
+                      goruntulenmeSayisi: ilan.goruntulenmeSayisi,
+                      favoriSayisi: ilan.favoriSayisi,
+                    ),
+                  ],
+                ),
+              ),
+              if (ilan.beden.isNotEmpty || ilan.cinsiyet.isNotEmpty)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (ilan.cinsiyet.isNotEmpty)
+                      _BedenChip(label: ilan.cinsiyet),
+                    if (ilan.cinsiyet.isNotEmpty && ilan.beden.isNotEmpty)
+                      const SizedBox(height: 4),
+                    if (ilan.beden.isNotEmpty)
+                      _BedenChip(label: ilan.beden),
+                  ],
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (sabitYukseklik) {
+      return Expanded(child: _icerik(context));
+    }
+    return _icerik(context);
   }
 }

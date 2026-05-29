@@ -265,6 +265,12 @@ const List<KategoriNode> kKategoriAgaci = [
         key: 'telefon', ad: 'Telefon', emoji: '📱',
         altlar: [
           KategoriNode(key: 'apple_iphone', ad: 'Apple iPhone', altlar: [
+            KategoriNode(key: 'iphone_17_serisi', ad: 'iPhone 17 Serisi', altlar: [
+              KategoriNode(key: 'iphone_17_pro_max', ad: 'iPhone 17 Pro Max'),
+              KategoriNode(key: 'iphone_17_pro', ad: 'iPhone 17 Pro'),
+              KategoriNode(key: 'iphone_17_plus', ad: 'iPhone 17 Plus'),
+              KategoriNode(key: 'iphone_17', ad: 'iPhone 17'),
+            ]),
             KategoriNode(key: 'iphone_16_serisi', ad: 'iPhone 16 Serisi', altlar: [
               KategoriNode(key: 'iphone_16_pro_max', ad: 'iPhone 16 Pro Max'),
               KategoriNode(key: 'iphone_16_pro', ad: 'iPhone 16 Pro'),
@@ -292,6 +298,11 @@ const List<KategoriNode> kKategoriAgaci = [
             KategoriNode(key: 'iphone_diger', ad: 'Diğer iPhone'),
           ]),
           KategoriNode(key: 'samsung_telefon', ad: 'Samsung', altlar: [
+            KategoriNode(key: 'samsung_s26', ad: 'Galaxy S26 Serisi', altlar: [
+              KategoriNode(key: 'samsung_s26_ultra', ad: 'Galaxy S26 Ultra'),
+              KategoriNode(key: 'samsung_s26_plus', ad: 'Galaxy S26+'),
+              KategoriNode(key: 'samsung_s26_base', ad: 'Galaxy S26'),
+            ]),
             KategoriNode(key: 'samsung_s25', ad: 'Galaxy S25 Serisi', altlar: [
               KategoriNode(key: 'samsung_s25_ultra', ad: 'Galaxy S25 Ultra'),
               KategoriNode(key: 'samsung_s25_plus', ad: 'Galaxy S25+'),

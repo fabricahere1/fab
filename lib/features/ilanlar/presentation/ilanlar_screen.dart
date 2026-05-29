@@ -222,6 +222,9 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
     final ilanlar = _sirala(_filtrele(state.filtrelenmis));
     final statusH = MediaQuery.of(context).padding.top;
     final isSwipe = mod == GoruntulemeModeli.swipe;
+    final scrW    = MediaQuery.of(context).size.width;
+    // 3'lü grid kart yüksekliği: kare resim + içerik alanı (padding, başlık, konum, chip, sayaç)
+    final uc3Extent = (scrW - 36) / 3 + 105;
 
     Widget ilanWidget;
     if (isSwipe) {
@@ -250,11 +253,11 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
     } else {
       if (mod.kolonSayisi == 3) {
         ilanWidget = SliverGrid(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
             mainAxisSpacing: 6,
             crossAxisSpacing: 6,
-            mainAxisExtent: 185,
+            mainAxisExtent: uc3Extent,
           ),
           delegate: SliverChildBuilderDelegate(
             (context, index) => RepaintBoundary(
