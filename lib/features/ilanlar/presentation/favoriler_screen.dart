@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../domain/ilan_model.dart';
 import '../providers/ilan_provider.dart';
-import '../data/ilan_repository.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/cache/app_cache_manager.dart';
 import '../../../shared/constants/app_colors.dart';
@@ -33,7 +32,7 @@ class FavorilerScreen extends ConsumerWidget {
       );
     }
 
-    final favorilerAsync = ref.watch(_favorilerProvider(uid));
+    final favorilerAsync = ref.watch(kullaniciFavorileriProvider(uid));
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -120,36 +119,6 @@ class FavorilerScreen extends ConsumerWidget {
     );
   }
 }
-
-// ── Provider ──────────────────────────────────────────────────────────────────
-
-final _favorilerProvider =
-    StreamProvider.family<List<IlanModel>, String>((ref, uid) {
-  final repo = ref.watch(ilanRepositoryProvider);
-  return repo.favorilerStream(uid).map((liste) => liste
-      .map((map) {
-        try {
-          final ilanId = map['ilanId'] as String? ?? '';
-          final tip    = map['tip']    as String? ?? '';
-          return IlanModel(
-            id:          ilanId,
-            tip:         tip,
-            nereden:     map['nereden']    as String? ?? '',
-            nereye:      map['nereye']     as String? ?? '',
-            urun:        map['urun']       as String? ?? '',
-            ucret:       map['ucret']      as String? ?? '',
-            kategori:    map['kategori']   as String? ?? 'diger',
-            kullaniciId: map['ilanSahibiId'] as String? ?? '',
-            kullaniciAd: map['kullaniciAd']  as String? ?? '',
-            resimUrl:    map['resimUrl']     as String? ?? '',
-          );
-        } catch (_) {
-          return null;
-        }
-      })
-      .whereType<IlanModel>()
-      .toList());
-});
 
 // ── Kart ──────────────────────────────────────────────────────────────────────
 

@@ -8,8 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 import 'package:iste_v3/shared/constants/app_colors.dart';
 import 'package:iste_v3/shared/constants/app_constants.dart';
@@ -17,86 +15,13 @@ import 'package:iste_v3/core/cache/app_cache_manager.dart';
 import 'package:iste_v3/features/ilanlar/presentation/ilan_detay_screen.dart';
 import 'package:iste_v3/features/home/providers/son_goruntulenenler_provider.dart';
 import 'package:iste_v3/features/ilanlar/domain/ilan_model.dart';
-
-const _kAlgoliaAppId     = 'NVHD1ZSPLZ';
-const _kAlgoliaSearchKey = '97de9ef489349d39ce0d256355b82952';
-const _kAlgoliaIndex     = 'ilanlar';
+import '../data/arama_service.dart';
 
 // Popüler arama terimleri — sabit liste
 const _kPopulerAramalar = [
   'iPhone', 'Nike', 'Dyson', 'Zara', 'MacBook',
   'Parfüm', 'Lego', 'PlayStation', 'Adidas', 'Vitamins',
 ];
-
-class AramaSonucu {
-  final String objectID;
-  final String urun;
-  final String nereden;
-  final String nereye;
-  final String kategori;
-  final String tip;
-  final String? resimUrl;
-
-  const AramaSonucu({
-    required this.objectID,
-    required this.urun,
-    required this.nereden,
-    required this.nereye,
-    required this.kategori,
-    required this.tip,
-    this.resimUrl,
-  });
-
-  factory AramaSonucu.fromJson(Map<String, dynamic> json) => AramaSonucu(
-        objectID: json['objectID'] as String? ?? '',
-        urun:     json['urun']     as String? ?? '',
-        nereden:  json['nereden']  as String? ?? '',
-        nereye:   json['nereye']   as String? ?? '',
-        kategori: json['kategori'] as String? ?? '',
-        tip:      json['tip']      as String? ?? '',
-        resimUrl: json['resimUrl'] as String?,
-      );
-}
-
-Future<List<AramaSonucu>> _algoliaAra(String sorgu, {String? katFiltre}) async {
-  if (sorgu.trim().isEmpty && katFiltre == null) return [];
-
-  final url = Uri.parse(
-    'https://$_kAlgoliaAppId-dsn.algolia.net/1/indexes/$_kAlgoliaIndex/query',
-  );
-
-  final body = <String, dynamic>{
-    'query': sorgu,
-    'hitsPerPage': 30,
-    'attributesToRetrieve': [
-      'objectID', 'urun', 'nereden', 'nereye', 'kategori',
-      'tip', 'resimUrl', 'kategoriYolu',
-    ],
-  };
-
-  if (katFiltre != null) {
-    final altKeyler = tumAltKeyler(katFiltre);
-    final filterParts = altKeyler
-        .map((k) => 'kategoriYolu:$k OR kategori:$k')
-        .join(' OR ');
-    body['filters'] = filterParts;
-  }
-
-  final response = await http.post(
-    url,
-    headers: {
-      'X-Algolia-Application-Id': _kAlgoliaAppId,
-      'X-Algolia-API-Key': _kAlgoliaSearchKey,
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode(body),
-  );
-
-  if (response.statusCode != 200) return [];
-  final data = jsonDecode(response.body) as Map<String, dynamic>;
-  final hits = (data['hits'] as List<dynamic>? ?? []);
-  return hits.map((h) => AramaSonucu.fromJson(h as Map<String, dynamic>)).toList();
-}
 
 class AramaScreen extends ConsumerStatefulWidget {
   const AramaScreen({super.key});
@@ -139,7 +64,7 @@ class _AramaScreenState extends ConsumerState<AramaScreen> {
     }
     setState(() => _yukleniyor = true);
     _debounce = Timer(const Duration(milliseconds: 350), () async {
-      final sonuclar = await _algoliaAra(deger.trim(), katFiltre: katFiltre);
+      final sonuclar = await algoliaAra(deger.trim(), katFiltre: katFiltre);
       if (mounted) setState(() { _sonuclar = sonuclar; _yukleniyor = false; });
     });
   }

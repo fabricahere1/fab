@@ -2,7 +2,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../mesajlar/data/mesaj_repository.dart';
+import '../../mesajlar/providers/mesaj_provider.dart';
 import '../data/degerlendirme_repository.dart';
 
 part 'degerlendirme_provider.g.dart';

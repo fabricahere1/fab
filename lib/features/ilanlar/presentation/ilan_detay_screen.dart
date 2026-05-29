@@ -1322,7 +1322,7 @@ class _BreadcrumbWidget extends StatelessWidget {
             InkWell(
               onTap: () {
                 final yol = kategoriYolu.sublist(0, i + 1);
-                context.push(AppRoutes.gelenlerPath(kategoriYolu: yol));
+                context.push(AppRoutes.gelenlerPath(kategoriYolu: yol, tip: ilanTip));
               },
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),

@@ -1,9 +1,12 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/ilan_repository.dart';
 import '../domain/ilan_model.dart';
 import '../../auth/providers/auth_provider.dart';
+
+export '../data/ilan_repository.dart' show ilanRepositoryProvider;
 
 part 'ilan_provider.g.dart';
 
@@ -410,6 +413,34 @@ class FavoriNotifier extends _$FavoriNotifier {
     ref.read(tasiyiciIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilanId, -1);
   }
 }
+
+// ── Kullanıcının favori ilanları (IlanModel listesi olarak) ──────────────────
+
+final kullaniciFavorileriProvider =
+    StreamProvider.autoDispose.family<List<IlanModel>, String>((ref, uid) {
+  final repo = ref.watch(ilanRepositoryProvider);
+  return repo.favorilerStream(uid).map((liste) => liste
+      .map((map) {
+        try {
+          return IlanModel(
+            id:          map['ilanId']      as String? ?? '',
+            tip:         map['tip']         as String? ?? '',
+            nereden:     map['nereden']     as String? ?? '',
+            nereye:      map['nereye']      as String? ?? '',
+            urun:        map['urun']        as String? ?? '',
+            ucret:       map['ucret']       as String? ?? '',
+            kategori:    map['kategori']    as String? ?? 'diger',
+            kullaniciId: map['ilanSahibiId'] as String? ?? '',
+            kullaniciAd: map['kullaniciAd'] as String? ?? '',
+            resimUrl:    map['resimUrl']    as String? ?? '',
+          );
+        } catch (_) {
+          return null;
+        }
+      })
+      .whereType<IlanModel>()
+      .toList());
+});
 
 // ── İlan işlemleri ────────────────────────────────────────────────────────────
 

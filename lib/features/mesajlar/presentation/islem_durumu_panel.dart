@@ -2,32 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../domain/islem_durumu.dart';
-import '../data/mesaj_repository.dart';
 import '../providers/mesaj_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../shared/constants/app_colors.dart';
-
-// ── Providers ─────────────────────────────────────────────
-
-final islemDurumuProvider =
-    StreamProvider.family<Map<String, dynamic>, String>((ref, sohbetId) {
-  return ref.read(mesajRepositoryProvider).islemDurumuStream(sohbetId);
-});
-
-final _ilanSahibiIdProvider =
-    StreamProvider.family<String, String>((ref, sohbetId) {
-  return ref.read(mesajRepositoryProvider).ilanSahibiIdStream(sohbetId);
-});
-
-final _ilanTipProvider =
-    StreamProvider.family<String, String>((ref, sohbetId) {
-  return ref.read(mesajRepositoryProvider).ilanTipStream(sohbetId);
-});
-
-final _sohbetKullanicilarProvider =
-    StreamProvider.family<List<String>, String>((ref, sohbetId) {
-  return ref.read(mesajRepositoryProvider).sohbetKullanicilarStream(sohbetId);
-});
 
 // ── Panel ─────────────────────────────────────────────────
 
@@ -45,9 +22,9 @@ class IslemDurumuPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final benimUid     = ref.watch(currentUserProvider)?.uid ?? '';
     final durumlari    = ref.watch(islemDurumuProvider(sohbetId)).value ?? {};
-    final ilanSahibiId = ref.watch(_ilanSahibiIdProvider(sohbetId)).value ?? '';
-    final kullanicilar = ref.watch(_sohbetKullanicilarProvider(sohbetId)).value ?? [];
-    final ilanTip      = ref.watch(_ilanTipProvider(sohbetId)).value ?? 'istek';
+    final ilanSahibiId = ref.watch(sohbetIlanSahibiIdProvider(sohbetId)).value ?? '';
+    final kullanicilar = ref.watch(sohbetKullanicilarProvider(sohbetId)).value ?? [];
+    final ilanTip      = ref.watch(sohbetIlanTipProvider(sohbetId)).value ?? 'istek';
     final adimlar      = IlanTipiAdimlar.forTip(ilanTip);
     final benimIlanSahibi = benimUid == ilanSahibiId;
 

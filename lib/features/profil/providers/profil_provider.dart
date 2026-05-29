@@ -1,10 +1,12 @@
 import 'dart:io';
-import '../../ilanlar/data/ilan_repository.dart';
+import '../../ilanlar/providers/ilan_provider.dart';
 import '../../ilanlar/domain/ilan_model.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/kullanici_repository.dart';
 import '../domain/kullanici_model.dart';
 import '../../auth/providers/auth_provider.dart';
+
+export '../data/kullanici_repository.dart' show kullaniciRepositoryProvider;
 
 part 'profil_provider.g.dart';
 

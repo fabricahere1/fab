@@ -1,12 +1,15 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/mesaj_repository.dart';
 import '../domain/mesaj_model.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../../profil/data/kullanici_repository.dart';
+import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_constants.dart';
+
+export '../data/mesaj_repository.dart' show mesajRepositoryProvider;
 
 part 'mesaj_provider.g.dart';
 
@@ -379,3 +382,25 @@ class SohbetIslemleri extends _$SohbetIslemleri {
     return _repo.sohbetGetir(sohbetId);
   }
 }
+
+// ── İşlem durumu stream provider'ları (islem_durumu_panel için) ──────────────
+
+final islemDurumuProvider =
+    StreamProvider.family<Map<String, dynamic>, String>((ref, sohbetId) {
+  return ref.read(mesajRepositoryProvider).islemDurumuStream(sohbetId);
+});
+
+final sohbetIlanSahibiIdProvider =
+    StreamProvider.family<String, String>((ref, sohbetId) {
+  return ref.read(mesajRepositoryProvider).ilanSahibiIdStream(sohbetId);
+});
+
+final sohbetIlanTipProvider =
+    StreamProvider.family<String, String>((ref, sohbetId) {
+  return ref.read(mesajRepositoryProvider).ilanTipStream(sohbetId);
+});
+
+final sohbetKullanicilarProvider =
+    StreamProvider.family<List<String>, String>((ref, sohbetId) {
+  return ref.read(mesajRepositoryProvider).sohbetKullanicilarStream(sohbetId);
+});

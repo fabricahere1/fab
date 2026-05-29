@@ -5,7 +5,6 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../../ilanlar/data/ilan_repository.dart';
 import '../../ilanlar/domain/ilan_model.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
 import '../../../core/cache/app_cache_manager.dart';
@@ -156,10 +155,7 @@ class _FavoriKarti extends ConsumerWidget {
       ),
     );
     if (onay != true) return;
-    await ref.read(ilanRepositoryProvider).favoridanCikar(
-          kullaniciId: uid,
-          ilanId: ilan.id,
-        );
+    await ref.read(favoriProvider.notifier).cikar(ilan.id);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Favorilerden çıkarıldı.',

@@ -32,9 +32,12 @@ abstract class AppRoutes {
   static const favoriler     = '/favoriler';
 
   static String ilanDetayPath(String ilanId) => '/ilan/$ilanId';
-  static String gelenlerPath({List<String> kategoriYolu = const []}) {
-    if (kategoriYolu.isEmpty) return gelenler;
-    return '$gelenler?kategori=${kategoriYolu.join(',')}';
+  static String gelenlerPath({List<String> kategoriYolu = const [], String? tip}) {
+    final params = <String>[];
+    if (kategoriYolu.isNotEmpty) params.add('kategori=${kategoriYolu.join(',')}');
+    if (tip != null && tip.isNotEmpty) params.add('tip=$tip');
+    if (params.isEmpty) return gelenler;
+    return '$gelenler?${params.join('&')}';
   }
 }
 
@@ -136,7 +139,8 @@ GoRouter router(Ref ref) {
           final kategoriYolu = kategoriParam.isNotEmpty
               ? kategoriParam.split(',')
               : <String>[];
-          return GelenlerDetayScreen(kategoriYolu: kategoriYolu);
+          final tip = state.uri.queryParameters['tip'];
+          return GelenlerDetayScreen(kategoriYolu: kategoriYolu, tip: tip);
         },
       ),
     ],

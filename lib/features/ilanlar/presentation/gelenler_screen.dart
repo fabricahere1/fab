@@ -942,7 +942,8 @@ class _BosEkran extends StatelessWidget {
 
 class GelenlerDetayScreen extends ConsumerStatefulWidget {
   final List<String> kategoriYolu;
-  const GelenlerDetayScreen({super.key, required this.kategoriYolu});
+  final String? tip;
+  const GelenlerDetayScreen({super.key, required this.kategoriYolu, this.tip});
 
   @override
   ConsumerState<GelenlerDetayScreen> createState() => _GelenlerDetayScreenState();
@@ -975,7 +976,9 @@ class _GelenlerDetayScreenState extends ConsumerState<GelenlerDetayScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(tasiyiciIlanlarProvider);
+    final state = widget.tip == 'istek'
+        ? ref.watch(istekIlanlarProvider)
+        : ref.watch(tasiyiciIlanlarProvider);
     final ilanlar = _filtrele(state.filtrelenmis)
       ..sort((a, b) => (b.olusturmaTarihi ?? DateTime(0))
           .compareTo(a.olusturmaTarihi ?? DateTime(0)));
