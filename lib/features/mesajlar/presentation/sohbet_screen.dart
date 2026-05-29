@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
-import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -210,7 +209,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                         width: double.infinity,
                         height: 48,
                         child: ElevatedButton(
-                          onPressed: () => Navigator.pop(ctx),
+                          onPressed: () => Navigator.pop(ctx, true),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.red,
                             foregroundColor: Colors.white,
@@ -218,7 +217,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(14)),
                           ),
-                          child: Text('Anasayfaya Dön',
+                          child: Text('Kapat',
                               style: GoogleFonts.dmSans(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600)),
@@ -229,8 +228,6 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                 ),
               ),
             );
-            // Dialog kapandıktan sonra anasayfaya yönlendir
-            if (mounted) context.go('/home');
           }
         } else if (sonuc == false) {
           await ref.read(degerlendirmeIslemleriProvider.notifier).bekleyenKaydet(
