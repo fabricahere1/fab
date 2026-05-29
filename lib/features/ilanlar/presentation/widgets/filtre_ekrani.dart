@@ -6,6 +6,18 @@ import '../../../../shared/constants/app_colors.dart';
 import '../../../../shared/constants/app_constants.dart';
 import '../ilanlar_screen.dart';
 
+// Ana kategori local asset yolları
+const _kKategoriGorseller = <String, String>{
+  'giyim':      'assets/images/kategoriler/giyim.png',
+  'elektronik': 'assets/images/kategoriler/elektronik.png',
+  'guzellik':   'assets/images/kategoriler/guzellik.png',
+  'ev':         'assets/images/kategoriler/ev.png',
+  'spor':       'assets/images/kategoriler/spor.png',
+  'kultur':     'assets/images/kategoriler/kultur.png',
+  'gida':       'assets/images/kategoriler/gida.png',
+  'diger':      'assets/images/kategoriler/diger.png',
+};
+
 // ── Filtre Ekranı ─────────────────────────────────────────────────────────────
 
 class FiltreEkrani extends StatefulWidget {
@@ -182,11 +194,97 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                 ),
               ),
 
-            // ── Liste ────────────────────────────────────────────────────────
+            // ── Liste / Grid ──────────────────────────────────────────────────
             Expanded(
               child: ListView(
+                padding: _gezinmeYolu.isEmpty
+                    ? const EdgeInsets.fromLTRB(14, 14, 14, 0)
+                    : EdgeInsets.zero,
                 children: [
-                  // "Tüm X" seçeneği — ana seviyede değilsek göster
+                  // Ana seviyede: 2'li görsel grid
+                  if (_gezinmeYolu.isEmpty) ...[
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 10,
+                        crossAxisSpacing: 10,
+                        childAspectRatio: 2.2,
+                      ),
+                      itemCount: nodes.length,
+                      itemBuilder: (_, i) {
+                        final node   = nodes[i];
+                        final secili = _nodeSeciliMi(node);
+                        final imgUrl = _kKategoriGorseller[node.key] ?? '';
+                        return GestureDetector(
+                          onTap: () => _nodeSecildi(node),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: secili
+                                  ? AppColors.red.withValues(alpha: 0.06)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: secili ? AppColors.red : const Color(0xFFEEEEEE),
+                                width: secili ? 1.5 : 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.05),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: Row(
+                              children: [
+                                // Kategori adı
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(left: 14),
+                                    child: Text(
+                                      node.ad,
+                                      style: GoogleFonts.dmSans(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        color: secili
+                                            ? AppColors.red
+                                            : AppColors.textPrimary,
+                                        height: 1.3,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                                // Ürün görseli — şeffaf arka planlı local asset
+                                if (imgUrl.isNotEmpty)
+                                  Container(
+                                    width: 88,
+                                    color: Colors.white,
+                                    padding: const EdgeInsets.all(6),
+                                    child: Image.asset(
+                                      imgUrl,
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (_, _, _) => Center(
+                                        child: Text(
+                                          node.emoji,
+                                          style: const TextStyle(fontSize: 28),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+
+                  // Alt seviyelerde: klasik liste
                   if (_gezinmeYolu.isNotEmpty) ...[
                     _KategoriSatiri(
                       ad: 'Tüm "$baslik" Ürünleri',
@@ -194,22 +292,22 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                       onTap: _tumunuSec,
                       vurgulu: true,
                     ),
+                    ...nodes.map((node) => _KategoriSatiri(
+                      ad: node.emoji.isNotEmpty
+                          ? '${node.emoji}  ${node.ad}'
+                          : node.ad,
+                      secili: _nodeSeciliMi(node),
+                      onTap: () => _nodeSecildi(node),
+                      derinlikOku: !node.yaprakMi,
+                    )),
                   ],
-
-                  // Alt kategoriler
-                  ...nodes.map((node) => _KategoriSatiri(
-                    ad: node.emoji.isNotEmpty
-                        ? '${node.emoji}  ${node.ad}'
-                        : node.ad,
-                    secili: _nodeSeciliMi(node),
-                    onTap: () => _nodeSecildi(node),
-                    derinlikOku: !node.yaprakMi,
-                  )),
 
                   // ── Sıralama bölümü — sadece ana seviyede göster ──────────
                   if (_gezinmeYolu.isEmpty) ...[
+                    const SizedBox(height: 8),
+                    const Divider(height: 1, color: AppColors.divider),
                     Container(
-                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
                       child: Text('Sıralama',
                           style: GoogleFonts.dmSans(
                               fontSize: 16, fontWeight: FontWeight.w700)),
