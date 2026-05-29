@@ -90,8 +90,9 @@ class IlanKarti extends ConsumerWidget {
             ),
           ],
         ),
-        clipBehavior: Clip.hardEdge,
-        child: Column(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -129,6 +130,7 @@ class IlanKarti extends ConsumerWidget {
               sabitYukseklik: kolonSayisi == 3,
             ),
           ],
+          ),
         ),
       ),
     );
