@@ -4,7 +4,13 @@
       "Bash(flutter analyze *)",
       "Bash(Get-ChildItem -Path \"C:\\\\src\\\\iste_v3\\\\lib\" -Recurse -Filter \"*.dart\")",
       "Bash(Measure-Object)",
-      "Bash(Select-Object -ExpandProperty Count)"
+      "Bash(Select-Object -ExpandProperty Count)",
+      "Bash(cp \"/mnt/c/Users/PC/Desktop/Claude ss leri/kategori görselleri/giyim&aksesuar.png\"    \"/mnt/c/src/iste_v3/assets/images/kategoriler/giyim.png\")",
+      "Bash(cp \"/mnt/c/Users/PC/Desktop/Claude ss leri/kategori görselleri/elektronik.webp\"       \"/mnt/c/src/iste_v3/assets/images/kategoriler/elektronik.webp\")",
+      "Bash(cp \"/mnt/c/Users/PC/Desktop/Claude ss leri/kategori görselleri/güzellik ve sağlık.webp\" \"/mnt/c/src/iste_v3/assets/images/kategoriler/guzellik.webp\")",
+      "Bash(cp \"/mnt/c/Users/PC/Desktop/Claude ss leri/kategori görselleri/ev ve yaşam.png\"      \"/mnt/c/src/iste_v3/assets/images/kategoriler/ev.png\")",
+      "Bash(cp \"/mnt/c/Users/PC/Desktop/Claude ss leri/kategori görselleri/spor ve outdoor.png\"  \"/mnt/c/src/iste_v3/assets/images/kategoriler/spor.png\")",
+      "Bash(flutter pub *)"
     ]
   }
 }
