@@ -39,9 +39,20 @@ class DegerlendirmeRepository {
     String ilanBaslik = '',
   }) async {
     await _db.runTransaction((tx) async {
-      final userRef = _db.collection(Collections.kullanicilar).doc(hedefKullaniciId);
-      final degRef  = _db.collection(Collections.degerlendirmeler).doc();
-      final snap    = await tx.get(userRef);
+      final sohbetRef = _db.collection(Collections.sohbetler).doc(sohbetId);
+      final userRef   = _db.collection(Collections.kullanicilar).doc(hedefKullaniciId);
+      final degRef    = _db.collection(Collections.degerlendirmeler).doc();
+
+      final sohbetSnap = await tx.get(sohbetRef);
+      final snap       = await tx.get(userRef);
+
+      // Mükerrer değerlendirmeyi önle — transaction içinde atomik kontrol
+      if (sohbetSnap.exists) {
+        final d = sohbetSnap.data() as Map<String, dynamic>;
+        if (d['degerlendirmeYapildi_$degerlendireninId'] == true) {
+          throw Exception('zaten_degerlendirdi');
+        }
+      }
 
       tx.set(degRef, {
         'sohbetId':          sohbetId,
@@ -51,6 +62,11 @@ class DegerlendirmeRepository {
         'yorum':             yorum,
         'ilanBaslik':        ilanBaslik,
         'tarih':             FieldValue.serverTimestamp(),
+      });
+
+      // Aynı transaction'da işaretle — race condition'ı önler
+      tx.update(sohbetRef, {
+        'degerlendirmeYapildi_$degerlendireninId': true,
       });
 
       if (snap.exists) {

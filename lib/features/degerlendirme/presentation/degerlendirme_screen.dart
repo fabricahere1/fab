@@ -80,7 +80,6 @@ class _DegerlendirmeModalState extends ConsumerState<DegerlendirmeModal> {
     if (!mounted) return;
     if (basarili) {
       Navigator.pop(context, true);
-      AppSnackBar.basari(context, 'Değerlendirmen gönderildi!');
     } else {
       setState(() => _gonderiyor = false);
       AppSnackBar.hata(context, 'Bir hata oluştu. Tekrar dene.');

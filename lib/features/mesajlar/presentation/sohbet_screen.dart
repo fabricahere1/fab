@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +11,7 @@ import '../domain/mesaj_model.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
+import '../../ilanlar/presentation/ilan_detay_screen.dart';
 import 'islem_durumu_panel.dart';
 import '../../degerlendirme/presentation/degerlendirme_screen.dart';
 import '../../degerlendirme/providers/degerlendirme_provider.dart';
@@ -154,12 +157,80 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
         }
 
         if (sonuc == true) {
-          await DegerlendirmeModal.goster(
+          final gonderildi = await DegerlendirmeModal.goster(
             context: context,
             sohbetId: _sohbetId,
             hedefKullaniciId: karsiId,
             hedefKullaniciAd: widget.karsiKullaniciAd,
           );
+          if (gonderildi && mounted) {
+            await showDialog<void>(
+              context: context,
+              barrierDismissible: false,
+              builder: (ctx) => Dialog(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20)),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 64, height: 64,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF81C784).withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.check_circle_rounded,
+                            color: Color(0xFF81C784), size: 38),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Değerlendirmeniz için\nteşekkür ederiz!',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.dmSans(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87,
+                            height: 1.4),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Tüm değerlendirmelere Profil sekmesi içerisindeki Değerlendirmelerim menüsünden ulaşabilirsiniz.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.dmSans(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                            height: 1.5),
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            context.go('/home');
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.red,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14)),
+                          ),
+                          child: Text('Anasayfaya Dön',
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
         } else if (sonuc == false) {
           await ref.read(degerlendirmeIslemleriProvider.notifier).bekleyenKaydet(
             sohbetId: _sohbetId,
@@ -357,43 +428,51 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
               color: Colors.black87, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: widget.ilanResimUrl != null &&
-                      widget.ilanResimUrl!.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: widget.ilanResimUrl!,
-                      width: 40,
-                      height: 40,
-                      fit: BoxFit.cover,
-                      fadeInDuration: Duration.zero,
-                      errorWidget: (_, _, _) => _IlanResimPlaceholder(),
-                    )
-                  : _IlanResimPlaceholder(),
+        title: GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            CupertinoPageRoute(
+              builder: (_) => IlanDetayScreen(ilanId: widget.ilanId),
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(widget.ilanBaslik,
-                      style: GoogleFonts.dmSans(
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
-                  Text(widget.karsiKullaniciAd,
-                      style: GoogleFonts.dmSans(
-                          color: AppColors.textSecondary, fontSize: 11),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
-                ],
+          ),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: widget.ilanResimUrl != null &&
+                        widget.ilanResimUrl!.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: widget.ilanResimUrl!,
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                        fadeInDuration: Duration.zero,
+                        errorWidget: (_, _, _) => _IlanResimPlaceholder(),
+                      )
+                    : _IlanResimPlaceholder(),
               ),
-            ),
-          ],
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(widget.ilanBaslik,
+                        style: GoogleFonts.dmSans(
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                    Text(widget.karsiKullaniciAd,
+                        style: GoogleFonts.dmSans(
+                            color: AppColors.textSecondary, fontSize: 11),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           IconButton(
