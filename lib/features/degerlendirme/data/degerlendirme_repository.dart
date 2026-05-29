@@ -64,10 +64,10 @@ class DegerlendirmeRepository {
         'tarih':             FieldValue.serverTimestamp(),
       });
 
-      // Aynı transaction'da işaretle — race condition'ı önler
-      tx.update(sohbetRef, {
+      // set+merge kullan — doküman yoksa da güvenli çalışır
+      tx.set(sohbetRef, {
         'degerlendirmeYapildi_$degerlendireninId': true,
-      });
+      }, SetOptions(merge: true));
 
       if (snap.exists) {
         final d = snap.data() as Map<String, dynamic>;

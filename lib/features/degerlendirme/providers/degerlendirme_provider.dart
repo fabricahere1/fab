@@ -1,5 +1,6 @@
 // lib/features/degerlendirme/providers/degerlendirme_provider.dart
 
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../mesajlar/data/mesaj_repository.dart';
 import '../data/degerlendirme_repository.dart';
@@ -60,7 +61,8 @@ class DegerlendirmeIslemleri extends _$DegerlendirmeIslemleri {
         kullaniciId: degerlendireninId,
       );
       return true;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[Degerlendirme] gonder hatasi: $e');
       return false;
     }
   }

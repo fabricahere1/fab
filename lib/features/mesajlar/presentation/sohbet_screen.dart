@@ -12,6 +12,8 @@ import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../ilanlar/presentation/ilan_detay_screen.dart';
+import '../../ilanlar/providers/ilan_provider.dart';
+import '../../profil/presentation/kullanici_profil_screen.dart';
 import 'islem_durumu_panel.dart';
 import '../../degerlendirme/presentation/degerlendirme_screen.dart';
 import '../../degerlendirme/providers/degerlendirme_provider.dart';
@@ -416,70 +418,169 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
       karsiKullaniciId: widget.karsiKullaniciId,
       ilanId: widget.ilanId,
     ));
+    final ilanAsync = widget.ilanId.isNotEmpty
+        ? ref.watch(ilanByIdProvider(widget.ilanId))
+        : null;
+    final guzergah = ilanAsync?.value != null
+        ? '${ilanAsync!.value!.nereden} → ${ilanAsync.value!.nereye}'
+        : '';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        titleSpacing: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,
-              color: Colors.black87, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: GestureDetector(
-          onTap: () => Navigator.push(
-            context,
-            CupertinoPageRoute(
-              builder: (_) => IlanDetayScreen(ilanId: widget.ilanId),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(114),
+        child: Container(
+          color: Colors.white,
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(4, 6, 8, 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Geri butonu
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new,
+                        color: Colors.black87, size: 20),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  // İki kart alt alta
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Kişi kartı
+                        GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => KullaniciProfilScreen(
+                                kullaniciId: widget.karsiKullaniciId,
+                                kullaniciAd: widget.karsiKullaniciAd,
+                              ),
+                            ),
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF5F5F5),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: AppColors.divider, width: 0.7),
+                            ),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 14,
+                                  backgroundColor: AppColors.red.withValues(alpha: 0.15),
+                                  child: Text(
+                                    widget.karsiKullaniciAd.isNotEmpty
+                                        ? widget.karsiKullaniciAd[0].toUpperCase()
+                                        : '?',
+                                    style: GoogleFonts.dmSans(
+                                        color: AppColors.red,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 12),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    widget.karsiKullaniciAd,
+                                    style: GoogleFonts.dmSans(
+                                        color: Colors.black87,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 13),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const Icon(Icons.chevron_right,
+                                    color: AppColors.textHint, size: 16),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        // İlan kartı
+                        if (widget.ilanId.isNotEmpty && widget.ilanBaslik.isNotEmpty)
+                          GestureDetector(
+                            onTap: () => Navigator.push(
+                              context,
+                              CupertinoPageRoute(
+                                builder: (_) => IlanDetayScreen(ilanId: widget.ilanId),
+                              ),
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF5F5F5),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: AppColors.divider, width: 0.7),
+                              ),
+                              child: Row(
+                                children: [
+                                  if (widget.ilanResimUrl != null && widget.ilanResimUrl!.isNotEmpty)
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(5),
+                                      child: CachedNetworkImage(
+                                        imageUrl: widget.ilanResimUrl!,
+                                        width: 28,
+                                        height: 28,
+                                        fit: BoxFit.cover,
+                                        fadeInDuration: Duration.zero,
+                                        errorWidget: (_, _, _) => _IlanResimPlaceholder(),
+                                      ),
+                                    )
+                                  else
+                                    _IlanResimPlaceholder(),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          widget.ilanBaslik,
+                                          style: GoogleFonts.dmSans(
+                                              color: Colors.black87,
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 12),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        if (guzergah.isNotEmpty)
+                                          Text(
+                                            guzergah,
+                                            style: GoogleFonts.dmSans(
+                                                color: AppColors.textSecondary,
+                                                fontSize: 10),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(Icons.chevron_right,
+                                      color: AppColors.textHint, size: 16),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  // Üç nokta menü
+                  IconButton(
+                    icon: const Icon(Icons.more_vert, color: Colors.black87),
+                    onPressed: () => _ucNoktaMenu(benimUid),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 36),
+                  ),
+                ],
+              ),
             ),
           ),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: widget.ilanResimUrl != null &&
-                        widget.ilanResimUrl!.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: widget.ilanResimUrl!,
-                        width: 40,
-                        height: 40,
-                        fit: BoxFit.cover,
-                        fadeInDuration: Duration.zero,
-                        errorWidget: (_, _, _) => _IlanResimPlaceholder(),
-                      )
-                    : _IlanResimPlaceholder(),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(widget.ilanBaslik,
-                        style: GoogleFonts.dmSans(
-                            color: Colors.black87,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
-                    Text(widget.karsiKullaniciAd,
-                        style: GoogleFonts.dmSans(
-                            color: AppColors.textSecondary, fontSize: 11),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
-                  ],
-                ),
-              ),
-            ],
-          ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.black87),
-            onPressed: () => _ucNoktaMenu(benimUid),
-          ),
-        ],
       ),
       body: Stack(
         children: [
@@ -592,31 +693,53 @@ class _MesajListesi extends ConsumerWidget {
               color: AppColors.red, strokeWidth: 2));
     }
     if (sohbetState.siraliMesajlar.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.chat_bubble_outline,
-                size: 50, color: AppColors.divider),
-            const SizedBox(height: 12),
-            Text('Henüz mesaj yok.',
-                style: GoogleFonts.dmSans(
-                    color: AppColors.textSecondary, fontSize: 14)),
-            const SizedBox(height: 4),
-            Text('İlk mesajı sen gönder!',
-                style: GoogleFonts.dmSans(
-                    color: AppColors.textHint, fontSize: 12)),
-          ],
-        ),
+      return Column(
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(8, 12, 8, 8),
+            child: _KurallarBanner(),
+          ),
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.chat_bubble_outline,
+                      size: 50, color: AppColors.divider),
+                  const SizedBox(height: 12),
+                  Text('Henüz mesaj yok.',
+                      style: GoogleFonts.dmSans(
+                          color: AppColors.textSecondary, fontSize: 14)),
+                  const SizedBox(height: 4),
+                  Text('İlk mesajı sen gönder!',
+                      style: GoogleFonts.dmSans(
+                          color: AppColors.textHint, fontSize: 12)),
+                ],
+              ),
+            ),
+          ),
+        ],
       );
     }
+    // reverse:true → index 0 = en yeni mesaj (altta), yüksek index = üstte
+    // Banner en üstte (konuşma başında) görünmesi için en yüksek indexe ekleniyor
+    final dahaFazlaOffset = sohbetState.dahaFazlaVar ? 1 : 0;
+    final bannerIndex = sohbetState.siraliMesajlar.length + dahaFazlaOffset;
+
     return ListView.builder(
       reverse: true,
       controller: scrollCtrl,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-      itemCount: sohbetState.siraliMesajlar.length +
-          (sohbetState.dahaFazlaVar ? 1 : 0),
+      itemCount: bannerIndex + 1,
       itemBuilder: (context, index) {
+        // En üstteki item: Mesajlaşma Kuralları
+        if (index == bannerIndex) {
+          return const Padding(
+            padding: EdgeInsets.only(bottom: 8),
+            child: _KurallarBanner(),
+          );
+        }
+        // "Daha fazla mesaj yükle" butonu
         if (index == sohbetState.siraliMesajlar.length) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -764,14 +887,60 @@ class _InputBar extends StatelessWidget {
 class _IlanResimPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
-        width: 40,
-        height: 40,
+        width: 32,
+        height: 32,
         decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(6)),
         child: const Icon(Icons.image_outlined,
-            color: AppColors.textHint, size: 20),
+            color: AppColors.textHint, size: 16),
       );
+}
+
+// ── Mesajlaşma Kuralları Banner ───────────────────────────────────────────────
+
+class _KurallarBanner extends StatelessWidget {
+  const _KurallarBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: const Color(0xFFF8F9FA),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.red,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              'Mesajlaşma Kuralları',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.dmSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Hakaret içeren veya dolandırma amaçlı mesaj göndermeniz durumunda mesajlaşma hakkınız engellenebilir veya hesabınız kapatılabilir.\n\nEğer sizi rahatsız eden bir mesaj alırsanız mesajlaştığınız kişiyi engelleyebilir veya şikayet edebilirsiniz.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.dmSans(
+                fontSize: 11,
+                color: Colors.white.withValues(alpha: 0.92),
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _MesajBalonu extends StatelessWidget {
