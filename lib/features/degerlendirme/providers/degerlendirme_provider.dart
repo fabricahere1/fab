@@ -56,10 +56,7 @@ class DegerlendirmeIslemleri extends _$DegerlendirmeIslemleri {
         yorum: yorum,
         ilanBaslik: ilanBaslik,
       );
-      await _repo.sohbetDegerlendirmeyiIsaretle(
-        sohbetId: sohbetId,
-        kullaniciId: degerlendireninId,
-      );
+      // sohbetDegerlendirmeyiIsaretle transaction içinde atomik yapılıyor
       return true;
     } catch (e) {
       debugPrint('[Degerlendirme] gonder hatasi: $e');

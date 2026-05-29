@@ -168,7 +168,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
           if (gonderildi && mounted) {
             await showDialog<void>(
               context: context,
-              barrierDismissible: false,
+              barrierDismissible: true,
               builder: (ctx) => Dialog(
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20)),
@@ -188,7 +188,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        'Değerlendirmeniz için\nteşekkür ederiz!',
+                        'Değerlendirme için teşekkür ederiz!',
                         textAlign: TextAlign.center,
                         style: GoogleFonts.dmSans(
                             fontSize: 18,
@@ -198,7 +198,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Tüm değerlendirmelere Profil sekmesi içerisindeki Değerlendirmelerim menüsünden ulaşabilirsiniz.',
+                        'Tüm değerlendirmelere Profil sayfasından ulaşabilirsin.',
                         textAlign: TextAlign.center,
                         style: GoogleFonts.dmSans(
                             fontSize: 13,
@@ -210,10 +210,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                         width: double.infinity,
                         height: 48,
                         child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pop(ctx);
-                            context.go('/home');
-                          },
+                          onPressed: () => Navigator.pop(ctx),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.red,
                             foregroundColor: Colors.white,
@@ -232,6 +229,8 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                 ),
               ),
             );
+            // Dialog kapandıktan sonra anasayfaya yönlendir
+            if (mounted) context.go('/home');
           }
         } else if (sonuc == false) {
           await ref.read(degerlendirmeIslemleriProvider.notifier).bekleyenKaydet(
