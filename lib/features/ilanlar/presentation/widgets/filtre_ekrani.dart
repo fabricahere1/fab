@@ -6,23 +6,14 @@ import '../../../../shared/constants/app_colors.dart';
 import '../../../../shared/constants/app_constants.dart';
 import '../ilanlar_screen.dart';
 
-// Ana kategori local asset yolları
-const _kKategoriGorseller = <String, String>{
-  'giyim':      'assets/images/kategoriler/giyim.png',
-  'elektronik': 'assets/images/kategoriler/elektronik.png',
-  'guzellik':   'assets/images/kategoriler/guzellik.png',
-  'ev':         'assets/images/kategoriler/ev.png',
-  'spor':       'assets/images/kategoriler/spor.png',
-  'kultur':     'assets/images/kategoriler/kultur.png',
-  'gida':       'assets/images/kategoriler/gida.png',
-  'diger':      'assets/images/kategoriler/diger.png',
-};
 
 // ── Filtre Ekranı ─────────────────────────────────────────────────────────────
 
 class FiltreEkrani extends StatefulWidget {
   final List<String> seciliKategoriYolu;
   final SiralamaTipi seciliSiralama;
+  final Map<String, int>? ilanSayilari;
+  final String ilanEtiket;
   final void Function(List<String> yol) onKategoriSecildi;
   final VoidCallback onTemizle;
   final ValueChanged<SiralamaTipi> onSiralamaSecildi;
@@ -31,6 +22,8 @@ class FiltreEkrani extends StatefulWidget {
     super.key,
     required this.seciliKategoriYolu,
     required this.seciliSiralama,
+    this.ilanSayilari,
+    this.ilanEtiket = 'aktif ilan',
     required this.onKategoriSecildi,
     required this.onTemizle,
     required this.onSiralamaSecildi,
@@ -74,7 +67,7 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
 
   // Mevcut seviyenin başlığı
   String _seviyeBasligi() {
-    if (_gezinmeYolu.isEmpty) return 'Kategori';
+    if (_gezinmeYolu.isEmpty) return 'Kategoriler';
     final node = kategoriNodeBul(_gezinmeYolu.last);
     return node?.ad ?? 'Kategori';
   }
@@ -115,6 +108,74 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
     return widget.seciliKategoriYolu.contains(node.key);
   }
 
+  Widget _buildKarti(KategoriNode node) {
+    final secili = _nodeSeciliMi(node);
+    return GestureDetector(
+      onTap: () => _nodeSecildi(node),
+      child: Container(
+        height: 80,
+        decoration: BoxDecoration(
+          color: secili ? AppColors.red.withValues(alpha: 0.06) : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: secili ? AppColors.red : const Color(0xFFEEEEEE),
+            width: secili ? 1.5 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: Row(
+            children: [
+              if (node.emoji.isNotEmpty) ...[
+                Text(node.emoji, style: const TextStyle(fontSize: 28)),
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      node.ad,
+                      style: GoogleFonts.dmSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: secili ? AppColors.red : AppColors.textPrimary,
+                        height: 1.3,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (widget.ilanSayilari != null) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        '${widget.ilanSayilari![node.key] ?? 0} ${widget.ilanEtiket}',
+                        style: GoogleFonts.dmSans(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w400,
+                          color: secili
+                              ? AppColors.red.withValues(alpha: 0.7)
+                              : AppColors.textHint,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   bool _tumSeciliMi() {
     if (widget.seciliKategoriYolu.isEmpty) return false;
     if (_gezinmeYolu.isEmpty) return false;
@@ -151,8 +212,15 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                   Expanded(
                     child: Text(
                       baslik,
-                      style: GoogleFonts.dmSans(
-                          fontSize: 16, fontWeight: FontWeight.w700),
+                      style: _gezinmeYolu.isEmpty
+                          ? const TextStyle(
+                              fontFamily: 'Times New Roman',
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            )
+                          : GoogleFonts.dmSans(
+                              fontSize: 16, fontWeight: FontWeight.w700),
                     ),
                   ),
                   if (widget.seciliKategoriYolu.isNotEmpty)
@@ -201,7 +269,7 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                     ? const EdgeInsets.fromLTRB(14, 14, 14, 0)
                     : EdgeInsets.zero,
                 children: [
-                  // Ana seviyede: 2'li görsel grid
+                  // Ana seviyede: 2'li grid
                   if (_gezinmeYolu.isEmpty) ...[
                     GridView.builder(
                       shrinkWrap: true,
@@ -210,77 +278,10 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                         crossAxisCount: 2,
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 10,
-                        childAspectRatio: 2.2,
+                        childAspectRatio: 1.7,
                       ),
                       itemCount: nodes.length,
-                      itemBuilder: (_, i) {
-                        final node   = nodes[i];
-                        final secili = _nodeSeciliMi(node);
-                        final imgUrl = _kKategoriGorseller[node.key] ?? '';
-                        return GestureDetector(
-                          onTap: () => _nodeSecildi(node),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: secili
-                                  ? AppColors.red.withValues(alpha: 0.06)
-                                  : Colors.white,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: secili ? AppColors.red : const Color(0xFFEEEEEE),
-                                width: secili ? 1.5 : 1,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.05),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: Row(
-                              children: [
-                                // Kategori adı
-                                Expanded(
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(left: 14),
-                                    child: Text(
-                                      node.ad,
-                                      style: GoogleFonts.dmSans(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                        color: secili
-                                            ? AppColors.red
-                                            : AppColors.textPrimary,
-                                        height: 1.3,
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ),
-                                // Ürün görseli — şeffaf arka planlı local asset
-                                if (imgUrl.isNotEmpty)
-                                  Container(
-                                    width: 88,
-                                    color: Colors.white,
-                                    padding: const EdgeInsets.all(6),
-                                    child: Image.asset(
-                                      imgUrl,
-                                      fit: BoxFit.contain,
-                                      errorBuilder: (_, _, _) => Center(
-                                        child: Text(
-                                          node.emoji,
-                                          style: const TextStyle(fontSize: 28),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
+                      itemBuilder: (_, i) => _buildKarti(nodes[i]),
                     ),
                   ],
 
@@ -308,9 +309,12 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                     const Divider(height: 1, color: AppColors.divider),
                     Container(
                       padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                      child: Text('Sıralama',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 16, fontWeight: FontWeight.w700)),
+                      child: const Text('Sıralama',
+                          style: TextStyle(
+                              fontFamily: 'Times New Roman',
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary)),
                     ),
                     ...SiralamaTipi.values.map((tip) {
                       final secili = _seciliSiralama == tip;

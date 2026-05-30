@@ -75,7 +75,6 @@ flutter:
   assets:
     - assets/splash/
     - assets/images/
-    - assets/images/kategoriler/
 
 # ── Splash Ekranı ────────────────────────────────────────────────────────────
 flutter_native_splash:

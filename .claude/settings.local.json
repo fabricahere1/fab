@@ -11,7 +11,11 @@
       "Bash(cp \"/mnt/c/Users/PC/Desktop/Claude ss leri/kategori görselleri/ev ve yaşam.png\"      \"/mnt/c/src/iste_v3/assets/images/kategoriler/ev.png\")",
       "Bash(cp \"/mnt/c/Users/PC/Desktop/Claude ss leri/kategori görselleri/spor ve outdoor.png\"  \"/mnt/c/src/iste_v3/assets/images/kategoriler/spor.png\")",
       "Bash(flutter pub *)",
-      "Bash(dart analyze *)"
+      "Bash(dart analyze *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\src\\\\iste_v3\" -Recurse -Filter \"*.dart\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\src\\\\iste_v3\" -Recurse -Include \"*.dart\")",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)"
     ]
   }
 }

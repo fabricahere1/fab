@@ -50,7 +50,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
   List<String>        _seciliKategoriYolu = [];
   bool                _aramaGizli        = false;
   GelenlerSiralama    _siralama          = GelenlerSiralama.enYeni;
-  String?             _seciliSehir;
+  List<String>        _seciliSehirler = [];
 
   @override
   bool get wantKeepAlive => true;
@@ -96,7 +96,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
     }
   }
 
-  bool get _filtrAktif => _seciliSehir != null || _seciliKategoriYolu.isNotEmpty || _siralama != GelenlerSiralama.enYeni;
+  bool get _filtrAktif => _seciliSehirler.isNotEmpty || _seciliKategoriYolu.isNotEmpty || _siralama != GelenlerSiralama.enYeni;
 
   String? get _seciliAnaKey =>
       _seciliKategoriYolu.isNotEmpty ? _seciliKategoriYolu.first : null;
@@ -112,9 +112,10 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
           i.kategoriYolu.any((k) => gecerliKeyler.contains(k))).toList();
     }
 
-    if (_seciliSehir != null) {
-      final sehir = _seciliSehir!.toLowerCase();
-      sonuc = sonuc.where((i) => i.nereye.toLowerCase().contains(sehir)).toList();
+    if (_seciliSehirler.isNotEmpty) {
+      sonuc = sonuc.where((i) =>
+        _seciliSehirler.any((s) => i.nereye.toLowerCase().contains(s.toLowerCase()))
+      ).toList();
     }
 
     if (_aramaMetni.isNotEmpty) {
@@ -150,10 +151,23 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
     });
   }
 
+  Map<String, int> _ilanSayilariHesapla(List<IlanModel> ilanlar) {
+    final map = <String, int>{};
+    for (final ana in app_constants.kKategoriAgaci) {
+      final keyler = app_constants.tumAltKeyler(ana.key);
+      map[ana.key] = ilanlar.where((i) =>
+        keyler.contains(i.kategori) ||
+        i.kategoriYolu.any((k) => keyler.contains(k))
+      ).length;
+    }
+    return map;
+  }
+
   void _filtreAc() {
+    final ilanSayilari = _ilanSayilariHesapla(ref.read(tasiyiciIlanlarProvider).filtrelenmis);
     var modalKategoriYolu = List<String>.from(_seciliKategoriYolu);
     var modalSiralama     = _siralama;
-    var modalSehir        = _seciliSehir;
+    var modalSehirler     = List<String>.from(_seciliSehirler);
 
     showModalBottomSheet(
       context: context,
@@ -199,7 +213,8 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
               }
 
               return SafeArea(
-                child: Padding(
+                child: SingleChildScrollView(
+                  child: Padding(
                   padding: const EdgeInsets.fromLTRB(0, 16, 0, 24),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -266,40 +281,39 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
 
                       const SizedBox(height: 10),
 
-                      ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxHeight: MediaQuery.of(context).size.height * 0.3,
-                        ),
-                        child: ListView(
-                          shrinkWrap: true,
-                          padding: EdgeInsets.zero,
-                          children: [
-                            if (gezinmeYolu.isNotEmpty)
-                              _FiltreKategoriSatiri(
-                                ad: 'Tüm "${seviyeBasligi()}" Ürünleri',
-                                secili: modalKategoriYolu.isNotEmpty &&
-                                    modalKategoriYolu.last == gezinmeYolu.last,
-                                vurgulu: true,
-                                onTap: () {
-                                  setModalState(() => modalKategoriYolu = List<String>.from(gezinmeYolu));
-                                },
-                              ),
-                            ...mevcutNodes().map((node) => _FiltreKategoriSatiri(
-                              ad: node.emoji.isNotEmpty
-                                  ? '${node.emoji}  ${node.ad}'
-                                  : node.ad,
-                              secili: modalKategoriYolu.contains(node.key),
-                              derinlikOku: !node.yaprakMi,
+                      ListView(
+                        shrinkWrap: true,
+                        padding: EdgeInsets.zero,
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: [
+                          if (gezinmeYolu.isNotEmpty)
+                            _FiltreKategoriSatiri(
+                              ad: 'Tüm "${seviyeBasligi()}" Ürünleri',
+                              secili: modalKategoriYolu.isNotEmpty &&
+                                  modalKategoriYolu.last == gezinmeYolu.last,
+                              vurgulu: true,
                               onTap: () {
-                                if (node.yaprakMi) {
-                                  setModalState(() => modalKategoriYolu = [...gezinmeYolu, node.key]);
-                                } else {
-                                  setInnerState(() => gezinmeYolu = [...gezinmeYolu, node.key]);
-                                }
+                                setModalState(() => modalKategoriYolu = List<String>.from(gezinmeYolu));
                               },
-                            )),
-                          ],
-                        ),
+                            ),
+                          ...mevcutNodes().map((node) => _FiltreKategoriSatiri(
+                            ad: node.emoji.isNotEmpty
+                                ? '${node.emoji}  ${node.ad}'
+                                : node.ad,
+                            secili: modalKategoriYolu.contains(node.key),
+                            derinlikOku: !node.yaprakMi,
+                            ilanSayisi: gezinmeYolu.isEmpty
+                                ? (ilanSayilari[node.key] ?? 0)
+                                : null,
+                            onTap: () {
+                              if (node.yaprakMi) {
+                                setModalState(() => modalKategoriYolu = [...gezinmeYolu, node.key]);
+                              } else {
+                                setInnerState(() => gezinmeYolu = [...gezinmeYolu, node.key]);
+                              }
+                            },
+                          )),
+                        ],
                       ),
 
                       const Divider(height: 24),
@@ -345,21 +359,114 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                       const SizedBox(height: 10),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            _FiltreChip(
-                              label: 'Tümü',
-                              secili: modalSehir == null,
-                              onTap: () => setModalState(() => modalSehir = null),
+                        child: GestureDetector(
+                          onTap: () async {
+                            List<String> temp = List.from(modalSehirler);
+                            await showDialog<void>(
+                              context: context,
+                              builder: (dlgCtx) => StatefulBuilder(
+                                builder: (dlgCtx, setDlg) => AlertDialog(
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16)),
+                                  title: Text('Varış Şehri',
+                                      style: GoogleFonts.dmSans(
+                                          fontSize: 16, fontWeight: FontWeight.w700)),
+                                  content: SizedBox(
+                                    width: double.maxFinite,
+                                    height: 300,
+                                    child: ListView(
+                                      children: [
+                                        CheckboxListTile(
+                                          dense: true,
+                                          title: Text('Tümü',
+                                              style: GoogleFonts.dmSans(fontSize: 14)),
+                                          value: temp.isEmpty,
+                                          activeColor: AppColors.red,
+                                          onChanged: (v) {
+                                            if (v == true) setDlg(() => temp.clear());
+                                          },
+                                        ),
+                                        ..._kSehirler.map((s) => CheckboxListTile(
+                                          dense: true,
+                                          title: Text(s,
+                                              style: GoogleFonts.dmSans(fontSize: 14)),
+                                          value: temp.contains(s),
+                                          activeColor: AppColors.red,
+                                          onChanged: (v) {
+                                            setDlg(() {
+                                              v == true ? temp.add(s) : temp.remove(s);
+                                            });
+                                          },
+                                        )),
+                                      ],
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(dlgCtx),
+                                      child: Text('İptal',
+                                          style: GoogleFonts.dmSans(
+                                              color: AppColors.textSecondary)),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        setModalState(() => modalSehirler = List.from(temp));
+                                        Navigator.pop(dlgCtx);
+                                      },
+                                      child: Text('Uygula',
+                                          style: GoogleFonts.dmSans(
+                                              color: AppColors.red,
+                                              fontWeight: FontWeight.w600)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: modalSehirler.isEmpty
+                                  ? AppColors.surface
+                                  : AppColors.red.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: modalSehirler.isEmpty
+                                    ? AppColors.divider
+                                    : AppColors.red.withValues(alpha: 0.3),
+                              ),
                             ),
-                            ..._kSehirler.map((sehir) => _FiltreChip(
-                              label: sehir,
-                              secili: modalSehir == sehir,
-                              onTap: () => setModalState(() => modalSehir = sehir),
-                            )),
-                          ],
+                            child: Row(
+                              children: [
+                                Icon(Icons.location_on_outlined,
+                                    size: 18,
+                                    color: modalSehirler.isEmpty
+                                        ? AppColors.textSecondary
+                                        : AppColors.red),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    modalSehirler.isEmpty
+                                        ? 'Tüm şehirler'
+                                        : modalSehirler.join(', '),
+                                    style: GoogleFonts.dmSans(
+                                      fontSize: 14,
+                                      color: modalSehirler.isEmpty
+                                          ? AppColors.textHint
+                                          : AppColors.textPrimary,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Icon(Icons.keyboard_arrow_down_rounded,
+                                    size: 20,
+                                    color: modalSehirler.isEmpty
+                                        ? AppColors.textSecondary
+                                        : AppColors.red),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
 
@@ -374,7 +481,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                               setState(() {
                                 _seciliKategoriYolu = modalKategoriYolu;
                                 _siralama           = modalSiralama;
-                                _seciliSehir        = modalSehir;
+                                _seciliSehirler     = modalSehirler;
                               });
                               Navigator.pop(ctx);
                             },
@@ -394,6 +501,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                       ),
                     ],
                   ),
+                ),
                 ),
               );
             },
@@ -718,7 +826,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
         ),
 
         // ── Aktif filtre badge'leri ──
-        if (_seciliKategoriYolu.isNotEmpty || _seciliSehir != null)
+        if (_seciliKategoriYolu.isNotEmpty || _seciliSehirler.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
             child: Row(
@@ -752,7 +860,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                       ),
                     ]),
                   ),
-                if (_seciliSehir != null)
+                if (_seciliSehirler.isNotEmpty)
                   Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 3),
@@ -761,14 +869,20 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      Text(_seciliSehir!,
+                      Flexible(
+                        child: Text(
+                          _seciliSehirler.join(', '),
                           style: GoogleFonts.dmSans(
                               fontSize: 12,
                               color: AppColors.red,
-                              fontWeight: FontWeight.w500)),
+                              fontWeight: FontWeight.w500),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
                       const SizedBox(width: 6),
                       GestureDetector(
-                        onTap: () => setState(() => _seciliSehir = null),
+                        onTap: () => setState(() => _seciliSehirler = []),
                         child: const Icon(Icons.close_rounded,
                             size: 13, color: AppColors.red),
                       ),
@@ -863,6 +977,7 @@ class _FiltreKategoriSatiri extends StatelessWidget {
   final VoidCallback onTap;
   final bool derinlikOku;
   final bool vurgulu;
+  final int? ilanSayisi;
 
   const _FiltreKategoriSatiri({
     required this.ad,
@@ -870,6 +985,7 @@ class _FiltreKategoriSatiri extends StatelessWidget {
     required this.onTap,
     this.derinlikOku = false,
     this.vurgulu = false,
+    this.ilanSayisi,
   });
 
   @override
@@ -890,13 +1006,32 @@ class _FiltreKategoriSatiri extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: Text(
-                ad,
-                style: GoogleFonts.dmSans(
-                  fontSize: 14,
-                  fontWeight: (secili || vurgulu) ? FontWeight.w600 : FontWeight.w400,
-                  color: secili ? AppColors.red : AppColors.textPrimary,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    ad,
+                    style: GoogleFonts.dmSans(
+                      fontSize: 14,
+                      fontWeight: (secili || vurgulu) ? FontWeight.w600 : FontWeight.w400,
+                      color: secili ? AppColors.red : AppColors.textPrimary,
+                    ),
+                  ),
+                  if (ilanSayisi != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      '$ilanSayisi aktif ilan',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w400,
+                        color: secili
+                            ? AppColors.red.withValues(alpha: 0.7)
+                            : AppColors.textHint,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
             if (secili)

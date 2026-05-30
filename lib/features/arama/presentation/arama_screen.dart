@@ -421,14 +421,13 @@ class _KategoriItem extends StatelessWidget {
 
   IconData _ikonBul(String key) {
     switch (key) {
-      case 'elektronik': return Icons.phone_android_outlined;
-      case 'giyim':      return Icons.checkroom_outlined;
-      case 'guzellik':   return Icons.face_retouching_natural_outlined;
-      case 'ev':         return Icons.home_outlined;
-      case 'spor':       return Icons.sports_soccer_outlined;
-      case 'kultur':     return Icons.menu_book_outlined;
-      case 'gida':       return Icons.restaurant_outlined;
-      default:           return Icons.inventory_2_outlined;
+      case 'kadin':        return Icons.checkroom_outlined;
+      case 'erkek':        return Icons.checkroom_outlined;
+      case 'cocuk':        return Icons.child_care_outlined;
+      case 'ev':           return Icons.home_outlined;
+      case 'elektronik':   return Icons.phone_android_outlined;
+      case 'supplement':   return Icons.medication_outlined;
+      default:             return Icons.inventory_2_outlined;
     }
   }
 
