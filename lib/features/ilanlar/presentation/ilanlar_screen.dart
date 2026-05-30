@@ -61,13 +61,27 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
     _scrollController.addListener(_onScroll);
   }
 
+  double _sonScrollPixel = 0;
+  static const double _gosterThreshold = 80; // px — X tarzı gecikme
+
   void _onScroll() {
     final pos = _scrollController.position;
-    if (pos.userScrollDirection == ScrollDirection.reverse && !_aramaGizli) {
-      setState(() => _aramaGizli = true);
-    } else if (pos.userScrollDirection == ScrollDirection.forward && _aramaGizli) {
-      setState(() => _aramaGizli = false);
+    final simdi = pos.pixels;
+
+    if (pos.userScrollDirection == ScrollDirection.reverse) {
+      // Aşağı scroll — hemen gizle
+      _sonScrollPixel = simdi;
+      if (!_aramaGizli) setState(() => _aramaGizli = true);
+      ref.read(navBarGizliProvider.notifier).gizle();
+    } else if (pos.userScrollDirection == ScrollDirection.forward) {
+      // Yukarı scroll — threshold geçince göster
+      if (simdi < _sonScrollPixel - _gosterThreshold) {
+        _sonScrollPixel = simdi;
+        if (_aramaGizli) setState(() => _aramaGizli = false);
+        ref.read(navBarGizliProvider.notifier).goster();
+      }
     }
+
     if (pos.pixels >= pos.maxScrollExtent - 120) {
       if (!ref.read(istekIlanlarProvider).yukleniyor) {
         ref.read(istekIlanlarProvider.notifier).dahaFazlaYukle();

@@ -42,6 +42,7 @@ dependencies:
   flutter_map: ^7.0.0
   latlong2: ^0.9.0
   animations: ^2.0.11
+  material_symbols_icons: ^4.2.1
 
   # ── Utilities ────────────────────────────────────────────
   image_picker: ^1.1.2

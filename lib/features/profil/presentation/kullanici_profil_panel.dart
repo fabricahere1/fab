@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -31,7 +32,9 @@ class KullaniciProfilPanel extends ConsumerWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final panelWidth = screenWidth * 0.85;
 
-    return SafeArea(
+    return Material(
+      color: Colors.transparent,
+      child: SafeArea(
       child: Container(
         width: panelWidth,
         height: double.infinity,
@@ -351,6 +354,7 @@ class KullaniciProfilPanel extends ConsumerWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }
@@ -390,12 +394,13 @@ class _PanelIlanSatiri extends StatelessWidget {
             if (resim != null)
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  resim,
+                child: CachedNetworkImage(
+                  imageUrl: resim,
                   width: 52,
                   height: 52,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => Container(
+                  fadeInDuration: Duration.zero,
+                  errorWidget: (_, _, _) => Container(
                     width: 52,
                     height: 52,
                     color: AppColors.divider,

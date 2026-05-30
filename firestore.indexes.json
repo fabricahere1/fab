@@ -60,6 +60,14 @@
         { "fieldPath": "kullaniciId", "order": "ASCENDING" },
         { "fieldPath": "eklemeTarihi", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "ilanlar",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "kullaniciId", "order": "ASCENDING" },
+        { "fieldPath": "olusturmaTarihi", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

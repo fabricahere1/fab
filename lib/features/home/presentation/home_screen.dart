@@ -1,6 +1,7 @@
 // lib/features/home/presentation/home_screen.dart
 
 import 'package:flutter/cupertino.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,6 +16,7 @@ import '../../ilanlar/presentation/ilan_form_screen.dart';
 import '../../ilanlar/presentation/gelenler_form_screen.dart';
 import '../../mesajlar/presentation/mesajlar_screen.dart';
 import '../../mesajlar/providers/mesaj_provider.dart';
+import '../../ilanlar/providers/ilan_provider.dart';
 import '../../profil/presentation/profil_screen.dart';
 import 'kesfet_screen.dart';
 
@@ -179,116 +181,73 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         )
         : null,
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-        bottomNavigationBar: Container(
-          height: 62 + bottomPadding,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
-                blurRadius: 20,
-                offset: const Offset(0, -4),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            child: SizedBox(
-              height: 62,
-              child: Row(
-                children: [
-                  _NavItem(
-                    secili: _selectedIndex == 0,
-                    onTap: () => setState(() { _selectedIndex = 0; _fabAcik = false; }),
-                    label: 'İstekler',
-                    child: Icon(
-                      _selectedIndex == 0
-                          ? Icons.home_rounded
-                          : Icons.home_outlined,
-                      size: 24,
-                      color: _selectedIndex == 0
-                          ? AppColors.red
-                          : AppColors.textSecondary,
+        bottomNavigationBar: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+          height: (ref.watch(navBarGizliProvider) && _selectedIndex == 0)
+              ? 0
+              : 62 + bottomPadding,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 20,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
+            child: SafeArea(
+              child: SizedBox(
+                height: 62,
+                child: Row(
+                  children: [
+                    _NavItem(
+                      secili: _selectedIndex == 0,
+                      onTap: () => setState(() { _selectedIndex = 0; _fabAcik = false; }),
+                      label: 'İstekler',
+                      child: Icon(Symbols.home, size: 24, fill: _selectedIndex == 0 ? 1 : 0, weight: 300,
+                          color: _selectedIndex == 0 ? AppColors.red : Colors.black),
                     ),
-                  ),
-                  _NavItem(
-                    secili: _selectedIndex == 1,
-                    onTap: () => setState(() { _selectedIndex = 1; _fabAcik = false; }),
-                    label: 'Gelenler',
-                    child: Icon(
-                      _selectedIndex == 1
-                          ? Icons.flight_land_rounded
-                          : Icons.flight_land_outlined,
-                      size: 24,
-                      color: _selectedIndex == 1
-                          ? AppColors.red
-                          : AppColors.textSecondary,
+                    _NavItem(
+                      secili: _selectedIndex == 1,
+                      onTap: () => setState(() { _selectedIndex = 1; _fabAcik = false; }),
+                      label: 'Gelenler',
+                      child: Icon(Symbols.flight_land, size: 24, fill: _selectedIndex == 1 ? 1 : 0, weight: 300,
+                          color: _selectedIndex == 1 ? AppColors.red : Colors.black),
                     ),
-                  ),
-                  _NavItem(
-                    secili: _selectedIndex == 2,
-                    onTap: () => setState(() { _selectedIndex = 2; _fabAcik = false; }),
-                    label: 'Mesajlar',
-                    child: uid == null || toplamOkunmamis == 0
-                        ? Icon(
-                            _selectedIndex == 2
-                                ? Icons.chat_bubble
-                                : Icons.chat_bubble_outline,
-                            size: 24,
-                            color: _selectedIndex == 2
-                                ? AppColors.red
-                                : AppColors.textSecondary,
-                          )
-                        : Badge(
-                            label: Text(
-                              toplamOkunmamis > 99
-                                  ? '99+'
-                                  : '$toplamOkunmamis',
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 10,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600),
+                    _NavItem(
+                      secili: _selectedIndex == 2,
+                      onTap: () => setState(() { _selectedIndex = 2; _fabAcik = false; }),
+                      label: 'Mesajlar',
+                      child: uid == null || toplamOkunmamis == 0
+                          ? Icon(Symbols.chat_bubble, size: 24, fill: _selectedIndex == 2 ? 1 : 0, weight: 300,
+                              color: _selectedIndex == 2 ? AppColors.red : Colors.black)
+                          : Badge(
+                              label: Text(toplamOkunmamis > 99 ? '99+' : '\$toplamOkunmamis',
+                                  style: GoogleFonts.dmSans(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w600)),
+                              backgroundColor: AppColors.red,
+                              child: Icon(Symbols.chat_bubble, size: 24, fill: _selectedIndex == 2 ? 1 : 0, weight: 300,
+                                  color: _selectedIndex == 2 ? AppColors.red : Colors.black),
                             ),
-                            backgroundColor: AppColors.red,
-                            child: Icon(
-                              _selectedIndex == 2
-                                  ? Icons.chat_bubble
-                                  : Icons.chat_bubble_outline,
-                              size: 24,
-                              color: _selectedIndex == 2
-                                  ? AppColors.red
-                                  : AppColors.textSecondary,
-                            ),
-                          ),
-                  ),
-                  _NavItem(
-                    secili: _selectedIndex == 3,
-                    onTap: () => setState(() { _selectedIndex = 3; _fabAcik = false; }),
-                    label: 'Profil',
-                    child: Icon(
-                      _selectedIndex == 3
-                          ? Icons.person_rounded
-                          : Icons.person_outline,
-                      size: 24,
-                      color: _selectedIndex == 3
-                          ? AppColors.red
-                          : AppColors.textSecondary,
                     ),
-                  ),
-                  _NavItem(
-                    secili: _selectedIndex == 4,
-                    onTap: () => setState(() { _selectedIndex = 4; _fabAcik = false; }),
-                    label: 'Keşfet',
-                    child: Icon(
-                      _selectedIndex == 4
-                          ? Icons.explore_rounded
-                          : Icons.explore_outlined,
-                      size: 24,
-                      color: _selectedIndex == 4
-                          ? AppColors.red
-                          : AppColors.textSecondary,
+                    _NavItem(
+                      secili: _selectedIndex == 3,
+                      onTap: () => setState(() { _selectedIndex = 3; _fabAcik = false; }),
+                      label: 'Profil',
+                      child: Icon(Symbols.person, size: 24, fill: _selectedIndex == 3 ? 1 : 0, weight: 300,
+                          color: _selectedIndex == 3 ? AppColors.red : Colors.black),
                     ),
-                  ),
-                ],
+                    _NavItem(
+                      secili: _selectedIndex == 4,
+                      onTap: () => setState(() { _selectedIndex = 4; _fabAcik = false; }),
+                      label: 'Keşfet',
+                      child: Icon(Symbols.explore, size: 24, fill: _selectedIndex == 4 ? 1 : 0, weight: 300,
+                          color: _selectedIndex == 4 ? AppColors.red : Colors.black),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -338,7 +297,7 @@ class _NavItem extends StatelessWidget {
               style: GoogleFonts.raleway(
                 fontSize: 10,
                 fontWeight: secili ? FontWeight.w700 : FontWeight.w500,
-                color: secili ? AppColors.red : AppColors.textSecondary,
+                color: secili ? AppColors.red : Colors.black,
                 letterSpacing: 0.3,
               ),
             ),

@@ -360,7 +360,7 @@ Stream<bool> ilanFavorideMi(Ref ref, String ilanId) {
   );
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 Stream<List<IlanModel>> kullaniciIlanlarStream(Ref ref, String kullaniciId) {
   return ref.watch(ilanRepositoryProvider).kullaniciIlanlarStream(kullaniciId);
 }
@@ -485,4 +485,17 @@ class IlanIslemleri extends _$IlanIslemleri {
   Future<void> guncelle(String ilanId, Map<String, dynamic> data) async {
     await _repo.ilanGuncelle(ilanId, data);
   }
+}
+
+// ── Nav bar görünürlük provider'ı ────────────────────────────────────────────
+// ilanlar_screen scroll direction'ını buraya yazıyor
+// home_screen buradan okuyor
+
+@Riverpod(keepAlive: true)
+class NavBarGizli extends _$NavBarGizli {
+  @override
+  bool build() => false;
+
+  void gizle() { if (!state) state = true; }
+  void goster() { if (state) state = false; }
 }

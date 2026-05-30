@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../../features/bildirimler/presentation/bildirimler_screen.dart';
 import '../../features/bildirimler/providers/bildirim_provider.dart';
 import '../constants/app_colors.dart';
@@ -13,7 +14,16 @@ class BildirimCaniWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final okunmamisBildirim =
         ref.watch(okunmamisBildirimSayiProvider).value ?? 0;
-    final ikonRenk = renk ?? AppColors.textPrimary;
+    final ikonRenk = renk ?? Colors.black;
+
+    final ikon = Icon(
+      Symbols.notifications,
+      color: ikonRenk,
+      size: 24,
+      weight: 300,
+      opticalSize: 24,
+      fill: 0,
+    );
 
     return IconButton(
       onPressed: () => Navigator.push(
@@ -34,7 +44,7 @@ class BildirimCaniWidget extends ConsumerWidget {
         ),
       ),
       icon: okunmamisBildirim == 0
-          ? Icon(Icons.notifications_outlined, color: ikonRenk)
+          ? ikon
           : Badge(
               label: Text(
                 okunmamisBildirim > 99 ? '99+' : '$okunmamisBildirim',
@@ -44,7 +54,7 @@ class BildirimCaniWidget extends ConsumerWidget {
                     fontWeight: FontWeight.w600),
               ),
               backgroundColor: AppColors.red,
-              child: Icon(Icons.notifications_outlined, color: ikonRenk),
+              child: ikon,
             ),
     );
   }

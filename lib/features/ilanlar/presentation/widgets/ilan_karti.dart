@@ -2,6 +2,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -315,9 +316,11 @@ class _FavoriButonState extends ConsumerState<_FavoriButon>
             ),
           ),
           child: Icon(
-            gosterilen ? Icons.favorite : Icons.favorite_border,
-            color: gosterilen ? AppColors.red : Colors.white.withValues(alpha: 0.9),
-            size: 16,
+            Symbols.favorite,
+            fill: gosterilen ? 1 : 0,
+            weight: 200,
+            color: gosterilen ? AppColors.red : Colors.white,
+            size: 20,
           ),
         ),
       ),
