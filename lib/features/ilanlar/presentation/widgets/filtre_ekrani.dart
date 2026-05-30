@@ -144,9 +144,10 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                   children: [
                     Text(
                       node.ad,
-                      style: GoogleFonts.dmSans(
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Display',
                         fontSize: 13,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                         color: secili ? AppColors.red : AppColors.textPrimary,
                         height: 1.3,
                       ),
@@ -214,9 +215,9 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                       baslik,
                       style: _gezinmeYolu.isEmpty
                           ? const TextStyle(
-                              fontFamily: 'Times New Roman',
+                              fontFamily: 'SF Pro Display',
                               fontSize: 22,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w600,
                               color: AppColors.textPrimary,
                             )
                           : GoogleFonts.dmSans(
@@ -309,11 +310,11 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                     const Divider(height: 1, color: AppColors.divider),
                     Container(
                       padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                      child: const Text('Sıralama',
+                      child: const Text('Sıralamalar',
                           style: TextStyle(
-                              fontFamily: 'Times New Roman',
+                              fontFamily: 'SF Pro Display',
                               fontSize: 22,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w600,
                               color: AppColors.textPrimary)),
                     ),
                     ...SiralamaTipi.values.map((tip) {
@@ -357,11 +358,10 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                               Expanded(
                                 child: Text(
                                   tip.label,
-                                  style: GoogleFonts.dmSans(
-                                    fontSize: 15,
-                                    fontWeight: secili
-                                        ? FontWeight.w600
-                                        : FontWeight.w400,
+                                  style: TextStyle(
+                                    fontFamily: 'SF Pro Display',
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
                                     color: secili
                                         ? AppColors.red
                                         : AppColors.textPrimary,
