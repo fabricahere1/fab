@@ -184,7 +184,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         bottomNavigationBar: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeOutCubic,
-          height: (ref.watch(navBarGizliProvider) && _selectedIndex == 0)
+          height: ref.watch(navBarGizliProvider)
               ? 0
               : 62 + bottomPadding,
           child: Container(
@@ -205,21 +205,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     _NavItem(
                       secili: _selectedIndex == 0,
-                      onTap: () => setState(() { _selectedIndex = 0; _fabAcik = false; }),
+                      onTap: () { setState(() { _selectedIndex = 0; _fabAcik = false; }); ref.read(navBarGizliProvider.notifier).goster(); },
                       label: 'İstekler',
                       child: Icon(Symbols.home, size: 24, fill: _selectedIndex == 0 ? 1 : 0, weight: 300,
                           color: _selectedIndex == 0 ? AppColors.red : Colors.black),
                     ),
                     _NavItem(
                       secili: _selectedIndex == 1,
-                      onTap: () => setState(() { _selectedIndex = 1; _fabAcik = false; }),
+                      onTap: () { setState(() { _selectedIndex = 1; _fabAcik = false; }); ref.read(navBarGizliProvider.notifier).goster(); },
                       label: 'Gelenler',
                       child: Icon(Symbols.flight_land, size: 24, fill: _selectedIndex == 1 ? 1 : 0, weight: 300,
                           color: _selectedIndex == 1 ? AppColors.red : Colors.black),
                     ),
                     _NavItem(
                       secili: _selectedIndex == 2,
-                      onTap: () => setState(() { _selectedIndex = 2; _fabAcik = false; }),
+                      onTap: () { setState(() { _selectedIndex = 2; _fabAcik = false; }); ref.read(navBarGizliProvider.notifier).goster(); },
                       label: 'Mesajlar',
                       child: uid == null || toplamOkunmamis == 0
                           ? Icon(Symbols.chat_bubble, size: 24, fill: _selectedIndex == 2 ? 1 : 0, weight: 300,
@@ -234,14 +234,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     _NavItem(
                       secili: _selectedIndex == 3,
-                      onTap: () => setState(() { _selectedIndex = 3; _fabAcik = false; }),
+                      onTap: () { setState(() { _selectedIndex = 3; _fabAcik = false; }); ref.read(navBarGizliProvider.notifier).goster(); },
                       label: 'Profil',
                       child: Icon(Symbols.person, size: 24, fill: _selectedIndex == 3 ? 1 : 0, weight: 300,
                           color: _selectedIndex == 3 ? AppColors.red : Colors.black),
                     ),
                     _NavItem(
                       secili: _selectedIndex == 4,
-                      onTap: () => setState(() { _selectedIndex = 4; _fabAcik = false; }),
+                      onTap: () { setState(() { _selectedIndex = 4; _fabAcik = false; }); ref.read(navBarGizliProvider.notifier).goster(); },
                       label: 'Keşfet',
                       child: Icon(Symbols.explore, size: 24, fill: _selectedIndex == 4 ? 1 : 0, weight: 300,
                           color: _selectedIndex == 4 ? AppColors.red : Colors.black),

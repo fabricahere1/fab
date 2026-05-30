@@ -72,12 +72,22 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
     super.dispose();
   }
 
+  double _sonScrollPixel = 0;
+  static const double _gosterThreshold = 80;
+
   void _onScroll() {
     final pos = _scrollController.position;
-    if (pos.userScrollDirection == ScrollDirection.reverse && !_aramaGizli) {
-      setState(() => _aramaGizli = true);
-    } else if (pos.userScrollDirection == ScrollDirection.forward && _aramaGizli) {
-      setState(() => _aramaGizli = false);
+    final simdi = pos.pixels;
+    if (pos.userScrollDirection == ScrollDirection.reverse) {
+      if (!_aramaGizli) setState(() => _aramaGizli = true);
+      _sonScrollPixel = simdi;
+      ref.read(navBarGizliProvider.notifier).gizle();
+    } else if (pos.userScrollDirection == ScrollDirection.forward) {
+      if (_aramaGizli) setState(() => _aramaGizli = false);
+      if (simdi < _sonScrollPixel - _gosterThreshold) {
+        _sonScrollPixel = simdi;
+        ref.read(navBarGizliProvider.notifier).goster();
+      }
     }
     if (pos.pixels >= pos.maxScrollExtent - 400) {
       if (!ref.read(tasiyiciIlanlarProvider).yukleniyor) {

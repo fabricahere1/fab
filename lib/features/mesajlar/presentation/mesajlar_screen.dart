@@ -10,6 +10,8 @@ import '../../mesajlar/presentation/sohbet_screen.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/widgets/avatar_widget.dart';
+import '../../ilanlar/providers/ilan_provider.dart';
+import 'package:flutter/rendering.dart';
 
 class MesajlarScreen extends ConsumerStatefulWidget {
   const MesajlarScreen({super.key});
@@ -20,6 +22,36 @@ class MesajlarScreen extends ConsumerStatefulWidget {
 
 class _MesajlarScreenState extends ConsumerState<MesajlarScreen>
     with AutomaticKeepAliveClientMixin {
+
+  final _scrollCtrl = ScrollController();
+  double _sonScrollPixel = 0;
+  static const double _threshold = 80;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollCtrl.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    final pos = _scrollCtrl.position;
+    final simdi = pos.pixels;
+    if (pos.userScrollDirection == ScrollDirection.reverse) {
+      _sonScrollPixel = simdi;
+      ref.read(navBarGizliProvider.notifier).gizle();
+    } else if (pos.userScrollDirection == ScrollDirection.forward) {
+      if (simdi < _sonScrollPixel - _threshold) {
+        _sonScrollPixel = simdi;
+        ref.read(navBarGizliProvider.notifier).goster();
+      }
+    }
+  }
 
   @override
   bool get wantKeepAlive => true;
@@ -105,6 +137,7 @@ class _MesajlarScreenState extends ConsumerState<MesajlarScreen>
           }
 
           return ListView.separated(
+            controller: _scrollCtrl,
             itemCount: gorunenler.length,
             separatorBuilder: (_, _) =>
                 const Divider(height: 1, indent: 72),

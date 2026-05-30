@@ -38,10 +38,17 @@ class DegerlendirmeRepository {
     required String yorum,
     String ilanBaslik = '',
   }) async {
+    final bekleyenRef = _db
+        .collection(Collections.kullanicilar)
+        .doc(degerlendireninId)
+        .collection('bekleyenDegerlendirmeler')
+        .doc(sohbetId);
+
     await _db.runTransaction((tx) async {
-      final sohbetRef = _db.collection(Collections.sohbetler).doc(sohbetId);
-      final userRef   = _db.collection(Collections.kullanicilar).doc(hedefKullaniciId);
-      final degRef    = _db.collection(Collections.degerlendirmeler).doc();
+      final sohbetRef  = _db.collection(Collections.sohbetler).doc(sohbetId);
+      final userRef    = _db.collection(Collections.kullanicilar).doc(hedefKullaniciId);
+      final degRef     = _db.collection(Collections.degerlendirmeler).doc();
+      final bekleyenSnap = await tx.get(bekleyenRef);
 
       final sohbetSnap = await tx.get(sohbetRef);
       final snap       = await tx.get(userRef);
@@ -68,6 +75,11 @@ class DegerlendirmeRepository {
       tx.set(sohbetRef, {
         'degerlendirmeYapildi_$degerlendireninId': true,
       }, SetOptions(merge: true));
+
+      // Bekleyen değerlendirme kaydı varsa transaction içinde tamamlandı işaretle
+      if (bekleyenSnap.exists) {
+        tx.update(bekleyenRef, {'tamamlandi': true});
+      }
 
       if (snap.exists) {
         final d = snap.data() as Map<String, dynamic>;
@@ -152,15 +164,19 @@ class DegerlendirmeRepository {
     });
   }
 
+  /// Bekleyen değerlendirme kaydını tamamlandı olarak işaretler.
+  /// Kayıt yoksa (sohbet ekranından direkt yapıldıysa) sessizce döner.
   Future<void> bekleyenDegerlendirmeTamamla({
     required String sohbetId,
     required String kullaniciId,
   }) async {
-    await _db
+    final ref = _db
         .collection(Collections.kullanicilar)
         .doc(kullaniciId)
         .collection('bekleyenDegerlendirmeler')
-        .doc(sohbetId)
-        .update({'tamamlandi': true});
+        .doc(sohbetId);
+    final snap = await ref.get();
+    if (!snap.exists) return;
+    await ref.update({'tamamlandi': true});
   }
 }

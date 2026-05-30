@@ -34,10 +34,13 @@ Stream<List<Map<String, dynamic>>> kullaniciDegerlendirmeleri(
 // Değerlendirme işlemleri notifier
 @riverpod
 class DegerlendirmeIslemleri extends _$DegerlendirmeIslemleri {
-  @override
-  AsyncValue<void> build() => const AsyncData(null);
+  late final DegerlendirmeRepository _repo;
 
-  DegerlendirmeRepository get _repo => ref.read(degerlendirmeRepositoryProvider);
+  @override
+  AsyncValue<void> build() {
+    _repo = ref.read(degerlendirmeRepositoryProvider);
+    return const AsyncData(null);
+  }
 
   Future<bool> gonder({
     required String sohbetId,
@@ -56,9 +59,16 @@ class DegerlendirmeIslemleri extends _$DegerlendirmeIslemleri {
         yorum: yorum,
         ilanBaslik: ilanBaslik,
       );
-      // sohbetDegerlendirmeyiIsaretle transaction içinde atomik yapılıyor
       return true;
     } catch (e) {
+      // Zaten değerlendirildiyse bekleyen kaydı temizle — veri tutarsızlığı düzeltme
+      if (e.toString().contains('zaten_degerlendirdi')) {
+        await _repo.bekleyenDegerlendirmeTamamla(
+          sohbetId: sohbetId,
+          kullaniciId: degerlendireninId,
+        );
+        return true;
+      }
       debugPrint('[Degerlendirme] gonder hatasi: $e');
       return false;
     }

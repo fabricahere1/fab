@@ -12,6 +12,8 @@ import '../../degerlendirme/providers/degerlendirme_provider.dart';
 import '../../degerlendirme/presentation/degerlendirme_screen.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/widgets/avatar_widget.dart';
+import '../../ilanlar/providers/ilan_provider.dart';
+import 'package:flutter/rendering.dart';
 
 class ProfilScreen extends ConsumerStatefulWidget {
   const ProfilScreen({super.key});
@@ -22,6 +24,36 @@ class ProfilScreen extends ConsumerStatefulWidget {
 
 class _ProfilScreenState extends ConsumerState<ProfilScreen>
     with AutomaticKeepAliveClientMixin {
+
+  final _scrollCtrl = ScrollController();
+  double _sonScrollPixel = 0;
+  static const double _threshold = 80;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollCtrl.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    final pos = _scrollCtrl.position;
+    final simdi = pos.pixels;
+    if (pos.userScrollDirection == ScrollDirection.reverse) {
+      _sonScrollPixel = simdi;
+      ref.read(navBarGizliProvider.notifier).gizle();
+    } else if (pos.userScrollDirection == ScrollDirection.forward) {
+      if (simdi < _sonScrollPixel - _threshold) {
+        _sonScrollPixel = simdi;
+        ref.read(navBarGizliProvider.notifier).goster();
+      }
+    }
+  }
 
   @override
   bool get wantKeepAlive => true;
@@ -75,6 +107,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
         elevation: 0,
       ),
       body: ListView(
+        controller: _scrollCtrl,
         padding: const EdgeInsets.symmetric(vertical: 12),
         children: [
           // ── Profil Kartı ──────────────────────────────
