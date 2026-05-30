@@ -12,7 +12,7 @@ import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../ilanlar/presentation/ilan_detay_screen.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
-import '../../profil/presentation/kullanici_profil_screen.dart';
+import '../../profil/presentation/kullanici_profil_panel.dart';
 import 'islem_durumu_panel.dart';
 import '../../degerlendirme/presentation/degerlendirme_screen.dart';
 import '../../degerlendirme/providers/degerlendirme_provider.dart';
@@ -447,13 +447,27 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                       children: [
                         // Kişi kartı
                         GestureDetector(
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => KullaniciProfilScreen(
-                                kullaniciId: widget.karsiKullaniciId,
-                                kullaniciAd: widget.karsiKullaniciAd,
+                          onTap: () => Navigator.of(context).push(
+                            PageRouteBuilder(
+                              opaque: false,
+                              barrierColor: Colors.black.withValues(alpha: 0.35),
+                              barrierDismissible: true,
+                              pageBuilder: (ctx, anim, _) => Align(
+                                alignment: Alignment.centerRight,
+                                child: KullaniciProfilPanel(
+                                  kullaniciId: widget.karsiKullaniciId,
+                                  kullaniciAd: widget.karsiKullaniciAd,
+                                ),
                               ),
+                              transitionsBuilder: (ctx, anim, _, child) => SlideTransition(
+                                position: Tween(
+                                  begin: const Offset(1, 0),
+                                  end: Offset.zero,
+                                ).animate(CurvedAnimation(
+                                    parent: anim, curve: Curves.easeOutCubic)),
+                                child: child,
+                              ),
+                              transitionDuration: const Duration(milliseconds: 280),
                             ),
                           ),
                           child: Container(

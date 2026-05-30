@@ -34,7 +34,6 @@ void main() async {
     persistenceEnabled: true,
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
-
   await FirebaseAppCheck.instance.activate(
     // ignore: deprecated_member_use
     androidProvider: kDebugMode

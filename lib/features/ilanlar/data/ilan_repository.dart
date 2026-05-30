@@ -60,6 +60,7 @@ class IlanRepository {
 
   // ── Liste ─────────────────────────────────────────────────────────────────
 
+  /// Cache-first: önce cache'den dener, boşsa server'dan çeker.
   Future<IlanSayfasi> istekIlanlariniGetir({
     String? kategori,
     int limit = Pagination.ilanSayfaBoyutu,
@@ -71,8 +72,39 @@ class IlanRepository {
         .limit(limit);
     if (kategori != null) q = q.where('kategori', isEqualTo: kategori);
 
-    final snap = await q.get();
+    QuerySnapshot snap;
+    try {
+      snap = await q.get(const GetOptions(source: Source.cache));
+      if (snap.docs.isEmpty) {
+        snap = await q.get(const GetOptions(source: Source.server));
+      }
+    } catch (_) {
+      snap = await q.get(const GetOptions(source: Source.server));
+    }
 
+    final ilanlar = snap.docs.map(IlanModel.fromFirestore).toList();
+    return IlanSayfasi(
+      ilanlar: ilanlar,
+      sonTarih: ilanlar.isNotEmpty ? ilanlar.last.olusturmaTarihi : null,
+      sonId: ilanlar.isNotEmpty ? ilanlar.last.id : null,
+      bitti: snap.docs.length < limit,
+    );
+  }
+
+  /// Direkt sunucudan çeker — cache'i atlar.
+  /// Arka plan güncelleme için kullanılır.
+  Future<IlanSayfasi> istekIlanlariniGetirSunucu({
+    String? kategori,
+    int limit = Pagination.ilanSayfaBoyutu,
+  }) async {
+    Query q = _col
+        .where('tip', isEqualTo: IlanTip.istek)
+        .where('aktif', isEqualTo: true)
+        .orderBy('olusturmaTarihi', descending: true)
+        .limit(limit);
+    if (kategori != null) q = q.where('kategori', isEqualTo: kategori);
+
+    final snap = await q.get(const GetOptions(source: Source.server));
     final ilanlar = snap.docs.map(IlanModel.fromFirestore).toList();
     return IlanSayfasi(
       ilanlar: ilanlar,
@@ -104,8 +136,19 @@ class IlanRepository {
           .orderBy('tarih', descending: true)
           .limit(10);
 
-      final gelecek = await gelecekQ.get();
-      final gecmis  = await gecmisQ.get();
+      QuerySnapshot gelecek;
+      QuerySnapshot gecmis;
+      try {
+        gelecek = await gelecekQ.get(const GetOptions(source: Source.cache));
+        gecmis  = await gecmisQ.get(const GetOptions(source: Source.cache));
+        if (gelecek.docs.isEmpty && gecmis.docs.isEmpty) {
+          gelecek = await gelecekQ.get(const GetOptions(source: Source.server));
+          gecmis  = await gecmisQ.get(const GetOptions(source: Source.server));
+        }
+      } catch (_) {
+        gelecek = await gelecekQ.get(const GetOptions(source: Source.server));
+        gecmis  = await gecmisQ.get(const GetOptions(source: Source.server));
+      }
 
       final ilanlar = [
         ...gelecek.docs.map(IlanModel.fromFirestore),
@@ -118,13 +161,22 @@ class IlanRepository {
         bitti: gelecek.docs.length < limit,
       );
     }
+
     final q = _col
         .where('tip', isEqualTo: IlanTip.tasiyici)
         .where('aktif', isEqualTo: true)
         .orderBy('olusturmaTarihi', descending: true)
         .limit(limit);
 
-    final snap = await q.get();
+    QuerySnapshot snap;
+    try {
+      snap = await q.get(const GetOptions(source: Source.cache));
+      if (snap.docs.isEmpty) {
+        snap = await q.get(const GetOptions(source: Source.server));
+      }
+    } catch (_) {
+      snap = await q.get(const GetOptions(source: Source.server));
+    }
 
     final ilanlar = snap.docs.map(IlanModel.fromFirestore).toList();
     return IlanSayfasi(
@@ -156,7 +208,6 @@ class IlanRepository {
     final ilanlar = snap.docs.map(IlanModel.fromFirestore).toList();
     return IlanSayfasi(
       ilanlar: ilanlar,
-      // orderField ile cursor alanı eşleşmeli
       sonTarih: ilanlar.isNotEmpty
           ? (orderField == 'tarih'
               ? ilanlar.last.tarih
@@ -290,14 +341,12 @@ class IlanRepository {
     required String kullaniciId,
     required IlanModel ilan,
   }) async {
-    // Deterministik ID — race condition'ı önler
-    // Aynı kullanıcı aynı ilanı iki kez favorilerse ikinci yazma birincinin üzerine yazar
     final favoriId = '${kullaniciId}_${ilan.id}';
     final favoriRef = firestore.collection(Collections.favoriler).doc(favoriId);
 
     await firestore.runTransaction((txn) async {
       final favoriSnap = await txn.get(favoriRef);
-      if (favoriSnap.exists) return; // Zaten favoride
+      if (favoriSnap.exists) return;
 
       txn.set(favoriRef, {
         'kullaniciId':  kullaniciId,
@@ -339,7 +388,6 @@ class IlanRepository {
   }
 
   /// 12 saatlik throttle ile görüntülenme sayısını artırır.
-  /// favoriler koleksiyonuyla aynı pattern: üst seviye koleksiyon + deterministik ID.
   Future<bool> goruntulenmeyiKaydet({
     required String kullaniciId,
     required String ilanId,

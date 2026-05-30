@@ -75,6 +75,9 @@ class IstekIlanlar extends _$IstekIlanlar {
         dahaFazlaVar: !sonuc.bitti,
         yukleniyor: false,
       );
+      if (sonuc.ilanlar.isNotEmpty) {
+        _arkaGuncelleIstekIlanlar();
+      }
     } catch (e) {
       debugPrint('İstek ilanları yükleme hatası: $e');
       if (deneme < 2) {
@@ -84,6 +87,19 @@ class IstekIlanlar extends _$IstekIlanlar {
         state = state.copyWith(yukleniyor: false);
       }
     }
+  }
+
+  Future<void> _arkaGuncelleIstekIlanlar() async {
+    try {
+      final sonuc = await _repo.istekIlanlariniGetirSunucu();
+      if (!state.yukleniyor) {
+        state = state.copyWith(
+          ilanlar: sonuc.ilanlar,
+          sonTarih: sonuc.sonTarih,
+          dahaFazlaVar: !sonuc.bitti,
+        );
+      }
+    } catch (_) {}
   }
 
   Future<void> yenile() async {

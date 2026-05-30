@@ -1,0 +1,66 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "ilanlar",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tip", "order": "ASCENDING" },
+        { "fieldPath": "aktif", "order": "ASCENDING" },
+        { "fieldPath": "olusturmaTarihi", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ilanlar",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tip", "order": "ASCENDING" },
+        { "fieldPath": "aktif", "order": "ASCENDING" },
+        { "fieldPath": "kategori", "order": "ASCENDING" },
+        { "fieldPath": "olusturmaTarihi", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ilanlar",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tip", "order": "ASCENDING" },
+        { "fieldPath": "aktif", "order": "ASCENDING" },
+        { "fieldPath": "tarih", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ilanlar",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tip", "order": "ASCENDING" },
+        { "fieldPath": "aktif", "order": "ASCENDING" },
+        { "fieldPath": "tarih", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "sohbetler",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "kullanicilar", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "sonMesajZamani", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "bildirimler",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "kullaniciId", "order": "ASCENDING" },
+        { "fieldPath": "okundu", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "favoriler",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "kullaniciId", "order": "ASCENDING" },
+        { "fieldPath": "eklemeTarihi", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

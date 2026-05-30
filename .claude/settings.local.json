@@ -10,7 +10,8 @@
       "Bash(cp \"/mnt/c/Users/PC/Desktop/Claude ss leri/kategori görselleri/güzellik ve sağlık.webp\" \"/mnt/c/src/iste_v3/assets/images/kategoriler/guzellik.webp\")",
       "Bash(cp \"/mnt/c/Users/PC/Desktop/Claude ss leri/kategori görselleri/ev ve yaşam.png\"      \"/mnt/c/src/iste_v3/assets/images/kategoriler/ev.png\")",
       "Bash(cp \"/mnt/c/Users/PC/Desktop/Claude ss leri/kategori görselleri/spor ve outdoor.png\"  \"/mnt/c/src/iste_v3/assets/images/kategoriler/spor.png\")",
-      "Bash(flutter pub *)"
+      "Bash(flutter pub *)",
+      "Bash(dart analyze *)"
     ]
   }
 }
