@@ -236,16 +236,21 @@ class _SohbetKarti extends ConsumerWidget {
             Stack(
               children: [
                 sohbet.ilanResimUrl.isNotEmpty
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: CachedNetworkImage(
-                          imageUrl: sohbet.ilanResimUrl,
-                          width: 48,
-                          height: 48,
-                          fit: BoxFit.cover,
-                          fadeInDuration: Duration.zero,
-                          errorWidget: (_, _, _) =>
-                              AvatarWidget(isim: karsiAd, radius: 24),
+                    ? RepaintBoundary(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: CachedNetworkImage(
+                            imageUrl: sohbet.ilanResimUrl,
+                            cacheKey: sohbet.ilanResimUrl,
+                            width: 48,
+                            height: 48,
+                            fit: BoxFit.cover,
+                            fadeInDuration: Duration.zero,
+                            memCacheWidth: 96,
+                            memCacheHeight: 96,
+                            errorWidget: (_, _, _) =>
+                                AvatarWidget(isim: karsiAd, radius: 24),
+                          ),
                         ),
                       )
                     : AvatarWidget(isim: karsiAd, radius: 24),

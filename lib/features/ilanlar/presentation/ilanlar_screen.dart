@@ -155,20 +155,7 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
     return sonuc;
   }
 
-  Map<String, int> _ilanSayilariHesapla(List<IlanModel> ilanlar) {
-    final map = <String, int>{};
-    for (final ana in kKategoriAgaci) {
-      final keyler = tumAltKeyler(ana.key);
-      map[ana.key] = ilanlar.where((i) =>
-        keyler.contains(i.kategori) ||
-        i.kategoriYolu.any((k) => keyler.contains(k))
-      ).length;
-    }
-    return map;
-  }
-
   void _filtreAc() {
-    final sayilar = _ilanSayilariHesapla(ref.read(istekIlanlarProvider).filtrelenmis);
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
@@ -187,8 +174,6 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
             child: FiltreEkrani(
               seciliKategoriYolu: _seciliKategoriYolu,
               seciliSiralama: _siralama,
-              ilanSayilari: sayilar,
-              ilanEtiket: 'aktif istek',
               onKategoriSecildi: (yol) {
                 setState(() => _seciliKategoriYolu = yol);
                 Navigator.of(ctx).pop();
@@ -357,6 +342,19 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
                           controller: _scrollController,
                           physics: const AlwaysScrollableScrollPhysics(),
                           slivers: [
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(14),
+                                  child: Image.asset(
+                                    'assets/images/banner_ilk_ilan.png',
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                            ),
                             SliverPadding(
                               padding: const EdgeInsets.all(10),
                               sliver: ilanWidget,
