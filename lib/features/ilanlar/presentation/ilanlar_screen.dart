@@ -156,6 +156,15 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
   }
 
   void _filtreAc() {
+    final ilanlar = ref.read(istekIlanlarProvider).filtrelenmis;
+    final ilanSayilari = <String, int>{};
+    for (final ana in kKategoriAgaci) {
+      final keyler = tumAltKeyler(ana.key);
+      ilanSayilari[ana.key] = ilanlar.where((i) =>
+        keyler.contains(i.kategori) ||
+        i.kategoriYolu.any((k) => keyler.contains(k))).length;
+    }
+
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
@@ -174,6 +183,8 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
             child: FiltreEkrani(
               seciliKategoriYolu: _seciliKategoriYolu,
               seciliSiralama: _siralama,
+              ilanSayilari: ilanSayilari,
+              ilanEtiket: 'aktif istek',
               onKategoriSecildi: (yol) {
                 setState(() => _seciliKategoriYolu = yol);
                 Navigator.of(ctx).pop();
