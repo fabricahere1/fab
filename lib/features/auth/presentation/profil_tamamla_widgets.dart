@@ -133,11 +133,13 @@ class ProfilBolum extends StatelessWidget {
                 child: Icon(ikon, size: 17, color: AppColors.red),
               ),
               const SizedBox(width: 10),
-              Text(baslik,
-                  style: GoogleFonts.dmSans(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary)),
+              Expanded(
+                child: Text(baslik,
+                    style: GoogleFonts.dmSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary)),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -339,7 +341,258 @@ class _AutocompleteAlaniState extends State<AutocompleteAlani> {
   }
 }
 
-// ── Çoklu Şehir Alanı ────────────────────────────────────────────────────────
+// ── Evet / Hayır Seçici ───────────────────────────────────────────────────────
+
+class EvetHayirSecici extends StatelessWidget {
+  final bool? deger;
+  final ValueChanged<bool> onSecildi;
+
+  const EvetHayirSecici({
+    super.key,
+    required this.deger,
+    required this.onSecildi,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _EvetHayirButon(
+            label: 'Evet',
+            secili: deger == true,
+            onTap: () => onSecildi(true),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _EvetHayirButon(
+            label: 'Hayır',
+            secili: deger == false,
+            onTap: () => onSecildi(false),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EvetHayirButon extends StatelessWidget {
+  final String label;
+  final bool secili;
+  final VoidCallback onTap;
+
+  const _EvetHayirButon({
+    required this.label,
+    required this.secili,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: 48,
+        decoration: BoxDecoration(
+          color: secili ? AppColors.red : AppColors.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: secili ? AppColors.red : AppColors.divider,
+            width: secili ? 1.5 : 1,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: GoogleFonts.dmSans(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: secili ? Colors.white : AppColors.textSecondary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Tek Seçim Alanı ───────────────────────────────────────────────────────────
+
+class TekSecimAlani extends StatelessWidget {
+  final String secilen;
+  final String placeholder;
+  final VoidCallback onTap;
+  final VoidCallback onTemizle;
+
+  const TekSecimAlani({
+    super.key,
+    required this.secilen,
+    required this.placeholder,
+    required this.onTap,
+    required this.onTemizle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasValue = secilen.isNotEmpty;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 50,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: hasValue ? AppColors.primary : AppColors.divider,
+            width: hasValue ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              hasValue ? Icons.check_circle_outline : Icons.location_on_outlined,
+              size: 20,
+              color: hasValue ? AppColors.primary : AppColors.textSecondary,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                hasValue ? secilen : placeholder,
+                style: GoogleFonts.dmSans(
+                  fontSize: 14,
+                  color: hasValue ? AppColors.textPrimary : AppColors.textHint,
+                  fontWeight:
+                      hasValue ? FontWeight.w500 : FontWeight.w400,
+                ),
+              ),
+            ),
+            if (hasValue)
+              GestureDetector(
+                onTap: onTemizle,
+                child: const Icon(Icons.close,
+                    size: 18, color: AppColors.textSecondary),
+              )
+            else
+              const Icon(Icons.keyboard_arrow_down_rounded,
+                  size: 22, color: AppColors.textSecondary),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Çoklu Şehir Seçim Alanı ──────────────────────────────────────────────────
+
+class CokluSehirSecimAlani extends StatelessWidget {
+  final List<String> secilenler;
+  final String placeholder;
+  final VoidCallback onTap;
+  final ValueChanged<String> onKaldirildi;
+
+  const CokluSehirSecimAlani({
+    super.key,
+    required this.secilenler,
+    required this.placeholder,
+    required this.onTap,
+    required this.onKaldirildi,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: secilenler.isNotEmpty
+                    ? AppColors.primary
+                    : AppColors.divider,
+                width: secilenler.isNotEmpty ? 1.5 : 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  secilenler.isNotEmpty
+                      ? Icons.check_circle_outline
+                      : Icons.add_location_outlined,
+                  size: 20,
+                  color: secilenler.isNotEmpty
+                      ? AppColors.primary
+                      : AppColors.textSecondary,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    secilenler.isEmpty
+                        ? placeholder
+                        : '${secilenler.length} şehir seçildi',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 14,
+                      color: secilenler.isNotEmpty
+                          ? AppColors.textPrimary
+                          : AppColors.textHint,
+                      fontWeight: secilenler.isNotEmpty
+                          ? FontWeight.w500
+                          : FontWeight.w400,
+                    ),
+                  ),
+                ),
+                const Icon(Icons.keyboard_arrow_down_rounded,
+                    size: 22, color: AppColors.textSecondary),
+              ],
+            ),
+          ),
+        ),
+        if (secilenler.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: secilenler
+                .map((s) => Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                          color: AppColors.red,
+                          borderRadius: BorderRadius.circular(20)),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(s,
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 13,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500)),
+                          const SizedBox(width: 6),
+                          GestureDetector(
+                            onTap: () => onKaldirildi(s),
+                            child: const Icon(Icons.close,
+                                size: 14, color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    ))
+                .toList(),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+// ── Çoklu Şehir Alanı (eski — autocomplete) ───────────────────────────────────
 
 class CokluSehirAlani extends StatefulWidget {
   final List<String> secilenler, secenekler;

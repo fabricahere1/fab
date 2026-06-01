@@ -1,12 +1,4 @@
 // lib/features/auth/presentation/profil_tamamla_screen.dart
-//
-// DEĞİŞİKLİKLER:
-// - _TipKart        → ProfilTipKart        (profil_tamamla_widgets.dart)
-// - _Bolum          → ProfilBolum          (profil_tamamla_widgets.dart)
-// - _AutocompleteAlani → AutocompleteAlani (profil_tamamla_widgets.dart)
-// - _CokluSehirAlani   → CokluSehirAlani   (profil_tamamla_widgets.dart)
-// - Adım header tekrarı → ProfilAdimHeader (profil_tamamla_widgets.dart)
-// - _buildAdim1..4  → private metodlar bu dosyada kalıyor ama kısa
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,9 +7,58 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../providers/auth_provider.dart';
 import '../../../shared/constants/app_colors.dart';
-import '../../../shared/constants/app_constants.dart' show kDunyaUlkeleri, kTurkiyeSehirleri;
+import '../../../shared/constants/app_constants.dart' show kTurkiyeSehirleri;
 import '../../../router/app_router.dart';
 import 'profil_tamamla_widgets.dart';
+
+const _kYasadigiUlkeler = [
+  'Almanya',
+  'Amerika Birleşik Devletleri',
+  'Andorra',
+  'Arnavutluk',
+  'Avusturya',
+  'Belçika',
+  'Bosna-Hersek',
+  'Bulgaristan',
+  'Çek Cumhuriyeti',
+  'Danimarka',
+  'Estonya',
+  'Finlandiya',
+  'Fransa',
+  'Hırvatistan',
+  'Hollanda',
+  'İngiltere',
+  'İrlanda',
+  'İspanya',
+  'İsveç',
+  'İsviçre',
+  'İtalya',
+  'İzlanda',
+  'Kanada',
+  'Karadağ',
+  'Kıbrıs',
+  'Kosova',
+  'Kuzey Makedonya',
+  'Letonya',
+  'Liechtenstein',
+  'Litvanya',
+  'Lüksemburg',
+  'Macaristan',
+  'Malta',
+  'Moldovya',
+  'Monako',
+  'Norveç',
+  'Polonya',
+  'Portekiz',
+  'Romanya',
+  'San Marino',
+  'Sırbistan',
+  'Slovakya',
+  'Slovenya',
+  'Ukrayna',
+  'Vatikan',
+  'Yunanistan',
+];
 
 class ProfilTamamlaScreen extends ConsumerStatefulWidget {
   final bool ilkGiris;
@@ -28,27 +69,39 @@ class ProfilTamamlaScreen extends ConsumerStatefulWidget {
       _ProfilTamamlaScreenState();
 }
 
-class _ProfilTamamlaScreenState
-    extends ConsumerState<ProfilTamamlaScreen> {
-  final _pageCtrl   = PageController();
-  int _adim         = 0;
+class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
+  final _pageCtrl      = PageController();
+  int _adim            = 0;
   final int _toplamAdim = 4;
 
   // Form state
-  String?      _kullaniciTipi;
-  String       _yasadigiUlke       = '';
-  final List<String> _geldigiSehirler = [];
-  String       _bulunduguSehir     = '';
+  String? _kullaniciTipi;
+  String  _bulunduguSehir = '';
   final _telefonCtrl  = TextEditingController();
   final _hakkindaCtrl = TextEditingController();
   bool   _telefonGizli = false;
   bool   _yukleniyor   = false;
   String _hata         = '';
 
+  // Taşıyıcı adım-2 state
+  bool?        _turkiyedeMi;
+  String       _secilenIlTurkiye    = '';
+  String       _secilenUlkeYurtdisi = '';
+  final List<String> _seyahatEdilenSehirler = [];
+  bool?        _dutyFreeIlgileniyor;
+
+  late final List<String> _sortedTurkiyeSehirleri;
+
   bool get _tasiyiciMi =>
       _kullaniciTipi == 'tasiyici' || _kullaniciTipi == 'her_ikisi';
   bool get _istekMi =>
       _kullaniciTipi == 'istek' || _kullaniciTipi == 'her_ikisi';
+
+  @override
+  void initState() {
+    super.initState();
+    _sortedTurkiyeSehirleri = [...kTurkiyeSehirleri]..sort();
+  }
 
   @override
   void dispose() {
@@ -67,13 +120,27 @@ class _ProfilTamamlaScreenState
       return;
     }
     if (_adim == 1) {
-      if (_tasiyiciMi && _yasadigiUlke.trim().isEmpty) {
-        setState(() => _hata = 'Yaşadığınız ülkeyi girin.');
-        return;
-      }
-      if (_tasiyiciMi && _geldigiSehirler.isEmpty) {
-        setState(() => _hata = 'En az bir şehir ekleyin.');
-        return;
+      if (_tasiyiciMi) {
+        if (_turkiyedeMi == null) {
+          setState(() => _hata = "Lütfen Türkiye'de yaşayıp yaşamadığınızı seçin.");
+          return;
+        }
+        if (_turkiyedeMi! && _secilenIlTurkiye.isEmpty) {
+          setState(() => _hata = 'Yaşadığınız şehri seçin.');
+          return;
+        }
+        if (!_turkiyedeMi! && _secilenUlkeYurtdisi.isEmpty) {
+          setState(() => _hata = 'Yaşadığınız ülkeyi seçin.');
+          return;
+        }
+        if (!_turkiyedeMi! && _seyahatEdilenSehirler.isEmpty) {
+          setState(() => _hata = "Türkiye'de gideceğiniz en az bir şehir seçin.");
+          return;
+        }
+        if (_dutyFreeIlgileniyor == null) {
+          setState(() => _hata = 'Duty Free tercihini belirtin.');
+          return;
+        }
       }
       if (_istekMi && !_tasiyiciMi && _bulunduguSehir.trim().isEmpty) {
         setState(() => _hata = 'Bulunduğunuz şehri girin.');
@@ -107,7 +174,6 @@ class _ProfilTamamlaScreenState
       _yukleniyor = true;
       _hata       = '';
     });
-    // currentUserProvider üzerinden — FirebaseAuth direkt erişim yok
     final user = ref.read(currentUserProvider);
     final uid  = user?.uid;
     if (uid == null) {
@@ -118,16 +184,31 @@ class _ProfilTamamlaScreenState
       return;
     }
     try {
+      final String yasadigiUlke;
+      final List<String> geldigiSehirler;
+      final String bulunduguSehir;
+
+      if (_tasiyiciMi) {
+        yasadigiUlke    = _turkiyedeMi == true ? 'Türkiye' : _secilenUlkeYurtdisi;
+        geldigiSehirler = _turkiyedeMi == true ? [] : List<String>.from(_seyahatEdilenSehirler);
+        bulunduguSehir  = _turkiyedeMi == true ? _secilenIlTurkiye : '';
+      } else {
+        yasadigiUlke    = '';
+        geldigiSehirler = [];
+        bulunduguSehir  = _istekMi ? _bulunduguSehir.trim() : '';
+      }
+
       final data = {
-        'kullaniciTipi':   _kullaniciTipi,
-        'yasadigiUlke':    _tasiyiciMi ? _yasadigiUlke.trim() : '',
-        'geldigiSehirler': _tasiyiciMi ? _geldigiSehirler : [],
-        'bulunduguSehir':  _istekMi ? _bulunduguSehir.trim() : '',
-        'hakkinda':        _hakkindaCtrl.text.trim(),
-        'telefon':         _telefonCtrl.text.trim(),
-        'telefonGizli':    _telefonGizli,
-        'adSoyad':         user?.displayName ?? '',
-        'email':           user?.email ?? '',
+        'kullaniciTipi':       _kullaniciTipi,
+        'yasadigiUlke':        yasadigiUlke,
+        'geldigiSehirler':     geldigiSehirler,
+        'bulunduguSehir':      bulunduguSehir,
+        'dutyFreeIlgileniyor': _tasiyiciMi ? (_dutyFreeIlgileniyor ?? false) : null,
+        'hakkinda':            _hakkindaCtrl.text.trim(),
+        'telefon':             _telefonCtrl.text.trim(),
+        'telefonGizli':        _telefonGizli,
+        'adSoyad':             user?.displayName ?? '',
+        'email':               user?.email ?? '',
       };
       final basarili = await ref
           .read(profilDuzenleProvider.notifier)
@@ -146,6 +227,58 @@ class _ProfilTamamlaScreenState
         _hata       = 'Hata: $e';
       });
     }
+  }
+
+  // ── Bottom Sheet / Dialog Açıcılar ──────────────────────────────────────────
+
+  void _ilSecimAc(ValueChanged<String> onSecildi) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _TekSecimSheet(
+        baslik: 'Şehir seçin',
+        secenekler: _sortedTurkiyeSehirleri,
+        secilen: _secilenIlTurkiye,
+        onSecildi: (v) {
+          onSecildi(v);
+          Navigator.pop(ctx);
+        },
+      ),
+    );
+  }
+
+  void _ulkeSecimAc() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _TekSecimSheet(
+        baslik: 'Ülke seçin',
+        secenekler: _kYasadigiUlkeler,
+        secilen: _secilenUlkeYurtdisi,
+        onSecildi: (v) {
+          setState(() => _secilenUlkeYurtdisi = v);
+          Navigator.pop(ctx);
+        },
+      ),
+    );
+  }
+
+  void _cokluSehirSecimAc() {
+    final oncekiSecim = List<String>.from(_seyahatEdilenSehirler);
+    showDialog(
+      context: context,
+      builder: (ctx) => _CokluSehirDialog(
+        secenekler: _sortedTurkiyeSehirleri,
+        baslangicSecim: oncekiSecim,
+        onTamam: (secilenler) => setState(() {
+          _seyahatEdilenSehirler
+            ..clear()
+            ..addAll(secilenler);
+        }),
+      ),
+    );
   }
 
   // ── Build ────────────────────────────────────────────────────────────────────
@@ -183,7 +316,6 @@ class _ProfilTamamlaScreenState
       ),
       body: Column(
         children: [
-          // İlerleme çubuğu
           Row(
             children: List.generate(
               _toplamAdim,
@@ -196,8 +328,6 @@ class _ProfilTamamlaScreenState
               ),
             ),
           ),
-
-          // Sayfa içeriği
           Expanded(
             child: PageView(
               controller: _pageCtrl,
@@ -210,8 +340,6 @@ class _ProfilTamamlaScreenState
               ],
             ),
           ),
-
-          // Hata mesajı
           if (_hata.isNotEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
@@ -228,8 +356,6 @@ class _ProfilTamamlaScreenState
                 ],
               ),
             ),
-
-          // Devam butonu
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
             child: SizedBox(
@@ -300,8 +426,8 @@ class _ProfilTamamlaScreenState
                     aciklama:
                         "Türkiye'ye seyahat ediyorum, yanımda eşya getirebilirim.",
                     secili: _kullaniciTipi == 'tasiyici',
-                    onTap: () => setState(
-                        () => _kullaniciTipi = 'tasiyici'),
+                    onTap: () =>
+                        setState(() => _kullaniciTipi = 'tasiyici'),
                   ),
                   const SizedBox(height: 10),
                   ProfilTipKart(
@@ -320,8 +446,8 @@ class _ProfilTamamlaScreenState
                     aciklama:
                         'Hem taşıyıcı hem istek sahibi olarak kullanacağım.',
                     secili: _kullaniciTipi == 'her_ikisi',
-                    onTap: () => setState(
-                        () => _kullaniciTipi = 'her_ikisi'),
+                    onTap: () =>
+                        setState(() => _kullaniciTipi = 'her_ikisi'),
                   ),
                 ],
               ),
@@ -336,67 +462,142 @@ class _ProfilTamamlaScreenState
   // ── Adım 2: Konum ────────────────────────────────────────────────────────────
 
   Widget _buildAdim2() {
+    if (_tasiyiciMi) return _buildAdim2Tasiyici();
+    return _buildAdim2Istek();
+  }
+
+  Widget _buildAdim2Tasiyici() {
+    final dutyFreeGoster = _turkiyedeMi != null &&
+        (_turkiyedeMi!
+            ? _secilenIlTurkiye.isNotEmpty
+            : _secilenUlkeYurtdisi.isNotEmpty);
+
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: SingleChildScrollView(
         child: Column(
           children: [
-            ProfilAdimHeader(
+            const ProfilAdimHeader(
               ikon: Icons.location_on_outlined,
               baslik: 'Konum bilgisi',
-              aciklama: _tasiyiciMi
-                  ? "Nerede yaşıyorsun ve Türkiye'de hangi şehirlere geliyorsun?"
-                  : "Türkiye'de hangi şehirdesin?",
+              aciklama: 'Nerede yaşadığını ve seyahat bilgilerini paylaş.',
             ),
             const SizedBox(height: 8),
-            if (_tasiyiciMi) ...[
-              ProfilBolum(
-                baslik: 'Yaşadığın ülke *',
-                ikon: Icons.public_outlined,
-                child: AutocompleteAlani(
-                  value: _yasadigiUlke,
-                  secenekler: kDunyaUlkeleri,
-                  hint: 'Ülke ara... (örn: Almanya)',
-                  icon: Icons.public_outlined,
-                  onSecildi: (v) =>
-                      setState(() => _yasadigiUlke = v),
-                ),
+
+            // Türkiye'de mi yaşıyorsun?
+            ProfilBolum(
+              baslik: "Türkiye'de mi yaşıyorsun?",
+              ikon: Icons.public_outlined,
+              child: EvetHayirSecici(
+                deger: _turkiyedeMi,
+                onSecildi: (v) => setState(() {
+                  _turkiyedeMi = v;
+                  _secilenIlTurkiye = '';
+                  _secilenUlkeYurtdisi = '';
+                  _seyahatEdilenSehirler.clear();
+                  _dutyFreeIlgileniyor = null;
+                }),
               ),
+            ),
+
+            // Evet → Hangi şehirde yaşıyorsun?
+            if (_turkiyedeMi == true) ...[
               const SizedBox(height: 8),
               ProfilBolum(
-                baslik: "Türkiye'de geldiğin şehirler *",
+                baslik: 'Hangi şehirde yaşıyorsun?',
                 ikon: Icons.location_city_outlined,
-                child: CokluSehirAlani(
-                  secilenler: _geldigiSehirler,
-                  secenekler: kTurkiyeSehirleri,
-                  hint: 'Şehir ara... (örn: İstanbul)',
-                  onEklendi: (s) {
-                    if (!_geldigiSehirler.contains(s)) {
-                      setState(() => _geldigiSehirler.add(s));
-                    }
-                  },
-                  onKaldirildi: (s) =>
-                      setState(() => _geldigiSehirler.remove(s)),
+                child: TekSecimAlani(
+                  secilen: _secilenIlTurkiye,
+                  placeholder: 'Şehir seçin...',
+                  onTap: () => _ilSecimAc(
+                      (v) => setState(() => _secilenIlTurkiye = v)),
+                  onTemizle: () => setState(() {
+                    _secilenIlTurkiye = '';
+                    _dutyFreeIlgileniyor = null;
+                  }),
                 ),
               ),
             ],
-            if (_istekMi) ...[
+
+            // Hayır → Hangi ülkede yaşıyorsun?
+            if (_turkiyedeMi == false) ...[
               const SizedBox(height: 8),
               ProfilBolum(
-                baslik: _tasiyiciMi
-                    ? "Türkiye'deki şehrin (opsiyonel)"
-                    : "Türkiye'deki şehrin *",
-                ikon: Icons.location_on_outlined,
-                child: AutocompleteAlani(
-                  value: _bulunduguSehir,
-                  secenekler: kTurkiyeSehirleri,
-                  hint: 'Şehir ara... (örn: İstanbul)',
-                  icon: Icons.location_on_outlined,
-                  onSecildi: (v) =>
-                      setState(() => _bulunduguSehir = v),
+                baslik: 'Hangi ülkede yaşıyorsun?',
+                ikon: Icons.public_outlined,
+                child: TekSecimAlani(
+                  secilen: _secilenUlkeYurtdisi,
+                  placeholder: 'Ülke seçin...',
+                  onTap: _ulkeSecimAc,
+                  onTemizle: () => setState(() {
+                    _secilenUlkeYurtdisi = '';
+                    _seyahatEdilenSehirler.clear();
+                    _dutyFreeIlgileniyor = null;
+                  }),
                 ),
               ),
             ],
+
+            // Hayır + ülke seçildi → Türkiye'de hangi şehirlere seyahat ediyorsun?
+            if (_turkiyedeMi == false && _secilenUlkeYurtdisi.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              ProfilBolum(
+                baslik: "Türkiye'de hangi şehirlere seyahat ediyorsun?",
+                ikon: Icons.flight_land_outlined,
+                child: CokluSehirSecimAlani(
+                  secilenler: _seyahatEdilenSehirler,
+                  placeholder: 'Şehir seçin...',
+                  onTap: _cokluSehirSecimAc,
+                  onKaldirildi: (s) =>
+                      setState(() => _seyahatEdilenSehirler.remove(s)),
+                ),
+              ),
+            ],
+
+            // Duty Free sorusu
+            if (dutyFreeGoster) ...[
+              const SizedBox(height: 8),
+              ProfilBolum(
+                baslik: 'Duty Free alışverişi ile ilgileniyor musun?',
+                ikon: Icons.shopping_bag_outlined,
+                child: EvetHayirSecici(
+                  deger: _dutyFreeIlgileniyor,
+                  onSecildi: (v) =>
+                      setState(() => _dutyFreeIlgileniyor = v),
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdim2Istek() {
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            const ProfilAdimHeader(
+              ikon: Icons.location_on_outlined,
+              baslik: 'Konum bilgisi',
+              aciklama: "Türkiye'de hangi şehirdesin?",
+            ),
+            const SizedBox(height: 8),
+            ProfilBolum(
+              baslik: "Türkiye'deki şehrin *",
+              ikon: Icons.location_on_outlined,
+              child: AutocompleteAlani(
+                value: _bulunduguSehir,
+                secenekler: kTurkiyeSehirleri,
+                hint: 'Şehir ara... (örn: İstanbul)',
+                icon: Icons.location_on_outlined,
+                onSecildi: (v) => setState(() => _bulunduguSehir = v),
+              ),
+            ),
             const SizedBox(height: 40),
           ],
         ),
@@ -452,7 +653,6 @@ class _ProfilTamamlaScreenState
                     ),
                   ),
                   const SizedBox(height: 14),
-                  // Telefon gizle toggle
                   GestureDetector(
                     onTap: () =>
                         setState(() => _telefonGizli = !_telefonGizli),
@@ -483,7 +683,8 @@ class _ProfilTamamlaScreenState
                           ),
                           AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
-                            width: 48, height: 26,
+                            width: 48,
+                            height: 26,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(13),
                               color: _telefonGizli
@@ -498,7 +699,8 @@ class _ProfilTamamlaScreenState
                               child: Container(
                                 margin: const EdgeInsets.symmetric(
                                     horizontal: 3),
-                                width: 20, height: 20,
+                                width: 20,
+                                height: 20,
                                 decoration: const BoxDecoration(
                                     shape: BoxShape.circle,
                                     color: Colors.white),
@@ -567,6 +769,329 @@ class _ProfilTamamlaScreenState
             const SizedBox(height: 40),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Tek Seçim Bottom Sheet ────────────────────────────────────────────────────
+
+class _TekSecimSheet extends StatefulWidget {
+  final String baslik;
+  final List<String> secenekler;
+  final String secilen;
+  final ValueChanged<String> onSecildi;
+
+  const _TekSecimSheet({
+    required this.baslik,
+    required this.secenekler,
+    required this.secilen,
+    required this.onSecildi,
+  });
+
+  @override
+  State<_TekSecimSheet> createState() => _TekSecimSheetState();
+}
+
+class _TekSecimSheetState extends State<_TekSecimSheet> {
+  final _aramaCtrl = TextEditingController();
+  late List<String> _filtreli;
+
+  @override
+  void initState() {
+    super.initState();
+    _filtreli = widget.secenekler;
+  }
+
+  @override
+  void dispose() {
+    _aramaCtrl.dispose();
+    super.dispose();
+  }
+
+  void _filtrele(String q) {
+    setState(() {
+      _filtreli = q.isEmpty
+          ? widget.secenekler
+          : widget.secenekler
+              .where((s) => s.toLowerCase().contains(q.toLowerCase()))
+              .toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      builder: (ctx, scrollCtrl) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 4),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Text(
+                widget.baslik,
+                style: GoogleFonts.dmSans(
+                    fontSize: 16, fontWeight: FontWeight.w700),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _AramaAlani(
+                ctrl: _aramaCtrl,
+                onChanged: _filtrele,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Expanded(
+              child: ListView.builder(
+                controller: scrollCtrl,
+                itemCount: _filtreli.length,
+                itemBuilder: (ctx, i) {
+                  final item = _filtreli[i];
+                  final secili = item == widget.secilen;
+                  return InkWell(
+                    onTap: () => widget.onSecildi(item),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 14),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item,
+                              style: GoogleFonts.dmSans(
+                                fontSize: 14,
+                                fontWeight: secili
+                                    ? FontWeight.w700
+                                    : FontWeight.w400,
+                                color: secili
+                                    ? AppColors.red
+                                    : AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                          if (secili)
+                            const Icon(Icons.check,
+                                size: 18, color: AppColors.red),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Çoklu Şehir Dialog ───────────────────────────────────────────────────────
+
+class _CokluSehirDialog extends StatefulWidget {
+  final List<String> secenekler;
+  final List<String> baslangicSecim;
+  final ValueChanged<List<String>> onTamam;
+
+  const _CokluSehirDialog({
+    required this.secenekler,
+    required this.baslangicSecim,
+    required this.onTamam,
+  });
+
+  @override
+  State<_CokluSehirDialog> createState() => _CokluSehirDialogState();
+}
+
+class _CokluSehirDialogState extends State<_CokluSehirDialog> {
+  late List<String> _tempSecim;
+  final _aramaCtrl = TextEditingController();
+  late List<String> _filtreli;
+
+  @override
+  void initState() {
+    super.initState();
+    _tempSecim = List<String>.from(widget.baslangicSecim);
+    _filtreli  = widget.secenekler;
+  }
+
+  @override
+  void dispose() {
+    _aramaCtrl.dispose();
+    super.dispose();
+  }
+
+  void _filtrele(String q) {
+    setState(() {
+      _filtreli = q.isEmpty
+          ? widget.secenekler
+          : widget.secenekler
+              .where((s) => s.toLowerCase().contains(q.toLowerCase()))
+              .toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+            child: Text(
+              "Türkiye'de hangi şehirlere\nseyahat ediyorsun?",
+              style: GoogleFonts.dmSans(
+                  fontSize: 15, fontWeight: FontWeight.w700),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: _AramaAlani(
+              ctrl: _aramaCtrl,
+              onChanged: _filtrele,
+            ),
+          ),
+          const SizedBox(height: 4),
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.38,
+            ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _filtreli.length,
+              itemBuilder: (ctx, i) {
+                final sehir = _filtreli[i];
+                final secili = _tempSecim.contains(sehir);
+                return CheckboxListTile(
+                  value: secili,
+                  title: Text(sehir,
+                      style: GoogleFonts.dmSans(fontSize: 14)),
+                  activeColor: AppColors.red,
+                  checkColor: Colors.white,
+                  dense: true,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  onChanged: (val) => setState(() {
+                    if (val == true) {
+                      _tempSecim.add(sehir);
+                    } else {
+                      _tempSecim.remove(sehir);
+                    }
+                  }),
+                );
+              },
+            ),
+          ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.divider),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                    ),
+                    child: Text('Vazgeç',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 14,
+                            color: AppColors.textSecondary)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      widget.onTamam(List<String>.from(_tempSecim));
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.red,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                    ),
+                    child: Text('Tamam',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Ortak Arama Alanı ────────────────────────────────────────────────────────
+
+class _AramaAlani extends StatelessWidget {
+  final TextEditingController ctrl;
+  final ValueChanged<String> onChanged;
+
+  const _AramaAlani({required this.ctrl, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: ctrl,
+      onChanged: onChanged,
+      style: GoogleFonts.dmSans(fontSize: 14),
+      decoration: InputDecoration(
+        hintText: 'Ara...',
+        hintStyle:
+            GoogleFonts.dmSans(color: AppColors.textHint, fontSize: 14),
+        prefixIcon: const Icon(Icons.search,
+            color: AppColors.textSecondary, size: 20),
+        suffixIcon: ctrl.text.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.close,
+                    size: 16, color: AppColors.textSecondary),
+                onPressed: () => onChanged(''),
+              )
+            : null,
+        filled: true,
+        fillColor: AppColors.surface,
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: AppColors.divider)),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: AppColors.divider)),
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide:
+                const BorderSide(color: AppColors.primary, width: 1.5)),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       ),
     );
   }
