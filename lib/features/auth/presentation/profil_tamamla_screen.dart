@@ -388,7 +388,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: Center(
-              child: Text('${_adim + 1}/$_toplamAdim',
+              child: Text('${_gosterimAdim + 1}/$_toplamAdim',
                   style: _sf(
                       fontSize: 13, color: AppColors.textSecondary)),
             ),
@@ -404,7 +404,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
                   height: 3,
-                  color: i <= _adim ? AppColors.red : AppColors.divider,
+                  color: i <= _gosterimAdim ? AppColors.red : AppColors.divider,
                 ),
               ),
             ),
@@ -418,6 +418,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
                 _buildAdim2(),
                 _buildAdim3(),
                 _buildAdim4(),
+                _buildAdim5(),
               ],
             ),
           ),
@@ -461,14 +462,14 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            _adim == _toplamAdim - 1
+                            _gosterimAdim == _toplamAdim - 1
                                 ? 'Tamamla'
                                 : 'Devam Et',
                             style: _sf(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700),
                           ),
-                          if (_adim < _toplamAdim - 1) ...[
+                          if (_gosterimAdim < _toplamAdim - 1) ...[
                             const SizedBox(width: 8),
                             const Icon(Icons.arrow_forward, size: 18),
                           ],
@@ -940,8 +941,6 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
               aciklama: "Türkiye'de hangi şehirde ikamet ediyorsun?",
             ),
             const SizedBox(height: 8),
-
-            // Şehir seçimi
             ProfilBolum(
               baslik: "Türkiye'de hangi şehirde ikamet ediyorsun?",
               ikon: Icons.location_on_outlined,
@@ -955,7 +954,27 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
                 onTemizle: () => setState(() => _bulunduguSehir = ''),
               ),
             ),
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
+    );
+  }
 
+  // ── Adım 3: İlgi Alanları (sadece istekçiler) ────────────────────────────────
+
+  Widget _buildAdim3() {
+    if (_tasiyiciMi) return const SizedBox.shrink();
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            const ProfilAdimHeader(
+              ikon: Icons.interests_outlined,
+              baslik: 'İlgi Alanların',
+              aciklama: 'Burada vereceğin bilgiler uygulamayı senin için özelleştirmemize yarar.',
+            ),
             const SizedBox(height: 8),
 
             // İlgi kategorileri
@@ -1008,9 +1027,9 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
     );
   }
 
-  // ── Adım 3: İletişim ─────────────────────────────────────────────────────────
+  // ── Adım 4: İletişim ─────────────────────────────────────────────────────────
 
-  Widget _buildAdim3() {
+  Widget _buildAdim4() {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: SingleChildScrollView(
@@ -1124,9 +1143,9 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
     );
   }
 
-  // ── Adım 4: Hakkında ─────────────────────────────────────────────────────────
+  // ── Adım 5: Hakkında ─────────────────────────────────────────────────────────
 
-  Widget _buildAdim4() {
+  Widget _buildAdim5() {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: SingleChildScrollView(
