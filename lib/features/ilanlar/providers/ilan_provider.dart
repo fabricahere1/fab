@@ -76,7 +76,8 @@ class IstekIlanlar extends _$IstekIlanlar {
         yukleniyor: false,
       );
       if (sonuc.ilanlar.isNotEmpty) {
-        _arkaGuncelleIstekIlanlar();
+        // Resimler yüklensin diye 8 saniye bekle, sonra arka planda güncelle
+        Future.delayed(const Duration(seconds: 8), _arkaGuncelleIstekIlanlar);
       }
     } catch (e) {
       debugPrint('İstek ilanları yükleme hatası: $e');
@@ -93,11 +94,19 @@ class IstekIlanlar extends _$IstekIlanlar {
     try {
       final sonuc = await _repo.istekIlanlariniGetirSunucu();
       if (!state.yukleniyor) {
-        state = state.copyWith(
-          ilanlar: sonuc.ilanlar,
-          sonTarih: sonuc.sonTarih,
-          dahaFazlaVar: !sonuc.bitti,
-        );
+        // Sadece gerçekten değişiklik varsa state'i güncelle
+        final mevcutIdler = state.ilanlar.map((i) => i.id).toSet();
+        final yeniIdler = sonuc.ilanlar.map((i) => i.id).toSet();
+        final degisiklikVar =
+            mevcutIdler.difference(yeniIdler).isNotEmpty ||
+            yeniIdler.difference(mevcutIdler).isNotEmpty;
+        if (degisiklikVar) {
+          state = state.copyWith(
+            ilanlar: sonuc.ilanlar,
+            sonTarih: sonuc.sonTarih,
+            dahaFazlaVar: !sonuc.bitti,
+          );
+        }
       }
     } catch (_) {}
   }
