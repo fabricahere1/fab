@@ -275,7 +275,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
         'yasadigiUlke':        yasadigiUlke,
         'geldigiSehirler':     geldigiSehirler,
         'bulunduguSehir':      bulunduguSehir,
-        'dutyFreeIlgileniyor': _tasiyiciMi ? (_dutyFreeIlgileniyor ?? false) : null,
+        'dutyFreeIlgileniyor': _dutyFreeIlgileniyor,
         'teslimatTercihi':     _tasiyiciMi ? (_teslimatTercihi ?? 'ikisi_de') : null,
         'ilgiKategorileri':    _ilgiKategorileri,
         'kadinUstBeden':       _kadinUstBeden,
@@ -938,7 +938,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
             const ProfilAdimHeader(
               ikon: Icons.location_on_outlined,
               baslik: 'Konum bilgisi',
-              aciklama: "Türkiye'de hangi şehirde ikamet ediyorsun?",
+              aciklama: 'Konumunu paylaşarak, şehrine gelecek yurt dışı yolcularının ilanlarını Keşfet sayfanda görebilirsin.',
             ),
             const SizedBox(height: 8),
             ProfilBolum(
@@ -1019,6 +1019,18 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
               const SizedBox(height: 8),
               _buildBedenBilgileri(),
             ],
+
+            // Duty Free sorusu
+            const SizedBox(height: 8),
+            ProfilBolum(
+              baslik: 'Duty Free alışverişi ile ilgileniyor musun?',
+              ikon: Icons.shopping_bag_outlined,
+              child: EvetHayirSecici(
+                deger: _dutyFreeIlgileniyor,
+                onSecildi: (v) =>
+                    setState(() => _dutyFreeIlgileniyor = v),
+              ),
+            ),
 
             const SizedBox(height: 40),
           ],

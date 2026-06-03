@@ -15,7 +15,8 @@
       "Bash(Get-ChildItem -Path \"C:\\\\src\\\\iste_v3\" -Recurse -Filter \"*.dart\")",
       "Bash(Get-ChildItem -Path \"C:\\\\src\\\\iste_v3\" -Recurse -Include \"*.dart\")",
       "Bash(Select-Object -ExpandProperty FullName)",
-      "Bash(Sort-Object)"
+      "Bash(Sort-Object)",
+      "Bash(git checkout *)"
     ]
   }
 }
