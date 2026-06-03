@@ -113,10 +113,11 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
   final _pageCtrl      = PageController();
   int _adim            = 0;
 
-  // Taşıyıcılar 4 adım (adım 2 atlanır), istekçiler 5 adım
-  int get _toplamAdim   => _tasiyiciMi ? 4 : 5;
-  // Görüntüleme adımı — taşıyıcı için adım 3+ bir geri alınır
-  int get _gosterimAdim => (_tasiyiciMi && _adim >= 3) ? _adim - 1 : _adim;
+  // Sadece pure taşıyıcı 4 adım (adım 2 atlanır); istek ve her_ikisi 5 adım
+  int get _toplamAdim   => _kullaniciTipi == 'tasiyici' ? 4 : 5;
+  // Görüntüleme adımı — sadece pure taşıyıcı için adım 3+ bir geri alınır
+  int get _gosterimAdim =>
+      (_kullaniciTipi == 'tasiyici' && _adim >= 3) ? _adim - 1 : _adim;
 
   // Form state
   String? _kullaniciTipi;
@@ -202,7 +203,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
           setState(() => _hata = 'Teslimat tercihini seçin.');
           return;
         }
-        if (_dutyFreeIlgileniyor == null) {
+        if (_kullaniciTipi == 'tasiyici' && _dutyFreeIlgileniyor == null) {
           setState(() => _hata = 'Duty Free tercihini belirtin.');
           return;
         }
@@ -213,8 +214,9 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
       }
     }
     final nextAdim = _adim + 1;
-    // Adım 2 (ilgi/beden) taşıyıcılar için atlanır
-    final navigateToAdim = (nextAdim == 2 && _tasiyiciMi) ? 3 : nextAdim;
+    // Adım 2 (ilgi/beden) sadece pure taşıyıcı için atlanır
+    final navigateToAdim =
+        (nextAdim == 2 && _kullaniciTipi == 'tasiyici') ? 3 : nextAdim;
 
     if (navigateToAdim <= 4) {
       setState(() => _adim = navigateToAdim);
@@ -229,8 +231,9 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
   void _geri() {
     if (_adim > 0) {
       final prevAdim = _adim - 1;
-      // Adım 2 (ilgi/beden) taşıyıcılar için atlanır
-      final navigateToAdim = (prevAdim == 2 && _tasiyiciMi) ? 1 : prevAdim;
+      // Adım 2 (ilgi/beden) sadece pure taşıyıcı için atlanır
+      final navigateToAdim =
+          (prevAdim == 2 && _kullaniciTipi == 'tasiyici') ? 1 : prevAdim;
       setState(() {
         _adim = navigateToAdim;
         _hata = '';
@@ -706,8 +709,8 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
               ),
             ],
 
-            // Duty Free sorusu
-            if (dutyFreeGoster) ...[
+            // Duty Free sorusu — her_ikisi için 3/5'te gösterildiğinden burada sadece pure taşıyıcı
+            if (dutyFreeGoster && _kullaniciTipi == 'tasiyici') ...[
               const SizedBox(height: 8),
               ProfilBolum(
                 baslik: 'Duty Free alışverişi ile ilgileniyor musun?',
@@ -964,7 +967,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
   // ── Adım 3: İlgi Alanları (sadece istekçiler) ────────────────────────────────
 
   Widget _buildAdim3() {
-    if (_tasiyiciMi) return const SizedBox.shrink();
+    if (_kullaniciTipi == 'tasiyici') return const SizedBox.shrink();
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: SingleChildScrollView(
