@@ -135,6 +135,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
   final List<String> _seyahatEdilenSehirler = [];
   bool?        _dutyFreeIlgileniyor;
   String?      _teslimatTercihi;
+  String?      _istekTeslimatTercihi;
 
   // İstek adım-2: ilgi kategorileri + beden
   final List<String> _ilgiKategorileri = [];
@@ -212,6 +213,10 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
         setState(() => _hata = 'Bulunduğunuz şehri girin.');
         return;
       }
+      if (_istekMi && !_tasiyiciMi && _istekTeslimatTercihi == null) {
+        setState(() => _hata = 'Teslimat tercihini seçin.');
+        return;
+      }
     }
     final nextAdim = _adim + 1;
     // Adım 2 (ilgi/beden) sadece pure taşıyıcı için atlanır
@@ -280,6 +285,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
         'bulunduguSehir':      bulunduguSehir,
         'dutyFreeIlgileniyor': _dutyFreeIlgileniyor,
         'teslimatTercihi':     _tasiyiciMi ? (_teslimatTercihi ?? 'ikisi_de') : null,
+        'istekTeslimatTercihi': (_istekMi && !_tasiyiciMi) ? _istekTeslimatTercihi : null,
         'ilgiKategorileri':    _ilgiKategorileri,
         'kadinUstBeden':       _kadinUstBeden,
         'kadinAltBeden':       _kadinAltBeden,
@@ -955,6 +961,58 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
                   secilen: _bulunduguSehir,
                 ),
                 onTemizle: () => setState(() => _bulunduguSehir = ''),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ProfilBolum(
+              baslik: 'İstediğin ürünlerin sana nasıl teslim edilmesini istersin?',
+              ikon: Icons.local_shipping_outlined,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: _istekTeslimatTercihi != null
+                        ? AppColors.primary
+                        : AppColors.divider,
+                    width: _istekTeslimatTercihi != null ? 1.5 : 1,
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _istekTeslimatTercihi,
+                    hint: Text(
+                      'Seçiniz...',
+                      style: _sf(color: AppColors.textHint, fontSize: 14),
+                    ),
+                    isExpanded: true,
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: AppColors.textSecondary,
+                    ),
+                    style: _sf(fontSize: 14, color: AppColors.textPrimary),
+                    items: [
+                      DropdownMenuItem(
+                        value: 'kargo',
+                        child: Text('Kargo ile teslimat',
+                            style: _sf(fontSize: 14, color: AppColors.textPrimary)),
+                      ),
+                      DropdownMenuItem(
+                        value: 'elden',
+                        child: Text('Elden teslimat',
+                            style: _sf(fontSize: 14, color: AppColors.textPrimary)),
+                      ),
+                      DropdownMenuItem(
+                        value: 'ikisi_de',
+                        child: Text('İkisi de olsun',
+                            style: _sf(fontSize: 14, color: AppColors.textPrimary)),
+                      ),
+                    ],
+                    onChanged: (v) =>
+                        setState(() => _istekTeslimatTercihi = v),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 40),

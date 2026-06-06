@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../domain/ilan_model.dart';
 import '../providers/ilan_provider.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../../../shared/utils/app_snackbar.dart';
@@ -156,6 +157,7 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
             : '')
         : _beden;
 
+    final profilSnapshot = await ref.read(kullaniciBilgiProvider(user.uid).future);
     final ilan = IlanModel(
       id:           '',
       tip:          IlanTip.tasiyici,
@@ -172,6 +174,8 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
       tarih:        _seyahatTarihi,
       cinsiyet:     _cinsiyet,
       beden:        bedenDeger,
+      kullaniciPuan: profilSnapshot?.ortalamaPuan ?? 0.0,
+      sahipDutyFree: profilSnapshot?.dutyFreeIlgileniyor ?? false,
     );
 
     final id = await ref.read(ilanOlusturProvider.notifier).olustur(

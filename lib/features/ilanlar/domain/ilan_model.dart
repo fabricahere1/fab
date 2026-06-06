@@ -50,6 +50,9 @@ abstract class IlanModel with _$IlanModel {
     @Default([]) List<String> kategoriYolu,
     @Default('') String cinsiyet,
     @Default('') String beden,
+    // Denormalized owner attributes for Sana Özel filtering
+    String? sahipIstekTeslimatTercihi,
+    @Default(false) bool sahipDutyFree,
   }) = _IlanModel;
 
   factory IlanModel.fromFirestore(DocumentSnapshot doc) {
@@ -80,6 +83,8 @@ abstract class IlanModel with _$IlanModel {
       kategoriYolu:    List<String>.from(data['kategoriYolu'] ?? []),
       cinsiyet:        data['cinsiyet']      as String? ?? '',
       beden:           data['beden']         as String? ?? '',
+      sahipIstekTeslimatTercihi: data['sahipIstekTeslimatTercihi'] as String?,
+      sahipDutyFree:   data['sahipDutyFree'] as bool? ?? false,
     );
   }
 
@@ -120,6 +125,8 @@ extension IlanModelX on IlanModel {
     'kategoriYolu':    kategoriYolu,
     if (cinsiyet.isNotEmpty) 'cinsiyet': cinsiyet,
     if (beden.isNotEmpty)    'beden':    beden,
+    if (sahipIstekTeslimatTercihi != null) 'sahipIstekTeslimatTercihi': sahipIstekTeslimatTercihi,
+    if (sahipDutyFree) 'sahipDutyFree': sahipDutyFree,
     if (tarih != null) 'tarih': Timestamp.fromDate(tarih!),
     'olusturmaTarihi': FieldValue.serverTimestamp(),
     if (resimUrl.isNotEmpty)      'resimUrl':      resimUrl,

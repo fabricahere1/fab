@@ -16,7 +16,14 @@
       "Bash(Get-ChildItem -Path \"C:\\\\src\\\\iste_v3\" -Recurse -Include \"*.dart\")",
       "Bash(Select-Object -ExpandProperty FullName)",
       "Bash(Sort-Object)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(git reset *)",
+      "Bash(git push *)",
+      "Bash(python3 *)",
+      "PowerShell(python --version; python3 --version)",
+      "PowerShell(Get-Command *)",
+      "PowerShell(winget install *)",
+      "Bash(dart run *)"
     ]
   }
 }

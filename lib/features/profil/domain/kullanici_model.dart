@@ -24,6 +24,17 @@ abstract class KullaniciModel with _$KullaniciModel {
     @Default('') String sehir,
     @Default(false) bool telefonGizli,
     @Default([]) List<String> engellenenler,
+    // Kayıt ekranından gelen tercihler
+    @Default([]) List<String> ilgiKategorileri,
+    bool? dutyFreeIlgileniyor,
+    String? istekTeslimatTercihi,
+    @Default([]) List<String> kadinUstBeden,
+    @Default([]) List<String> kadinAltBeden,
+    @Default([]) List<String> erkekUstBeden,
+    @Default([]) List<String> erkekAltBeden,
+    @Default([]) List<String> kadinAyakkabi,
+    @Default([]) List<String> erkekAyakkabi,
+    @Default([]) List<String> cocukAyakkabi,
   }) = _KullaniciModel;
  
   factory KullaniciModel.fromFirestore(DocumentSnapshot doc) {
@@ -46,6 +57,16 @@ abstract class KullaniciModel with _$KullaniciModel {
       sehir:                d['sehir']                as String? ?? '',
       telefonGizli:         d['telefonGizli']         as bool?   ?? false,
       engellenenler:        List<String>.from(d['engellenenler'] ?? []),
+      ilgiKategorileri:     List<String>.from(d['ilgiKategorileri'] ?? []),
+      dutyFreeIlgileniyor:  d['dutyFreeIlgileniyor'] as bool?,
+      istekTeslimatTercihi: d['istekTeslimatTercihi'] as String?,
+      kadinUstBeden:        List<String>.from(d['kadinUstBeden'] ?? []),
+      kadinAltBeden:        List<String>.from(d['kadinAltBeden'] ?? []),
+      erkekUstBeden:        List<String>.from(d['erkekUstBeden'] ?? []),
+      erkekAltBeden:        List<String>.from(d['erkekAltBeden'] ?? []),
+      kadinAyakkabi:        List<String>.from(d['kadinAyakkabi'] ?? []),
+      erkekAyakkabi:        List<String>.from(d['erkekAyakkabi'] ?? []),
+      cocukAyakkabi:        List<String>.from(d['cocukAyakkabi'] ?? []),
     );
   }
  
@@ -71,6 +92,16 @@ extension KullaniciModelX on KullaniciModel {
     'sehir':               sehir,
     'telefonGizli':        telefonGizli,
     'engellenenler':       engellenenler,
+    'ilgiKategorileri':    ilgiKategorileri,
+    if (dutyFreeIlgileniyor != null) 'dutyFreeIlgileniyor': dutyFreeIlgileniyor,
+    if (istekTeslimatTercihi != null) 'istekTeslimatTercihi': istekTeslimatTercihi,
+    if (kadinUstBeden.isNotEmpty) 'kadinUstBeden': kadinUstBeden,
+    if (kadinAltBeden.isNotEmpty) 'kadinAltBeden': kadinAltBeden,
+    if (erkekUstBeden.isNotEmpty) 'erkekUstBeden': erkekUstBeden,
+    if (erkekAltBeden.isNotEmpty) 'erkekAltBeden': erkekAltBeden,
+    if (kadinAyakkabi.isNotEmpty) 'kadinAyakkabi': kadinAyakkabi,
+    if (erkekAyakkabi.isNotEmpty) 'erkekAyakkabi': erkekAyakkabi,
+    if (cocukAyakkabi.isNotEmpty) 'cocukAyakkabi': cocukAyakkabi,
   };
  
   bool get tasiyiciMi =>
