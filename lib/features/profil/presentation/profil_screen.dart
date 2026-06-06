@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../domain/kullanici_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -129,6 +130,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
               children: [
                 AvatarWidget(
                   isim: user?.displayName ?? user?.email ?? '',
+                  fotoUrl: benimProfilAsync.value?.fotoUrl ?? user?.photoURL,
                   radius: 36,
                 ),
                 const SizedBox(width: 16),
@@ -229,6 +231,116 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                 ),
               ],
             ),
+          ),
+
+          // ── Güven Skoru + Rozetler + İstatistikler ───
+          benimProfilAsync.when(
+            data: (profil) {
+              if (profil == null) return const SizedBox.shrink();
+              return Column(
+                children: [
+                  const SizedBox(height: 12),
+                  // İstatistikler
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+                    ),
+                    child: Row(
+                      children: [
+                        _StatKutu(sayi: profil.takipciSayisi.toString(), label: 'Takipçi'),
+                        _StatAyrac(),
+                        _StatKutu(sayi: profil.takipSayisi.toString(), label: 'Takip'),
+                        _StatAyrac(),
+                        _StatKutu(sayi: profil.degerlendirmeSayisi.toString(), label: 'Değerlendirme'),
+                      ],
+                    ),
+                  ),
+
+                  if (profil.guvenSkoru > 0) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Güven Skoru', style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                              Text('${profil.guvenSkoru}/100', style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.red)),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: profil.guvenSkoru / 100,
+                              backgroundColor: const Color(0xFFF0F0F0),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                profil.guvenSkoru >= 80 ? const Color(0xFF4CAF50)
+                                    : profil.guvenSkoru >= 60 ? const Color(0xFF2196F3)
+                                    : profil.guvenSkoru >= 40 ? const Color(0xFFFFA726)
+                                    : AppColors.red,
+                              ),
+                              minHeight: 8,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(profil.guvenSkoruEtiketi, style: GoogleFonts.dmSans(fontSize: 12, color: AppColors.textSecondary)),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  if (profil.rozetler.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Rozetler', style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: profil.rozetler.map((rozet) => Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF8E1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: const Color(0xFFFFE082), width: 0.5),
+                              ),
+                              child: Text(
+                                '${profil.rozetEmoji(rozet)} ${profil.rozetAdi(rozet)}',
+                                style: GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w500, color: const Color(0xFF633806)),
+                              ),
+                            )).toList(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              );
+            },
+            loading: () => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
           ),
 
           // ── Hesabım ───────────────────────────────────
@@ -668,4 +780,35 @@ class _BekleyenKarti extends ConsumerWidget {
       },
     );
   }
+}
+
+// ── Stat widget'ları ──────────────────────────────────────────────────────────
+
+class _StatKutu extends StatelessWidget {
+  final String sayi;
+  final String label;
+  const _StatKutu({required this.sayi, required this.label});
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      child: Column(
+        children: [
+          Text(sayi, style: GoogleFonts.dmSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+          const SizedBox(height: 2),
+          Text(label, style: GoogleFonts.dmSans(fontSize: 11, color: AppColors.textSecondary)),
+        ],
+      ),
+    ),
+  );
+}
+
+class _StatAyrac extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 0.5,
+    height: 40,
+    color: AppColors.divider,
+  );
 }

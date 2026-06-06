@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
- 
+
 part 'kullanici_model.freezed.dart';
 part 'kullanici_model.g.dart';
- 
+
 @freezed
 abstract class KullaniciModel with _$KullaniciModel {
   const factory KullaniciModel({
@@ -24,8 +24,12 @@ abstract class KullaniciModel with _$KullaniciModel {
     @Default('') String sehir,
     @Default(false) bool telefonGizli,
     @Default([]) List<String> engellenenler,
+    @Default(0) int guvenSkoru,
+    @Default([]) List<String> rozetler,
+    @Default(0) int takipciSayisi,
+    @Default(0) int takipSayisi,
   }) = _KullaniciModel;
- 
+
   factory KullaniciModel.fromFirestore(DocumentSnapshot doc) {
     final d = doc.data() as Map<String, dynamic>;
     return KullaniciModel(
@@ -46,13 +50,17 @@ abstract class KullaniciModel with _$KullaniciModel {
       sehir:                d['sehir']                as String? ?? '',
       telefonGizli:         d['telefonGizli']         as bool?   ?? false,
       engellenenler:        List<String>.from(d['engellenenler'] ?? []),
+      guvenSkoru:           ((d['guvenSkoru']         as num?)?.toInt()) ?? 0,
+      rozetler:             List<String>.from(d['rozetler'] ?? []),
+      takipciSayisi:        ((d['takipciSayisi']      as num?)?.toInt()) ?? 0,
+      takipSayisi:          ((d['takipSayisi']        as num?)?.toInt()) ?? 0,
     );
   }
- 
+
   factory KullaniciModel.fromJson(Map<String, dynamic> json) =>
       _$KullaniciModelFromJson(json);
 }
- 
+
 extension KullaniciModelX on KullaniciModel {
   Map<String, dynamic> toFirestore() => {
     'adSoyad':             adSoyad,
@@ -72,10 +80,41 @@ extension KullaniciModelX on KullaniciModel {
     'telefonGizli':        telefonGizli,
     'engellenenler':       engellenenler,
   };
- 
+
   bool get tasiyiciMi =>
       kullaniciTipi == 'tasiyici' || kullaniciTipi == 'her_ikisi';
- 
+
   bool get istekMi =>
       kullaniciTipi == 'istek' || kullaniciTipi == 'her_ikisi';
+
+  String get guvenSkoruEtiketi {
+    if (guvenSkoru >= 80) return 'Çok Güvenilir';
+    if (guvenSkoru >= 60) return 'Güvenilir';
+    if (guvenSkoru >= 40) return 'Orta';
+    return 'Yeni';
+  }
+
+  String rozetAdi(String rozet) {
+    const adilar = {
+      'ilk_degerlendirme': 'İlk Değerlendirme',
+      'deneyimli': 'Deneyimli',
+      'uzman': 'Uzman',
+      'efsane': 'Efsane',
+      'super_tasiyici': 'Süper Taşıyıcı',
+      'onayli_istekci': 'Onaylı İstekçi',
+    };
+    return adilar[rozet] ?? rozet;
+  }
+
+  String rozetEmoji(String rozet) {
+    const emojiler = {
+      'ilk_degerlendirme': '⭐',
+      'deneyimli': '🎯',
+      'uzman': '🏅',
+      'efsane': '👑',
+      'super_tasiyici': '🚀',
+      'onayli_istekci': '✅',
+    };
+    return emojiler[rozet] ?? '🏆';
+  }
 }

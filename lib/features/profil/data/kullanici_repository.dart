@@ -146,4 +146,58 @@ class KullaniciRepository {
       'tarih':         FieldValue.serverTimestamp(),
     });
   }
+
+  // ── Takip sistemi ──────────────────────────────────────────────────────────
+
+  Future<void> takipEt({required String takipciId, required String takipEdilenId}) async {
+    final takipId = '${takipciId}_$takipEdilenId';
+    final takipRef = firestore.collection('takipler').doc(takipId);
+    await firestore.runTransaction((txn) async {
+      final snap = await txn.get(takipRef);
+      if (snap.exists) return;
+      txn.set(takipRef, {
+        'takipciId':     takipciId,
+        'takipEdilenId': takipEdilenId,
+        'tarih':         FieldValue.serverTimestamp(),
+      });
+      txn.update(_col.doc(takipEdilenId), {'takipciSayisi': FieldValue.increment(1)});
+      txn.update(_col.doc(takipciId), {'takipSayisi': FieldValue.increment(1)});
+    });
+  }
+
+  Future<void> takipiBirak({required String takipciId, required String takipEdilenId}) async {
+    final takipId = '${takipciId}_$takipEdilenId';
+    final takipRef = firestore.collection('takipler').doc(takipId);
+    await firestore.runTransaction((txn) async {
+      final snap = await txn.get(takipRef);
+      if (!snap.exists) return;
+      txn.delete(takipRef);
+      txn.update(_col.doc(takipEdilenId), {'takipciSayisi': FieldValue.increment(-1)});
+      txn.update(_col.doc(takipciId), {'takipSayisi': FieldValue.increment(-1)});
+    });
+  }
+
+  Stream<bool> takipEdiyorMu({required String takipciId, required String takipEdilenId}) {
+    return firestore
+        .collection('takipler')
+        .doc('${takipciId}_$takipEdilenId')
+        .snapshots()
+        .map((snap) => snap.exists);
+  }
+
+  Stream<List<String>> takipciIdleriStream(String kullaniciId) {
+    return firestore
+        .collection('takipler')
+        .where('takipEdilenId', isEqualTo: kullaniciId)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()['takipciId'] as String).toList());
+  }
+
+  Stream<List<String>> takipEdilenIdleriStream(String kullaniciId) {
+    return firestore
+        .collection('takipler')
+        .where('takipciId', isEqualTo: kullaniciId)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()['takipEdilenId'] as String).toList());
+  }
 }

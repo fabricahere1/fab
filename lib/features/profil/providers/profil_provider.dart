@@ -161,3 +161,38 @@ Stream<List<IlanModel>> ilanlarim(Ref ref) {
 
   return ref.watch(ilanRepositoryProvider).kullaniciIlanlarStream(uid);
 }
+
+// ── Takip provider'ları ───────────────────────────────────────────────────────
+
+@riverpod
+Stream<bool> takipEdiyorMu(Ref ref, String takipEdilenId) {
+  final uid = ref.watch(currentUserProvider)?.uid;
+  if (uid == null) return Stream.value(false);
+  return ref.watch(kullaniciRepositoryProvider).takipEdiyorMu(
+    takipciId: uid,
+    takipEdilenId: takipEdilenId,
+  );
+}
+
+@riverpod
+class TakipIslemleri extends _$TakipIslemleri {
+  late final KullaniciRepository _repo;
+
+  @override
+  AsyncValue<void> build() {
+    _repo = ref.read(kullaniciRepositoryProvider);
+    return const AsyncData(null);
+  }
+
+  Future<void> takipEt(String takipEdilenId) async {
+    final uid = ref.read(currentUserProvider)?.uid;
+    if (uid == null) return;
+    await _repo.takipEt(takipciId: uid, takipEdilenId: takipEdilenId);
+  }
+
+  Future<void> takipiBirak(String takipEdilenId) async {
+    final uid = ref.read(currentUserProvider)?.uid;
+    if (uid == null) return;
+    await _repo.takipiBirak(takipciId: uid, takipEdilenId: takipEdilenId);
+  }
+}

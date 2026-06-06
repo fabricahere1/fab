@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$KullaniciModel {
 
- String get id; String get adSoyad; String? get fotoUrl; String? get telefon; String? get email; String? get fcmToken; bool get profilTamamlandi; double get ortalamaPuan; int get degerlendirmeSayisi; String get kullaniciTipi; String get yasadigiUlke; String get bulunduguSehir; List<String> get geldigiSehirler; String get hakkinda; String get sehir; bool get telefonGizli; List<String> get engellenenler;
+ String get id; String get adSoyad; String? get fotoUrl; String? get telefon; String? get email; String? get fcmToken; bool get profilTamamlandi; double get ortalamaPuan; int get degerlendirmeSayisi; String get kullaniciTipi; String get yasadigiUlke; String get bulunduguSehir; List<String> get geldigiSehirler; String get hakkinda; String get sehir; bool get telefonGizli; List<String> get engellenenler; int get guvenSkoru; List<String> get rozetler; int get takipciSayisi; int get takipSayisi;
 /// Create a copy of KullaniciModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $KullaniciModelCopyWith<KullaniciModel> get copyWith => _$KullaniciModelCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is KullaniciModel&&(identical(other.id, id) || other.id == id)&&(identical(other.adSoyad, adSoyad) || other.adSoyad == adSoyad)&&(identical(other.fotoUrl, fotoUrl) || other.fotoUrl == fotoUrl)&&(identical(other.telefon, telefon) || other.telefon == telefon)&&(identical(other.email, email) || other.email == email)&&(identical(other.fcmToken, fcmToken) || other.fcmToken == fcmToken)&&(identical(other.profilTamamlandi, profilTamamlandi) || other.profilTamamlandi == profilTamamlandi)&&(identical(other.ortalamaPuan, ortalamaPuan) || other.ortalamaPuan == ortalamaPuan)&&(identical(other.degerlendirmeSayisi, degerlendirmeSayisi) || other.degerlendirmeSayisi == degerlendirmeSayisi)&&(identical(other.kullaniciTipi, kullaniciTipi) || other.kullaniciTipi == kullaniciTipi)&&(identical(other.yasadigiUlke, yasadigiUlke) || other.yasadigiUlke == yasadigiUlke)&&(identical(other.bulunduguSehir, bulunduguSehir) || other.bulunduguSehir == bulunduguSehir)&&const DeepCollectionEquality().equals(other.geldigiSehirler, geldigiSehirler)&&(identical(other.hakkinda, hakkinda) || other.hakkinda == hakkinda)&&(identical(other.sehir, sehir) || other.sehir == sehir)&&(identical(other.telefonGizli, telefonGizli) || other.telefonGizli == telefonGizli)&&const DeepCollectionEquality().equals(other.engellenenler, engellenenler));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is KullaniciModel&&(identical(other.id, id) || other.id == id)&&(identical(other.adSoyad, adSoyad) || other.adSoyad == adSoyad)&&(identical(other.fotoUrl, fotoUrl) || other.fotoUrl == fotoUrl)&&(identical(other.telefon, telefon) || other.telefon == telefon)&&(identical(other.email, email) || other.email == email)&&(identical(other.fcmToken, fcmToken) || other.fcmToken == fcmToken)&&(identical(other.profilTamamlandi, profilTamamlandi) || other.profilTamamlandi == profilTamamlandi)&&(identical(other.ortalamaPuan, ortalamaPuan) || other.ortalamaPuan == ortalamaPuan)&&(identical(other.degerlendirmeSayisi, degerlendirmeSayisi) || other.degerlendirmeSayisi == degerlendirmeSayisi)&&(identical(other.kullaniciTipi, kullaniciTipi) || other.kullaniciTipi == kullaniciTipi)&&(identical(other.yasadigiUlke, yasadigiUlke) || other.yasadigiUlke == yasadigiUlke)&&(identical(other.bulunduguSehir, bulunduguSehir) || other.bulunduguSehir == bulunduguSehir)&&const DeepCollectionEquality().equals(other.geldigiSehirler, geldigiSehirler)&&(identical(other.hakkinda, hakkinda) || other.hakkinda == hakkinda)&&(identical(other.sehir, sehir) || other.sehir == sehir)&&(identical(other.telefonGizli, telefonGizli) || other.telefonGizli == telefonGizli)&&const DeepCollectionEquality().equals(other.engellenenler, engellenenler)&&(identical(other.guvenSkoru, guvenSkoru) || other.guvenSkoru == guvenSkoru)&&const DeepCollectionEquality().equals(other.rozetler, rozetler)&&(identical(other.takipciSayisi, takipciSayisi) || other.takipciSayisi == takipciSayisi)&&(identical(other.takipSayisi, takipSayisi) || other.takipSayisi == takipSayisi));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,adSoyad,fotoUrl,telefon,email,fcmToken,profilTamamlandi,ortalamaPuan,degerlendirmeSayisi,kullaniciTipi,yasadigiUlke,bulunduguSehir,const DeepCollectionEquality().hash(geldigiSehirler),hakkinda,sehir,telefonGizli,const DeepCollectionEquality().hash(engellenenler));
+int get hashCode => Object.hashAll([runtimeType,id,adSoyad,fotoUrl,telefon,email,fcmToken,profilTamamlandi,ortalamaPuan,degerlendirmeSayisi,kullaniciTipi,yasadigiUlke,bulunduguSehir,const DeepCollectionEquality().hash(geldigiSehirler),hakkinda,sehir,telefonGizli,const DeepCollectionEquality().hash(engellenenler),guvenSkoru,const DeepCollectionEquality().hash(rozetler),takipciSayisi,takipSayisi]);
 
 @override
 String toString() {
-  return 'KullaniciModel(id: $id, adSoyad: $adSoyad, fotoUrl: $fotoUrl, telefon: $telefon, email: $email, fcmToken: $fcmToken, profilTamamlandi: $profilTamamlandi, ortalamaPuan: $ortalamaPuan, degerlendirmeSayisi: $degerlendirmeSayisi, kullaniciTipi: $kullaniciTipi, yasadigiUlke: $yasadigiUlke, bulunduguSehir: $bulunduguSehir, geldigiSehirler: $geldigiSehirler, hakkinda: $hakkinda, sehir: $sehir, telefonGizli: $telefonGizli, engellenenler: $engellenenler)';
+  return 'KullaniciModel(id: $id, adSoyad: $adSoyad, fotoUrl: $fotoUrl, telefon: $telefon, email: $email, fcmToken: $fcmToken, profilTamamlandi: $profilTamamlandi, ortalamaPuan: $ortalamaPuan, degerlendirmeSayisi: $degerlendirmeSayisi, kullaniciTipi: $kullaniciTipi, yasadigiUlke: $yasadigiUlke, bulunduguSehir: $bulunduguSehir, geldigiSehirler: $geldigiSehirler, hakkinda: $hakkinda, sehir: $sehir, telefonGizli: $telefonGizli, engellenenler: $engellenenler, guvenSkoru: $guvenSkoru, rozetler: $rozetler, takipciSayisi: $takipciSayisi, takipSayisi: $takipSayisi)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $KullaniciModelCopyWith<$Res>  {
   factory $KullaniciModelCopyWith(KullaniciModel value, $Res Function(KullaniciModel) _then) = _$KullaniciModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String adSoyad, String? fotoUrl, String? telefon, String? email, String? fcmToken, bool profilTamamlandi, double ortalamaPuan, int degerlendirmeSayisi, String kullaniciTipi, String yasadigiUlke, String bulunduguSehir, List<String> geldigiSehirler, String hakkinda, String sehir, bool telefonGizli, List<String> engellenenler
+ String id, String adSoyad, String? fotoUrl, String? telefon, String? email, String? fcmToken, bool profilTamamlandi, double ortalamaPuan, int degerlendirmeSayisi, String kullaniciTipi, String yasadigiUlke, String bulunduguSehir, List<String> geldigiSehirler, String hakkinda, String sehir, bool telefonGizli, List<String> engellenenler, int guvenSkoru, List<String> rozetler, int takipciSayisi, int takipSayisi
 });
 
 
@@ -65,7 +65,7 @@ class _$KullaniciModelCopyWithImpl<$Res>
 
 /// Create a copy of KullaniciModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? adSoyad = null,Object? fotoUrl = freezed,Object? telefon = freezed,Object? email = freezed,Object? fcmToken = freezed,Object? profilTamamlandi = null,Object? ortalamaPuan = null,Object? degerlendirmeSayisi = null,Object? kullaniciTipi = null,Object? yasadigiUlke = null,Object? bulunduguSehir = null,Object? geldigiSehirler = null,Object? hakkinda = null,Object? sehir = null,Object? telefonGizli = null,Object? engellenenler = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? adSoyad = null,Object? fotoUrl = freezed,Object? telefon = freezed,Object? email = freezed,Object? fcmToken = freezed,Object? profilTamamlandi = null,Object? ortalamaPuan = null,Object? degerlendirmeSayisi = null,Object? kullaniciTipi = null,Object? yasadigiUlke = null,Object? bulunduguSehir = null,Object? geldigiSehirler = null,Object? hakkinda = null,Object? sehir = null,Object? telefonGizli = null,Object? engellenenler = null,Object? guvenSkoru = null,Object? rozetler = null,Object? takipciSayisi = null,Object? takipSayisi = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,adSoyad: null == adSoyad ? _self.adSoyad : adSoyad // ignore: cast_nullable_to_non_nullable
@@ -84,7 +84,11 @@ as List<String>,hakkinda: null == hakkinda ? _self.hakkinda : hakkinda // ignore
 as String,sehir: null == sehir ? _self.sehir : sehir // ignore: cast_nullable_to_non_nullable
 as String,telefonGizli: null == telefonGizli ? _self.telefonGizli : telefonGizli // ignore: cast_nullable_to_non_nullable
 as bool,engellenenler: null == engellenenler ? _self.engellenenler : engellenenler // ignore: cast_nullable_to_non_nullable
-as List<String>,
+as List<String>,guvenSkoru: null == guvenSkoru ? _self.guvenSkoru : guvenSkoru // ignore: cast_nullable_to_non_nullable
+as int,rozetler: null == rozetler ? _self.rozetler : rozetler // ignore: cast_nullable_to_non_nullable
+as List<String>,takipciSayisi: null == takipciSayisi ? _self.takipciSayisi : takipciSayisi // ignore: cast_nullable_to_non_nullable
+as int,takipSayisi: null == takipSayisi ? _self.takipSayisi : takipSayisi // ignore: cast_nullable_to_non_nullable
+as int,
   ));
 }
 
@@ -169,10 +173,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String adSoyad,  String? fotoUrl,  String? telefon,  String? email,  String? fcmToken,  bool profilTamamlandi,  double ortalamaPuan,  int degerlendirmeSayisi,  String kullaniciTipi,  String yasadigiUlke,  String bulunduguSehir,  List<String> geldigiSehirler,  String hakkinda,  String sehir,  bool telefonGizli,  List<String> engellenenler)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String adSoyad,  String? fotoUrl,  String? telefon,  String? email,  String? fcmToken,  bool profilTamamlandi,  double ortalamaPuan,  int degerlendirmeSayisi,  String kullaniciTipi,  String yasadigiUlke,  String bulunduguSehir,  List<String> geldigiSehirler,  String hakkinda,  String sehir,  bool telefonGizli,  List<String> engellenenler,  int guvenSkoru,  List<String> rozetler,  int takipciSayisi,  int takipSayisi)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _KullaniciModel() when $default != null:
-return $default(_that.id,_that.adSoyad,_that.fotoUrl,_that.telefon,_that.email,_that.fcmToken,_that.profilTamamlandi,_that.ortalamaPuan,_that.degerlendirmeSayisi,_that.kullaniciTipi,_that.yasadigiUlke,_that.bulunduguSehir,_that.geldigiSehirler,_that.hakkinda,_that.sehir,_that.telefonGizli,_that.engellenenler);case _:
+return $default(_that.id,_that.adSoyad,_that.fotoUrl,_that.telefon,_that.email,_that.fcmToken,_that.profilTamamlandi,_that.ortalamaPuan,_that.degerlendirmeSayisi,_that.kullaniciTipi,_that.yasadigiUlke,_that.bulunduguSehir,_that.geldigiSehirler,_that.hakkinda,_that.sehir,_that.telefonGizli,_that.engellenenler,_that.guvenSkoru,_that.rozetler,_that.takipciSayisi,_that.takipSayisi);case _:
   return orElse();
 
 }
@@ -190,10 +194,10 @@ return $default(_that.id,_that.adSoyad,_that.fotoUrl,_that.telefon,_that.email,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String adSoyad,  String? fotoUrl,  String? telefon,  String? email,  String? fcmToken,  bool profilTamamlandi,  double ortalamaPuan,  int degerlendirmeSayisi,  String kullaniciTipi,  String yasadigiUlke,  String bulunduguSehir,  List<String> geldigiSehirler,  String hakkinda,  String sehir,  bool telefonGizli,  List<String> engellenenler)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String adSoyad,  String? fotoUrl,  String? telefon,  String? email,  String? fcmToken,  bool profilTamamlandi,  double ortalamaPuan,  int degerlendirmeSayisi,  String kullaniciTipi,  String yasadigiUlke,  String bulunduguSehir,  List<String> geldigiSehirler,  String hakkinda,  String sehir,  bool telefonGizli,  List<String> engellenenler,  int guvenSkoru,  List<String> rozetler,  int takipciSayisi,  int takipSayisi)  $default,) {final _that = this;
 switch (_that) {
 case _KullaniciModel():
-return $default(_that.id,_that.adSoyad,_that.fotoUrl,_that.telefon,_that.email,_that.fcmToken,_that.profilTamamlandi,_that.ortalamaPuan,_that.degerlendirmeSayisi,_that.kullaniciTipi,_that.yasadigiUlke,_that.bulunduguSehir,_that.geldigiSehirler,_that.hakkinda,_that.sehir,_that.telefonGizli,_that.engellenenler);case _:
+return $default(_that.id,_that.adSoyad,_that.fotoUrl,_that.telefon,_that.email,_that.fcmToken,_that.profilTamamlandi,_that.ortalamaPuan,_that.degerlendirmeSayisi,_that.kullaniciTipi,_that.yasadigiUlke,_that.bulunduguSehir,_that.geldigiSehirler,_that.hakkinda,_that.sehir,_that.telefonGizli,_that.engellenenler,_that.guvenSkoru,_that.rozetler,_that.takipciSayisi,_that.takipSayisi);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -210,10 +214,10 @@ return $default(_that.id,_that.adSoyad,_that.fotoUrl,_that.telefon,_that.email,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String adSoyad,  String? fotoUrl,  String? telefon,  String? email,  String? fcmToken,  bool profilTamamlandi,  double ortalamaPuan,  int degerlendirmeSayisi,  String kullaniciTipi,  String yasadigiUlke,  String bulunduguSehir,  List<String> geldigiSehirler,  String hakkinda,  String sehir,  bool telefonGizli,  List<String> engellenenler)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String adSoyad,  String? fotoUrl,  String? telefon,  String? email,  String? fcmToken,  bool profilTamamlandi,  double ortalamaPuan,  int degerlendirmeSayisi,  String kullaniciTipi,  String yasadigiUlke,  String bulunduguSehir,  List<String> geldigiSehirler,  String hakkinda,  String sehir,  bool telefonGizli,  List<String> engellenenler,  int guvenSkoru,  List<String> rozetler,  int takipciSayisi,  int takipSayisi)?  $default,) {final _that = this;
 switch (_that) {
 case _KullaniciModel() when $default != null:
-return $default(_that.id,_that.adSoyad,_that.fotoUrl,_that.telefon,_that.email,_that.fcmToken,_that.profilTamamlandi,_that.ortalamaPuan,_that.degerlendirmeSayisi,_that.kullaniciTipi,_that.yasadigiUlke,_that.bulunduguSehir,_that.geldigiSehirler,_that.hakkinda,_that.sehir,_that.telefonGizli,_that.engellenenler);case _:
+return $default(_that.id,_that.adSoyad,_that.fotoUrl,_that.telefon,_that.email,_that.fcmToken,_that.profilTamamlandi,_that.ortalamaPuan,_that.degerlendirmeSayisi,_that.kullaniciTipi,_that.yasadigiUlke,_that.bulunduguSehir,_that.geldigiSehirler,_that.hakkinda,_that.sehir,_that.telefonGizli,_that.engellenenler,_that.guvenSkoru,_that.rozetler,_that.takipciSayisi,_that.takipSayisi);case _:
   return null;
 
 }
@@ -225,7 +229,7 @@ return $default(_that.id,_that.adSoyad,_that.fotoUrl,_that.telefon,_that.email,_
 @JsonSerializable()
 
 class _KullaniciModel implements KullaniciModel {
-  const _KullaniciModel({required this.id, this.adSoyad = '', this.fotoUrl, this.telefon, this.email, this.fcmToken, this.profilTamamlandi = false, this.ortalamaPuan = 0.0, this.degerlendirmeSayisi = 0, this.kullaniciTipi = '', this.yasadigiUlke = '', this.bulunduguSehir = '', final  List<String> geldigiSehirler = const [], this.hakkinda = '', this.sehir = '', this.telefonGizli = false, final  List<String> engellenenler = const []}): _geldigiSehirler = geldigiSehirler,_engellenenler = engellenenler;
+  const _KullaniciModel({required this.id, this.adSoyad = '', this.fotoUrl, this.telefon, this.email, this.fcmToken, this.profilTamamlandi = false, this.ortalamaPuan = 0.0, this.degerlendirmeSayisi = 0, this.kullaniciTipi = '', this.yasadigiUlke = '', this.bulunduguSehir = '', final  List<String> geldigiSehirler = const [], this.hakkinda = '', this.sehir = '', this.telefonGizli = false, final  List<String> engellenenler = const [], this.guvenSkoru = 0, final  List<String> rozetler = const [], this.takipciSayisi = 0, this.takipSayisi = 0}): _geldigiSehirler = geldigiSehirler,_engellenenler = engellenenler,_rozetler = rozetler;
   factory _KullaniciModel.fromJson(Map<String, dynamic> json) => _$KullaniciModelFromJson(json);
 
 @override final  String id;
@@ -257,6 +261,16 @@ class _KullaniciModel implements KullaniciModel {
   return EqualUnmodifiableListView(_engellenenler);
 }
 
+@override@JsonKey() final  int guvenSkoru;
+ final  List<String> _rozetler;
+@override@JsonKey() List<String> get rozetler {
+  if (_rozetler is EqualUnmodifiableListView) return _rozetler;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_rozetler);
+}
+
+@override@JsonKey() final  int takipciSayisi;
+@override@JsonKey() final  int takipSayisi;
 
 /// Create a copy of KullaniciModel
 /// with the given fields replaced by the non-null parameter values.
@@ -271,16 +285,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _KullaniciModel&&(identical(other.id, id) || other.id == id)&&(identical(other.adSoyad, adSoyad) || other.adSoyad == adSoyad)&&(identical(other.fotoUrl, fotoUrl) || other.fotoUrl == fotoUrl)&&(identical(other.telefon, telefon) || other.telefon == telefon)&&(identical(other.email, email) || other.email == email)&&(identical(other.fcmToken, fcmToken) || other.fcmToken == fcmToken)&&(identical(other.profilTamamlandi, profilTamamlandi) || other.profilTamamlandi == profilTamamlandi)&&(identical(other.ortalamaPuan, ortalamaPuan) || other.ortalamaPuan == ortalamaPuan)&&(identical(other.degerlendirmeSayisi, degerlendirmeSayisi) || other.degerlendirmeSayisi == degerlendirmeSayisi)&&(identical(other.kullaniciTipi, kullaniciTipi) || other.kullaniciTipi == kullaniciTipi)&&(identical(other.yasadigiUlke, yasadigiUlke) || other.yasadigiUlke == yasadigiUlke)&&(identical(other.bulunduguSehir, bulunduguSehir) || other.bulunduguSehir == bulunduguSehir)&&const DeepCollectionEquality().equals(other._geldigiSehirler, _geldigiSehirler)&&(identical(other.hakkinda, hakkinda) || other.hakkinda == hakkinda)&&(identical(other.sehir, sehir) || other.sehir == sehir)&&(identical(other.telefonGizli, telefonGizli) || other.telefonGizli == telefonGizli)&&const DeepCollectionEquality().equals(other._engellenenler, _engellenenler));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _KullaniciModel&&(identical(other.id, id) || other.id == id)&&(identical(other.adSoyad, adSoyad) || other.adSoyad == adSoyad)&&(identical(other.fotoUrl, fotoUrl) || other.fotoUrl == fotoUrl)&&(identical(other.telefon, telefon) || other.telefon == telefon)&&(identical(other.email, email) || other.email == email)&&(identical(other.fcmToken, fcmToken) || other.fcmToken == fcmToken)&&(identical(other.profilTamamlandi, profilTamamlandi) || other.profilTamamlandi == profilTamamlandi)&&(identical(other.ortalamaPuan, ortalamaPuan) || other.ortalamaPuan == ortalamaPuan)&&(identical(other.degerlendirmeSayisi, degerlendirmeSayisi) || other.degerlendirmeSayisi == degerlendirmeSayisi)&&(identical(other.kullaniciTipi, kullaniciTipi) || other.kullaniciTipi == kullaniciTipi)&&(identical(other.yasadigiUlke, yasadigiUlke) || other.yasadigiUlke == yasadigiUlke)&&(identical(other.bulunduguSehir, bulunduguSehir) || other.bulunduguSehir == bulunduguSehir)&&const DeepCollectionEquality().equals(other._geldigiSehirler, _geldigiSehirler)&&(identical(other.hakkinda, hakkinda) || other.hakkinda == hakkinda)&&(identical(other.sehir, sehir) || other.sehir == sehir)&&(identical(other.telefonGizli, telefonGizli) || other.telefonGizli == telefonGizli)&&const DeepCollectionEquality().equals(other._engellenenler, _engellenenler)&&(identical(other.guvenSkoru, guvenSkoru) || other.guvenSkoru == guvenSkoru)&&const DeepCollectionEquality().equals(other._rozetler, _rozetler)&&(identical(other.takipciSayisi, takipciSayisi) || other.takipciSayisi == takipciSayisi)&&(identical(other.takipSayisi, takipSayisi) || other.takipSayisi == takipSayisi));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,adSoyad,fotoUrl,telefon,email,fcmToken,profilTamamlandi,ortalamaPuan,degerlendirmeSayisi,kullaniciTipi,yasadigiUlke,bulunduguSehir,const DeepCollectionEquality().hash(_geldigiSehirler),hakkinda,sehir,telefonGizli,const DeepCollectionEquality().hash(_engellenenler));
+int get hashCode => Object.hashAll([runtimeType,id,adSoyad,fotoUrl,telefon,email,fcmToken,profilTamamlandi,ortalamaPuan,degerlendirmeSayisi,kullaniciTipi,yasadigiUlke,bulunduguSehir,const DeepCollectionEquality().hash(_geldigiSehirler),hakkinda,sehir,telefonGizli,const DeepCollectionEquality().hash(_engellenenler),guvenSkoru,const DeepCollectionEquality().hash(_rozetler),takipciSayisi,takipSayisi]);
 
 @override
 String toString() {
-  return 'KullaniciModel(id: $id, adSoyad: $adSoyad, fotoUrl: $fotoUrl, telefon: $telefon, email: $email, fcmToken: $fcmToken, profilTamamlandi: $profilTamamlandi, ortalamaPuan: $ortalamaPuan, degerlendirmeSayisi: $degerlendirmeSayisi, kullaniciTipi: $kullaniciTipi, yasadigiUlke: $yasadigiUlke, bulunduguSehir: $bulunduguSehir, geldigiSehirler: $geldigiSehirler, hakkinda: $hakkinda, sehir: $sehir, telefonGizli: $telefonGizli, engellenenler: $engellenenler)';
+  return 'KullaniciModel(id: $id, adSoyad: $adSoyad, fotoUrl: $fotoUrl, telefon: $telefon, email: $email, fcmToken: $fcmToken, profilTamamlandi: $profilTamamlandi, ortalamaPuan: $ortalamaPuan, degerlendirmeSayisi: $degerlendirmeSayisi, kullaniciTipi: $kullaniciTipi, yasadigiUlke: $yasadigiUlke, bulunduguSehir: $bulunduguSehir, geldigiSehirler: $geldigiSehirler, hakkinda: $hakkinda, sehir: $sehir, telefonGizli: $telefonGizli, engellenenler: $engellenenler, guvenSkoru: $guvenSkoru, rozetler: $rozetler, takipciSayisi: $takipciSayisi, takipSayisi: $takipSayisi)';
 }
 
 
@@ -291,7 +305,7 @@ abstract mixin class _$KullaniciModelCopyWith<$Res> implements $KullaniciModelCo
   factory _$KullaniciModelCopyWith(_KullaniciModel value, $Res Function(_KullaniciModel) _then) = __$KullaniciModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String adSoyad, String? fotoUrl, String? telefon, String? email, String? fcmToken, bool profilTamamlandi, double ortalamaPuan, int degerlendirmeSayisi, String kullaniciTipi, String yasadigiUlke, String bulunduguSehir, List<String> geldigiSehirler, String hakkinda, String sehir, bool telefonGizli, List<String> engellenenler
+ String id, String adSoyad, String? fotoUrl, String? telefon, String? email, String? fcmToken, bool profilTamamlandi, double ortalamaPuan, int degerlendirmeSayisi, String kullaniciTipi, String yasadigiUlke, String bulunduguSehir, List<String> geldigiSehirler, String hakkinda, String sehir, bool telefonGizli, List<String> engellenenler, int guvenSkoru, List<String> rozetler, int takipciSayisi, int takipSayisi
 });
 
 
@@ -308,7 +322,7 @@ class __$KullaniciModelCopyWithImpl<$Res>
 
 /// Create a copy of KullaniciModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? adSoyad = null,Object? fotoUrl = freezed,Object? telefon = freezed,Object? email = freezed,Object? fcmToken = freezed,Object? profilTamamlandi = null,Object? ortalamaPuan = null,Object? degerlendirmeSayisi = null,Object? kullaniciTipi = null,Object? yasadigiUlke = null,Object? bulunduguSehir = null,Object? geldigiSehirler = null,Object? hakkinda = null,Object? sehir = null,Object? telefonGizli = null,Object? engellenenler = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? adSoyad = null,Object? fotoUrl = freezed,Object? telefon = freezed,Object? email = freezed,Object? fcmToken = freezed,Object? profilTamamlandi = null,Object? ortalamaPuan = null,Object? degerlendirmeSayisi = null,Object? kullaniciTipi = null,Object? yasadigiUlke = null,Object? bulunduguSehir = null,Object? geldigiSehirler = null,Object? hakkinda = null,Object? sehir = null,Object? telefonGizli = null,Object? engellenenler = null,Object? guvenSkoru = null,Object? rozetler = null,Object? takipciSayisi = null,Object? takipSayisi = null,}) {
   return _then(_KullaniciModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,adSoyad: null == adSoyad ? _self.adSoyad : adSoyad // ignore: cast_nullable_to_non_nullable
@@ -327,7 +341,11 @@ as List<String>,hakkinda: null == hakkinda ? _self.hakkinda : hakkinda // ignore
 as String,sehir: null == sehir ? _self.sehir : sehir // ignore: cast_nullable_to_non_nullable
 as String,telefonGizli: null == telefonGizli ? _self.telefonGizli : telefonGizli // ignore: cast_nullable_to_non_nullable
 as bool,engellenenler: null == engellenenler ? _self._engellenenler : engellenenler // ignore: cast_nullable_to_non_nullable
-as List<String>,
+as List<String>,guvenSkoru: null == guvenSkoru ? _self.guvenSkoru : guvenSkoru // ignore: cast_nullable_to_non_nullable
+as int,rozetler: null == rozetler ? _self._rozetler : rozetler // ignore: cast_nullable_to_non_nullable
+as List<String>,takipciSayisi: null == takipciSayisi ? _self.takipciSayisi : takipciSayisi // ignore: cast_nullable_to_non_nullable
+as int,takipSayisi: null == takipSayisi ? _self.takipSayisi : takipSayisi // ignore: cast_nullable_to_non_nullable
+as int,
   ));
 }
 

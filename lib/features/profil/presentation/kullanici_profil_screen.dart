@@ -12,6 +12,7 @@ import '../../degerlendirme/presentation/degerlendirmeler_liste_screen.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../../../shared/widgets/avatar_widget.dart';
 import '../../../router/app_router.dart';
+import '../domain/kullanici_model.dart';
 
 class KullaniciProfilScreen extends ConsumerWidget {
   final String kullaniciId;
@@ -179,11 +180,112 @@ class KullaniciProfilScreen extends ConsumerWidget {
                             ),
                           ],
 
-                          // ── Mesaj Gönder Butonu ──────────
+                          // ── İstatistikler ────────────────
+                          const SizedBox(height: 16),
+                          const Divider(color: AppColors.divider),
+                          Row(
+                            children: [
+                              Expanded(child: Column(children: [
+                                Text('${profil?.takipciSayisi ?? 0}', style: GoogleFonts.dmSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                                Text('Takipçi', style: GoogleFonts.dmSans(fontSize: 11, color: AppColors.textSecondary)),
+                              ])),
+                              Container(width: 0.5, height: 36, color: AppColors.divider),
+                              Expanded(child: Column(children: [
+                                Text('${profil?.takipSayisi ?? 0}', style: GoogleFonts.dmSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                                Text('Takip', style: GoogleFonts.dmSans(fontSize: 11, color: AppColors.textSecondary)),
+                              ])),
+                            ],
+                          ),
+
+                          // ── Güven Skoru ───────────────────
+                          if ((profil?.guvenSkoru ?? 0) > 0) ...[
+                            const SizedBox(height: 12),
+                            const Divider(color: AppColors.divider),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Güven Skoru', style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                                Text('${profil!.guvenSkoru}/100', style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.red)),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: profil.guvenSkoru / 100,
+                                backgroundColor: const Color(0xFFF0F0F0),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  profil.guvenSkoru >= 80 ? const Color(0xFF4CAF50)
+                                      : profil.guvenSkoru >= 60 ? const Color(0xFF2196F3)
+                                      : profil.guvenSkoru >= 40 ? const Color(0xFFFFA726)
+                                      : AppColors.red,
+                                ),
+                                minHeight: 8,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(profil.guvenSkoruEtiketi, style: GoogleFonts.dmSans(fontSize: 12, color: AppColors.textSecondary)),
+                          ],
+
+                          // ── Rozetler ──────────────────────
+                          if ((profil?.rozetler ?? []).isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            const Divider(color: AppColors.divider),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: profil!.rozetler.map((rozet) => Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF8E1),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: const Color(0xFFFFE082), width: 0.5),
+                                ),
+                                child: Text(
+                                  '${profil.rozetEmoji(rozet)} ${profil.rozetAdi(rozet)}',
+                                  style: GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w500, color: const Color(0xFF633806)),
+                                ),
+                              )).toList(),
+                            ),
+                          ],
+
+                          // ── Takip + Mesaj Butonları ────────
                           if (benimKisi) ...[
                             const SizedBox(height: 16),
                             const Divider(color: AppColors.divider),
                             const SizedBox(height: 16),
+                            Consumer(
+                              builder: (ctx, ref, _) {
+                                final takipAsync = ref.watch(takipEdiyorMuProvider(kullaniciId));
+                                final takipEdiyor = takipAsync.value ?? false;
+                                return SizedBox(
+                                  width: double.infinity,
+                                  height: 44,
+                                  child: OutlinedButton.icon(
+                                    onPressed: () async {
+                                      if (takipEdiyor) {
+                                        await ref.read(takipIslemleriProvider.notifier).takipiBirak(kullaniciId);
+                                      } else {
+                                        await ref.read(takipIslemleriProvider.notifier).takipEt(kullaniciId);
+                                      }
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: takipEdiyor ? AppColors.textSecondary : AppColors.textPrimary,
+                                      side: BorderSide(color: takipEdiyor ? AppColors.divider : AppColors.textPrimary, width: 0.8),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                    icon: Icon(takipEdiyor ? Icons.person_remove_outlined : Icons.person_add_outlined, size: 16),
+                                    label: Text(
+                                      takipEdiyor ? 'Takip Ediliyor' : 'Takip Et',
+                                      style: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 8),
                             SizedBox(
                               width: double.infinity,
                               height: 48,
