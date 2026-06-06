@@ -9,6 +9,7 @@ import 'package:iste_v3/features/ilanlar/domain/ilan_model.dart';
 import 'package:iste_v3/features/profil/providers/profil_provider.dart';
 import 'package:iste_v3/features/profil/domain/kullanici_model.dart';
 import 'package:iste_v3/features/home/providers/sana_ozel_providers.dart';
+import 'package:iste_v3/features/ilanlar/providers/ilan_provider.dart';
 import 'package:iste_v3/shared/constants/app_colors.dart';
 import 'package:iste_v3/router/app_router.dart';
 import 'package:iste_v3/features/home/providers/son_goruntulenenler_provider.dart';
@@ -44,6 +45,13 @@ class SanaOzelScreen extends ConsumerWidget {
 class _IstekSanaOzel extends ConsumerWidget {
   const _IstekSanaOzel({super.key});
 
+  Future<void> _yenile(WidgetRef ref) async {
+    await Future.wait([
+      ref.read(istekIlanlarProvider.notifier).yenile(),
+      ref.read(tasiyiciIlanlarProvider.notifier).yenile(),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sehirIlanlar      = ref.watch(sehirGelecekIlanlarProvider);
@@ -61,15 +69,32 @@ class _IstekSanaOzel extends ConsumerWidget {
     ].where((b) => b.ilanlar.isNotEmpty).toList();
 
     if (tumu.isEmpty) {
-      return _BosEkran(
-        mesaj: 'Henüz sana özel içerik yok.\nProfilini tamamladıktan sonra burada kişiselleştirilmiş ilanlar görünecek.',
+      return RefreshIndicator(
+        color: AppColors.red,
+        onRefresh: () => _yenile(ref),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.6,
+              child: _BosEkran(
+                mesaj: 'Henüz sana özel içerik yok.\nProfilini tamamladıktan sonra burada kişiselleştirilmiş ilanlar görünecek.',
+              ),
+            ),
+          ],
+        ),
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.only(top: 12, bottom: 24),
-      itemCount: tumu.length,
-      itemBuilder: (context, i) => _Bolum(data: tumu[i]),
+    return RefreshIndicator(
+      color: AppColors.red,
+      onRefresh: () => _yenile(ref),
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(top: 12, bottom: 24),
+        itemCount: tumu.length,
+        itemBuilder: (context, i) => _Bolum(data: tumu[i]),
+      ),
     );
   }
 }
@@ -80,6 +105,9 @@ class _IstekSanaOzel extends ConsumerWidget {
 
 class _TasiyiciSanaOzel extends ConsumerWidget {
   const _TasiyiciSanaOzel({super.key});
+
+  Future<void> _yenile(WidgetRef ref) =>
+      ref.read(istekIlanlarProvider.notifier).yenile();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -96,15 +124,32 @@ class _TasiyiciSanaOzel extends ConsumerWidget {
     ].where((b) => b.ilanlar.isNotEmpty).toList();
 
     if (tumu.isEmpty) {
-      return _BosEkran(
-        mesaj: 'Henüz sana özel içerik yok.\nSeyahat bilgilerini güncelledikten sonra burada eşleşen istekler görünecek.',
+      return RefreshIndicator(
+        color: AppColors.red,
+        onRefresh: () => _yenile(ref),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.6,
+              child: _BosEkran(
+                mesaj: 'Henüz sana özel içerik yok.\nSeyahat bilgilerini güncelledikten sonra burada eşleşen istekler görünecek.',
+              ),
+            ),
+          ],
+        ),
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.only(top: 12, bottom: 24),
-      itemCount: tumu.length,
-      itemBuilder: (context, i) => _Bolum(data: tumu[i]),
+    return RefreshIndicator(
+      color: AppColors.red,
+      onRefresh: () => _yenile(ref),
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(top: 12, bottom: 24),
+        itemCount: tumu.length,
+        itemBuilder: (context, i) => _Bolum(data: tumu[i]),
+      ),
     );
   }
 }
