@@ -343,13 +343,13 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
               Container(height: 0.5, color: AppColors.divider),
 
               Expanded(
-                child: isSwipe
-                    ? ilanWidget
-                    : RefreshIndicator(
-                        color: AppColors.red,
-                        onRefresh: () =>
-                            ref.read(istekIlanlarProvider.notifier).yenile(),
-                        child: CustomScrollView(
+                child: RefreshIndicator(
+                    color: AppColors.red,
+                    onRefresh: () =>
+                        ref.read(istekIlanlarProvider.notifier).yenile(),
+                    child: isSwipe
+                        ? ilanWidget
+                        : CustomScrollView(
                           controller: _scrollController,
                           physics: const AlwaysScrollableScrollPhysics(),
                           slivers: [

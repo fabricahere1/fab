@@ -114,7 +114,7 @@ class IstekIlanlar extends _$IstekIlanlar {
   Future<void> yenile() async {
     state = state.copyWith(yukleniyor: true);
     try {
-      final sonuc = await _repo.istekIlanlariniGetir();
+      final sonuc = await _repo.istekIlanlariniGetir(forceServer: true);
       state = state.copyWith(
         ilanlar: sonuc.ilanlar,
         sonTarih: sonuc.sonTarih,
@@ -218,6 +218,7 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
     try {
       final sonuc = await _repo.tasiyiciIlanlariniGetir(
         tariheGore: state.siralama == 'tarih',
+        forceServer: true,
       );
       state = IlanListeState(
         ilanlar: sonuc.ilanlar,

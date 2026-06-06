@@ -33,14 +33,48 @@ _KullaniciModel _$KullaniciModelFromJson(Map<String, dynamic> json) =>
               ?.map((e) => e as String)
               .toList() ??
           const [],
-      guvenSkoru: (json['guvenSkoru'] as num?)?.toInt() ?? 0,
-      rozetler:
-          (json['rozetler'] as List<dynamic>?)
+      ilgiKategorileri:
+          (json['ilgiKategorileri'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           const [],
-      takipciSayisi: (json['takipciSayisi'] as num?)?.toInt() ?? 0,
-      takipSayisi: (json['takipSayisi'] as num?)?.toInt() ?? 0,
+      dutyFreeIlgileniyor: json['dutyFreeIlgileniyor'] as bool?,
+      istekTeslimatTercihi: json['istekTeslimatTercihi'] as String?,
+      kadinUstBeden:
+          (json['kadinUstBeden'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      kadinAltBeden:
+          (json['kadinAltBeden'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      erkekUstBeden:
+          (json['erkekUstBeden'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      erkekAltBeden:
+          (json['erkekAltBeden'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      kadinAyakkabi:
+          (json['kadinAyakkabi'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      erkekAyakkabi:
+          (json['erkekAyakkabi'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      cocukAyakkabi:
+          (json['cocukAyakkabi'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
     );
 
 Map<String, dynamic> _$KullaniciModelToJson(_KullaniciModel instance) =>
@@ -62,8 +96,14 @@ Map<String, dynamic> _$KullaniciModelToJson(_KullaniciModel instance) =>
       'sehir': instance.sehir,
       'telefonGizli': instance.telefonGizli,
       'engellenenler': instance.engellenenler,
-      'guvenSkoru': instance.guvenSkoru,
-      'rozetler': instance.rozetler,
-      'takipciSayisi': instance.takipciSayisi,
-      'takipSayisi': instance.takipSayisi,
+      'ilgiKategorileri': instance.ilgiKategorileri,
+      'dutyFreeIlgileniyor': instance.dutyFreeIlgileniyor,
+      'istekTeslimatTercihi': instance.istekTeslimatTercihi,
+      'kadinUstBeden': instance.kadinUstBeden,
+      'kadinAltBeden': instance.kadinAltBeden,
+      'erkekUstBeden': instance.erkekUstBeden,
+      'erkekAltBeden': instance.erkekAltBeden,
+      'kadinAyakkabi': instance.kadinAyakkabi,
+      'erkekAyakkabi': instance.erkekAyakkabi,
+      'cocukAyakkabi': instance.cocukAyakkabi,
     };

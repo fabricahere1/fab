@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../domain/ilan_model.dart';
 import '../providers/ilan_provider.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../../../core/cache/app_cache_manager.dart';
@@ -266,6 +267,7 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
       AppSnackBar.basari(context, 'İlan güncellendi!');
       ref.read(istekIlanlarProvider.notifier).yenile();
     } else {
+      final profilSnapshot = await ref.read(kullaniciBilgiProvider(user.uid).future);
       final ilan = IlanModel(
         id: '', tip: widget.tip,
         nereden:      _neredenFarketmez ? 'Farketmez' : _neredenCtrl.text.trim(),
@@ -280,6 +282,8 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
         tarih:        _seciliTarih,
         cinsiyet:     _cinsiyet,
         beden:        bedenDeger,
+        kullaniciPuan: profilSnapshot?.ortalamaPuan ?? 0.0,
+        sahipIstekTeslimatTercihi: profilSnapshot?.istekTeslimatTercihi,
       );
       final id = await ref.read(ilanOlusturProvider.notifier).olustur(
         ilan: ilan, resimler: _yeniResimler,

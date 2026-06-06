@@ -244,6 +244,52 @@ class KargoSirketi {
   }
 }
 
+// Türkçe alfabetik sıralama karşılaştırıcısı.
+// Dart'ın varsayılan sort'u Unicode code-point kullandığından İ ve Ş gibi
+// karakterleri Z'nin arkasına atar; bu fonksiyon doğru Türkçe alfabetik
+// sırayı uygular.
+const _trSira = <String, int>{
+  'A': 0,  'a': 0,
+  'B': 1,  'b': 1,
+  'C': 2,  'c': 2,
+  'Ç': 3,  'ç': 3,
+  'D': 4,  'd': 4,
+  'E': 5,  'e': 5,
+  'F': 6,  'f': 6,
+  'G': 7,  'g': 7,
+  'Ğ': 8,  'ğ': 8,
+  'H': 9,  'h': 9,
+  'I': 10, 'ı': 10,
+  'İ': 11, 'i': 11,
+  'J': 12, 'j': 12,
+  'K': 13, 'k': 13,
+  'L': 14, 'l': 14,
+  'M': 15, 'm': 15,
+  'N': 16, 'n': 16,
+  'O': 17, 'o': 17,
+  'Ö': 18, 'ö': 18,
+  'P': 19, 'p': 19,
+  'R': 20, 'r': 20,
+  'S': 21, 's': 21,
+  'Ş': 22, 'ş': 22,
+  'T': 23, 't': 23,
+  'U': 24, 'u': 24,
+  'Ü': 25, 'ü': 25,
+  'V': 26, 'v': 26,
+  'Y': 27, 'y': 27,
+  'Z': 28, 'z': 28,
+};
+
+int turkceKarsilastir(String a, String b) {
+  for (int i = 0; i < a.length && i < b.length; i++) {
+    if (a[i] == b[i]) continue;
+    final ia = _trSira[a[i]] ?? (a.codeUnitAt(i) + 1000);
+    final ib = _trSira[b[i]] ?? (b.codeUnitAt(i) + 1000);
+    if (ia != ib) return ia - ib;
+  }
+  return a.length - b.length;
+}
+
 /// Türkiye'nin 81 ili
 const List<String> kTurkiyeSehirleri = [
   'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Aksaray', 'Amasya',

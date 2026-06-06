@@ -15,7 +15,8 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$IlanModel {
 
- String get id; String get tip; String get nereden; String get nereye; String get ucret; String get urun; String get notlar; String get kategori; String get kullaniciId; String get kullaniciAd; bool get aktif;@TimestampConverter() DateTime? get tarih;@TimestampConverter() DateTime? get olusturmaTarihi; String get resimUrl; String get resimThumbUrl; List<String> get resimUrller; String get urunLinki; int get favoriSayisi; int get goruntulenmeSayisi; String get tasimaTercihi; double get kullaniciPuan; String get anaKategori; List<String> get kategoriYolu; String get cinsiyet; String get beden;
+ String get id; String get tip; String get nereden; String get nereye; String get ucret; String get urun; String get notlar; String get kategori; String get kullaniciId; String get kullaniciAd; bool get aktif;@TimestampConverter() DateTime? get tarih;@TimestampConverter() DateTime? get olusturmaTarihi; String get resimUrl; String get resimThumbUrl; List<String> get resimUrller; String get urunLinki; int get favoriSayisi; int get goruntulenmeSayisi; String get tasimaTercihi; double get kullaniciPuan; String get anaKategori; List<String> get kategoriYolu; String get cinsiyet; String get beden;// Denormalized owner attributes for Sana Özel filtering
+ String? get sahipIstekTeslimatTercihi; bool get sahipDutyFree;
 /// Create a copy of IlanModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +29,16 @@ $IlanModelCopyWith<IlanModel> get copyWith => _$IlanModelCopyWithImpl<IlanModel>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is IlanModel&&(identical(other.id, id) || other.id == id)&&(identical(other.tip, tip) || other.tip == tip)&&(identical(other.nereden, nereden) || other.nereden == nereden)&&(identical(other.nereye, nereye) || other.nereye == nereye)&&(identical(other.ucret, ucret) || other.ucret == ucret)&&(identical(other.urun, urun) || other.urun == urun)&&(identical(other.notlar, notlar) || other.notlar == notlar)&&(identical(other.kategori, kategori) || other.kategori == kategori)&&(identical(other.kullaniciId, kullaniciId) || other.kullaniciId == kullaniciId)&&(identical(other.kullaniciAd, kullaniciAd) || other.kullaniciAd == kullaniciAd)&&(identical(other.aktif, aktif) || other.aktif == aktif)&&(identical(other.tarih, tarih) || other.tarih == tarih)&&(identical(other.olusturmaTarihi, olusturmaTarihi) || other.olusturmaTarihi == olusturmaTarihi)&&(identical(other.resimUrl, resimUrl) || other.resimUrl == resimUrl)&&(identical(other.resimThumbUrl, resimThumbUrl) || other.resimThumbUrl == resimThumbUrl)&&const DeepCollectionEquality().equals(other.resimUrller, resimUrller)&&(identical(other.urunLinki, urunLinki) || other.urunLinki == urunLinki)&&(identical(other.favoriSayisi, favoriSayisi) || other.favoriSayisi == favoriSayisi)&&(identical(other.goruntulenmeSayisi, goruntulenmeSayisi) || other.goruntulenmeSayisi == goruntulenmeSayisi)&&(identical(other.tasimaTercihi, tasimaTercihi) || other.tasimaTercihi == tasimaTercihi)&&(identical(other.kullaniciPuan, kullaniciPuan) || other.kullaniciPuan == kullaniciPuan)&&(identical(other.anaKategori, anaKategori) || other.anaKategori == anaKategori)&&const DeepCollectionEquality().equals(other.kategoriYolu, kategoriYolu)&&(identical(other.cinsiyet, cinsiyet) || other.cinsiyet == cinsiyet)&&(identical(other.beden, beden) || other.beden == beden));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is IlanModel&&(identical(other.id, id) || other.id == id)&&(identical(other.tip, tip) || other.tip == tip)&&(identical(other.nereden, nereden) || other.nereden == nereden)&&(identical(other.nereye, nereye) || other.nereye == nereye)&&(identical(other.ucret, ucret) || other.ucret == ucret)&&(identical(other.urun, urun) || other.urun == urun)&&(identical(other.notlar, notlar) || other.notlar == notlar)&&(identical(other.kategori, kategori) || other.kategori == kategori)&&(identical(other.kullaniciId, kullaniciId) || other.kullaniciId == kullaniciId)&&(identical(other.kullaniciAd, kullaniciAd) || other.kullaniciAd == kullaniciAd)&&(identical(other.aktif, aktif) || other.aktif == aktif)&&(identical(other.tarih, tarih) || other.tarih == tarih)&&(identical(other.olusturmaTarihi, olusturmaTarihi) || other.olusturmaTarihi == olusturmaTarihi)&&(identical(other.resimUrl, resimUrl) || other.resimUrl == resimUrl)&&(identical(other.resimThumbUrl, resimThumbUrl) || other.resimThumbUrl == resimThumbUrl)&&const DeepCollectionEquality().equals(other.resimUrller, resimUrller)&&(identical(other.urunLinki, urunLinki) || other.urunLinki == urunLinki)&&(identical(other.favoriSayisi, favoriSayisi) || other.favoriSayisi == favoriSayisi)&&(identical(other.goruntulenmeSayisi, goruntulenmeSayisi) || other.goruntulenmeSayisi == goruntulenmeSayisi)&&(identical(other.tasimaTercihi, tasimaTercihi) || other.tasimaTercihi == tasimaTercihi)&&(identical(other.kullaniciPuan, kullaniciPuan) || other.kullaniciPuan == kullaniciPuan)&&(identical(other.anaKategori, anaKategori) || other.anaKategori == anaKategori)&&const DeepCollectionEquality().equals(other.kategoriYolu, kategoriYolu)&&(identical(other.cinsiyet, cinsiyet) || other.cinsiyet == cinsiyet)&&(identical(other.beden, beden) || other.beden == beden)&&(identical(other.sahipIstekTeslimatTercihi, sahipIstekTeslimatTercihi) || other.sahipIstekTeslimatTercihi == sahipIstekTeslimatTercihi)&&(identical(other.sahipDutyFree, sahipDutyFree) || other.sahipDutyFree == sahipDutyFree));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,id,tip,nereden,nereye,ucret,urun,notlar,kategori,kullaniciId,kullaniciAd,aktif,tarih,olusturmaTarihi,resimUrl,resimThumbUrl,const DeepCollectionEquality().hash(resimUrller),urunLinki,favoriSayisi,goruntulenmeSayisi,tasimaTercihi,kullaniciPuan,anaKategori,const DeepCollectionEquality().hash(kategoriYolu),cinsiyet,beden]);
+int get hashCode => Object.hashAll([runtimeType,id,tip,nereden,nereye,ucret,urun,notlar,kategori,kullaniciId,kullaniciAd,aktif,tarih,olusturmaTarihi,resimUrl,resimThumbUrl,const DeepCollectionEquality().hash(resimUrller),urunLinki,favoriSayisi,goruntulenmeSayisi,tasimaTercihi,kullaniciPuan,anaKategori,const DeepCollectionEquality().hash(kategoriYolu),cinsiyet,beden,sahipIstekTeslimatTercihi,sahipDutyFree]);
 
 @override
 String toString() {
-  return 'IlanModel(id: $id, tip: $tip, nereden: $nereden, nereye: $nereye, ucret: $ucret, urun: $urun, notlar: $notlar, kategori: $kategori, kullaniciId: $kullaniciId, kullaniciAd: $kullaniciAd, aktif: $aktif, tarih: $tarih, olusturmaTarihi: $olusturmaTarihi, resimUrl: $resimUrl, resimThumbUrl: $resimThumbUrl, resimUrller: $resimUrller, urunLinki: $urunLinki, favoriSayisi: $favoriSayisi, goruntulenmeSayisi: $goruntulenmeSayisi, tasimaTercihi: $tasimaTercihi, kullaniciPuan: $kullaniciPuan, anaKategori: $anaKategori, kategoriYolu: $kategoriYolu, cinsiyet: $cinsiyet, beden: $beden)';
+  return 'IlanModel(id: $id, tip: $tip, nereden: $nereden, nereye: $nereye, ucret: $ucret, urun: $urun, notlar: $notlar, kategori: $kategori, kullaniciId: $kullaniciId, kullaniciAd: $kullaniciAd, aktif: $aktif, tarih: $tarih, olusturmaTarihi: $olusturmaTarihi, resimUrl: $resimUrl, resimThumbUrl: $resimThumbUrl, resimUrller: $resimUrller, urunLinki: $urunLinki, favoriSayisi: $favoriSayisi, goruntulenmeSayisi: $goruntulenmeSayisi, tasimaTercihi: $tasimaTercihi, kullaniciPuan: $kullaniciPuan, anaKategori: $anaKategori, kategoriYolu: $kategoriYolu, cinsiyet: $cinsiyet, beden: $beden, sahipIstekTeslimatTercihi: $sahipIstekTeslimatTercihi, sahipDutyFree: $sahipDutyFree)';
 }
 
 
@@ -48,7 +49,7 @@ abstract mixin class $IlanModelCopyWith<$Res>  {
   factory $IlanModelCopyWith(IlanModel value, $Res Function(IlanModel) _then) = _$IlanModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String tip, String nereden, String nereye, String ucret, String urun, String notlar, String kategori, String kullaniciId, String kullaniciAd, bool aktif,@TimestampConverter() DateTime? tarih,@TimestampConverter() DateTime? olusturmaTarihi, String resimUrl, String resimThumbUrl, List<String> resimUrller, String urunLinki, int favoriSayisi, int goruntulenmeSayisi, String tasimaTercihi, double kullaniciPuan, String anaKategori, List<String> kategoriYolu, String cinsiyet, String beden
+ String id, String tip, String nereden, String nereye, String ucret, String urun, String notlar, String kategori, String kullaniciId, String kullaniciAd, bool aktif,@TimestampConverter() DateTime? tarih,@TimestampConverter() DateTime? olusturmaTarihi, String resimUrl, String resimThumbUrl, List<String> resimUrller, String urunLinki, int favoriSayisi, int goruntulenmeSayisi, String tasimaTercihi, double kullaniciPuan, String anaKategori, List<String> kategoriYolu, String cinsiyet, String beden, String? sahipIstekTeslimatTercihi, bool sahipDutyFree
 });
 
 
@@ -65,7 +66,7 @@ class _$IlanModelCopyWithImpl<$Res>
 
 /// Create a copy of IlanModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? tip = null,Object? nereden = null,Object? nereye = null,Object? ucret = null,Object? urun = null,Object? notlar = null,Object? kategori = null,Object? kullaniciId = null,Object? kullaniciAd = null,Object? aktif = null,Object? tarih = freezed,Object? olusturmaTarihi = freezed,Object? resimUrl = null,Object? resimThumbUrl = null,Object? resimUrller = null,Object? urunLinki = null,Object? favoriSayisi = null,Object? goruntulenmeSayisi = null,Object? tasimaTercihi = null,Object? kullaniciPuan = null,Object? anaKategori = null,Object? kategoriYolu = null,Object? cinsiyet = null,Object? beden = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? tip = null,Object? nereden = null,Object? nereye = null,Object? ucret = null,Object? urun = null,Object? notlar = null,Object? kategori = null,Object? kullaniciId = null,Object? kullaniciAd = null,Object? aktif = null,Object? tarih = freezed,Object? olusturmaTarihi = freezed,Object? resimUrl = null,Object? resimThumbUrl = null,Object? resimUrller = null,Object? urunLinki = null,Object? favoriSayisi = null,Object? goruntulenmeSayisi = null,Object? tasimaTercihi = null,Object? kullaniciPuan = null,Object? anaKategori = null,Object? kategoriYolu = null,Object? cinsiyet = null,Object? beden = null,Object? sahipIstekTeslimatTercihi = freezed,Object? sahipDutyFree = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,tip: null == tip ? _self.tip : tip // ignore: cast_nullable_to_non_nullable
@@ -92,7 +93,9 @@ as double,anaKategori: null == anaKategori ? _self.anaKategori : anaKategori // 
 as String,kategoriYolu: null == kategoriYolu ? _self.kategoriYolu : kategoriYolu // ignore: cast_nullable_to_non_nullable
 as List<String>,cinsiyet: null == cinsiyet ? _self.cinsiyet : cinsiyet // ignore: cast_nullable_to_non_nullable
 as String,beden: null == beden ? _self.beden : beden // ignore: cast_nullable_to_non_nullable
-as String,
+as String,sahipIstekTeslimatTercihi: freezed == sahipIstekTeslimatTercihi ? _self.sahipIstekTeslimatTercihi : sahipIstekTeslimatTercihi // ignore: cast_nullable_to_non_nullable
+as String?,sahipDutyFree: null == sahipDutyFree ? _self.sahipDutyFree : sahipDutyFree // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
@@ -177,10 +180,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String tip,  String nereden,  String nereye,  String ucret,  String urun,  String notlar,  String kategori,  String kullaniciId,  String kullaniciAd,  bool aktif, @TimestampConverter()  DateTime? tarih, @TimestampConverter()  DateTime? olusturmaTarihi,  String resimUrl,  String resimThumbUrl,  List<String> resimUrller,  String urunLinki,  int favoriSayisi,  int goruntulenmeSayisi,  String tasimaTercihi,  double kullaniciPuan,  String anaKategori,  List<String> kategoriYolu,  String cinsiyet,  String beden)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String tip,  String nereden,  String nereye,  String ucret,  String urun,  String notlar,  String kategori,  String kullaniciId,  String kullaniciAd,  bool aktif, @TimestampConverter()  DateTime? tarih, @TimestampConverter()  DateTime? olusturmaTarihi,  String resimUrl,  String resimThumbUrl,  List<String> resimUrller,  String urunLinki,  int favoriSayisi,  int goruntulenmeSayisi,  String tasimaTercihi,  double kullaniciPuan,  String anaKategori,  List<String> kategoriYolu,  String cinsiyet,  String beden,  String? sahipIstekTeslimatTercihi,  bool sahipDutyFree)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _IlanModel() when $default != null:
-return $default(_that.id,_that.tip,_that.nereden,_that.nereye,_that.ucret,_that.urun,_that.notlar,_that.kategori,_that.kullaniciId,_that.kullaniciAd,_that.aktif,_that.tarih,_that.olusturmaTarihi,_that.resimUrl,_that.resimThumbUrl,_that.resimUrller,_that.urunLinki,_that.favoriSayisi,_that.goruntulenmeSayisi,_that.tasimaTercihi,_that.kullaniciPuan,_that.anaKategori,_that.kategoriYolu,_that.cinsiyet,_that.beden);case _:
+return $default(_that.id,_that.tip,_that.nereden,_that.nereye,_that.ucret,_that.urun,_that.notlar,_that.kategori,_that.kullaniciId,_that.kullaniciAd,_that.aktif,_that.tarih,_that.olusturmaTarihi,_that.resimUrl,_that.resimThumbUrl,_that.resimUrller,_that.urunLinki,_that.favoriSayisi,_that.goruntulenmeSayisi,_that.tasimaTercihi,_that.kullaniciPuan,_that.anaKategori,_that.kategoriYolu,_that.cinsiyet,_that.beden,_that.sahipIstekTeslimatTercihi,_that.sahipDutyFree);case _:
   return orElse();
 
 }
@@ -198,10 +201,10 @@ return $default(_that.id,_that.tip,_that.nereden,_that.nereye,_that.ucret,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String tip,  String nereden,  String nereye,  String ucret,  String urun,  String notlar,  String kategori,  String kullaniciId,  String kullaniciAd,  bool aktif, @TimestampConverter()  DateTime? tarih, @TimestampConverter()  DateTime? olusturmaTarihi,  String resimUrl,  String resimThumbUrl,  List<String> resimUrller,  String urunLinki,  int favoriSayisi,  int goruntulenmeSayisi,  String tasimaTercihi,  double kullaniciPuan,  String anaKategori,  List<String> kategoriYolu,  String cinsiyet,  String beden)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String tip,  String nereden,  String nereye,  String ucret,  String urun,  String notlar,  String kategori,  String kullaniciId,  String kullaniciAd,  bool aktif, @TimestampConverter()  DateTime? tarih, @TimestampConverter()  DateTime? olusturmaTarihi,  String resimUrl,  String resimThumbUrl,  List<String> resimUrller,  String urunLinki,  int favoriSayisi,  int goruntulenmeSayisi,  String tasimaTercihi,  double kullaniciPuan,  String anaKategori,  List<String> kategoriYolu,  String cinsiyet,  String beden,  String? sahipIstekTeslimatTercihi,  bool sahipDutyFree)  $default,) {final _that = this;
 switch (_that) {
 case _IlanModel():
-return $default(_that.id,_that.tip,_that.nereden,_that.nereye,_that.ucret,_that.urun,_that.notlar,_that.kategori,_that.kullaniciId,_that.kullaniciAd,_that.aktif,_that.tarih,_that.olusturmaTarihi,_that.resimUrl,_that.resimThumbUrl,_that.resimUrller,_that.urunLinki,_that.favoriSayisi,_that.goruntulenmeSayisi,_that.tasimaTercihi,_that.kullaniciPuan,_that.anaKategori,_that.kategoriYolu,_that.cinsiyet,_that.beden);case _:
+return $default(_that.id,_that.tip,_that.nereden,_that.nereye,_that.ucret,_that.urun,_that.notlar,_that.kategori,_that.kullaniciId,_that.kullaniciAd,_that.aktif,_that.tarih,_that.olusturmaTarihi,_that.resimUrl,_that.resimThumbUrl,_that.resimUrller,_that.urunLinki,_that.favoriSayisi,_that.goruntulenmeSayisi,_that.tasimaTercihi,_that.kullaniciPuan,_that.anaKategori,_that.kategoriYolu,_that.cinsiyet,_that.beden,_that.sahipIstekTeslimatTercihi,_that.sahipDutyFree);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -218,10 +221,10 @@ return $default(_that.id,_that.tip,_that.nereden,_that.nereye,_that.ucret,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String tip,  String nereden,  String nereye,  String ucret,  String urun,  String notlar,  String kategori,  String kullaniciId,  String kullaniciAd,  bool aktif, @TimestampConverter()  DateTime? tarih, @TimestampConverter()  DateTime? olusturmaTarihi,  String resimUrl,  String resimThumbUrl,  List<String> resimUrller,  String urunLinki,  int favoriSayisi,  int goruntulenmeSayisi,  String tasimaTercihi,  double kullaniciPuan,  String anaKategori,  List<String> kategoriYolu,  String cinsiyet,  String beden)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String tip,  String nereden,  String nereye,  String ucret,  String urun,  String notlar,  String kategori,  String kullaniciId,  String kullaniciAd,  bool aktif, @TimestampConverter()  DateTime? tarih, @TimestampConverter()  DateTime? olusturmaTarihi,  String resimUrl,  String resimThumbUrl,  List<String> resimUrller,  String urunLinki,  int favoriSayisi,  int goruntulenmeSayisi,  String tasimaTercihi,  double kullaniciPuan,  String anaKategori,  List<String> kategoriYolu,  String cinsiyet,  String beden,  String? sahipIstekTeslimatTercihi,  bool sahipDutyFree)?  $default,) {final _that = this;
 switch (_that) {
 case _IlanModel() when $default != null:
-return $default(_that.id,_that.tip,_that.nereden,_that.nereye,_that.ucret,_that.urun,_that.notlar,_that.kategori,_that.kullaniciId,_that.kullaniciAd,_that.aktif,_that.tarih,_that.olusturmaTarihi,_that.resimUrl,_that.resimThumbUrl,_that.resimUrller,_that.urunLinki,_that.favoriSayisi,_that.goruntulenmeSayisi,_that.tasimaTercihi,_that.kullaniciPuan,_that.anaKategori,_that.kategoriYolu,_that.cinsiyet,_that.beden);case _:
+return $default(_that.id,_that.tip,_that.nereden,_that.nereye,_that.ucret,_that.urun,_that.notlar,_that.kategori,_that.kullaniciId,_that.kullaniciAd,_that.aktif,_that.tarih,_that.olusturmaTarihi,_that.resimUrl,_that.resimThumbUrl,_that.resimUrller,_that.urunLinki,_that.favoriSayisi,_that.goruntulenmeSayisi,_that.tasimaTercihi,_that.kullaniciPuan,_that.anaKategori,_that.kategoriYolu,_that.cinsiyet,_that.beden,_that.sahipIstekTeslimatTercihi,_that.sahipDutyFree);case _:
   return null;
 
 }
@@ -233,7 +236,7 @@ return $default(_that.id,_that.tip,_that.nereden,_that.nereye,_that.ucret,_that.
 @JsonSerializable()
 
 class _IlanModel implements IlanModel {
-  const _IlanModel({required this.id, required this.tip, required this.nereden, required this.nereye, this.ucret = '', this.urun = '', this.notlar = '', this.kategori = 'diger', required this.kullaniciId, this.kullaniciAd = 'Kullanıcı', this.aktif = true, @TimestampConverter() this.tarih, @TimestampConverter() this.olusturmaTarihi, this.resimUrl = '', this.resimThumbUrl = '', final  List<String> resimUrller = const [], this.urunLinki = '', this.favoriSayisi = 0, this.goruntulenmeSayisi = 0, this.tasimaTercihi = 'hepsi', this.kullaniciPuan = 0.0, this.anaKategori = '', final  List<String> kategoriYolu = const [], this.cinsiyet = '', this.beden = ''}): _resimUrller = resimUrller,_kategoriYolu = kategoriYolu;
+  const _IlanModel({required this.id, required this.tip, required this.nereden, required this.nereye, this.ucret = '', this.urun = '', this.notlar = '', this.kategori = 'diger', required this.kullaniciId, this.kullaniciAd = 'Kullanıcı', this.aktif = true, @TimestampConverter() this.tarih, @TimestampConverter() this.olusturmaTarihi, this.resimUrl = '', this.resimThumbUrl = '', final  List<String> resimUrller = const [], this.urunLinki = '', this.favoriSayisi = 0, this.goruntulenmeSayisi = 0, this.tasimaTercihi = 'hepsi', this.kullaniciPuan = 0.0, this.anaKategori = '', final  List<String> kategoriYolu = const [], this.cinsiyet = '', this.beden = '', this.sahipIstekTeslimatTercihi, this.sahipDutyFree = false}): _resimUrller = resimUrller,_kategoriYolu = kategoriYolu;
   factory _IlanModel.fromJson(Map<String, dynamic> json) => _$IlanModelFromJson(json);
 
 @override final  String id;
@@ -273,6 +276,9 @@ class _IlanModel implements IlanModel {
 
 @override@JsonKey() final  String cinsiyet;
 @override@JsonKey() final  String beden;
+// Denormalized owner attributes for Sana Özel filtering
+@override final  String? sahipIstekTeslimatTercihi;
+@override@JsonKey() final  bool sahipDutyFree;
 
 /// Create a copy of IlanModel
 /// with the given fields replaced by the non-null parameter values.
@@ -287,16 +293,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _IlanModel&&(identical(other.id, id) || other.id == id)&&(identical(other.tip, tip) || other.tip == tip)&&(identical(other.nereden, nereden) || other.nereden == nereden)&&(identical(other.nereye, nereye) || other.nereye == nereye)&&(identical(other.ucret, ucret) || other.ucret == ucret)&&(identical(other.urun, urun) || other.urun == urun)&&(identical(other.notlar, notlar) || other.notlar == notlar)&&(identical(other.kategori, kategori) || other.kategori == kategori)&&(identical(other.kullaniciId, kullaniciId) || other.kullaniciId == kullaniciId)&&(identical(other.kullaniciAd, kullaniciAd) || other.kullaniciAd == kullaniciAd)&&(identical(other.aktif, aktif) || other.aktif == aktif)&&(identical(other.tarih, tarih) || other.tarih == tarih)&&(identical(other.olusturmaTarihi, olusturmaTarihi) || other.olusturmaTarihi == olusturmaTarihi)&&(identical(other.resimUrl, resimUrl) || other.resimUrl == resimUrl)&&(identical(other.resimThumbUrl, resimThumbUrl) || other.resimThumbUrl == resimThumbUrl)&&const DeepCollectionEquality().equals(other._resimUrller, _resimUrller)&&(identical(other.urunLinki, urunLinki) || other.urunLinki == urunLinki)&&(identical(other.favoriSayisi, favoriSayisi) || other.favoriSayisi == favoriSayisi)&&(identical(other.goruntulenmeSayisi, goruntulenmeSayisi) || other.goruntulenmeSayisi == goruntulenmeSayisi)&&(identical(other.tasimaTercihi, tasimaTercihi) || other.tasimaTercihi == tasimaTercihi)&&(identical(other.kullaniciPuan, kullaniciPuan) || other.kullaniciPuan == kullaniciPuan)&&(identical(other.anaKategori, anaKategori) || other.anaKategori == anaKategori)&&const DeepCollectionEquality().equals(other._kategoriYolu, _kategoriYolu)&&(identical(other.cinsiyet, cinsiyet) || other.cinsiyet == cinsiyet)&&(identical(other.beden, beden) || other.beden == beden));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _IlanModel&&(identical(other.id, id) || other.id == id)&&(identical(other.tip, tip) || other.tip == tip)&&(identical(other.nereden, nereden) || other.nereden == nereden)&&(identical(other.nereye, nereye) || other.nereye == nereye)&&(identical(other.ucret, ucret) || other.ucret == ucret)&&(identical(other.urun, urun) || other.urun == urun)&&(identical(other.notlar, notlar) || other.notlar == notlar)&&(identical(other.kategori, kategori) || other.kategori == kategori)&&(identical(other.kullaniciId, kullaniciId) || other.kullaniciId == kullaniciId)&&(identical(other.kullaniciAd, kullaniciAd) || other.kullaniciAd == kullaniciAd)&&(identical(other.aktif, aktif) || other.aktif == aktif)&&(identical(other.tarih, tarih) || other.tarih == tarih)&&(identical(other.olusturmaTarihi, olusturmaTarihi) || other.olusturmaTarihi == olusturmaTarihi)&&(identical(other.resimUrl, resimUrl) || other.resimUrl == resimUrl)&&(identical(other.resimThumbUrl, resimThumbUrl) || other.resimThumbUrl == resimThumbUrl)&&const DeepCollectionEquality().equals(other._resimUrller, _resimUrller)&&(identical(other.urunLinki, urunLinki) || other.urunLinki == urunLinki)&&(identical(other.favoriSayisi, favoriSayisi) || other.favoriSayisi == favoriSayisi)&&(identical(other.goruntulenmeSayisi, goruntulenmeSayisi) || other.goruntulenmeSayisi == goruntulenmeSayisi)&&(identical(other.tasimaTercihi, tasimaTercihi) || other.tasimaTercihi == tasimaTercihi)&&(identical(other.kullaniciPuan, kullaniciPuan) || other.kullaniciPuan == kullaniciPuan)&&(identical(other.anaKategori, anaKategori) || other.anaKategori == anaKategori)&&const DeepCollectionEquality().equals(other._kategoriYolu, _kategoriYolu)&&(identical(other.cinsiyet, cinsiyet) || other.cinsiyet == cinsiyet)&&(identical(other.beden, beden) || other.beden == beden)&&(identical(other.sahipIstekTeslimatTercihi, sahipIstekTeslimatTercihi) || other.sahipIstekTeslimatTercihi == sahipIstekTeslimatTercihi)&&(identical(other.sahipDutyFree, sahipDutyFree) || other.sahipDutyFree == sahipDutyFree));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,id,tip,nereden,nereye,ucret,urun,notlar,kategori,kullaniciId,kullaniciAd,aktif,tarih,olusturmaTarihi,resimUrl,resimThumbUrl,const DeepCollectionEquality().hash(_resimUrller),urunLinki,favoriSayisi,goruntulenmeSayisi,tasimaTercihi,kullaniciPuan,anaKategori,const DeepCollectionEquality().hash(_kategoriYolu),cinsiyet,beden]);
+int get hashCode => Object.hashAll([runtimeType,id,tip,nereden,nereye,ucret,urun,notlar,kategori,kullaniciId,kullaniciAd,aktif,tarih,olusturmaTarihi,resimUrl,resimThumbUrl,const DeepCollectionEquality().hash(_resimUrller),urunLinki,favoriSayisi,goruntulenmeSayisi,tasimaTercihi,kullaniciPuan,anaKategori,const DeepCollectionEquality().hash(_kategoriYolu),cinsiyet,beden,sahipIstekTeslimatTercihi,sahipDutyFree]);
 
 @override
 String toString() {
-  return 'IlanModel(id: $id, tip: $tip, nereden: $nereden, nereye: $nereye, ucret: $ucret, urun: $urun, notlar: $notlar, kategori: $kategori, kullaniciId: $kullaniciId, kullaniciAd: $kullaniciAd, aktif: $aktif, tarih: $tarih, olusturmaTarihi: $olusturmaTarihi, resimUrl: $resimUrl, resimThumbUrl: $resimThumbUrl, resimUrller: $resimUrller, urunLinki: $urunLinki, favoriSayisi: $favoriSayisi, goruntulenmeSayisi: $goruntulenmeSayisi, tasimaTercihi: $tasimaTercihi, kullaniciPuan: $kullaniciPuan, anaKategori: $anaKategori, kategoriYolu: $kategoriYolu, cinsiyet: $cinsiyet, beden: $beden)';
+  return 'IlanModel(id: $id, tip: $tip, nereden: $nereden, nereye: $nereye, ucret: $ucret, urun: $urun, notlar: $notlar, kategori: $kategori, kullaniciId: $kullaniciId, kullaniciAd: $kullaniciAd, aktif: $aktif, tarih: $tarih, olusturmaTarihi: $olusturmaTarihi, resimUrl: $resimUrl, resimThumbUrl: $resimThumbUrl, resimUrller: $resimUrller, urunLinki: $urunLinki, favoriSayisi: $favoriSayisi, goruntulenmeSayisi: $goruntulenmeSayisi, tasimaTercihi: $tasimaTercihi, kullaniciPuan: $kullaniciPuan, anaKategori: $anaKategori, kategoriYolu: $kategoriYolu, cinsiyet: $cinsiyet, beden: $beden, sahipIstekTeslimatTercihi: $sahipIstekTeslimatTercihi, sahipDutyFree: $sahipDutyFree)';
 }
 
 
@@ -307,7 +313,7 @@ abstract mixin class _$IlanModelCopyWith<$Res> implements $IlanModelCopyWith<$Re
   factory _$IlanModelCopyWith(_IlanModel value, $Res Function(_IlanModel) _then) = __$IlanModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String tip, String nereden, String nereye, String ucret, String urun, String notlar, String kategori, String kullaniciId, String kullaniciAd, bool aktif,@TimestampConverter() DateTime? tarih,@TimestampConverter() DateTime? olusturmaTarihi, String resimUrl, String resimThumbUrl, List<String> resimUrller, String urunLinki, int favoriSayisi, int goruntulenmeSayisi, String tasimaTercihi, double kullaniciPuan, String anaKategori, List<String> kategoriYolu, String cinsiyet, String beden
+ String id, String tip, String nereden, String nereye, String ucret, String urun, String notlar, String kategori, String kullaniciId, String kullaniciAd, bool aktif,@TimestampConverter() DateTime? tarih,@TimestampConverter() DateTime? olusturmaTarihi, String resimUrl, String resimThumbUrl, List<String> resimUrller, String urunLinki, int favoriSayisi, int goruntulenmeSayisi, String tasimaTercihi, double kullaniciPuan, String anaKategori, List<String> kategoriYolu, String cinsiyet, String beden, String? sahipIstekTeslimatTercihi, bool sahipDutyFree
 });
 
 
@@ -324,7 +330,7 @@ class __$IlanModelCopyWithImpl<$Res>
 
 /// Create a copy of IlanModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? tip = null,Object? nereden = null,Object? nereye = null,Object? ucret = null,Object? urun = null,Object? notlar = null,Object? kategori = null,Object? kullaniciId = null,Object? kullaniciAd = null,Object? aktif = null,Object? tarih = freezed,Object? olusturmaTarihi = freezed,Object? resimUrl = null,Object? resimThumbUrl = null,Object? resimUrller = null,Object? urunLinki = null,Object? favoriSayisi = null,Object? goruntulenmeSayisi = null,Object? tasimaTercihi = null,Object? kullaniciPuan = null,Object? anaKategori = null,Object? kategoriYolu = null,Object? cinsiyet = null,Object? beden = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? tip = null,Object? nereden = null,Object? nereye = null,Object? ucret = null,Object? urun = null,Object? notlar = null,Object? kategori = null,Object? kullaniciId = null,Object? kullaniciAd = null,Object? aktif = null,Object? tarih = freezed,Object? olusturmaTarihi = freezed,Object? resimUrl = null,Object? resimThumbUrl = null,Object? resimUrller = null,Object? urunLinki = null,Object? favoriSayisi = null,Object? goruntulenmeSayisi = null,Object? tasimaTercihi = null,Object? kullaniciPuan = null,Object? anaKategori = null,Object? kategoriYolu = null,Object? cinsiyet = null,Object? beden = null,Object? sahipIstekTeslimatTercihi = freezed,Object? sahipDutyFree = null,}) {
   return _then(_IlanModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,tip: null == tip ? _self.tip : tip // ignore: cast_nullable_to_non_nullable
@@ -351,7 +357,9 @@ as double,anaKategori: null == anaKategori ? _self.anaKategori : anaKategori // 
 as String,kategoriYolu: null == kategoriYolu ? _self._kategoriYolu : kategoriYolu // ignore: cast_nullable_to_non_nullable
 as List<String>,cinsiyet: null == cinsiyet ? _self.cinsiyet : cinsiyet // ignore: cast_nullable_to_non_nullable
 as String,beden: null == beden ? _self.beden : beden // ignore: cast_nullable_to_non_nullable
-as String,
+as String,sahipIstekTeslimatTercihi: freezed == sahipIstekTeslimatTercihi ? _self.sahipIstekTeslimatTercihi : sahipIstekTeslimatTercihi // ignore: cast_nullable_to_non_nullable
+as String?,sahipDutyFree: null == sahipDutyFree ? _self.sahipDutyFree : sahipDutyFree // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

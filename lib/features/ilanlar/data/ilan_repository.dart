@@ -61,9 +61,11 @@ class IlanRepository {
   // ── Liste ─────────────────────────────────────────────────────────────────
 
   /// Cache-first: önce cache'den dener, boşsa server'dan çeker.
+  /// [forceServer] true ise cache atlanır, direkt server'dan çeker.
   Future<IlanSayfasi> istekIlanlariniGetir({
     String? kategori,
     int limit = Pagination.ilanSayfaBoyutu,
+    bool forceServer = false,
   }) async {
     Query q = _col
         .where('tip', isEqualTo: IlanTip.istek)
@@ -73,13 +75,17 @@ class IlanRepository {
     if (kategori != null) q = q.where('kategori', isEqualTo: kategori);
 
     QuerySnapshot snap;
-    try {
-      snap = await q.get(const GetOptions(source: Source.cache));
-      if (snap.docs.isEmpty) {
+    if (forceServer) {
+      snap = await q.get(const GetOptions(source: Source.server));
+    } else {
+      try {
+        snap = await q.get(const GetOptions(source: Source.cache));
+        if (snap.docs.isEmpty) {
+          snap = await q.get(const GetOptions(source: Source.server));
+        }
+      } catch (_) {
         snap = await q.get(const GetOptions(source: Source.server));
       }
-    } catch (_) {
-      snap = await q.get(const GetOptions(source: Source.server));
     }
 
     final ilanlar = snap.docs.map(IlanModel.fromFirestore).toList();
@@ -117,6 +123,7 @@ class IlanRepository {
   Future<IlanSayfasi> tasiyiciIlanlariniGetir({
     bool tariheGore = true,
     int limit = Pagination.ilanSayfaBoyutu,
+    bool forceServer = false,
   }) async {
     if (tariheGore) {
       final bugun = DateTime.now();
@@ -138,16 +145,21 @@ class IlanRepository {
 
       QuerySnapshot gelecek;
       QuerySnapshot gecmis;
-      try {
-        gelecek = await gelecekQ.get(const GetOptions(source: Source.cache));
-        gecmis  = await gecmisQ.get(const GetOptions(source: Source.cache));
-        if (gelecek.docs.isEmpty && gecmis.docs.isEmpty) {
+      if (forceServer) {
+        gelecek = await gelecekQ.get(const GetOptions(source: Source.server));
+        gecmis  = await gecmisQ.get(const GetOptions(source: Source.server));
+      } else {
+        try {
+          gelecek = await gelecekQ.get(const GetOptions(source: Source.cache));
+          gecmis  = await gecmisQ.get(const GetOptions(source: Source.cache));
+          if (gelecek.docs.isEmpty && gecmis.docs.isEmpty) {
+            gelecek = await gelecekQ.get(const GetOptions(source: Source.server));
+            gecmis  = await gecmisQ.get(const GetOptions(source: Source.server));
+          }
+        } catch (_) {
           gelecek = await gelecekQ.get(const GetOptions(source: Source.server));
           gecmis  = await gecmisQ.get(const GetOptions(source: Source.server));
         }
-      } catch (_) {
-        gelecek = await gelecekQ.get(const GetOptions(source: Source.server));
-        gecmis  = await gecmisQ.get(const GetOptions(source: Source.server));
       }
 
       final ilanlar = [
@@ -169,13 +181,17 @@ class IlanRepository {
         .limit(limit);
 
     QuerySnapshot snap;
-    try {
-      snap = await q.get(const GetOptions(source: Source.cache));
-      if (snap.docs.isEmpty) {
+    if (forceServer) {
+      snap = await q.get(const GetOptions(source: Source.server));
+    } else {
+      try {
+        snap = await q.get(const GetOptions(source: Source.cache));
+        if (snap.docs.isEmpty) {
+          snap = await q.get(const GetOptions(source: Source.server));
+        }
+      } catch (_) {
         snap = await q.get(const GetOptions(source: Source.server));
       }
-    } catch (_) {
-      snap = await q.get(const GetOptions(source: Source.server));
     }
 
     final ilanlar = snap.docs.map(IlanModel.fromFirestore).toList();
