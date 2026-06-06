@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../providers/auth_provider.dart';
 import '../../../shared/constants/app_colors.dart';
-import '../../../shared/constants/app_constants.dart' show kTurkiyeSehirleri;
+import '../../../shared/constants/app_constants.dart' show kTurkiyeSehirleri, turkceKarsilastir;
 import '../../../router/app_router.dart';
 import 'profil_tamamla_widgets.dart';
 
@@ -163,7 +163,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
   @override
   void initState() {
     super.initState();
-    _sortedTurkiyeSehirleri = [...kTurkiyeSehirleri]..sort();
+    _sortedTurkiyeSehirleri = [...kTurkiyeSehirleri]..sort(turkceKarsilastir);
   }
 
   @override

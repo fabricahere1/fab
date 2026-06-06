@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
-import '../../../shared/constants/app_constants.dart' show kDunyaUlkeleri, kTurkiyeSehirleri;
+import '../../../shared/constants/app_constants.dart' show kDunyaUlkeleri, kTurkiyeSehirleri, turkceKarsilastir;
 import '../../../shared/utils/app_snackbar.dart';
 import '../../../shared/widgets/autocomplete_alan.dart';
 
@@ -253,7 +253,7 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
                       controller: _bulunduguSehirCtrl,
                       hint: 'Şehir ara...',
                       icon: Icons.location_on_outlined,
-                      secenekler: kTurkiyeSehirleri,
+                      secenekler: ([...kTurkiyeSehirleri]..sort(turkceKarsilastir)),
                     ),
                   ],
                 ),
