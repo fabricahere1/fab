@@ -41,7 +41,7 @@ final class IstekIlanlarProvider
   }
 }
 
-String _$istekIlanlarHash() => r'c09a20233c310056f8d474d41e085d1f333bf498';
+String _$istekIlanlarHash() => r'579cc3a2abc83bf2bfe604481092ae86dec3464b';
 
 abstract class _$IstekIlanlar extends $Notifier<IlanListeState> {
   IlanListeState build();
@@ -93,7 +93,7 @@ final class TasiyiciIlanlarProvider
   }
 }
 
-String _$tasiyiciIlanlarHash() => r'50a1e1c10480b6d99ca47f731edd6766df1796f9';
+String _$tasiyiciIlanlarHash() => r'0270650d2cec4afd38c3ee68679ad499451e3542';
 
 abstract class _$TasiyiciIlanlar extends $Notifier<IlanListeState> {
   IlanListeState build();
