@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:iste_v3/shared/constants/app_colors.dart';
+import 'package:iste_v3/features/arama/presentation/arama_screen.dart';
 import 'sana_ozel_screen.dart';
 
 class KesfetScreen extends StatefulWidget {
@@ -43,6 +44,50 @@ class _KesfetScreenState extends State<KesfetScreen>
             child: Column(
               children: [
                 SizedBox(height: statusH),
+
+                // ── Arama çubuğu ──────────────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        PageRouteBuilder(
+                          pageBuilder: (_, _, _) => const AramaScreen(),
+                          transitionsBuilder: (_, anim, _, child) =>
+                              FadeTransition(opacity: anim, child: child),
+                          transitionDuration:
+                              const Duration(milliseconds: 200),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F5F5),
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(
+                            color: const Color(0xFFEEEEEE), width: 1),
+                      ),
+                      child: Row(
+                        children: [
+                          const SizedBox(width: 14),
+                          const Icon(Icons.search_rounded,
+                              size: 18, color: Color(0xFFCCCCCC)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Ne arıyorsun ?',
+                              style: GoogleFonts.dmSans(
+                                  color: const Color(0xFFCCCCCC),
+                                  fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
                 SizedBox(
                   height: 48,
                   child: TabBar(
