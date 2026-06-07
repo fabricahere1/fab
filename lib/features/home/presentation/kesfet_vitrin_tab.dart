@@ -156,7 +156,7 @@ class _Bolum extends StatelessWidget {
           ),
         ),
         SizedBox(
-          height: 208,
+          height: 285,
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             scrollDirection: Axis.horizontal,
@@ -194,7 +194,7 @@ class _KesfetKart extends ConsumerWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.divider, width: 0.8),
+          border: Border.all(color: const Color(0xFF888888), width: 0.3),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
@@ -206,13 +206,14 @@ class _KesfetKart extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Resim + rozet
+            // Resim + rozet — tam boyut (kırpmadan), arkada nötr gri zemin
             ClipRRect(
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(11)),
-              child: SizedBox(
-                height: 110,
+              child: Container(
+                height: 185,
                 width: double.infinity,
+                color: const Color(0xFFF2F2F2),
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -220,7 +221,7 @@ class _KesfetKart extends ConsumerWidget {
                         ? CachedNetworkImage(
                             cacheManager: AppCacheManager.instance,
                             imageUrl: resim,
-                            fit: BoxFit.cover,
+                            fit: BoxFit.contain,
                             fadeInDuration: Duration.zero,
                             errorWidget: (_, _, _) =>
                                 _RenkliArkaplan(ilan: ilan),
