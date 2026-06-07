@@ -41,7 +41,7 @@ final class IstekIlanlarProvider
   }
 }
 
-String _$istekIlanlarHash() => r'579cc3a2abc83bf2bfe604481092ae86dec3464b';
+String _$istekIlanlarHash() => r'437fa6af7051dbf515dff8d2c175af1aed717222';
 
 abstract class _$IstekIlanlar extends $Notifier<IlanListeState> {
   IlanListeState build();

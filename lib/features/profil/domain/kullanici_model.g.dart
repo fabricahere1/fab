@@ -75,6 +75,14 @@ _KullaniciModel _$KullaniciModelFromJson(Map<String, dynamic> json) =>
               ?.map((e) => e as String)
               .toList() ??
           const [],
+      takipciSayisi: (json['takipciSayisi'] as num?)?.toInt() ?? 0,
+      takipSayisi: (json['takipSayisi'] as num?)?.toInt() ?? 0,
+      guvenSkoru: (json['guvenSkoru'] as num?)?.toInt() ?? 0,
+      rozetler:
+          (json['rozetler'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
     );
 
 Map<String, dynamic> _$KullaniciModelToJson(_KullaniciModel instance) =>
@@ -106,4 +114,8 @@ Map<String, dynamic> _$KullaniciModelToJson(_KullaniciModel instance) =>
       'kadinAyakkabi': instance.kadinAyakkabi,
       'erkekAyakkabi': instance.erkekAyakkabi,
       'cocukAyakkabi': instance.cocukAyakkabi,
+      'takipciSayisi': instance.takipciSayisi,
+      'takipSayisi': instance.takipSayisi,
+      'guvenSkoru': instance.guvenSkoru,
+      'rozetler': instance.rozetler,
     };

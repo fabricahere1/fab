@@ -35,6 +35,11 @@ abstract class KullaniciModel with _$KullaniciModel {
     @Default([]) List<String> kadinAyakkabi,
     @Default([]) List<String> erkekAyakkabi,
     @Default([]) List<String> cocukAyakkabi,
+    // Sosyal & güven
+    @Default(0) int takipciSayisi,
+    @Default(0) int takipSayisi,
+    @Default(0) int guvenSkoru,
+    @Default([]) List<String> rozetler,
   }) = _KullaniciModel;
  
   factory KullaniciModel.fromFirestore(DocumentSnapshot doc) {
@@ -67,6 +72,10 @@ abstract class KullaniciModel with _$KullaniciModel {
       kadinAyakkabi:        List<String>.from(d['kadinAyakkabi'] ?? []),
       erkekAyakkabi:        List<String>.from(d['erkekAyakkabi'] ?? []),
       cocukAyakkabi:        List<String>.from(d['cocukAyakkabi'] ?? []),
+      takipciSayisi:        ((d['takipciSayisi'] as num?)?.toInt()) ?? 0,
+      takipSayisi:          ((d['takipSayisi']   as num?)?.toInt()) ?? 0,
+      guvenSkoru:           ((d['guvenSkoru']    as num?)?.toInt()) ?? 0,
+      rozetler:             List<String>.from(d['rozetler'] ?? []),
     );
   }
  
@@ -102,6 +111,10 @@ extension KullaniciModelX on KullaniciModel {
     if (kadinAyakkabi.isNotEmpty) 'kadinAyakkabi': kadinAyakkabi,
     if (erkekAyakkabi.isNotEmpty) 'erkekAyakkabi': erkekAyakkabi,
     if (cocukAyakkabi.isNotEmpty) 'cocukAyakkabi': cocukAyakkabi,
+    if (takipciSayisi > 0) 'takipciSayisi': takipciSayisi,
+    if (takipSayisi   > 0) 'takipSayisi':   takipSayisi,
+    if (guvenSkoru    > 0) 'guvenSkoru':    guvenSkoru,
+    if (rozetler.isNotEmpty) 'rozetler':    rozetler,
   };
  
   bool get tasiyiciMi =>
@@ -109,4 +122,35 @@ extension KullaniciModelX on KullaniciModel {
  
   bool get istekMi =>
       kullaniciTipi == 'istek' || kullaniciTipi == 'her_ikisi';
+
+  String get guvenSkoruEtiketi {
+    if (guvenSkoru >= 80) return 'Çok Güvenilir';
+    if (guvenSkoru >= 60) return 'Güvenilir';
+    if (guvenSkoru >= 40) return 'Orta';
+    return 'Düşük';
+  }
+
+  String rozetEmoji(String rozet) {
+    const emojiler = {
+      'dogrulandi':      '✅',
+      'hizli_teslimat':  '⚡',
+      'guvenilir':       '🛡️',
+      'cok_satilan':     '🔥',
+      'yeni_uye':        '🌟',
+      'premium':         '👑',
+    };
+    return emojiler[rozet] ?? '🏅';
+  }
+
+  String rozetAdi(String rozet) {
+    const adlar = {
+      'dogrulandi':      'Doğrulandı',
+      'hizli_teslimat':  'Hızlı Teslimat',
+      'guvenilir':       'Güvenilir',
+      'cok_satilan':     'Çok Satan',
+      'yeni_uye':        'Yeni Üye',
+      'premium':         'Premium',
+    };
+    return adlar[rozet] ?? rozet;
+  }
 }

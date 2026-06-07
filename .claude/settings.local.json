@@ -23,7 +23,8 @@
       "PowerShell(python --version; python3 --version)",
       "PowerShell(Get-Command *)",
       "PowerShell(winget install *)",
-      "Bash(dart run *)"
+      "Bash(dart run *)",
+      "mcp__ide__getDiagnostics"
     ]
   }
 }
