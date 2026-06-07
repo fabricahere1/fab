@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:iste_v3/shared/constants/app_colors.dart';
 import 'package:iste_v3/features/arama/presentation/arama_screen.dart';
 import 'sana_ozel_screen.dart';
+import 'kesfet_vitrin_tab.dart';
 
 class KesfetScreen extends StatefulWidget {
   const KesfetScreen({super.key});
@@ -121,39 +122,8 @@ class _KesfetScreenState extends State<KesfetScreen>
               controller: _tabCtrl,
               children: const [
                 SanaOzelScreen(),
-                _KesfetTab(),
+                KesfetVitrinTab(),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Keşfet tab — şimdilik boş
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _KesfetTab extends StatelessWidget {
-  const _KesfetTab();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.explore_outlined,
-              size: 56,
-              color: AppColors.textHint.withValues(alpha: 0.4)),
-          const SizedBox(height: 16),
-          Text(
-            'Yakında',
-            style: GoogleFonts.dmSans(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
             ),
           ),
         ],
