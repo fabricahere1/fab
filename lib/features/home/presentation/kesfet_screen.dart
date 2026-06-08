@@ -1,28 +1,37 @@
 // lib/features/home/presentation/kesfet_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:iste_v3/shared/constants/app_colors.dart';
 import 'package:iste_v3/features/arama/presentation/arama_screen.dart';
+import 'package:iste_v3/features/ilanlar/providers/ilan_provider.dart';
 import 'sana_ozel_screen.dart';
 import 'kesfet_vitrin_tab.dart';
 
-class KesfetScreen extends StatefulWidget {
+class KesfetScreen extends ConsumerStatefulWidget {
   const KesfetScreen({super.key});
 
   @override
-  State<KesfetScreen> createState() => _KesfetScreenState();
+  ConsumerState<KesfetScreen> createState() => _KesfetScreenState();
 }
 
-class _KesfetScreenState extends State<KesfetScreen>
+class _KesfetScreenState extends ConsumerState<KesfetScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabCtrl;
+  double _sonPixel = 0;
+  static const _threshold = 80.0;
 
   @override
   void initState() {
     super.initState();
     _tabCtrl = TabController(length: 2, vsync: this);
+    _tabCtrl.addListener(() {
+      if (!_tabCtrl.indexIsChanging) return;
+      _sonPixel = 0;
+      ref.read(navBarGizliProvider.notifier).goster();
+    });
   }
 
   @override
@@ -31,99 +40,111 @@ class _KesfetScreenState extends State<KesfetScreen>
     super.dispose();
   }
 
+  bool _onNotification(ScrollNotification n) {
+    if (n.metrics.axis == Axis.horizontal) return false;
+    if (n is! ScrollUpdateNotification) return false;
+    if (n.scrollDelta == null) return false;
+
+    final simdi = n.metrics.pixels;
+    final gizli = ref.read(navBarGizliProvider);
+
+    if (n.scrollDelta! > 0) {
+      _sonPixel = simdi;
+      if (!gizli) ref.read(navBarGizliProvider.notifier).gizle();
+    } else if (n.scrollDelta! < 0) {
+      if (simdi < _sonPixel - _threshold) {
+        _sonPixel = simdi;
+        if (gizli) ref.read(navBarGizliProvider.notifier).goster();
+      }
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final statusH = MediaQuery.of(context).padding.top;
+    final statusH  = MediaQuery.of(context).padding.top;
+    // navBarGizliProvider'ı dinle — nav bar gizliyse üst bar da gizlenir
+    final ustGizli = ref.watch(navBarGizliProvider);
 
     return Scaffold(
       backgroundColor: AppColors.surface,
       body: Column(
         children: [
-          // ── Üst bar ──────────────────────────────────────────────────────
+          // Status bar — her zaman sabit
+          Container(height: statusH, color: Colors.white),
+
+          // Arama + Tab bar — nav bar ile senkron
           Container(
             color: Colors.white,
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(height: statusH),
-
-                // ── Arama çubuğu ──────────────────────────────────────────
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(
-                        PageRouteBuilder(
-                          pageBuilder: (_, _, _) => const AramaScreen(),
-                          transitionsBuilder: (_, anim, _, child) =>
-                              FadeTransition(opacity: anim, child: child),
-                          transitionDuration:
-                              const Duration(milliseconds: 200),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F5F5),
-                        borderRadius: BorderRadius.circular(22),
-                        border: Border.all(
-                            color: const Color(0xFFEEEEEE), width: 1),
-                      ),
-                      child: Row(
-                        children: [
-                          const SizedBox(width: 14),
-                          const Icon(Icons.search_rounded,
-                              size: 18, color: Color(0xFFCCCCCC)),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Ne arıyorsun ?',
-                              style: GoogleFonts.dmSans(
-                                  color: const Color(0xFFCCCCCC),
-                                  fontSize: 13),
-                            ),
+                ClipRect(
+                  child: AnimatedAlign(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOutCubic,
+                    heightFactor: ustGizli ? 0.0 : 1.0,
+                    alignment: Alignment.topCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                      child: GestureDetector(
+                        onTap: () => Navigator.of(context).push(
+                          PageRouteBuilder(
+                            pageBuilder: (_, _, _) => const AramaScreen(),
+                            transitionsBuilder: (_, anim, _, child) =>
+                                FadeTransition(opacity: anim, child: child),
+                            transitionDuration: const Duration(milliseconds: 200),
                           ),
-                        ],
+                        ),
+                        child: Container(
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF5F5F5),
+                            borderRadius: BorderRadius.circular(22),
+                            border: Border.all(color: const Color(0xFFEEEEEE), width: 1),
+                          ),
+                          child: Row(
+                            children: [
+                              const SizedBox(width: 14),
+                              const Icon(Icons.search_rounded, size: 18, color: Color(0xFFCCCCCC)),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text('Ne arıyorsun ?',
+                                    style: GoogleFonts.dmSans(color: const Color(0xFFCCCCCC), fontSize: 13)),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-
-                SizedBox(
-                  height: 48,
-                  child: TabBar(
-                    controller: _tabCtrl,
-                    labelStyle: GoogleFonts.dmSans(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    unselectedLabelStyle: GoogleFonts.dmSans(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                    ),
-                    labelColor: AppColors.textPrimary,
-                    unselectedLabelColor: AppColors.textSecondary,
-                    indicatorColor: AppColors.red,
-                    indicatorWeight: 2.5,
-                    indicatorSize: TabBarIndicatorSize.label,
-                    tabs: const [
-                      Tab(text: 'Sana Özel'),
-                      Tab(text: 'Keşfet'),
-                    ],
-                  ),
+                TabBar(
+                  controller: _tabCtrl,
+                  labelStyle: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w700),
+                  unselectedLabelStyle: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w400),
+                  labelColor: AppColors.textPrimary,
+                  unselectedLabelColor: AppColors.textSecondary,
+                  indicatorColor: AppColors.red,
+                  indicatorWeight: 2.5,
+                  indicatorSize: TabBarIndicatorSize.label,
+                  tabs: const [Tab(text: 'Sana Özel'), Tab(text: 'Keşfet')],
                 ),
               ],
             ),
           ),
 
-          // ── İçerik ───────────────────────────────────────────────────────
+          // İçerik
           Expanded(
-            child: TabBarView(
-              controller: _tabCtrl,
-              children: const [
-                SanaOzelScreen(),
-                KesfetVitrinTab(),
-              ],
+            child: NotificationListener<ScrollNotification>(
+              onNotification: _onNotification,
+              child: TabBarView(
+                controller: _tabCtrl,
+                children: const [
+                  SanaOzelScreen(),
+                  KesfetVitrinTab(),
+                ],
+              ),
             ),
           ),
         ],

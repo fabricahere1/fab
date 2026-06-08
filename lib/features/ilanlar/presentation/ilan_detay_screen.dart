@@ -1182,7 +1182,7 @@ class _ResimWidget extends StatelessWidget {
         child: CachedNetworkImage(
           cacheManager: AppCacheManager.instance,
           imageUrl: url,
-          fit: BoxFit.contain,
+          fit: BoxFit.cover,
           width: double.infinity,
           height: double.infinity,
           fadeInDuration: Duration.zero,
@@ -1291,7 +1291,7 @@ class _ResimBuyukEkranState extends State<_ResimBuyukEkran>
               child: CachedNetworkImage(
                 cacheManager: AppCacheManager.instance,
                 imageUrl: widget.resimler[i],
-                fit: BoxFit.contain,
+                fit: BoxFit.cover,
                 fadeInDuration: Duration.zero,
                 placeholder: (_, _) => const CircularProgressIndicator(
                     color: Colors.white, strokeWidth: 2),

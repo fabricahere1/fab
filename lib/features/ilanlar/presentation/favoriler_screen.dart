@@ -234,7 +234,7 @@ class _FavoriKartiState extends ConsumerState<_FavoriKarti>
                       ? CachedNetworkImage(
                           cacheManager: AppCacheManager.instance,
                           imageUrl: resimler.first,
-                          fit: BoxFit.contain,
+                          fit: BoxFit.cover,
                           fadeInDuration: Duration.zero,
                           fadeOutDuration: Duration.zero,
                           placeholder: (_, _) =>

@@ -187,7 +187,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           height: ref.watch(navBarGizliProvider)
               ? 0
               : 62 + bottomPadding,
-          child: Container(
+          child: ClipRect(child: Container(
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
@@ -250,7 +250,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
             ),
-          ),
+          )),
         ),
       ),
     );

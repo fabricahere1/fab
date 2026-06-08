@@ -178,7 +178,7 @@ class _IlanResimSliderState extends State<_IlanResimSlider> {
           itemBuilder: (_, i) => CachedNetworkImage(
             cacheManager: AppCacheManager.instance,
             imageUrl: widget.resimler[i],
-            fit: BoxFit.contain,
+            fit: BoxFit.cover,
             memCacheWidth: w,
             fadeInDuration: Duration.zero,
             fadeOutDuration: Duration.zero,
