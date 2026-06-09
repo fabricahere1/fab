@@ -163,8 +163,8 @@ class _Bolum extends StatelessWidget {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(data.baslik,
-                    style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary, letterSpacing: 0.1)),
+                    style: GoogleFonts.urbanist(fontSize: 16, fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary, letterSpacing: 0.1)),
               ),
             ]),
           ],
