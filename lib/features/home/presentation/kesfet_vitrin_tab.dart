@@ -713,9 +713,9 @@ class _HeroBanner extends ConsumerWidget {
     ].where((i) => seen.add(i.id)).toList();
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 0, 0, 4),
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
       child: ClipRRect(
-        borderRadius: BorderRadius.zero,
+        borderRadius: BorderRadius.circular(16),
         child: SizedBox(
           height: 210,
           child: Stack(
@@ -754,9 +754,9 @@ class _HeroBanner extends ConsumerWidget {
                 children: [
                   // ── Üst: başlık + tümünü gör ──
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(14, 14, 12, 6),
+                    padding: const EdgeInsets.fromLTRB(14, 12, 12, 6),
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Expanded(
                           child: Column(
@@ -764,8 +764,10 @@ class _HeroBanner extends ConsumerWidget {
                             children: [
                               Text(
                                 'Bu hafta öne çıkanlar',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.urbanist(
-                                  fontSize: 24,
+                                  fontSize: 20,
                                   fontWeight: FontWeight.w700,
                                   color: Colors.white,
                                   letterSpacing: 0.2,
@@ -773,8 +775,10 @@ class _HeroBanner extends ConsumerWidget {
                               ),
                               Text(
                                 'En çok görüntülenen & favorilenen ilanlar',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.dmSans(
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   color: Colors.white.withValues(alpha: 0.85),
                                 ),
                               ),
@@ -816,10 +820,10 @@ class _HeroBanner extends ConsumerWidget {
                     ),
                   ),
                   // ── Alt: kaydırılabilir ilan kartları ──
-                  Expanded(
-                    child: heroIlanlar.isEmpty
-                        ? const SizedBox.shrink()
-                        : ListView.builder(
+                  if (heroIlanlar.isNotEmpty)
+                    SizedBox(
+                      height: 136,
+                      child: ListView.builder(
                             scrollDirection: Axis.horizontal,
                             padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
                             itemCount: heroIlanlar.length,
@@ -832,8 +836,8 @@ class _HeroBanner extends ConsumerWidget {
                                   context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan);
                                 },
                                 child: Container(
-                                  width: 80,
-                                  height: 80,
+                                  width: 88,
+                                  height: 120,
                                   margin: const EdgeInsets.only(right: 8),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(10),

@@ -168,115 +168,83 @@ class _TrendUrunlerBolum extends StatelessWidget {
   final List<TrendUrun> trendler;
   const _TrendUrunlerBolum({required this.trendler});
 
-  // İlk 5'i göster, tümünü gör ile hepsi
-  static const _onizleme = 5;
-
   @override
   Widget build(BuildContext context) {
-    final liste = trendler.take(_onizleme).toList();
-    // Tüm ilanlar (tümünü gör sayfası için)
     final tumIlanlar = trendler.expand((t) => t.ilanlar).toList();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _bolumBaslik(
-          baslik: 'Trend ürünler',
-          ikon: Icons.trending_up_rounded,
-          tumunuGor: () => Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => KesfetBolumDetayScreen(
-              baslik: 'Trend ürünler',
-              ilanlar: tumIlanlar,
-              ikon: Icons.trending_up_rounded,
-            ),
-          )),
-        ),
-
-        // Zemin + liste
-        Stack(
-          children: [
-            // Zemin
-            Positioned.fill(
-              child: CustomPaint(painter: _SiluetZeminPainter(_ZeminTipi.mavi)),
-            ),
-            // Liste
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-              child: Column(
-                children: List.generate(liste.length, (i) {
-                  final trend = liste[i];
-                  return GestureDetector(
-                    onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => KesfetBolumDetayScreen(
-                        baslik: trend.ad,
-                        ilanlar: trend.ilanlar,
-                        ikon: Icons.trending_up_rounded,
-                      ),
-                    )),
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.92),
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 4, offset: const Offset(0, 1))],
-                      ),
-                      child: Row(
-                        children: [
-                          // Sıra
-                          SizedBox(
-                            width: 24,
-                            child: Text('${i + 1}',
-                                style: GoogleFonts.dmSans(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: i < 3 ? AppColors.red : AppColors.textHint,
-                                )),
-                          ),
-                          // İkon
-                          if (i < 3) ...[
-                            Text(['🔥', '⚡', '✨'][i], style: const TextStyle(fontSize: 14)),
-                            const SizedBox(width: 8),
-                          ] else ...[
-                            const Icon(Icons.shopping_bag_outlined, size: 14, color: AppColors.textSecondary),
-                            const SizedBox(width: 8),
-                          ],
-                          // Ürün adı
-                          Expanded(
-                            child: Text(trend.ad,
-                                style: GoogleFonts.dmSans(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.textPrimary),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis),
-                          ),
-                          // İlan sayısı
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: AppColors.red.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text('${trend.ilanlar.length} ilan',
-                                style: GoogleFonts.dmSans(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.red)),
-                          ),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.textHint),
-                        ],
-                      ),
-                    ),
-                  );
-                }),
+    return Consumer(
+      builder: (context, ref, _) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _bolumBaslik(
+            baslik: 'Trend ürünler',
+            ikon: Icons.trending_up_rounded,
+            tumunuGor: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => KesfetBolumDetayScreen(
+                baslik: 'Trend ürünler',
+                ilanlar: tumIlanlar,
+                ikon: Icons.trending_up_rounded,
               ),
+            )),
+          ),
+          SizedBox(
+            height: 136,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 14),
+              itemCount: tumIlanlar.length,
+              itemBuilder: (_, index) {
+                final ilan = tumIlanlar[index];
+                final resim = ilan.gridResim;
+                return GestureDetector(
+                  onTap: () {
+                    ref.read(sonGoruntulenenlerProvider.notifier).kaydet(ilan);
+                    context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan);
+                  },
+                  child: Container(
+                    width: 88,
+                    height: 120,
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: AppColors.divider,
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(9),
+                      child: resim.isNotEmpty
+                          ? CachedNetworkImage(
+                              cacheManager: AppCacheManager.instance,
+                              imageUrl: resim,
+                              fit: BoxFit.cover,
+                              fadeInDuration: Duration.zero,
+                            )
+                          : Container(
+                              color: AppColors.surfaceAlt,
+                              child: const Icon(
+                                Icons.inventory_2_outlined,
+                                color: AppColors.textHint,
+                                size: 26,
+                              ),
+                            ),
+                    ),
+                  ),
+                );
+              },
             ),
-          ],
-        ),
-        const SizedBox(height: 8),
-      ],
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
     );
   }
 }
@@ -486,66 +454,6 @@ class _GuzergahlarBolum extends StatelessWidget {
       );
 }
 
-// ── Mini ilan kartı ───────────────────────────────────────────────────────────
-
-class _MiniIlanKarti extends ConsumerWidget {
-  final IlanModel ilan;
-  const _MiniIlanKarti({required this.ilan});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final resim = ilan.gridResim;
-    return GestureDetector(
-      onTap: () {
-        ref.read(sonGoruntulenenlerProvider.notifier).kaydet(ilan);
-        context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan);
-      },
-      child: Container(
-        width: 80,
-        height: 136,
-        margin: const EdgeInsets.only(right: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.zero,
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 6, offset: const Offset(0, 2))],
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(children: [
-          SizedBox(
-            height: 104,
-            width: double.infinity,
-            child: resim.isNotEmpty
-                ? CachedNetworkImage(
-                    cacheManager: AppCacheManager.instance,
-                    imageUrl: resim,
-                    fit: BoxFit.cover,
-                    fadeInDuration: Duration.zero,
-                    errorWidget: (_, _, _) => _resimYok(),
-                  )
-                : _resimYok(),
-          ),
-          SizedBox(
-            height: 32,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-              child: Text(
-                ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
-                style: GoogleFonts.dmSans(fontSize: 9, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-        ]),
-      ),
-    );
-  }
-
-  Widget _resimYok() => Container(
-        color: const Color(0xFFF2F2F2),
-        child: const Center(child: Icon(Icons.inventory_2_outlined, size: 22, color: AppColors.textHint)),
-      );
-}
 
 // ── 3) Bu Hafta Hangi Şehirlerden Geliyor ────────────────────────────────────
 
