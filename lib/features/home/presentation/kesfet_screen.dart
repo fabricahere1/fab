@@ -12,6 +12,7 @@ import 'package:iste_v3/features/ilanlar/providers/ilan_provider.dart';
 import 'package:iste_v3/features/ilanlar/presentation/ilan_form_screen.dart';
 import 'sana_ozel_screen.dart';
 import 'kesfet_vitrin_tab.dart';
+import 'kesfet_vitrin2_tab.dart';
 
 class KesfetScreen extends ConsumerStatefulWidget {
   const KesfetScreen({super.key});
@@ -175,12 +176,41 @@ class _KesfetScreenState extends ConsumerState<KesfetScreen>
                 controller: _tabCtrl,
                 children: const [
                   SanaOzelScreen(),
-                  KesfetVitrinTab(),
+                  _KesfetTumEkran(),
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+// ── Keşfet tam ekranı — vitrin1 + vitrin2 alt alta ───────────────────────────
+
+class _KesfetTumEkran extends ConsumerWidget {
+  const _KesfetTumEkran();
+
+  Future<void> _yenile(WidgetRef ref) async {
+    await Future.wait([
+      ref.read(istekIlanlarProvider.notifier).yenile(),
+      ref.read(tasiyiciIlanlarProvider.notifier).yenile(),
+    ]);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return RefreshIndicator(
+      color: AppColors.red,
+      onRefresh: () => _yenile(ref),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          children: const [
+            KesfetVitrinTab(),
+            KesfetVitrin2Tab(),
+          ],
+        ),
       ),
     );
   }

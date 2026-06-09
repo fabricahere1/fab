@@ -45,26 +45,22 @@ class KesfetVitrinTab extends ConsumerWidget {
       _BolumData('Bugün yola çıkacaklar · Duty Free fırsatları', Icons.local_mall_outlined, dutyFree, _RozetTipi.dutyFree, CicekTipi.papatya),
     ].where((b) => b.ilanlar.isNotEmpty).toList();
 
-    return RefreshIndicator(
-          color: AppColors.red,
-          onRefresh: () => _yenile(ref),
-          child: bolumler.isEmpty
-              ? ListView(physics: const AlwaysScrollableScrollPhysics(), children: [
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.7,
-                    child: yukleniyor
-                        ? const Center(child: CircularProgressIndicator(color: AppColors.red, strokeWidth: 2))
-                        : const _BosEkran()),
-                ])
-              : ListView.builder(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.only(top: 0, bottom: 24),
-                  itemCount: bolumler.length + 1,
-                  itemBuilder: (_, i) {
-                    if (i == 0) return const _HeroBanner();
-                    return _Bolum(data: bolumler[i - 1]);
-                  },
-                ),
-        );
+    if (bolumler.isEmpty) {
+      return yukleniyor
+          ? const Center(
+              child: CircularProgressIndicator(
+                  color: AppColors.red, strokeWidth: 2))
+          : const _BosEkran();
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const _HeroBanner(),
+        ...bolumler.map((b) => _Bolum(data: b)),
+        const SizedBox(height: 8),
+      ],
+    );
   }
 }
 
@@ -180,7 +176,7 @@ class _Bolum extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.inter(
                       fontSize: 15,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w500,
                       color: AppColors.textPrimary,
                       letterSpacing: 0.0,
                     ),
