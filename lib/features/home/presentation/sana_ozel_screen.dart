@@ -17,7 +17,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:iste_v3/core/cache/app_cache_manager.dart';
 import 'package:iste_v3/shared/constants/app_constants.dart';
 import 'package:iste_v3/features/home/presentation/kesfet_vitrin_tab.dart'
-    show CicekBaslikPainter, CicekTipi, KartZeminPainter;
+    show CicekTipi, KartZeminPainter;
 import 'package:iste_v3/features/home/presentation/kesfet_bolum_detay_screen.dart';
 
 class SanaOzelScreen extends ConsumerWidget {
@@ -176,7 +176,7 @@ class _Bolum extends StatelessWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(data.baslik,
-                      style: GoogleFonts.urbanist(fontSize: 16, fontWeight: FontWeight.w600,
+                      style: GoogleFonts.notoSans(fontSize: 16, fontWeight: FontWeight.w500,
     color: AppColors.textPrimary, letterSpacing: 0.1)),
                 ),
               ]),

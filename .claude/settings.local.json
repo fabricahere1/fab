@@ -24,7 +24,9 @@
       "PowerShell(Get-Command *)",
       "PowerShell(winget install *)",
       "Bash(dart run *)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(cat)",
+      "Read(//tmp/**)"
     ]
   }
 }

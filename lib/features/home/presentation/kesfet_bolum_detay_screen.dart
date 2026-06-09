@@ -9,7 +9,6 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import 'package:iste_v3/core/cache/app_cache_manager.dart';
 import 'package:iste_v3/features/ilanlar/domain/ilan_model.dart';
-import 'package:iste_v3/features/ilanlar/providers/ilan_provider.dart';
 import 'package:iste_v3/features/home/providers/son_goruntulenenler_provider.dart';
 import 'package:iste_v3/router/app_router.dart';
 import 'package:iste_v3/shared/constants/app_colors.dart';

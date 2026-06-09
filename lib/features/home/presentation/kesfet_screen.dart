@@ -1,12 +1,15 @@
 // lib/features/home/presentation/kesfet_screen.dart
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:iste_v3/shared/constants/app_colors.dart';
+import 'package:iste_v3/shared/constants/app_constants.dart';
 import 'package:iste_v3/features/arama/presentation/arama_screen.dart';
 import 'package:iste_v3/features/ilanlar/providers/ilan_provider.dart';
+import 'package:iste_v3/features/ilanlar/presentation/ilan_form_screen.dart';
 import 'sana_ozel_screen.dart';
 import 'kesfet_vitrin_tab.dart';
 
@@ -131,6 +134,36 @@ class _KesfetScreenState extends ConsumerState<KesfetScreen>
                   tabs: const [Tab(text: 'Sana Özel'), Tab(text: 'Keşfet')],
                 ),
               ],
+            ),
+          ),
+
+          // ── Promosyon bandı — arama/tab ile içerik arasında ──────────────
+          GestureDetector(
+            onTap: () => Navigator.of(context).push(
+              CupertinoPageRoute(
+                builder: (_) => IlanFormScreen(tip: IlanTip.istek),
+              ),
+            ),
+            child: Container(
+              width: double.infinity,
+              color: const Color(0xFFEDE7F6),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'İlk ilanını ver, öne çıkaralım!',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right_rounded,
+                      size: 18, color: Colors.black54),
+                ],
+              ),
             ),
           ),
 

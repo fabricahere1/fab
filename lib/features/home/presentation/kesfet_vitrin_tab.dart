@@ -57,9 +57,12 @@ class KesfetVitrinTab extends ConsumerWidget {
                 ])
               : ListView.builder(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.only(top: 8, bottom: 24),
-                  itemCount: bolumler.length,
-                  itemBuilder: (_, i) => _Bolum(data: bolumler[i]),
+                  padding: const EdgeInsets.only(top: 0, bottom: 24),
+                  itemCount: bolumler.length + 1,
+                  itemBuilder: (_, i) {
+                    if (i == 0) return const _HeroBanner();
+                    return _Bolum(data: bolumler[i - 1]);
+                  },
                 ),
         );
   }
@@ -122,10 +125,11 @@ class _Bolum extends StatelessWidget {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       // Başlık + Tümünü Göster butonu
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 12, 8),
+        padding: const EdgeInsets.fromLTRB(16, 14, 12, 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Tümünü Gör butonu — sağ üstte
             Align(
               alignment: Alignment.centerRight,
               child: GestureDetector(
@@ -139,7 +143,7 @@ class _Bolum extends StatelessWidget {
                   ),
                 ),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
@@ -152,21 +156,38 @@ class _Bolum extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: Text('Tümünü Gör',
-                      style: GoogleFonts.dmSans(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.red)),
+                  child: Text(
+                    'Tümünü Gör',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.red,
+                    ),
+                  ),
                 ),
               ),
             ),
-            const SizedBox(height: 4),
-            Row(children: [
-              Icon(data.ikon, size: 15, color: AppColors.red),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(data.baslik,
-                    style: GoogleFonts.urbanist(fontSize: 16, fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary, letterSpacing: 0.1)),
-              ),
-            ]),
+            const SizedBox(height: 6),
+            // İkon + Başlık — tek satır
+            Row(
+              children: [
+                Icon(data.ikon, size: 16, color: AppColors.red),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    data.baslik,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                      letterSpacing: 0.0,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -420,12 +441,20 @@ class KartZeminPainter extends CustomPainter {
   final CicekTipi tip;
   const KartZeminPainter(this.tip);
 
+  // ── Beyaz stroke boya — tüm siluetler bu boya ile çizilir ──────────────────
+  static final _p = Paint()
+    ..color = Colors.white.withValues(alpha: 0.55)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.1
+    ..strokeCap = StrokeCap.round
+    ..strokeJoin = StrokeJoin.round;
+
   @override
   void paint(Canvas canvas, Size size) {
     final w = size.width;
     final h = size.height;
 
-    // Gradient zemin
+    // ── Zemin rengi (gradient) ───────────────────────────────────────────────
     final List<Color> renkler;
     switch (tip) {
       case CicekTipi.papatya:  renkler = [const Color(0xFF87CEEB), const Color(0xFFE0F4FF)]; break;
@@ -433,151 +462,431 @@ class KartZeminPainter extends CustomPainter {
       case CicekTipi.lavanta:  renkler = [const Color(0xFFFFF176), const Color(0xFFFFFDE7)]; break;
       case CicekTipi.aycicegi: renkler = [const Color(0xFFB2DFDB), const Color(0xFFE8F5E9)]; break;
     }
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, w, h),
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: renkler,
+        ).createShader(Rect.fromLTWH(0, 0, w, h)),
+    );
 
-    final gradBoya = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: renkler,
-      ).createShader(Rect.fromLTWH(0, 0, w, h));
-    canvas.drawRect(Rect.fromLTWH(0, 0, w, h), gradBoya);
-
-    final beyaz = Paint()..color = Colors.white..style = PaintingStyle.fill;
-
-    // Her tip için farklı bulut pozisyonları
+    // ── Siluet dizilimi — her tip için farklı yerleşim ───────────────────────
     switch (tip) {
       case CicekTipi.papatya:
-        // Ana bulut — sağ üst
-        _bulut(canvas, beyaz, w * 0.78, h * 0.22, 0.90, [
-          _B(0,    0,    65, 24),
-          _B(-38,  8,    42, 19),
-          _B(35,   7,    38, 17),
-          _B(0,   -8,    35, 15),
-          _B(-22, -2,    25, 13),
-          _B(24,  -3,    28, 13),
-        ]);
-        // Orta sol bulut
-        _bulut(canvas, beyaz, w * 0.22, h * 0.18, 0.78, [
-          _B(0,    0,    50, 18),
-          _B(-28,  6,    32, 14),
-          _B(28,   5,    30, 13),
-          _B(0,   -6,    24, 11),
-        ]);
-        // Alt küçük bulut
-        _bulut(canvas, beyaz, w * 0.50, h * 0.72, 0.55, [
-          _B(0,    0,    38, 12),
-          _B(-18,  4,    22, 9),
-          _B(18,   3,    20, 8),
-        ]);
+        // sol üst: uçak büyük
+        _ucak(canvas, w * 0.12, h * 0.18, 1.0, 0.0);
+        // sağ üst: çiçek demeti
+        _demetCicek(canvas, w * 0.78, h * 0.12, 1.0);
+        // orta sol: bavul küçük
+        _bavul(canvas, w * 0.08, h * 0.60, 0.75);
+        // orta sağ: sepet
+        _sepet(canvas, w * 0.72, h * 0.55, 0.85);
+        // alt orta: uçak küçük eğik
+        _ucak(canvas, w * 0.45, h * 0.82, 0.65, -0.3);
+        // sağ alt: tek çiçek
+        _tekCicek(canvas, w * 0.88, h * 0.78, 0.7);
         break;
 
       case CicekTipi.gul:
-        // Ana bulut — sol üst
-        _bulut(canvas, beyaz, w * 0.20, h * 0.25, 0.88, [
-          _B(0,    0,    70, 26),
-          _B(-40,  8,    46, 20),
-          _B(38,   7,    42, 19),
-          _B(0,   -9,    38, 17),
-          _B(-25, -3,    28, 14),
-          _B(28,  -4,    30, 14),
-        ]);
-        // Sağ orta bulut
-        _bulut(canvas, beyaz, w * 0.75, h * 0.30, 0.72, [
-          _B(0,    0,    48, 17),
-          _B(-26,  6,    30, 13),
-          _B(26,   5,    28, 12),
-          _B(0,   -5,    22, 10),
-        ]);
-        // Sol alt küçük
-        _bulut(canvas, beyaz, w * 0.30, h * 0.78, 0.50, [
-          _B(0,    0,    35, 11),
-          _B(-16,  3,    20, 8),
-          _B(16,   3,    18, 8),
-        ]);
-        // Sağ alt ince
-        _bulut(canvas, beyaz, w * 0.82, h * 0.82, 0.42, [
-          _B(0,    0,    28, 9),
-          _B(-13,  3,    16, 7),
-          _B(13,   3,    14, 6),
-        ]);
+        // sol üst: çiçek demeti büyük
+        _demetCicek(canvas, w * 0.15, h * 0.14, 1.0);
+        // sağ üst: bavul
+        _bavul(canvas, w * 0.78, h * 0.12, 0.9);
+        // orta: uçak
+        _ucak(canvas, w * 0.48, h * 0.45, 0.85, 0.15);
+        // sol alt: sepet
+        _sepet(canvas, w * 0.10, h * 0.68, 0.8);
+        // sağ alt: tek çiçek
+        _tekCicek(canvas, w * 0.82, h * 0.65, 0.75);
+        // alt orta: bavul mini
+        _bavul(canvas, w * 0.50, h * 0.82, 0.6);
         break;
 
       case CicekTipi.lavanta:
-        // Ana bulut — ortada üst
-        _bulut(canvas, beyaz, w * 0.50, h * 0.20, 0.90, [
-          _B(0,    0,    72, 27),
-          _B(-42,  9,    46, 21),
-          _B(42,   8,    44, 20),
-          _B(0,   -10,   38, 17),
-          _B(-28,  -4,   28, 14),
-          _B(30,   -5,   30, 14),
-        ]);
-        // Sol küçük
-        _bulut(canvas, beyaz, w * 0.12, h * 0.40, 0.65, [
-          _B(0,    0,    38, 14),
-          _B(-20,  5,    24, 11),
-          _B(20,   4,    22, 10),
-          _B(0,   -4,    18, 8),
-        ]);
-        // Sağ alt
-        _bulut(canvas, beyaz, w * 0.80, h * 0.70, 0.55, [
-          _B(0,    0,    42, 14),
-          _B(-22,  5,    26, 10),
-          _B(22,   4,    24, 10),
-        ]);
+        // sol üst: sepet
+        _sepet(canvas, w * 0.08, h * 0.12, 0.9);
+        // sağ üst: uçak
+        _ucak(canvas, w * 0.70, h * 0.10, 0.95, -0.2);
+        // orta sol: çiçek demeti
+        _demetCicek(canvas, w * 0.18, h * 0.52, 0.85);
+        // orta sağ: bavul
+        _bavul(canvas, w * 0.78, h * 0.48, 0.8);
+        // alt: tek çiçek + uçak mini
+        _tekCicek(canvas, w * 0.50, h * 0.78, 0.7);
+        _ucak(canvas, w * 0.82, h * 0.82, 0.6, 0.25);
         break;
 
       case CicekTipi.aycicegi:
-        // Ana bulut — sağ
-        _bulut(canvas, beyaz, w * 0.72, h * 0.20, 0.88, [
-          _B(0,    0,    64, 24),
-          _B(-36,  8,    42, 19),
-          _B(36,   7,    38, 17),
-          _B(0,   -8,    34, 15),
-          _B(-22,  -3,   25, 12),
-          _B(24,   -4,   26, 13),
-        ]);
-        // Sol üst orta
-        _bulut(canvas, beyaz, w * 0.18, h * 0.28, 0.75, [
-          _B(0,    0,    52, 19),
-          _B(-28,  6,    34, 14),
-          _B(28,   5,    30, 13),
-          _B(0,   -6,    24, 11),
-        ]);
-        // Orta alt
-        _bulut(canvas, beyaz, w * 0.48, h * 0.75, 0.50, [
-          _B(0,    0,    40, 12),
-          _B(-20,  4,    24, 9),
-          _B(20,   3,    22, 8),
-        ]);
-        // Sol alt küçük
-        _bulut(canvas, beyaz, w * 0.15, h * 0.80, 0.40, [
-          _B(0,    0,    28, 9),
-          _B(-12,  3,    16, 7),
-          _B(12,   3,    14, 6),
-        ]);
+        // sol üst: bavul büyük
+        _bavul(canvas, w * 0.10, h * 0.12, 1.0);
+        // sağ üst: uçak
+        _ucak(canvas, w * 0.68, h * 0.08, 1.0, 0.1);
+        // orta: demet çiçek
+        _demetCicek(canvas, w * 0.45, h * 0.40, 0.9);
+        // sol alt: tek çiçek
+        _tekCicek(canvas, w * 0.12, h * 0.70, 0.75);
+        // sağ alt: sepet
+        _sepet(canvas, w * 0.75, h * 0.65, 0.85);
+        // alt sağ: uçak mini
+        _ucak(canvas, w * 0.88, h * 0.88, 0.55, -0.15);
         break;
     }
   }
 
-  void _bulut(Canvas canvas, Paint boya, double cx, double cy, double opacity, List<_B> elipsler) {
-    boya.color = Colors.white.withValues(alpha: opacity);
-    for (final e in elipsler) {
-      canvas.drawOval(
-        Rect.fromCenter(center: Offset(cx + e.dx, cy + e.dy), width: e.rx * 2, height: e.ry * 2),
-        boya,
-      );
+  // ── Uçak silueti ────────────────────────────────────────────────────────────
+  // cx,cy: merkez, scale: boyut çarpanı, angle: radyan cinsinden dönüş
+  void _ucak(Canvas canvas, double cx, double cy, double scale, double angle) {
+    canvas.save();
+    canvas.translate(cx, cy);
+    canvas.rotate(angle);
+    final s = scale * 22.0;
+    final p = _p;
+    // gövde
+    final govde = Path()
+      ..moveTo(-s, 0)
+      ..lineTo(s * 0.6, -s * 0.18)
+      ..lineTo(s, 0)
+      ..lineTo(s * 0.6, s * 0.18)
+      ..close();
+    canvas.drawPath(govde, p);
+    // sol kanat
+    final kanat = Path()
+      ..moveTo(-s * 0.1, 0)
+      ..lineTo(-s * 0.5, -s * 0.7)
+      ..lineTo(s * 0.25, -s * 0.22)
+      ..close();
+    canvas.drawPath(kanat, p);
+    // sağ kanat
+    final kanat2 = Path()
+      ..moveTo(-s * 0.1, 0)
+      ..lineTo(-s * 0.5, s * 0.7)
+      ..lineTo(s * 0.25, s * 0.22)
+      ..close();
+    canvas.drawPath(kanat2, p);
+    // kuyruk
+    final kuyruk = Path()
+      ..moveTo(-s * 0.75, 0)
+      ..lineTo(-s, -s * 0.38)
+      ..lineTo(-s * 0.55, -s * 0.12)
+      ..close();
+    canvas.drawPath(kuyruk, p);
+    canvas.restore();
+  }
+
+  // ── Bavul silueti ────────────────────────────────────────────────────────────
+  void _bavul(Canvas canvas, double cx, double cy, double scale) {
+    canvas.save();
+    canvas.translate(cx, cy);
+    final s = scale * 16.0;
+    final p = _p;
+    // gövde
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(center: Offset.zero, width: s * 2, height: s * 1.7),
+        const Radius.circular(4),
+      ),
+      p,
+    );
+    // sap
+    final sap = Path()
+      ..moveTo(-s * 0.4, -s * 0.85)
+      ..lineTo(-s * 0.4, -s * 1.25)
+      ..quadraticBezierTo(0, -s * 1.55, s * 0.4, -s * 1.25)
+      ..lineTo(s * 0.4, -s * 0.85);
+    canvas.drawPath(sap, p);
+    // orta çizgi (dikey)
+    canvas.drawLine(Offset(0, -s * 0.85), Offset(0, s * 0.85), p);
+    // orta çizgi (yatay)
+    canvas.drawLine(Offset(-s, 0), Offset(s, 0), p);
+    // tekerlekler
+    canvas.drawCircle(Offset(-s * 0.55, s * 0.85), s * 0.18, p);
+    canvas.drawCircle(Offset( s * 0.55, s * 0.85), s * 0.18, p);
+    canvas.restore();
+  }
+
+  // ── Alışveriş sepeti silueti ─────────────────────────────────────────────────
+  void _sepet(Canvas canvas, double cx, double cy, double scale) {
+    canvas.save();
+    canvas.translate(cx, cy);
+    final s = scale * 18.0;
+    final p = _p;
+    // sepet gövdesi (yamuk)
+    final govde = Path()
+      ..moveTo(-s, -s * 0.2)
+      ..lineTo(-s * 0.75, s * 0.9)
+      ..lineTo( s * 0.75, s * 0.9)
+      ..lineTo( s, -s * 0.2)
+      ..close();
+    canvas.drawPath(govde, p);
+    // sap (yay)
+    final sapPath = Path()
+      ..moveTo(-s * 0.55, -s * 0.2)
+      ..quadraticBezierTo(0, -s * 1.2, s * 0.55, -s * 0.2);
+    canvas.drawPath(sapPath, p);
+    // yatay çizgiler
+    canvas.drawLine(Offset(-s * 0.9, s * 0.28), Offset( s * 0.9, s * 0.28), p);
+    canvas.drawLine(Offset(-s * 0.84, s * 0.6), Offset( s * 0.84, s * 0.6), p);
+    // dikey çizgiler
+    canvas.drawLine(Offset(-s * 0.3, -s * 0.2), Offset(-s * 0.35, s * 0.9), p);
+    canvas.drawLine(Offset( s * 0.3, -s * 0.2), Offset( s * 0.35, s * 0.9), p);
+    canvas.restore();
+  }
+
+  // ── Çiçek demeti silueti ─────────────────────────────────────────────────────
+  void _demetCicek(Canvas canvas, double cx, double cy, double scale) {
+    canvas.save();
+    canvas.translate(cx, cy);
+    final s = scale * 14.0;
+    final p = _p;
+    // saplar
+    final saplar = [
+      [0.0, s * 3.5, 0.0, -s * 0.5],
+      [-s * 0.7, s * 3.5, -s * 0.9, -s * 0.3],
+      [ s * 0.7, s * 3.5,  s * 0.9, -s * 0.3],
+      [-s * 1.4, s * 3.5, -s * 1.6,  s * 0.2],
+      [ s * 1.4, s * 3.5,  s * 1.6,  s * 0.2],
+    ];
+    for (final sap in saplar) {
+      canvas.drawLine(Offset(sap[0], sap[1]), Offset(sap[2], sap[3]), p);
     }
+    // çiçek başları — oval
+    canvas.drawOval(Rect.fromCenter(center: Offset(0, -s * 0.5 - s * 0.7), width: s, height: s * 1.4), p);
+    canvas.drawOval(Rect.fromCenter(center: Offset(-s * 0.9, -s * 0.3 - s * 0.6), width: s * 0.85, height: s * 1.2), p);
+    canvas.drawOval(Rect.fromCenter(center: Offset( s * 0.9, -s * 0.3 - s * 0.6), width: s * 0.85, height: s * 1.2), p);
+    canvas.drawOval(Rect.fromCenter(center: Offset(-s * 1.6, s * 0.2 - s * 0.5), width: s * 0.7, height: s), p);
+    canvas.drawOval(Rect.fromCenter(center: Offset( s * 1.6, s * 0.2 - s * 0.5), width: s * 0.7, height: s), p);
+    // bağ (kurdelesi)
+    final kurde = Path()
+      ..moveTo(-s * 0.5, s * 3.2)
+      ..quadraticBezierTo(0, s * 2.6, s * 0.5, s * 3.2);
+    canvas.drawPath(kurde, p);
+    canvas.restore();
+  }
+
+  // ── Tek çiçek silueti ────────────────────────────────────────────────────────
+  void _tekCicek(Canvas canvas, double cx, double cy, double scale) {
+    canvas.save();
+    canvas.translate(cx, cy);
+    final s = scale * 12.0;
+    final p = _p;
+    // sap
+    canvas.drawLine(Offset(0, s * 0.5), Offset(0, s * 2.5), p);
+    // yaprak
+    final yaprak = Path()
+      ..moveTo(0, s * 1.5)
+      ..quadraticBezierTo(s * 0.8, s * 1.0, s * 0.6, s * 0.5)
+      ..quadraticBezierTo(s * 0.2, s * 1.2, 0, s * 1.5);
+    canvas.drawPath(yaprak, p);
+    // taç yapraklar (4 yön)
+    for (int i = 0; i < 5; i++) {
+      canvas.save();
+      canvas.translate(0, 0);
+      canvas.rotate(i * 3.14159 * 2 / 5);
+      canvas.drawOval(
+        Rect.fromCenter(center: Offset(0, -s * 0.85), width: s * 0.55, height: s * 1.1),
+        p,
+      );
+      canvas.restore();
+    }
+    // merkez
+    canvas.drawCircle(Offset.zero, s * 0.28, p);
+    canvas.restore();
   }
 
   @override
   bool shouldRepaint(covariant KartZeminPainter old) => old.tip != tip;
 }
 
-class _B {
-  final double dx, dy, rx, ry;
-  const _B(this.dx, this.dy, this.rx, this.ry);
+// ── Hero Banner ───────────────────────────────────────────────────────────────
+
+class _HeroBanner extends ConsumerWidget {
+  const _HeroBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final goruntulenen = ref.watch(kesfetEnCokGoruntulenenProvider);
+    final favorilenen  = ref.watch(kesfetEnCokFavorilenenProvider);
+
+    // En çok görüntülenen + en çok favorilenen, tekrarları kaldır
+    final seen = <String>{};
+    final heroIlanlar = [
+      ...goruntulenen,
+      ...favorilenen,
+    ].where((i) => seen.add(i.id)).toList();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 0, 0, 4),
+      child: ClipRRect(
+        borderRadius: BorderRadius.zero,
+        child: SizedBox(
+          height: 210,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Arka plan resmi
+              Image.asset(
+                'assets/images/hero_banner.png',
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFFFF6B6B), Color(0xFFFFB347)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                ),
+              ),
+              // Koyu overlay — yazı okunsun
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.black.withValues(alpha: 0.60),
+                      Colors.black.withValues(alpha: 0.20),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
+              ),
+              // İçerik
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Üst: başlık + tümünü gör ──
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 14, 12, 6),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Bu hafta öne çıkanlar',
+                                style: GoogleFonts.urbanist(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                              Text(
+                                'En çok görüntülenen & favorilenen ilanlar',
+                                style: GoogleFonts.dmSans(
+                                  fontSize: 12,
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Tümünü Gör butonu
+                        GestureDetector(
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => KesfetBolumDetayScreen(
+                                baslik: 'Bu hafta öne çıkanlar',
+                                ilanlar: heroIlanlar,
+                                ikon: Icons.local_fire_department_outlined,
+                              ),
+                            ),
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              'Tümünü Gör',
+                              style: GoogleFonts.dmSans(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // ── Alt: kaydırılabilir ilan kartları ──
+                  Expanded(
+                    child: heroIlanlar.isEmpty
+                        ? const SizedBox.shrink()
+                        : ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+                            itemCount: heroIlanlar.length,
+                            itemBuilder: (_, index) {
+                              final ilan  = heroIlanlar[index];
+                              final resim = ilan.gridResim;
+                              return GestureDetector(
+                                onTap: () {
+                                  ref.read(sonGoruntulenenlerProvider.notifier).kaydet(ilan);
+                                  context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan);
+                                },
+                                child: Container(
+                                  width: 80,
+                                  height: 80,
+                                  margin: const EdgeInsets.only(right: 8),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.65),
+                                      width: 1.5,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.25),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(9),
+                                    child: resim.isNotEmpty
+                                        ? CachedNetworkImage(
+                                            cacheManager: AppCacheManager.instance,
+                                            imageUrl: resim,
+                                            fit: BoxFit.cover,
+                                            fadeInDuration: Duration.zero,
+                                          )
+                                        : Container(
+                                            color: Colors.white.withValues(alpha: 0.2),
+                                            child: const Icon(
+                                              Icons.inventory_2_outlined,
+                                              color: Colors.white,
+                                              size: 26,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
+
+// ── Boş ekran ─────────────────────────────────────────────────────────────────
 
 class _BosEkran extends StatelessWidget {
   const _BosEkran();
