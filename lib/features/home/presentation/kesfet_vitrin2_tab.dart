@@ -14,6 +14,68 @@ import 'package:iste_v3/features/home/providers/son_goruntulenenler_provider.dar
 import 'package:iste_v3/features/home/presentation/kesfet_bolum_detay_screen.dart';
 import 'package:iste_v3/router/app_router.dart';
 
+// ── Güzergah kartı bulutlu gökyüzü painter ───────────────────────────────────
+
+class _GuzergahKartPainter extends CustomPainter {
+  final int index;
+  const _GuzergahKartPainter(this.index);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, w, h),
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF87CEEB), Color(0xFFE0F4FF)],
+        ).createShader(Rect.fromLTWH(0, 0, w, h)),
+    );
+
+    final boya = Paint()..style = PaintingStyle.fill;
+
+    void bulut(double cx, double cy, double opacity, List<List<double>> elipsler) {
+      boya.color = Colors.white.withValues(alpha: opacity);
+      for (final e in elipsler) {
+        canvas.drawOval(Rect.fromCenter(center: Offset(cx + e[0], cy + e[1]), width: e[2], height: e[3]), boya);
+      }
+    }
+
+    switch (index % 4) {
+      case 0:
+        // Sağ üst büyük + sol alt küçük
+        bulut(w * 0.70, h * 0.18, 0.45, [[0,0,55,22],[-28,6,36,16],[26,5,32,15],[0,-7,28,13]]);
+        bulut(w * 0.20, h * 0.72, 0.30, [[0,0,36,14],[-18,4,24,10],[18,3,22,10]]);
+        bulut(w * 0.50, h * 0.38, 0.20, [[0,0,28,10],[-12,3,18,8],[12,3,16,7]]);
+        break;
+      case 1:
+        // Sol üst büyük + sağ orta
+        bulut(w * 0.22, h * 0.15, 0.45, [[0,0,50,20],[-24,6,32,14],[22,5,30,13],[0,-6,24,11]]);
+        bulut(w * 0.80, h * 0.50, 0.30, [[0,0,38,15],[-18,4,24,10],[18,3,22,10]]);
+        bulut(w * 0.45, h * 0.80, 0.20, [[0,0,30,11],[-14,3,18,8],[14,3,16,7]]);
+        break;
+      case 2:
+        // Orta üst büyük + köşelerde küçük
+        bulut(w * 0.50, h * 0.16, 0.45, [[0,0,58,23],[-30,7,38,17],[28,6,34,15],[0,-8,30,13]]);
+        bulut(w * 0.10, h * 0.55, 0.28, [[0,0,32,12],[-14,3,20,9],[14,3,18,8]]);
+        bulut(w * 0.82, h * 0.75, 0.20, [[0,0,28,10],[-12,3,16,7],[12,3,14,7]]);
+        break;
+      case 3:
+        // Sağ üst küçük + sol orta büyük + alt
+        bulut(w * 0.75, h * 0.12, 0.38, [[0,0,40,16],[-20,5,26,11],[18,4,24,10]]);
+        bulut(w * 0.18, h * 0.42, 0.45, [[0,0,52,20],[-26,6,34,14],[24,5,30,13],[0,-7,26,11]]);
+        bulut(w * 0.60, h * 0.78, 0.22, [[0,0,34,12],[-15,3,20,8],[15,3,18,8]]);
+        break;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _GuzergahKartPainter old) => old.index != index;
+}
+
 // ── Zemin painter ─────────────────────────────────────────────────────────────
 
 enum _ZeminTipi { mavi, yesil }
@@ -65,14 +127,10 @@ class _SiluetZeminPainter extends CustomPainter {
     canvas.translate(cx, cy);
     canvas.rotate(angle);
     final s = scale * 18.0;
-    canvas.drawPath(Path()
-      ..moveTo(-s, 0)..lineTo(s * 0.6, -s * 0.18)..lineTo(s, 0)..lineTo(s * 0.6, s * 0.18)..close(), _p);
-    canvas.drawPath(Path()
-      ..moveTo(-s * 0.1, 0)..lineTo(-s * 0.5, -s * 0.65)..lineTo(s * 0.25, -s * 0.20)..close(), _p);
-    canvas.drawPath(Path()
-      ..moveTo(-s * 0.1, 0)..lineTo(-s * 0.5, s * 0.65)..lineTo(s * 0.25, s * 0.20)..close(), _p);
-    canvas.drawPath(Path()
-      ..moveTo(-s * 0.75, 0)..lineTo(-s, -s * 0.36)..lineTo(-s * 0.55, -s * 0.12)..close(), _p);
+    canvas.drawPath(Path()..moveTo(-s, 0)..lineTo(s * 0.6, -s * 0.18)..lineTo(s, 0)..lineTo(s * 0.6, s * 0.18)..close(), _p);
+    canvas.drawPath(Path()..moveTo(-s * 0.1, 0)..lineTo(-s * 0.5, -s * 0.65)..lineTo(s * 0.25, -s * 0.20)..close(), _p);
+    canvas.drawPath(Path()..moveTo(-s * 0.1, 0)..lineTo(-s * 0.5, s * 0.65)..lineTo(s * 0.25, s * 0.20)..close(), _p);
+    canvas.drawPath(Path()..moveTo(-s * 0.75, 0)..lineTo(-s, -s * 0.36)..lineTo(-s * 0.55, -s * 0.12)..close(), _p);
     canvas.restore();
   }
 
@@ -80,13 +138,8 @@ class _SiluetZeminPainter extends CustomPainter {
     canvas.save();
     canvas.translate(cx, cy);
     final s = scale * 13.0;
-    canvas.drawRRect(RRect.fromRectAndRadius(
-      Rect.fromCenter(center: Offset.zero, width: s * 2, height: s * 1.7),
-      const Radius.circular(3),
-    ), _p);
-    canvas.drawPath(Path()
-      ..moveTo(-s * 0.4, -s * 0.85)..lineTo(-s * 0.4, -s * 1.2)
-      ..quadraticBezierTo(0, -s * 1.45, s * 0.4, -s * 1.2)..lineTo(s * 0.4, -s * 0.85), _p);
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromCenter(center: Offset.zero, width: s * 2, height: s * 1.7), const Radius.circular(3)), _p);
+    canvas.drawPath(Path()..moveTo(-s * 0.4, -s * 0.85)..lineTo(-s * 0.4, -s * 1.2)..quadraticBezierTo(0, -s * 1.45, s * 0.4, -s * 1.2)..lineTo(s * 0.4, -s * 0.85), _p);
     canvas.drawLine(Offset(0, -s * 0.85), Offset(0, s * 0.85), _p);
     canvas.drawLine(Offset(-s, 0), Offset(s, 0), _p);
     canvas.restore();
@@ -121,11 +174,7 @@ class KesfetVitrin2Tab extends ConsumerWidget {
 
 // ── Bölüm başlığı helper ──────────────────────────────────────────────────────
 
-Widget _bolumBaslik({
-  required String baslik,
-  required IconData ikon,
-  VoidCallback? tumunuGor,
-}) {
+Widget _bolumBaslik({required String baslik, required IconData ikon, VoidCallback? tumunuGor}) {
   return Padding(
     padding: const EdgeInsets.fromLTRB(16, 20, 12, 10),
     child: Row(
@@ -136,10 +185,7 @@ Widget _bolumBaslik({
           child: Text(baslik,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary)),
+              style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
         ),
         if (tumunuGor != null)
           GestureDetector(
@@ -152,9 +198,7 @@ Widget _bolumBaslik({
                 border: Border.all(color: const Color(0xFFEEEEEE), width: 1),
                 boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 4, offset: const Offset(0, 1))],
               ),
-              child: Text('Tümünü Gör',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.red)),
+              child: Text('Tümünü Gör', style: GoogleFonts.dmSans(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.red)),
             ),
           ),
       ],
@@ -162,7 +206,7 @@ Widget _bolumBaslik({
   );
 }
 
-// ── 1) Trend Ürünler — liste görünümü + tümünü gör ───────────────────────────
+// ── 1) Trend Ürünler ─────────────────────────────────────────────────────────
 
 class _TrendUrunlerBolum extends StatelessWidget {
   final List<TrendUrun> trendler;
@@ -171,7 +215,6 @@ class _TrendUrunlerBolum extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tumIlanlar = trendler.expand((t) => t.ilanlar).toList();
-
     return Consumer(
       builder: (context, ref, _) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,11 +223,7 @@ class _TrendUrunlerBolum extends StatelessWidget {
             baslik: 'Trend ürünler',
             ikon: Icons.trending_up_rounded,
             tumunuGor: () => Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => KesfetBolumDetayScreen(
-                baslik: 'Trend ürünler',
-                ilanlar: tumIlanlar,
-                ikon: Icons.trending_up_rounded,
-              ),
+              builder: (_) => KesfetBolumDetayScreen(baslik: 'Trend ürünler', ilanlar: tumIlanlar, ikon: Icons.trending_up_rounded),
             )),
           ),
           SizedBox(
@@ -197,45 +236,20 @@ class _TrendUrunlerBolum extends StatelessWidget {
                 final ilan = tumIlanlar[index];
                 final resim = ilan.gridResim;
                 return GestureDetector(
-                  onTap: () {
-                    ref.read(sonGoruntulenenlerProvider.notifier).kaydet(ilan);
-                    context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan);
-                  },
+                  onTap: () { ref.read(sonGoruntulenenlerProvider.notifier).kaydet(ilan); context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan); },
                   child: Container(
-                    width: 88,
-                    height: 120,
+                    width: 88, height: 120,
                     margin: const EdgeInsets.only(right: 8),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: AppColors.divider,
-                        width: 1,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                      border: Border.all(color: AppColors.divider, width: 1),
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 6, offset: const Offset(0, 2))],
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(9),
                       child: resim.isNotEmpty
-                          ? CachedNetworkImage(
-                              cacheManager: AppCacheManager.instance,
-                              imageUrl: resim,
-                              fit: BoxFit.cover,
-                              fadeInDuration: Duration.zero,
-                            )
-                          : Container(
-                              color: AppColors.surfaceAlt,
-                              child: const Icon(
-                                Icons.inventory_2_outlined,
-                                color: AppColors.textHint,
-                                size: 26,
-                              ),
-                            ),
+                          ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, fadeInDuration: Duration.zero)
+                          : Container(color: AppColors.surfaceAlt, child: const Icon(Icons.inventory_2_outlined, color: AppColors.textHint, size: 26)),
                     ),
                   ),
                 );
@@ -249,41 +263,11 @@ class _TrendUrunlerBolum extends StatelessWidget {
   }
 }
 
-// ── 2) Popüler Güzergahlar — D stili (bayrak + avatarlar) ────────────────────
+// ── 2) Popüler Güzergahlar ───────────────────────────────────────────────────
 
 class _GuzergahlarBolum extends StatelessWidget {
   final List<Guzergah> guzergahlar;
   const _GuzergahlarBolum({required this.guzergahlar});
-
-  static const _bayraklar = <String, String>{
-    'new york': '🇺🇸', 'los angeles': '🇺🇸', 'chicago': '🇺🇸',
-    'miami': '🇺🇸', 'houston': '🇺🇸', 'boston': '🇺🇸',
-    'san francisco': '🇺🇸', 'washington': '🇺🇸', 'usa': '🇺🇸',
-    'abd': '🇺🇸', 'new jersey': '🇺🇸', 'seattle': '🇺🇸',
-    'londra': '🇬🇧', 'london': '🇬🇧', 'manchester': '🇬🇧',
-    'uk': '🇬🇧', 'ingiltere': '🇬🇧',
-    'paris': '🇫🇷', 'lyon': '🇫🇷', 'fransa': '🇫🇷',
-    'berlin': '🇩🇪', 'münih': '🇩🇪', 'frankfurt': '🇩🇪', 'almanya': '🇩🇪',
-    'amsterdam': '🇳🇱', 'hollanda': '🇳🇱',
-    'dubai': '🇦🇪', 'abu dhabi': '🇦🇪', 'bae': '🇦🇪',
-    'tokyo': '🇯🇵', 'osaka': '🇯🇵', 'japonya': '🇯🇵',
-    'milano': '🇮🇹', 'roma': '🇮🇹', 'italya': '🇮🇹',
-    'madrid': '🇪🇸', 'barcelona': '🇪🇸', 'ispanya': '🇪🇸',
-    'stockholm': '🇸🇪', 'isveç': '🇸🇪',
-    'zürih': '🇨🇭', 'cenevre': '🇨🇭', 'isviçre': '🇨🇭',
-    'toronto': '🇨🇦', 'vancouver': '🇨🇦', 'kanada': '🇨🇦',
-    'sidney': '🇦🇺', 'melbourne': '🇦🇺', 'avustralya': '🇦🇺',
-    'seul': '🇰🇷', 'güney kore': '🇰🇷',
-    'şangay': '🇨🇳', 'pekin': '🇨🇳', 'çin': '🇨🇳',
-  };
-
-  String _bayrak(String sehir) {
-    final k = sehir.toLowerCase().trim();
-    for (final e in _bayraklar.entries) {
-      if (k.contains(e.key)) return e.value;
-    }
-    return '✈️';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -295,20 +279,14 @@ class _GuzergahlarBolum extends StatelessWidget {
           height: 200,
           child: Stack(
             children: [
-              Positioned.fill(
-                child: CustomPaint(painter: _SiluetZeminPainter(_ZeminTipi.yesil)),
-              ),
+              Positioned.fill(child: CustomPaint(painter: _SiluetZeminPainter(_ZeminTipi.yesil))),
               ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
                 itemCount: guzergahlar.length,
                 itemBuilder: (_, i) {
                   final g = guzergahlar[i];
-                  final bayrakNereden = _bayrak(g.nereden);
-                  final bayrakNereye  = _bayrak(g.nereye);
-                  // Avatar fotoğrafları — ilk 3 taşıyıcı
                   final avatarlar = g.ilanlar.take(3).toList();
-
                   return GestureDetector(
                     onTap: () => Navigator.of(context).push(MaterialPageRoute(
                       builder: (_) => KesfetBolumDetayScreen(
@@ -321,120 +299,88 @@ class _GuzergahlarBolum extends StatelessWidget {
                       width: 160,
                       margin: const EdgeInsets.only(right: 8),
                       decoration: BoxDecoration(
-                        color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        boxShadow: [BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.10),
-                          blurRadius: 8, offset: const Offset(0, 2))],
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.10), blurRadius: 8, offset: const Offset(0, 2))],
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-
-                          // ── Üst: bayraklar + şehirler ──────────────────
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-                            child: Column(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            // Bulutlu gökyüzü arka plan
+                            CustomPaint(painter: _GuzergahKartPainter(i)),
+                            // İçerik
+                            Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Nereden
-                                Row(children: [
-                                  Text(bayrakNereden, style: const TextStyle(fontSize: 20)),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(g.nereden,
-                                        style: GoogleFonts.dmSans(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w700,
-                                            color: AppColors.textPrimary),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis),
-                                  ),
-                                ]),
-                                // Ok
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 4),
-                                  child: Row(children: [
-                                    const SizedBox(width: 2),
-                                    Container(width: 1, height: 10, color: AppColors.divider),
-                                    const SizedBox(width: 12),
-                                    const Icon(Icons.arrow_downward_rounded,
-                                        size: 11, color: AppColors.textHint),
-                                  ]),
-                                ),
-                                // Nereye
-                                Row(children: [
-                                  Text(bayrakNereye, style: const TextStyle(fontSize: 20)),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(g.nereye,
-                                        style: GoogleFonts.dmSans(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.textSecondary),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis),
+                                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(children: [
+                                        const _UcakIkonu(),
+                                        const SizedBox(width: 8),
+                                        Expanded(child: Text(g.nereden,
+                                            style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                                            maxLines: 1, overflow: TextOverflow.ellipsis)),
+                                      ]),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 4),
+                                        child: Row(children: [
+                                          const SizedBox(width: 2),
+                                          Container(width: 1, height: 10, color: AppColors.divider),
+                                          const SizedBox(width: 12),
+                                          const Icon(Icons.arrow_downward_rounded, size: 11, color: AppColors.textHint),
+                                        ]),
+                                      ),
+                                      Row(children: [
+                                        const _UcakIkonu(),
+                                        const SizedBox(width: 8),
+                                        Expanded(child: Text(g.nereye,
+                                            style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                                            maxLines: 1, overflow: TextOverflow.ellipsis)),
+                                      ]),
+                                    ],
                                   ),
-                                ]),
-                              ],
-                            ),
-                          ),
-
-                          const Spacer(),
-
-                          // ── Alt: avatar + ilan sayısı ──────────────────
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                            child: Row(
-                              children: [
-                                // Avatarlar üst üste
-                                SizedBox(
-                                  width: avatarlar.length * 18.0 + 4,
-                                  height: 24,
-                                  child: Stack(
-                                    children: List.generate(avatarlar.length, (ai) {
-                                      final fotoUrl = avatarlar[ai].resimUrl;
-                                      return Positioned(
-                                        left: ai * 18.0,
-                                        child: Container(
-                                          width: 24, height: 24,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            border: Border.all(color: Colors.white, width: 1.5),
-                                            color: AppColors.surface,
-                                          ),
-                                          child: ClipOval(
-                                            child: fotoUrl.isNotEmpty
-                                                ? CachedNetworkImage(
-                                                    cacheManager: AppCacheManager.instance,
-                                                    imageUrl: fotoUrl,
-                                                    fit: BoxFit.cover,
-                                                    fadeInDuration: Duration.zero,
-                                                    errorWidget: (_, _, _) => _avatarYok(),
-                                                  )
-                                                : _avatarYok(),
-                                          ),
+                                ),
+                                const Spacer(),
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                                  child: Row(
+                                    children: [
+                                      SizedBox(
+                                        width: avatarlar.length * 18.0 + 4,
+                                        height: 24,
+                                        child: Stack(
+                                          children: List.generate(avatarlar.length, (ai) {
+                                            final fotoUrl = avatarlar[ai].resimUrl;
+                                            return Positioned(
+                                              left: ai * 18.0,
+                                              child: Container(
+                                                width: 24, height: 24,
+                                                decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.5), color: AppColors.surface),
+                                                child: ClipOval(
+                                                  child: fotoUrl.isNotEmpty
+                                                      ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: fotoUrl, fit: BoxFit.cover, fadeInDuration: Duration.zero, errorWidget: (_, _, _) => _avatarYok())
+                                                      : _avatarYok(),
+                                                ),
+                                              ),
+                                            );
+                                          }),
                                         ),
-                                      );
-                                    }),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Expanded(child: Text('${g.ilanSayisi} taşıyıcı',
+                                          style: GoogleFonts.dmSans(fontSize: 10, fontWeight: FontWeight.w500, color: AppColors.textSecondary))),
+                                      const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.textHint),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: Text(
-                                    '${g.ilanSayisi} taşıyıcı',
-                                    style: GoogleFonts.dmSans(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w500,
-                                        color: AppColors.textSecondary),
-                                  ),
-                                ),
-                                const Icon(Icons.chevron_right_rounded,
-                                    size: 16, color: AppColors.textHint),
                               ],
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   );
@@ -448,12 +394,73 @@ class _GuzergahlarBolum extends StatelessWidget {
     );
   }
 
-  Widget _avatarYok() => Container(
-        color: AppColors.surface,
-        child: const Icon(Icons.person_outline, size: 12, color: AppColors.textHint),
-      );
+  static Widget _avatarYok() => Container(color: AppColors.surface, child: const Icon(Icons.person_outline, size: 12, color: AppColors.textHint));
 }
 
+// ── Beyaz SVG uçak ikonu ──────────────────────────────────────────────────────
+
+class _UcakIkonu extends StatelessWidget {
+  const _UcakIkonu();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 20,
+      height: 20,
+      child: CustomPaint(painter: _UcakPainter(const Color(0xFF5B8DB8))),
+    );
+  }
+}
+
+class _UcakPainter extends CustomPainter {
+  final Color renk;
+  const _UcakPainter(this.renk);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    final boya = Paint()
+      ..color = renk
+      ..style = PaintingStyle.fill;
+
+    canvas.save();
+    canvas.translate(w / 2, h / 2);
+    canvas.rotate(-0.5);
+
+    final s = w * 0.42;
+    // Gövde
+    canvas.drawPath(Path()
+      ..moveTo(-s, 0)
+      ..lineTo(s * 0.6, -s * 0.18)
+      ..lineTo(s, 0)
+      ..lineTo(s * 0.6, s * 0.18)
+      ..close(), boya);
+    // Üst kanat
+    canvas.drawPath(Path()
+      ..moveTo(-s * 0.05, 0)
+      ..lineTo(-s * 0.45, -s * 0.85)
+      ..lineTo(s * 0.28, -s * 0.22)
+      ..close(), boya);
+    // Alt kanat
+    canvas.drawPath(Path()
+      ..moveTo(-s * 0.05, 0)
+      ..lineTo(-s * 0.45, s * 0.85)
+      ..lineTo(s * 0.28, s * 0.22)
+      ..close(), boya);
+    // Kuyruk
+    canvas.drawPath(Path()
+      ..moveTo(-s * 0.72, 0)
+      ..lineTo(-s, -s * 0.42)
+      ..lineTo(-s * 0.52, -s * 0.14)
+      ..close(), boya);
+
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _UcakPainter old) => old.renk != renk;
+}
 
 // ── 3) Bu Hafta Hangi Şehirlerden Geliyor ────────────────────────────────────
 
@@ -462,12 +469,10 @@ class _SehirlerBolum extends StatelessWidget {
   const _SehirlerBolum({required this.sehirler});
 
   static const _bayraklar = <String, String>{
-    'new york': '🇺🇸', 'los angeles': '🇺🇸', 'chicago': '🇺🇸',
-    'miami': '🇺🇸', 'houston': '🇺🇸', 'boston': '🇺🇸',
-    'san francisco': '🇺🇸', 'washington': '🇺🇸', 'usa': '🇺🇸',
-    'abd': '🇺🇸', 'new jersey': '🇺🇸', 'seattle': '🇺🇸',
-    'londra': '🇬🇧', 'london': '🇬🇧', 'manchester': '🇬🇧',
-    'uk': '🇬🇧', 'ingiltere': '🇬🇧',
+    'new york': '🇺🇸', 'los angeles': '🇺🇸', 'chicago': '🇺🇸', 'miami': '🇺🇸',
+    'houston': '🇺🇸', 'boston': '🇺🇸', 'san francisco': '🇺🇸', 'washington': '🇺🇸',
+    'usa': '🇺🇸', 'abd': '🇺🇸', 'new jersey': '🇺🇸', 'seattle': '🇺🇸',
+    'londra': '🇬🇧', 'london': '🇬🇧', 'manchester': '🇬🇧', 'uk': '🇬🇧', 'ingiltere': '🇬🇧',
     'paris': '🇫🇷', 'lyon': '🇫🇷', 'fransa': '🇫🇷',
     'berlin': '🇩🇪', 'münih': '🇩🇪', 'frankfurt': '🇩🇪', 'almanya': '🇩🇪',
     'amsterdam': '🇳🇱', 'hollanda': '🇳🇱',
@@ -485,28 +490,22 @@ class _SehirlerBolum extends StatelessWidget {
 
   String _bayrak(String sehir) {
     final k = sehir.toLowerCase().trim();
-    for (final e in _bayraklar.entries) {
-      if (k.contains(e.key)) return e.value;
-    }
+    for (final e in _bayraklar.entries) { if (k.contains(e.key)) return e.value; }
     return '✈️';
   }
 
   @override
   Widget build(BuildContext context) {
     final maxIlan = sehirler.first.ilanSayisi;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _bolumBaslik(
-          baslik: 'Bu hafta hangi şehirlerden geliyor',
-          ikon: Icons.location_on_outlined,
-        ),
+        _bolumBaslik(baslik: 'Bu hafta hangi şehirlerden geliyor', ikon: Icons.location_on_outlined),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
             children: List.generate(sehirler.length, (i) {
-              final s    = sehirler[i];
+              final s = sehirler[i];
               final oran = maxIlan > 0 ? s.ilanSayisi / maxIlan : 0.0;
               return Container(
                 margin: const EdgeInsets.only(bottom: 8),
@@ -517,50 +516,30 @@ class _SehirlerBolum extends StatelessWidget {
                   border: Border.all(color: const Color(0xFFEEEEEE), width: 0.8),
                 ),
                 child: Row(children: [
-                  SizedBox(
-                    width: 22,
-                    child: Text('${i + 1}',
-                        style: GoogleFonts.dmSans(
-                          fontSize: 12, fontWeight: FontWeight.w700,
-                          color: i < 3 ? AppColors.red : AppColors.textHint)),
-                  ),
+                  SizedBox(width: 22, child: Text('${i + 1}',
+                      style: GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w700,
+                          color: i < 3 ? AppColors.red : AppColors.textHint))),
                   Text(_bayrak(s.sehir), style: const TextStyle(fontSize: 18)),
                   const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(s.sehir,
-                            style: GoogleFonts.dmSans(
-                                fontSize: 13, fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary),
-                            maxLines: 1, overflow: TextOverflow.ellipsis),
-                        const SizedBox(height: 4),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(2),
-                          child: LinearProgressIndicator(
-                            value: oran,
-                            backgroundColor: AppColors.divider.withValues(alpha: 0.4),
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColors.red.withValues(alpha: 0.4 + oran * 0.6)),
-                            minHeight: 3,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  Expanded(child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(s.sehir, style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 4),
+                      ClipRRect(borderRadius: BorderRadius.circular(2),
+                        child: LinearProgressIndicator(
+                          value: oran,
+                          backgroundColor: AppColors.divider.withValues(alpha: 0.4),
+                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.red.withValues(alpha: 0.4 + oran * 0.6)),
+                          minHeight: 3,
+                        )),
+                    ],
+                  )),
                   const SizedBox(width: 10),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.divider, width: 0.5),
-                    ),
-                    child: Text('${s.ilanSayisi} ilan',
-                        style: GoogleFonts.dmSans(
-                            fontSize: 10, fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary)),
+                    decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.divider, width: 0.5)),
+                    child: Text('${s.ilanSayisi} ilan', style: GoogleFonts.dmSans(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
                   ),
                 ]),
               );

@@ -116,3 +116,28 @@ List<IlanModel> kesfetDutyFree(Ref ref) {
 
   return liste;
 }
+
+// ── 6) Hero Banner — son 7 günde eklenen + en çok görüntülenen ───────────────
+//
+// Son 7 günde eklenen ilanlardan görüntülenme sayısına göre sıralanmış ilk 15.
+// Bu hafta yeni + popüler kombinasyonu.
+
+@riverpod
+List<IlanModel> kesfetHeroBanner(Ref ref) {
+  final esik = DateTime.now().subtract(const Duration(days: 7));
+  final liste = _tumIlanlar(ref)
+      .where((i) => i.olusturmaTarihi != null && i.olusturmaTarihi!.isAfter(esik))
+      .toList()
+    ..sort((a, b) => b.goruntulenmeSayisi.compareTo(a.goruntulenmeSayisi));
+
+  // Eğer son 7 günde yeterli ilan yoksa genel en çok görüntülenenlerle tamamla
+  if (liste.length >= 10) return liste.take(15).toList();
+
+  final seen = <String>{...liste.map((i) => i.id)};
+  final ek = _tumIlanlar(ref)
+      .where((i) => seen.add(i.id))
+      .toList()
+    ..sort((a, b) => b.goruntulenmeSayisi.compareTo(a.goruntulenmeSayisi));
+
+  return [...liste, ...ek].take(15).toList();
+}

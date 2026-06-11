@@ -222,3 +222,45 @@ final class KesfetDutyFreeProvider
 }
 
 String _$kesfetDutyFreeHash() => r'0fbec4346cbbddbe1a54ed0d3555fcedcaf3b329';
+
+@ProviderFor(kesfetHeroBanner)
+final kesfetHeroBannerProvider = KesfetHeroBannerProvider._();
+
+final class KesfetHeroBannerProvider
+    extends
+        $FunctionalProvider<List<IlanModel>, List<IlanModel>, List<IlanModel>>
+    with $Provider<List<IlanModel>> {
+  KesfetHeroBannerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'kesfetHeroBannerProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$kesfetHeroBannerHash();
+
+  @$internal
+  @override
+  $ProviderElement<List<IlanModel>> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  List<IlanModel> create(Ref ref) {
+    return kesfetHeroBanner(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(List<IlanModel> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<List<IlanModel>>(value),
+    );
+  }
+}
+
+String _$kesfetHeroBannerHash() => r'8c0576d64dfd0b8d149fd6d60316938a8e6c2967';

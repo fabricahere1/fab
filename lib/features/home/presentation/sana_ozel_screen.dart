@@ -17,8 +17,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:iste_v3/core/cache/app_cache_manager.dart';
 import 'package:iste_v3/shared/constants/app_constants.dart';
 import 'package:iste_v3/features/home/presentation/kesfet_vitrin_tab.dart'
-    show CicekTipi, KartZeminPainter;
+    show CicekBaslikPainter, CicekTipi, KartZeminPainter;
 import 'package:iste_v3/features/home/presentation/kesfet_bolum_detay_screen.dart';
+import 'package:iste_v3/features/profil/presentation/profil_duzenle_screen.dart';
 
 class SanaOzelScreen extends ConsumerWidget {
   const SanaOzelScreen({super.key});
@@ -31,9 +32,13 @@ class SanaOzelScreen extends ConsumerWidget {
       error: (e, _) => const SizedBox.shrink(),
       data: (profil) {
         if (profil == null) return const SizedBox.shrink();
-        return profil.tasiyiciMi
-            ? const _TasiyiciSanaOzel(key: ValueKey('tasiyici'))
-            : const _IstekSanaOzel(key: ValueKey('istek'));
+        if (profil.kullaniciTipi == 'her_ikisi') {
+          return const _HerIkisiSanaOzel(key: ValueKey('her_ikisi'));
+        } else if (profil.tasiyiciMi) {
+          return const _TasiyiciSanaOzel(key: ValueKey('tasiyici'));
+        } else {
+          return const _IstekSanaOzel(key: ValueKey('istek'));
+        }
       },
     );
   }
@@ -49,31 +54,58 @@ class _IstekSanaOzel extends ConsumerWidget {
     ref.read(tasiyiciIlanlarProvider.notifier).yenile(),
   ]);
 
+  bool _profilEksik(KullaniciModel? profil) {
+    if (profil == null) return true;
+    return profil.bulunduguSehir.isEmpty ||
+        profil.ilgiKategorileri.isEmpty ||
+        (profil.kadinUstBeden.isEmpty && profil.erkekUstBeden.isEmpty);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final profil          = ref.watch(benimKullaniciProfilProvider).value;
+    final sonGorunenler   = ref.watch(sonGoruntulenenlerProvider);
+    final kategoriler     = ref.watch(kategorilereGoreIlanlarProvider);
+    final tumIlanlar      = ref.watch(istekIlanlarProvider).filtrelenmis;
+
     final tumu = [
-      _BolumData('Senin şehrine gelecek ilanlar', ref.watch(sehirGelecekIlanlarProvider), Icons.flight_land_outlined, CicekTipi.papatya),
-      _BolumData('Senin kategorilerin', ref.watch(kategorilereGoreIlanlarProvider), Icons.interests_outlined, CicekTipi.gul),
+      _BolumData('Senin şehrine gelecek taşıyıcılar', ref.watch(sehirGelecekIlanlarProvider), Icons.flight_land_outlined, CicekTipi.papatya),
+      _BolumData('Senin kategorilerin', kategoriler, Icons.interests_outlined, CicekTipi.gul),
       _BolumData('Senin bedenine göre ilanlar', ref.watch(bedenGoreIlanlarProvider), Icons.checkroom_outlined, CicekTipi.lavanta),
       _BolumData('İlgilendiğin kategorilerden en çok istenenler', ref.watch(populerKategoriIstekleriProvider), Icons.trending_up_rounded, CicekTipi.aycicegi),
       _BolumData('Duty Free alışverişi yapabilecek olanlar', ref.watch(dutyFreeYapabilecekIlanlarProvider), Icons.shopping_bag_outlined, CicekTipi.papatya),
     ].where((b) => b.ilanlar.isNotEmpty).toList();
 
+    final seen = <String>{};
+    final bannerListe = [...sonGorunenler, ...kategoriler, ...tumIlanlar]
+        .where((ilan) => seen.add(ilan.id)).take(15).toList();
+
+    final profilBannerVar = _profilEksik(profil);
+    final heroBannerIndex = profilBannerVar ? 1 : 0;
+    final toplamItem = (profilBannerVar ? 1 : 0) + 1 + (tumu.isEmpty ? 1 : tumu.length);
+
     return RefreshIndicator(
-          color: AppColors.red,
-          onRefresh: () => _yenile(ref),
-          child: tumu.isEmpty
-              ? ListView(physics: const AlwaysScrollableScrollPhysics(), children: [
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.7,
-                      child: const _BosEkran(mesaj: 'Henüz sana özel içerik yok.\nProfilini tamamladıktan sonra burada kişiselleştirilmiş ilanlar görünecek.')),
-                ])
-              : ListView.builder(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.only(top: 12, bottom: 24),
-                  itemCount: tumu.length,
-                  itemBuilder: (_, i) => _Bolum(data: tumu[i]),
-                ),
-        );
+      color: AppColors.red,
+      onRefresh: () => _yenile(ref),
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(top: 8, bottom: 24),
+        itemCount: toplamItem,
+        itemBuilder: (_, i) {
+          if (profilBannerVar && i == 0) return const _ProfilTamamlaBanner();
+          if (i == heroBannerIndex) return _SanaOzelHeroBanner(ilanlar: bannerListe);
+          final bolumIndex = i - heroBannerIndex - 1;
+          if (tumu.isEmpty) {
+            return SizedBox(
+              height: MediaQuery.of(context).size.height * 0.5,
+              child: const _BosEkran(mesaj: 'Henüz sana özel içerik yok.\nProfilini tamamladıktan sonra burada kişiselleştirilmiş ilanlar görünecek.'),
+            );
+          }
+          if (bolumIndex < 0 || bolumIndex >= tumu.length) return const SizedBox.shrink();
+          return _Bolum(data: tumu[bolumIndex]);
+        },
+      ),
+    );
   }
 }
 
@@ -114,6 +146,68 @@ class _TasiyiciSanaOzel extends ConsumerWidget {
   }
 }
 
+// ── HER İKİSİ ────────────────────────────────────────────────────────────────
+
+class _HerIkisiSanaOzel extends ConsumerWidget {
+  const _HerIkisiSanaOzel({super.key});
+
+  Future<void> _yenile(WidgetRef ref) => Future.wait([
+    ref.read(istekIlanlarProvider.notifier).yenile(),
+    ref.read(tasiyiciIlanlarProvider.notifier).yenile(),
+  ]);
+
+  bool _profilEksik(KullaniciModel? profil) {
+    if (profil == null) return true;
+    return profil.bulunduguSehir.isEmpty || profil.ilgiKategorileri.isEmpty;
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profil = ref.watch(benimKullaniciProfilProvider).value;
+
+    // İstekçi bölümleri
+    final istekBolumleri = [
+      _BolumData('Senin şehrine gelecek taşıyıcılar', ref.watch(sehirGelecekIlanlarProvider), Icons.flight_land_outlined, CicekTipi.papatya),
+      _BolumData('Senin kategorilerin', ref.watch(kategorilereGoreIlanlarProvider), Icons.interests_outlined, CicekTipi.gul),
+      _BolumData('Senin bedenine göre ilanlar', ref.watch(bedenGoreIlanlarProvider), Icons.checkroom_outlined, CicekTipi.lavanta),
+      _BolumData('İlgilendiğin kategorilerden en çok istenenler', ref.watch(populerKategoriIstekleriProvider), Icons.trending_up_rounded, CicekTipi.aycicegi),
+      _BolumData('Duty Free alışverişi yapabilecek olanlar', ref.watch(dutyFreeYapabilecekIlanlarProvider), Icons.shopping_bag_outlined, CicekTipi.papatya),
+    ].where((b) => b.ilanlar.isNotEmpty).toList();
+
+    // Taşıyıcı bölümleri
+    final tasiyiciBolumleri = [
+      _BolumData('Seyahat edeceğin şehirden açılan ilanlar', ref.watch(seyahatSehriIlanlarProvider), Icons.location_on_outlined, CicekTipi.aycicegi),
+      _BolumData('Kargo teslim kabul eden istekçiler', ref.watch(kargoKabulIsteklerProvider), Icons.local_shipping_outlined, CicekTipi.lavanta),
+      _BolumData('Elden teslim kabul eden istekçiler', ref.watch(eldenKabulIsteklerProvider), Icons.handshake_outlined, CicekTipi.gul),
+      _BolumData('Onaylı istekçilerin istekleri', ref.watch(onayliIsteklerProvider), Icons.verified_outlined, CicekTipi.papatya),
+    ].where((b) => b.ilanlar.isNotEmpty).toList();
+
+    final tumBolumler = [...istekBolumleri, ...tasiyiciBolumleri];
+    final bannerVar = _profilEksik(profil);
+
+    return RefreshIndicator(
+      color: AppColors.red,
+      onRefresh: () => _yenile(ref),
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(top: 8, bottom: 24),
+        itemCount: (bannerVar ? 1 : 0) + (tumBolumler.isEmpty ? 1 : tumBolumler.length),
+        itemBuilder: (_, i) {
+          if (bannerVar && i == 0) return const _ProfilTamamlaBanner();
+          final idx = bannerVar ? i - 1 : i;
+          if (tumBolumler.isEmpty) {
+            return SizedBox(
+              height: MediaQuery.of(context).size.height * 0.5,
+              child: const _BosEkran(mesaj: 'Henüz sana özel içerik yok.\nProfilini tamamladıktan sonra eşleşmeler burada görünecek.'),
+            );
+          }
+          return _Bolum(data: tumBolumler[idx]);
+        },
+      ),
+    );
+  }
+}
+
 // ── Bölüm ─────────────────────────────────────────────────────────────────────
 
 class _BolumData {
@@ -135,12 +229,23 @@ class _Bolum extends StatelessWidget {
       children: [
         // Başlık + Tümünü Göster butonu
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 12, 8),
-          child: Column(
+          padding: const EdgeInsets.fromLTRB(16, 14, 12, 10),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Icon(data.ikon, size: 16, color: AppColors.red),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(data.baslik,
+                    style: GoogleFonts.raleway(fontSize: 13, fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary, letterSpacing: 0.1)),
+              ),
+              const SizedBox(width: 8),
               Align(
-                alignment: Alignment.centerRight,
+                alignment: Alignment.topCenter,
                 child: GestureDetector(
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
@@ -152,7 +257,7 @@ class _Bolum extends StatelessWidget {
                     ),
                   ),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
@@ -165,21 +270,17 @@ class _Bolum extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: Text('Tümünü Gör',
-                        style: GoogleFonts.dmSans(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.red)),
+                    child: Text(
+                      'Tümünü Gör',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.red,
+                      ),
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 4),
-              Row(children: [
-                Icon(data.ikon, size: 15, color: AppColors.red),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(data.baslik,
-                      style: GoogleFonts.notoSans(fontSize: 16, fontWeight: FontWeight.w500,
-    color: AppColors.textPrimary, letterSpacing: 0.1)),
-                ),
-              ]),
             ],
           ),
         ),
@@ -269,6 +370,215 @@ class _RenkliArkaplan extends StatelessWidget {
     );
   }
 }
+
+// ── Sana Özel Hero Banner ─────────────────────────────────────────────────────
+
+class _SanaOzelHeroBanner extends ConsumerWidget {
+  final List<IlanModel> ilanlar;
+  const _SanaOzelHeroBanner({required this.ilanlar});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 4, 10, 4),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: SizedBox(
+          height: 210,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Arka plan
+              Image.asset(
+                'assets/images/sana.png',
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF1A1A2E), Color(0xFF16213E), Color(0xFF0F3460)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                ),
+              ),
+              // Overlay
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.black.withValues(alpha: 0.65),
+                      Colors.black.withValues(alpha: 0.20),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
+              ),
+              // İçerik
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 14, 12, 6),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Senin için önerilen',
+                            style: GoogleFonts.urbanist(
+                                fontSize: 22, fontWeight: FontWeight.w700,
+                                color: Colors.white, letterSpacing: 0.2)),
+                        Text('İlgi alanlarına göre seçildi',
+                            style: GoogleFonts.dmSans(
+                                fontSize: 11,
+                                color: Colors.white.withValues(alpha: 0.85))),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: ilanlar.isEmpty
+                        ? const SizedBox.shrink()
+                        : ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+                            itemCount: ilanlar.length,
+                            itemBuilder: (_, index) {
+                              final ilan  = ilanlar[index];
+                              final resim = ilan.gridResim;
+                              return GestureDetector(
+                                onTap: () {
+                                  ref.read(sonGoruntulenenlerProvider.notifier).kaydet(ilan);
+                                  context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan);
+                                },
+                                child: Container(
+                                  width: 80, height: 80,
+                                  margin: const EdgeInsets.only(right: 8),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: Colors.white.withValues(alpha: 0.65), width: 1.5),
+                                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 6, offset: const Offset(0, 2))],
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(9),
+                                    child: resim.isNotEmpty
+                                        ? CachedNetworkImage(
+                                            cacheManager: AppCacheManager.instance,
+                                            imageUrl: resim,
+                                            fit: BoxFit.cover,
+                                            fadeInDuration: Duration.zero)
+                                        : Container(
+                                            color: Colors.white.withValues(alpha: 0.2),
+                                            child: const Icon(Icons.inventory_2_outlined, color: Colors.white, size: 24)),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Profil Tamamla Banner ─────────────────────────────────────────────────────
+
+class _ProfilTamamlaBanner extends StatelessWidget {
+  const _ProfilTamamlaBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          height: 90,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFFFFCDD2), Color(0xFFFFE4EC), Color(0xFFFFF0F5)],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+          ),
+          child: Stack(
+            children: [
+              // Dekoratif daireler
+              Positioned(right: -20, top: -20,
+                child: Container(width: 90, height: 90,
+                    decoration: BoxDecoration(shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.08)))),
+              Positioned(right: 40, bottom: -30,
+                child: Container(width: 70, height: 70,
+                    decoration: BoxDecoration(shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.06)))),
+              // İçerik
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 42, height: 42,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.person_outline_rounded,
+                          color: Color(0xFF880E4F), size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Profilini tamamla',
+                              style: GoogleFonts.urbanist(
+                                  fontSize: 15, fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF880E4F))),
+                          Text('Daha iyi eşleşmeler gör',
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 10,
+                                  color: const Color(0xFF880E4F).withValues(alpha: 0.75)),
+                              maxLines: 1, overflow: TextOverflow.ellipsis),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const ProfilDuzenleScreen(),
+                        ),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE91E63),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text('Tamamla',
+                            style: GoogleFonts.dmSans(
+                                fontSize: 11, fontWeight: FontWeight.w700,
+                                color: Colors.white)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Boş ekran ─────────────────────────────────────────────────────────────────
 
 class _BosEkran extends StatelessWidget {
   final String mesaj;

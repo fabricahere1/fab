@@ -47,9 +47,7 @@ class KesfetVitrinTab extends ConsumerWidget {
 
     if (bolumler.isEmpty) {
       return yukleniyor
-          ? const Center(
-              child: CircularProgressIndicator(
-                  color: AppColors.red, strokeWidth: 2))
+          ? const Center(child: CircularProgressIndicator(color: AppColors.red, strokeWidth: 2))
           : const _BosEkran();
     }
 
@@ -119,13 +117,11 @@ class _Bolum extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      // Başlık + Tümünü Göster butonu
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 14, 12, 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Tümünü Gör butonu — sağ üstte
             Align(
               alignment: Alignment.centerRight,
               child: GestureDetector(
@@ -144,58 +140,30 @@ class _Bolum extends StatelessWidget {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: const Color(0xFFEEEEEE), width: 1),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.06),
-                        blurRadius: 4,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
+                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 4, offset: const Offset(0, 1))],
                   ),
-                  child: Text(
-                    'Tümünü Gör',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.red,
-                    ),
-                  ),
+                  child: Text('Tümünü Gör', style: GoogleFonts.dmSans(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.red)),
                 ),
               ),
             ),
             const SizedBox(height: 6),
-            // İkon + Başlık — tek satır
-            Row(
-              children: [
-                Icon(data.ikon, size: 16, color: AppColors.red),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    data.baslik,
+            Row(children: [
+              Icon(data.ikon, size: 16, color: AppColors.red),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(data.baslik,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary,
-                      letterSpacing: 0.0,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+                    style: GoogleFonts.notoSans(fontSize: 13, fontWeight: FontWeight.w400, color: AppColors.textPrimary)),
+              ),
+            ]),
           ],
         ),
       ),
-      // Kartların scroll alanı — çiçekli zemin
       SizedBox(
         height: 270,
         child: Stack(children: [
-          // Çiçekli zemin
-          Positioned.fill(
-            child: CustomPaint(painter: KartZeminPainter(data.cicekTipi)),
-          ),
-          // Kartlar
+          Positioned.fill(child: CustomPaint(painter: KartZeminPainter(data.cicekTipi))),
           ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             scrollDirection: Axis.horizontal,
@@ -217,8 +185,6 @@ class CicekBaslikPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final w = size.width;
     final h = size.height;
-
-    // Zemin rengi
     final Color zemin;
     switch (tip) {
       case CicekTipi.papatya:  zemin = const Color(0xFFFFF3E0); break;
@@ -227,112 +193,6 @@ class CicekBaslikPainter extends CustomPainter {
       case CicekTipi.aycicegi: zemin = const Color(0xFFFFFDE7); break;
     }
     canvas.drawRect(Rect.fromLTWH(0, 0, w, h), Paint()..color = zemin);
-
-    switch (tip) {
-      case CicekTipi.papatya:  _papatyaCiz(canvas, w, h); break;
-      case CicekTipi.gul:      _gulCiz(canvas, w, h); break;
-      case CicekTipi.lavanta:  _lavantaCiz(canvas, w, h); break;
-      case CicekTipi.aycicegi: _aycicegiCiz(canvas, w, h); break;
-    }
-  }
-
-  void _tacYaprak(Canvas canvas, Paint p, Offset merkez, double uzunluk, double genislik, int adet) {
-    for (int i = 0; i < adet; i++) {
-      canvas.save();
-      canvas.translate(merkez.dx, merkez.dy);
-      canvas.rotate(i * 2 * 3.14159 / adet);
-      canvas.drawOval(Rect.fromCenter(center: Offset(0, -uzunluk), width: genislik * 2, height: uzunluk * 2), p);
-      canvas.restore();
-    }
-  }
-
-  void _papatyaCiz(Canvas canvas, double w, double h) {
-    final yaprak = Paint()..color = const Color(0xFFFFF8E1).withValues(alpha: 0.75)..style = PaintingStyle.fill;
-    final merkez = Paint()..color = const Color(0xFFFFD54F).withValues(alpha: 0.9)..style = PaintingStyle.fill;
-    final yaprakRenk = Paint()..color = const Color(0xFFC8E6C9).withValues(alpha: 0.55)..style = PaintingStyle.fill;
-    // büyük papatya sağ
-    _tacYaprak(canvas, yaprak, Offset(w - 38, h * 0.45), 18, 7, 8);
-    canvas.drawCircle(Offset(w - 38, h * 0.45), 9, merkez);
-    // küçük papatya sol
-    _tacYaprak(canvas, yaprak, Offset(40, h * 0.4), 11, 4, 8);
-    canvas.drawCircle(Offset(40, h * 0.4), 6, merkez);
-    // yapraklar
-    canvas.save(); canvas.translate(w - 18, h - 8); canvas.rotate(-0.5);
-    canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: 28, height: 10), yaprakRenk); canvas.restore();
-  }
-
-  void _gulCiz(Canvas canvas, double w, double h) {
-    final dis = Paint()..color = const Color(0xFFF48FB1).withValues(alpha: 0.7)..style = PaintingStyle.fill;
-    final ic  = Paint()..color = const Color(0xFFF06292).withValues(alpha: 0.65)..style = PaintingStyle.fill;
-    final ort = Paint()..color = const Color(0xFFE91E63).withValues(alpha: 0.75)..style = PaintingStyle.fill;
-    final yp  = Paint()..color = const Color(0xFFA5D6A7).withValues(alpha: 0.5)..style = PaintingStyle.fill;
-    // büyük gül sağ
-    _tacYaprak(canvas, dis, Offset(w - 36, h * 0.42), 16, 9, 5);
-    _tacYaprak(canvas, ic,  Offset(w - 36, h * 0.42), 11, 6, 5);
-    canvas.drawCircle(Offset(w - 36, h * 0.42), 7, ort);
-    // küçük gül sol
-    _tacYaprak(canvas, dis, Offset(36, h * 0.38), 10, 6, 5);
-    canvas.drawCircle(Offset(36, h * 0.38), 5, ort);
-    // yaprak
-    canvas.save(); canvas.translate(w - 14, h - 5); canvas.rotate(-0.4);
-    canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: 24, height: 8), yp); canvas.restore();
-  }
-
-  void _lavantaCiz(Canvas canvas, double w, double h) {
-    final renkler = [
-      const Color(0xFFCE93D8),
-      const Color(0xFFBA68C8),
-      const Color(0xFFAB47BC),
-      const Color(0xFF9C27B0),
-    ];
-    final sap = Paint()..color = const Color(0xFFCE93D8).withValues(alpha: 0.5)..style = PaintingStyle.stroke..strokeWidth = 1.5;
-    final yp  = Paint()..color = const Color(0xFFC8E6C9).withValues(alpha: 0.5)..style = PaintingStyle.fill;
-
-    void dal(double x, double yBaslangic, double yBitis, double scale) {
-      canvas.drawLine(Offset(x, yBaslangic), Offset(x, yBitis), sap);
-      final adimlar = [0.0, 0.3, 0.55, 0.75, 0.9];
-      for (int i = 0; i < adimlar.length; i++) {
-        final y = yBitis + (yBaslangic - yBitis) * adimlar[i];
-        final renk = Paint()..color = renkler[i < renkler.length ? i : renkler.length - 1].withValues(alpha: 0.55)..style = PaintingStyle.fill;
-        if (i == 0) {
-          canvas.drawOval(Rect.fromCenter(center: Offset(x, y - 6 * scale), width: 7 * scale, height: 12 * scale), renk);
-        } else {
-          canvas.drawOval(Rect.fromCenter(center: Offset(x - 5 * scale, y), width: 7 * scale, height: 11 * scale), renk);
-          canvas.drawOval(Rect.fromCenter(center: Offset(x + 5 * scale, y), width: 7 * scale, height: 11 * scale), renk);
-        }
-      }
-    }
-    dal(w - 40, h, 10, 1.0);
-    dal(w - 20, h, 20, 0.8);
-    dal(30, h, 15, 0.85);
-    // yaprak
-    canvas.save(); canvas.translate(w - 55, h - 5); canvas.rotate(-0.6);
-    canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: 22, height: 8), yp); canvas.restore();
-    canvas.save(); canvas.translate(w - 30, h - 8); canvas.rotate(0.5);
-    canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: 18, height: 7), yp); canvas.restore();
-  }
-
-  void _aycicegiCiz(Canvas canvas, double w, double h) {
-    final tac  = Paint()..color = const Color(0xFFFFD54F).withValues(alpha: 0.75)..style = PaintingStyle.fill;
-    final dis  = Paint()..color = const Color(0xFF795548).withValues(alpha: 0.82)..style = PaintingStyle.fill;
-    final ic   = Paint()..color = const Color(0xFF5D4037).withValues(alpha: 0.7)..style = PaintingStyle.fill;
-    final sap  = Paint()..color = const Color(0xFF66BB6A).withValues(alpha: 0.45)..style = PaintingStyle.stroke..strokeWidth = 2;
-    final yp   = Paint()..color = const Color(0xFFA5D6A7).withValues(alpha: 0.5)..style = PaintingStyle.fill;
-    // büyük
-    _tacYaprak(canvas, tac, Offset(w - 36, h * 0.4), 20, 7, 12);
-    canvas.drawCircle(Offset(w - 36, h * 0.4), 12, dis);
-    canvas.drawCircle(Offset(w - 36, h * 0.4), 8, ic);
-    canvas.drawLine(Offset(w - 36, h * 0.4 + 12), Offset(w - 36, h + 4), sap);
-    // küçük
-    _tacYaprak(canvas, tac, Offset(34, h * 0.35), 13, 5, 12);
-    canvas.drawCircle(Offset(34, h * 0.35), 7, dis);
-    canvas.drawCircle(Offset(34, h * 0.35), 5, ic);
-    canvas.drawLine(Offset(34, h * 0.35 + 7), Offset(34, h + 4), sap);
-    // yaprak büyük
-    canvas.save(); canvas.translate(w - 52, h * 0.7); canvas.rotate(-0.6);
-    canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: 26, height: 9), yp); canvas.restore();
-    canvas.save(); canvas.translate(w - 20, h * 0.75); canvas.rotate(0.5);
-    canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: 22, height: 8), yp); canvas.restore();
   }
 
   @override
@@ -425,10 +285,7 @@ class _RenkliArkaplan extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomPaint(
       painter: KartZeminPainter(cicekTipi),
-      child: Center(
-        child: Icon(Icons.inventory_2_outlined, size: 32,
-            color: AppColors.textHint.withValues(alpha: 0.4)),
-      ),
+      child: Center(child: Icon(Icons.inventory_2_outlined, size: 32, color: AppColors.textHint.withValues(alpha: 0.4))),
     );
   }
 }
@@ -437,7 +294,6 @@ class KartZeminPainter extends CustomPainter {
   final CicekTipi tip;
   const KartZeminPainter(this.tip);
 
-  // ── Beyaz stroke boya — tüm siluetler bu boya ile çizilir ──────────────────
   static final _p = Paint()
     ..color = Colors.white.withValues(alpha: 0.55)
     ..style = PaintingStyle.stroke
@@ -450,7 +306,6 @@ class KartZeminPainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
 
-    // ── Zemin rengi (gradient) ───────────────────────────────────────────────
     final List<Color> renkler;
     switch (tip) {
       case CicekTipi.papatya:  renkler = [const Color(0xFF87CEEB), const Color(0xFFE0F4FF)]; break;
@@ -458,236 +313,105 @@ class KartZeminPainter extends CustomPainter {
       case CicekTipi.lavanta:  renkler = [const Color(0xFFFFF176), const Color(0xFFFFFDE7)]; break;
       case CicekTipi.aycicegi: renkler = [const Color(0xFFB2DFDB), const Color(0xFFE8F5E9)]; break;
     }
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, w, h),
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: renkler,
-        ).createShader(Rect.fromLTWH(0, 0, w, h)),
-    );
+    canvas.drawRect(Rect.fromLTWH(0, 0, w, h),
+      Paint()..shader = LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: renkler)
+          .createShader(Rect.fromLTWH(0, 0, w, h)));
 
-    // ── Siluet dizilimi — her tip için farklı yerleşim ───────────────────────
     switch (tip) {
       case CicekTipi.papatya:
-        // sol üst: uçak büyük
         _ucak(canvas, w * 0.12, h * 0.18, 1.0, 0.0);
-        // sağ üst: çiçek demeti
         _demetCicek(canvas, w * 0.78, h * 0.12, 1.0);
-        // orta sol: bavul küçük
         _bavul(canvas, w * 0.08, h * 0.60, 0.75);
-        // orta sağ: sepet
         _sepet(canvas, w * 0.72, h * 0.55, 0.85);
-        // alt orta: uçak küçük eğik
         _ucak(canvas, w * 0.45, h * 0.82, 0.65, -0.3);
-        // sağ alt: tek çiçek
         _tekCicek(canvas, w * 0.88, h * 0.78, 0.7);
         break;
-
       case CicekTipi.gul:
-        // sol üst: çiçek demeti büyük
         _demetCicek(canvas, w * 0.15, h * 0.14, 1.0);
-        // sağ üst: bavul
         _bavul(canvas, w * 0.78, h * 0.12, 0.9);
-        // orta: uçak
         _ucak(canvas, w * 0.48, h * 0.45, 0.85, 0.15);
-        // sol alt: sepet
         _sepet(canvas, w * 0.10, h * 0.68, 0.8);
-        // sağ alt: tek çiçek
         _tekCicek(canvas, w * 0.82, h * 0.65, 0.75);
-        // alt orta: bavul mini
         _bavul(canvas, w * 0.50, h * 0.82, 0.6);
         break;
-
       case CicekTipi.lavanta:
-        // sol üst: sepet
         _sepet(canvas, w * 0.08, h * 0.12, 0.9);
-        // sağ üst: uçak
         _ucak(canvas, w * 0.70, h * 0.10, 0.95, -0.2);
-        // orta sol: çiçek demeti
         _demetCicek(canvas, w * 0.18, h * 0.52, 0.85);
-        // orta sağ: bavul
         _bavul(canvas, w * 0.78, h * 0.48, 0.8);
-        // alt: tek çiçek + uçak mini
         _tekCicek(canvas, w * 0.50, h * 0.78, 0.7);
         _ucak(canvas, w * 0.82, h * 0.82, 0.6, 0.25);
         break;
-
       case CicekTipi.aycicegi:
-        // sol üst: bavul büyük
         _bavul(canvas, w * 0.10, h * 0.12, 1.0);
-        // sağ üst: uçak
         _ucak(canvas, w * 0.68, h * 0.08, 1.0, 0.1);
-        // orta: demet çiçek
         _demetCicek(canvas, w * 0.45, h * 0.40, 0.9);
-        // sol alt: tek çiçek
         _tekCicek(canvas, w * 0.12, h * 0.70, 0.75);
-        // sağ alt: sepet
         _sepet(canvas, w * 0.75, h * 0.65, 0.85);
-        // alt sağ: uçak mini
         _ucak(canvas, w * 0.88, h * 0.88, 0.55, -0.15);
         break;
     }
   }
 
-  // ── Uçak silueti ────────────────────────────────────────────────────────────
-  // cx,cy: merkez, scale: boyut çarpanı, angle: radyan cinsinden dönüş
   void _ucak(Canvas canvas, double cx, double cy, double scale, double angle) {
-    canvas.save();
-    canvas.translate(cx, cy);
-    canvas.rotate(angle);
-    final s = scale * 22.0;
-    final p = _p;
-    // gövde
-    final govde = Path()
-      ..moveTo(-s, 0)
-      ..lineTo(s * 0.6, -s * 0.18)
-      ..lineTo(s, 0)
-      ..lineTo(s * 0.6, s * 0.18)
-      ..close();
-    canvas.drawPath(govde, p);
-    // sol kanat
-    final kanat = Path()
-      ..moveTo(-s * 0.1, 0)
-      ..lineTo(-s * 0.5, -s * 0.7)
-      ..lineTo(s * 0.25, -s * 0.22)
-      ..close();
-    canvas.drawPath(kanat, p);
-    // sağ kanat
-    final kanat2 = Path()
-      ..moveTo(-s * 0.1, 0)
-      ..lineTo(-s * 0.5, s * 0.7)
-      ..lineTo(s * 0.25, s * 0.22)
-      ..close();
-    canvas.drawPath(kanat2, p);
-    // kuyruk
-    final kuyruk = Path()
-      ..moveTo(-s * 0.75, 0)
-      ..lineTo(-s, -s * 0.38)
-      ..lineTo(-s * 0.55, -s * 0.12)
-      ..close();
-    canvas.drawPath(kuyruk, p);
+    canvas.save(); canvas.translate(cx, cy); canvas.rotate(angle);
+    final s = scale * 22.0; final p = _p;
+    canvas.drawPath(Path()..moveTo(-s, 0)..lineTo(s * 0.6, -s * 0.18)..lineTo(s, 0)..lineTo(s * 0.6, s * 0.18)..close(), p);
+    canvas.drawPath(Path()..moveTo(-s * 0.1, 0)..lineTo(-s * 0.5, -s * 0.7)..lineTo(s * 0.25, -s * 0.22)..close(), p);
+    canvas.drawPath(Path()..moveTo(-s * 0.1, 0)..lineTo(-s * 0.5, s * 0.7)..lineTo(s * 0.25, s * 0.22)..close(), p);
+    canvas.drawPath(Path()..moveTo(-s * 0.75, 0)..lineTo(-s, -s * 0.38)..lineTo(-s * 0.55, -s * 0.12)..close(), p);
     canvas.restore();
   }
 
-  // ── Bavul silueti ────────────────────────────────────────────────────────────
   void _bavul(Canvas canvas, double cx, double cy, double scale) {
-    canvas.save();
-    canvas.translate(cx, cy);
-    final s = scale * 16.0;
-    final p = _p;
-    // gövde
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset.zero, width: s * 2, height: s * 1.7),
-        const Radius.circular(4),
-      ),
-      p,
-    );
-    // sap
-    final sap = Path()
-      ..moveTo(-s * 0.4, -s * 0.85)
-      ..lineTo(-s * 0.4, -s * 1.25)
-      ..quadraticBezierTo(0, -s * 1.55, s * 0.4, -s * 1.25)
-      ..lineTo(s * 0.4, -s * 0.85);
-    canvas.drawPath(sap, p);
-    // orta çizgi (dikey)
+    canvas.save(); canvas.translate(cx, cy);
+    final s = scale * 16.0; final p = _p;
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromCenter(center: Offset.zero, width: s * 2, height: s * 1.7), const Radius.circular(4)), p);
+    canvas.drawPath(Path()..moveTo(-s * 0.4, -s * 0.85)..lineTo(-s * 0.4, -s * 1.25)..quadraticBezierTo(0, -s * 1.55, s * 0.4, -s * 1.25)..lineTo(s * 0.4, -s * 0.85), p);
     canvas.drawLine(Offset(0, -s * 0.85), Offset(0, s * 0.85), p);
-    // orta çizgi (yatay)
     canvas.drawLine(Offset(-s, 0), Offset(s, 0), p);
-    // tekerlekler
     canvas.drawCircle(Offset(-s * 0.55, s * 0.85), s * 0.18, p);
-    canvas.drawCircle(Offset( s * 0.55, s * 0.85), s * 0.18, p);
+    canvas.drawCircle(Offset(s * 0.55, s * 0.85), s * 0.18, p);
     canvas.restore();
   }
 
-  // ── Alışveriş sepeti silueti ─────────────────────────────────────────────────
   void _sepet(Canvas canvas, double cx, double cy, double scale) {
-    canvas.save();
-    canvas.translate(cx, cy);
-    final s = scale * 18.0;
-    final p = _p;
-    // sepet gövdesi (yamuk)
-    final govde = Path()
-      ..moveTo(-s, -s * 0.2)
-      ..lineTo(-s * 0.75, s * 0.9)
-      ..lineTo( s * 0.75, s * 0.9)
-      ..lineTo( s, -s * 0.2)
-      ..close();
-    canvas.drawPath(govde, p);
-    // sap (yay)
-    final sapPath = Path()
-      ..moveTo(-s * 0.55, -s * 0.2)
-      ..quadraticBezierTo(0, -s * 1.2, s * 0.55, -s * 0.2);
-    canvas.drawPath(sapPath, p);
-    // yatay çizgiler
-    canvas.drawLine(Offset(-s * 0.9, s * 0.28), Offset( s * 0.9, s * 0.28), p);
-    canvas.drawLine(Offset(-s * 0.84, s * 0.6), Offset( s * 0.84, s * 0.6), p);
-    // dikey çizgiler
+    canvas.save(); canvas.translate(cx, cy);
+    final s = scale * 18.0; final p = _p;
+    canvas.drawPath(Path()..moveTo(-s, -s * 0.2)..lineTo(-s * 0.75, s * 0.9)..lineTo(s * 0.75, s * 0.9)..lineTo(s, -s * 0.2)..close(), p);
+    canvas.drawPath(Path()..moveTo(-s * 0.55, -s * 0.2)..quadraticBezierTo(0, -s * 1.2, s * 0.55, -s * 0.2), p);
+    canvas.drawLine(Offset(-s * 0.9, s * 0.28), Offset(s * 0.9, s * 0.28), p);
+    canvas.drawLine(Offset(-s * 0.84, s * 0.6), Offset(s * 0.84, s * 0.6), p);
     canvas.drawLine(Offset(-s * 0.3, -s * 0.2), Offset(-s * 0.35, s * 0.9), p);
-    canvas.drawLine(Offset( s * 0.3, -s * 0.2), Offset( s * 0.35, s * 0.9), p);
+    canvas.drawLine(Offset(s * 0.3, -s * 0.2), Offset(s * 0.35, s * 0.9), p);
     canvas.restore();
   }
 
-  // ── Çiçek demeti silueti ─────────────────────────────────────────────────────
   void _demetCicek(Canvas canvas, double cx, double cy, double scale) {
-    canvas.save();
-    canvas.translate(cx, cy);
-    final s = scale * 14.0;
-    final p = _p;
-    // saplar
-    final saplar = [
-      [0.0, s * 3.5, 0.0, -s * 0.5],
-      [-s * 0.7, s * 3.5, -s * 0.9, -s * 0.3],
-      [ s * 0.7, s * 3.5,  s * 0.9, -s * 0.3],
-      [-s * 1.4, s * 3.5, -s * 1.6,  s * 0.2],
-      [ s * 1.4, s * 3.5,  s * 1.6,  s * 0.2],
-    ];
-    for (final sap in saplar) {
-      canvas.drawLine(Offset(sap[0], sap[1]), Offset(sap[2], sap[3]), p);
-    }
-    // çiçek başları — oval
-    canvas.drawOval(Rect.fromCenter(center: Offset(0, -s * 0.5 - s * 0.7), width: s, height: s * 1.4), p);
-    canvas.drawOval(Rect.fromCenter(center: Offset(-s * 0.9, -s * 0.3 - s * 0.6), width: s * 0.85, height: s * 1.2), p);
-    canvas.drawOval(Rect.fromCenter(center: Offset( s * 0.9, -s * 0.3 - s * 0.6), width: s * 0.85, height: s * 1.2), p);
-    canvas.drawOval(Rect.fromCenter(center: Offset(-s * 1.6, s * 0.2 - s * 0.5), width: s * 0.7, height: s), p);
-    canvas.drawOval(Rect.fromCenter(center: Offset( s * 1.6, s * 0.2 - s * 0.5), width: s * 0.7, height: s), p);
-    // bağ (kurdelesi)
-    final kurde = Path()
-      ..moveTo(-s * 0.5, s * 3.2)
-      ..quadraticBezierTo(0, s * 2.6, s * 0.5, s * 3.2);
-    canvas.drawPath(kurde, p);
+    canvas.save(); canvas.translate(cx, cy);
+    final s = scale * 14.0; final p = _p;
+    final saplar = [[0.0, s*3.5, 0.0, -s*0.5],[-s*0.7,s*3.5,-s*0.9,-s*0.3],[s*0.7,s*3.5,s*0.9,-s*0.3],[-s*1.4,s*3.5,-s*1.6,s*0.2],[s*1.4,s*3.5,s*1.6,s*0.2]];
+    for (final sap in saplar) { canvas.drawLine(Offset(sap[0], sap[1]), Offset(sap[2], sap[3]), p); }
+    canvas.drawOval(Rect.fromCenter(center: Offset(0, -s*0.5-s*0.7), width: s, height: s*1.4), p);
+    canvas.drawOval(Rect.fromCenter(center: Offset(-s*0.9, -s*0.3-s*0.6), width: s*0.85, height: s*1.2), p);
+    canvas.drawOval(Rect.fromCenter(center: Offset(s*0.9, -s*0.3-s*0.6), width: s*0.85, height: s*1.2), p);
+    canvas.drawOval(Rect.fromCenter(center: Offset(-s*1.6, s*0.2-s*0.5), width: s*0.7, height: s), p);
+    canvas.drawOval(Rect.fromCenter(center: Offset(s*1.6, s*0.2-s*0.5), width: s*0.7, height: s), p);
+    canvas.drawPath(Path()..moveTo(-s*0.5, s*3.2)..quadraticBezierTo(0, s*2.6, s*0.5, s*3.2), p);
     canvas.restore();
   }
 
-  // ── Tek çiçek silueti ────────────────────────────────────────────────────────
   void _tekCicek(Canvas canvas, double cx, double cy, double scale) {
-    canvas.save();
-    canvas.translate(cx, cy);
-    final s = scale * 12.0;
-    final p = _p;
-    // sap
-    canvas.drawLine(Offset(0, s * 0.5), Offset(0, s * 2.5), p);
-    // yaprak
-    final yaprak = Path()
-      ..moveTo(0, s * 1.5)
-      ..quadraticBezierTo(s * 0.8, s * 1.0, s * 0.6, s * 0.5)
-      ..quadraticBezierTo(s * 0.2, s * 1.2, 0, s * 1.5);
-    canvas.drawPath(yaprak, p);
-    // taç yapraklar (4 yön)
+    canvas.save(); canvas.translate(cx, cy);
+    final s = scale * 12.0; final p = _p;
+    canvas.drawLine(Offset(0, s*0.5), Offset(0, s*2.5), p);
+    canvas.drawPath(Path()..moveTo(0, s*1.5)..quadraticBezierTo(s*0.8, s*1.0, s*0.6, s*0.5)..quadraticBezierTo(s*0.2, s*1.2, 0, s*1.5), p);
     for (int i = 0; i < 5; i++) {
-      canvas.save();
-      canvas.translate(0, 0);
-      canvas.rotate(i * 3.14159 * 2 / 5);
-      canvas.drawOval(
-        Rect.fromCenter(center: Offset(0, -s * 0.85), width: s * 0.55, height: s * 1.1),
-        p,
-      );
+      canvas.save(); canvas.rotate(i * 3.14159 * 2 / 5);
+      canvas.drawOval(Rect.fromCenter(center: Offset(0, -s*0.85), width: s*0.55, height: s*1.1), p);
       canvas.restore();
     }
-    // merkez
-    canvas.drawCircle(Offset.zero, s * 0.28, p);
+    canvas.drawCircle(Offset.zero, s*0.28, p);
     canvas.restore();
   }
 
@@ -702,26 +426,17 @@ class _HeroBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final goruntulenen = ref.watch(kesfetEnCokGoruntulenenProvider);
-    final favorilenen  = ref.watch(kesfetEnCokFavorilenenProvider);
-
-    // En çok görüntülenen + en çok favorilenen, tekrarları kaldır
-    final seen = <String>{};
-    final heroIlanlar = [
-      ...goruntulenen,
-      ...favorilenen,
-    ].where((i) => seen.add(i.id)).toList();
+    final heroIlanlar = ref.watch(kesfetHeroBannerProvider);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(10),
         child: SizedBox(
           height: 210,
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // Arka plan resmi
               Image.asset(
                 'assets/images/hero_banner.png',
                 fit: BoxFit.cover,
@@ -735,7 +450,6 @@ class _HeroBanner extends ConsumerWidget {
                   ),
                 ),
               ),
-              // Koyu overlay — yazı okunsun
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -748,44 +462,21 @@ class _HeroBanner extends ConsumerWidget {
                   ),
                 ),
               ),
-              // İçerik
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Üst: başlık + tümünü gör ──
                   Padding(
                     padding: const EdgeInsets.fromLTRB(14, 12, 12, 6),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Bu hafta öne çıkanlar',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.urbanist(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                  letterSpacing: 0.2,
-                                ),
-                              ),
-                              Text(
-                                'En çok görüntülenen & favorilenen ilanlar',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.dmSans(
-                                  fontSize: 11,
-                                  color: Colors.white.withValues(alpha: 0.85),
-                                ),
-                              ),
-                            ],
-                          ),
+                          child: Text('Bu hafta öne çıkanlar',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.urbanist(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.2)),
                         ),
-                        // Tümünü Gör butonu
+                        const SizedBox(width: 8),
                         GestureDetector(
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute(
@@ -801,31 +492,21 @@ class _HeroBanner extends ConsumerWidget {
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.18),
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.5),
-                                width: 1,
-                              ),
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1),
                             ),
-                            child: Text(
-                              'Tümünü Gör',
-                              style: GoogleFonts.dmSans(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
+                            child: Text('Tümünü Gör',
+                                style: GoogleFonts.dmSans(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white)),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  // ── Alt: kaydırılabilir ilan kartları ──
-                  if (heroIlanlar.isNotEmpty)
-                    SizedBox(
-                      height: 136,
-                      child: ListView.builder(
+                  Expanded(
+                    child: heroIlanlar.isEmpty
+                        ? const SizedBox.shrink()
+                        : ListView.builder(
                             scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+                            padding: const EdgeInsets.fromLTRB(14, 4, 14, 14),
                             itemCount: heroIlanlar.length,
                             itemBuilder: (_, index) {
                               final ilan  = heroIlanlar[index];
@@ -841,35 +522,14 @@ class _HeroBanner extends ConsumerWidget {
                                   margin: const EdgeInsets.only(right: 8),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.65),
-                                      width: 1.5,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.25),
-                                        blurRadius: 6,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
+                                    border: Border.all(color: Colors.white.withValues(alpha: 0.65), width: 1.5),
+                                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 6, offset: const Offset(0, 2))],
                                   ),
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(9),
                                     child: resim.isNotEmpty
-                                        ? CachedNetworkImage(
-                                            cacheManager: AppCacheManager.instance,
-                                            imageUrl: resim,
-                                            fit: BoxFit.cover,
-                                            fadeInDuration: Duration.zero,
-                                          )
-                                        : Container(
-                                            color: Colors.white.withValues(alpha: 0.2),
-                                            child: const Icon(
-                                              Icons.inventory_2_outlined,
-                                              color: Colors.white,
-                                              size: 26,
-                                            ),
-                                          ),
+                                        ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, fadeInDuration: Duration.zero)
+                                        : Container(color: Colors.white.withValues(alpha: 0.2), child: const Icon(Icons.inventory_2_outlined, color: Colors.white, size: 26)),
                                   ),
                                 ),
                               );

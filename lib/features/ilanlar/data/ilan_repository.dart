@@ -282,32 +282,46 @@ class IlanRepository {
     final user = auth.currentUser;
     if (user == null) throw Exception('Giriş yapılmamış');
     final List<String> resimUrller = [];
+    final List<Reference> yuklenenRefler = [];
     String thumbUrl = '';
+    Reference? thumbRef;
     final ts = DateTime.now().millisecondsSinceEpoch;
-    for (int i = 0; i < resimler.length; i++) {
-      onProgress?.call(i, 0.0);
-      final sikistirilmis = await _resimSikistir(resimler[i], i);
-      final ref = storage
-          .ref()
-          .child(StoragePaths.ilanResimleri)
-          .child('${user.uid}_${ts}_$i.jpg');
-      final task = ref.putFile(sikistirilmis);
-      task.snapshotEvents.listen((snap) {
-        onProgress?.call(i, snap.bytesTransferred / snap.totalBytes);
-      });
-      await task;
-      resimUrller.add(await ref.getDownloadURL());
-
-      // Sadece ilk resim için thumbnail üret ve yükle
-      if (i == 0) {
-        final thumb = await _thumbnailOlustur(resimler[i]);
-        final thumbRef = storage
+    try {
+      for (int i = 0; i < resimler.length; i++) {
+        onProgress?.call(i, 0.0);
+        final sikistirilmis = await _resimSikistir(resimler[i], i);
+        final ref = storage
             .ref()
-            .child(StoragePaths.ilanThumbnailleri)
-            .child('${user.uid}_${ts}_thumb.jpg');
-        await thumbRef.putFile(thumb);
-        thumbUrl = await thumbRef.getDownloadURL();
+            .child(StoragePaths.ilanResimleri)
+            .child('${user.uid}_${ts}_$i.jpg');
+        final task = ref.putFile(sikistirilmis);
+        task.snapshotEvents.listen((snap) {
+          onProgress?.call(i, snap.bytesTransferred / snap.totalBytes);
+        });
+        await task;
+        yuklenenRefler.add(ref);
+        resimUrller.add(await ref.getDownloadURL());
+
+        // Sadece ilk resim için thumbnail üret ve yükle
+        if (i == 0) {
+          final thumb = await _thumbnailOlustur(resimler[i]);
+          thumbRef = storage
+              .ref()
+              .child(StoragePaths.ilanThumbnailleri)
+              .child('${user.uid}_${ts}_thumb.jpg');
+          await thumbRef.putFile(thumb);
+          thumbUrl = await thumbRef.getDownloadURL();
+        }
       }
+    } catch (e) {
+      // Upload yarıda kestiyse yüklenmiş dosyaları temizle
+      for (final ref in yuklenenRefler) {
+        await ref.delete().catchError((_) {});
+      }
+      if (thumbRef != null) {
+        await thumbRef.delete().catchError((_) {});
+      }
+      rethrow;
     }
     // Kullanıcının güncel puanını çek
     final kullaniciDoc = await firestore
@@ -329,7 +343,28 @@ class IlanRepository {
   Future<void> ilanGuncelle(String ilanId, Map<String, dynamic> data) =>
       _col.doc(ilanId).update(data);
 
-  Future<void> ilanSil(String ilanId) => _col.doc(ilanId).delete();
+  Future<void> ilanSil(String ilanId) async {
+    final batch = firestore.batch();
+    batch.delete(_col.doc(ilanId));
+
+    final favoriler = await firestore
+        .collection(Collections.favoriler)
+        .where('ilanId', isEqualTo: ilanId)
+        .get();
+    for (final doc in favoriler.docs) {
+      batch.delete(doc.reference);
+    }
+
+    final goruntulenmeler = await firestore
+        .collection(Collections.goruntulenmeler)
+        .where('ilanId', isEqualTo: ilanId)
+        .get();
+    for (final doc in goruntulenmeler.docs) {
+      batch.delete(doc.reference);
+    }
+
+    await batch.commit();
+  }
 
   Future<void> ilanPasifYap(String ilanId) =>
       _col.doc(ilanId).update({'aktif': false});
@@ -387,20 +422,16 @@ class IlanRepository {
     required String kullaniciId,
     required String ilanId,
   }) async {
-    final snap = await firestore
-        .collection(Collections.favoriler)
-        .where('kullaniciId', isEqualTo: kullaniciId)
-        .where('ilanId', isEqualTo: ilanId)
-        .get();
-    if (snap.docs.isEmpty) return;
-    final batch = firestore.batch();
-    for (final doc in snap.docs) {
-      batch.delete(doc.reference);
-    }
-    batch.update(_col.doc(ilanId), {
-      'favoriSayisi': FieldValue.increment(-1),
+    final favoriId = '${kullaniciId}_$ilanId';
+    final favoriRef = firestore.collection(Collections.favoriler).doc(favoriId);
+    await firestore.runTransaction((txn) async {
+      final snap = await txn.get(favoriRef);
+      if (!snap.exists) return;
+      txn.delete(favoriRef);
+      txn.update(_col.doc(ilanId), {
+        'favoriSayisi': FieldValue.increment(-1),
+      });
     });
-    await batch.commit();
   }
 
   /// 12 saatlik throttle ile görüntülenme sayısını artırır.
