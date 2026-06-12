@@ -154,7 +154,7 @@ class _Bolum extends StatelessWidget {
                 child: Text(data.baslik,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.notoSans(fontSize: 13, fontWeight: FontWeight.w400, color: AppColors.textPrimary)),
+                    style: GoogleFonts.notoSans(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
               ),
             ]),
           ],

@@ -6,6 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:iste_v3/features/home/presentation/alisveris_rehberi_bolum.dart';
+import 'package:iste_v3/features/home/presentation/beden_donusturucu_bolum.dart';
+import 'package:iste_v3/features/home/presentation/dunya_trendleri_bolum.dart';
+import 'package:iste_v3/features/home/presentation/tasiyici_ipuclari_bolum.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import 'package:iste_v3/core/cache/app_cache_manager.dart';
 import 'package:iste_v3/shared/constants/app_colors.dart';
 import 'package:iste_v3/features/ilanlar/domain/ilan_model.dart';
@@ -166,6 +172,12 @@ class KesfetVitrin2Tab extends ConsumerWidget {
         if (trendUrunler.isNotEmpty) _TrendUrunlerBolum(trendler: trendUrunler),
         if (guzergahlar.isNotEmpty)  _GuzergahlarBolum(guzergahlar: guzergahlar),
         if (sehirler.isNotEmpty)     _SehirlerBolum(sehirler: sehirler),
+        const _IndirimMagazalariBolum(),
+        const DunyaTrendleriBolum(),
+        const AlisverisRehberiBolum(),
+        const BedenDonusturuculBolum(),
+        const TasiyiciIpuclariBolum(),
+        _IlkIlanBanner(),
         const SizedBox(height: 24),
       ],
     );
@@ -185,7 +197,7 @@ Widget _bolumBaslik({required String baslik, required IconData ikon, VoidCallbac
           child: Text(baslik,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+              style: GoogleFonts.notoSans(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
         ),
         if (tumunuGor != null)
           GestureDetector(
@@ -268,6 +280,32 @@ class _TrendUrunlerBolum extends StatelessWidget {
 class _GuzergahlarBolum extends StatelessWidget {
   final List<Guzergah> guzergahlar;
   const _GuzergahlarBolum({required this.guzergahlar});
+
+  static const _bayraklar = <String, String>{
+    'new york': '🇺🇸', 'los angeles': '🇺🇸', 'chicago': '🇺🇸', 'miami': '🇺🇸',
+    'houston': '🇺🇸', 'boston': '🇺🇸', 'san francisco': '🇺🇸', 'washington': '🇺🇸',
+    'usa': '🇺🇸', 'abd': '🇺🇸', 'new jersey': '🇺🇸', 'seattle': '🇺🇸',
+    'londra': '🇬🇧', 'london': '🇬🇧', 'manchester': '🇬🇧', 'uk': '🇬🇧', 'ingiltere': '🇬🇧',
+    'paris': '🇫🇷', 'lyon': '🇫🇷', 'fransa': '🇫🇷',
+    'berlin': '🇩🇪', 'münih': '🇩🇪', 'frankfurt': '🇩🇪', 'almanya': '🇩🇪',
+    'amsterdam': '🇳🇱', 'hollanda': '🇳🇱',
+    'dubai': '🇦🇪', 'abu dhabi': '🇦🇪', 'bae': '🇦🇪',
+    'tokyo': '🇯🇵', 'osaka': '🇯🇵', 'japonya': '🇯🇵',
+    'milano': '🇮🇹', 'roma': '🇮🇹', 'italya': '🇮🇹',
+    'madrid': '🇪🇸', 'barcelona': '🇪🇸', 'ispanya': '🇪🇸',
+    'stockholm': '🇸🇪', 'isveç': '🇸🇪',
+    'zürih': '🇨🇭', 'cenevre': '🇨🇭', 'isviçre': '🇨🇭',
+    'toronto': '🇨🇦', 'vancouver': '🇨🇦', 'kanada': '🇨🇦',
+    'sidney': '🇦🇺', 'melbourne': '🇦🇺', 'avustralya': '🇦🇺',
+    'seul': '🇰🇷', 'güney kore': '🇰🇷',
+    'şangay': '🇨🇳', 'pekin': '🇨🇳', 'çin': '🇨🇳',
+  };
+
+  String _bayrak(String sehir) {
+    final k = sehir.toLowerCase().trim();
+    for (final e in _bayraklar.entries) { if (k.contains(e.key)) return e.value; }
+    return '✈️';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -400,14 +438,16 @@ class _GuzergahlarBolum extends StatelessWidget {
 // ── Beyaz SVG uçak ikonu ──────────────────────────────────────────────────────
 
 class _UcakIkonu extends StatelessWidget {
-  const _UcakIkonu();
+  final double size;
+  final Color renk;
+  const _UcakIkonu({this.size = 20, this.renk = const Color(0xFF5B8DB8)});
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 20,
-      height: 20,
-      child: CustomPaint(painter: _UcakPainter(const Color(0xFF5B8DB8))),
+      width: size,
+      height: size,
+      child: CustomPaint(painter: _UcakPainter(renk)),
     );
   }
 }
@@ -547,6 +587,226 @@ class _SehirlerBolum extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ── 4) İndirim & Outlet Mağazaları ───────────────────────────────────────────
+
+class _IndirimMagazalariBolum extends StatefulWidget {
+  const _IndirimMagazalariBolum();
+
+  @override
+  State<_IndirimMagazalariBolum> createState() => _IndirimMagazalariBolumState();
+}
+
+class _IndirimMagazalariBolumState extends State<_IndirimMagazalariBolum> {
+  String _seciliUlke = 'tumu';
+
+  static const _magazalar = [
+    _Magaza('Amazon Outlet',    '🇺🇸', 'Amerika',  'us', 0xFFFFF3E0, 0xFFE65100, 'https://www.amazon.com/Outlet'),
+    _Magaza('Nordstrom Rack',   '🇺🇸', 'Amerika',  'us', 0xFFEDE7F6, 0xFF4527A0, 'https://www.nordstromrack.com'),
+    _Magaza('TJ Maxx',          '🇺🇸', 'Amerika',  'us', 0xFFE3F2FD, 0xFF0D47A1, 'https://www.tjmaxx.tjx.com'),
+    _Magaza('Macy\'s Sale',     '🇺🇸', 'Amerika',  'us', 0xFFFCE4EC, 0xFF880E4F, 'https://www.macys.com/shop/sale'),
+    _Magaza('ASOS Sale',        '🇬🇧', 'İngiltere', 'gb', 0xFFE8F5E9, 0xFF1B5E20, 'https://www.asos.com/sale'),
+    _Magaza('Next Clearance',   '🇬🇧', 'İngiltere', 'gb', 0xFFF3E5F5, 0xFF4A148C, 'https://www.next.co.uk/shop/clearance'),
+    _Magaza('M&S Outlet',       '🇬🇧', 'İngiltere', 'gb', 0xFFE0F2F1, 0xFF004D40, 'https://www.marksandspencer.com/c/sale'),
+    _Magaza('Zalando Outlet',   '🇩🇪', 'Almanya',  'de', 0xFFFFF8E1, 0xFFF57F17, 'https://en.zalando.de/outlet/'),
+    _Magaza('About You Sale',   '🇩🇪', 'Almanya',  'de', 0xFFE8EAF6, 0xFF1A237E, 'https://www.aboutyou.de/sale'),
+    _Magaza('La Redoute',       '🇫🇷', 'Fransa',   'fr', 0xFFFCEAE8, 0xFFB71C1C, 'https://www.laredoute.fr/pplp/cat-promotion.aspx'),
+    _Magaza('Cdiscount',        '🇫🇷', 'Fransa',   'fr', 0xFFE8F4FD, 0xFF0D47A1, 'https://www.cdiscount.com/promo'),
+    _Magaza('YOOX',             '🇮🇹', 'İtalya',   'it', 0xFFF9FBE7, 0xFF33691E, 'https://www.yoox.com/us/women/sale/shoponline'),
+    _Magaza('The Outnet',       '🇮🇹', 'İtalya',   'it', 0xFFFFF3E0, 0xFFBF360C, 'https://www.theoutnet.com'),
+    _Magaza('Bol.com',          '🇳🇱', 'Hollanda', 'nl', 0xFFE3F2FD, 0xFF01579B, 'https://www.bol.com/nl/l/sale'),
+    _Magaza('El Corte Inglés',  '🇪🇸', 'İspanya',  'es', 0xFFFFEBEE, 0xFFC62828, 'https://www.elcorteingles.es/ofertas'),
+    _Magaza('Zara Sale',        '🇪🇸', 'İspanya',  'es', 0xFFF3E5F5, 0xFF6A1B9A, 'https://www.zara.com/es/en/woman-special-prices-l1314.html'),
+    _Magaza('H&M Sale',         '🇸🇪', 'İsveç',    'se', 0xFFE8F5E9, 0xFF1B5E20, 'https://www2.hm.com/en_gb/sale.html'),
+    _Magaza('AliExpress',       '🇨🇳', 'Çin',      'cn', 0xFFFFF3E0, 0xFFE65100, 'https://www.aliexpress.com/sale/sale-items.html'),
+    _Magaza('JD.com',           '🇨🇳', 'Çin',      'cn', 0xFFE3F2FD, 0xFF0D47A1, 'https://www.jd.com'),
+    _Magaza('Vip.com',          '🇨🇳', 'Çin',      'cn', 0xFFFCE4EC, 0xFF880E4F, 'https://www.vip.com'),
+    _Magaza('Amazon Japan',     '🇯🇵', 'Japonya',  'jp', 0xFFFFF8E1, 0xFFF57F17, 'https://www.amazon.co.jp'),
+    _Magaza('Rakuten Sale',     '🇯🇵', 'Japonya',  'jp', 0xFFFFEBEE, 0xFFC62828, 'https://www.rakuten.co.jp'),
+    _Magaza('Gmarket Global',   '🇰🇷', 'G. Kore',  'kr', 0xFFE8F5E9, 0xFF1B5E20, 'https://global.gmarket.co.kr'),
+    _Magaza('YesStyle',         '🇰🇷', 'G. Kore',  'kr', 0xFFF3E5F5, 0xFF6A1B9A, 'https://www.yesstyle.com/en/sale.html'),
+  ];
+
+  static const _ulkeler = [
+    ('tumu', 'Tümü'),
+    ('us',   '🇺🇸 Amerika'),
+    ('gb',   '🇬🇧 İngiltere'),
+    ('de',   '🇩🇪 Almanya'),
+    ('fr',   '🇫🇷 Fransa'),
+    ('it',   '🇮🇹 İtalya'),
+    ('nl',   '🇳🇱 Hollanda'),
+    ('es',   '🇪🇸 İspanya'),
+    ('se',   '🇸🇪 İsveç'),
+    ('cn',   '🇨🇳 Çin'),
+    ('jp',   '🇯🇵 Japonya'),
+    ('kr',   '🇰🇷 G. Kore'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final filtreli = _seciliUlke == 'tumu'
+        ? _magazalar
+        : _magazalar.where((m) => m.ulkeKod == _seciliUlke).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _bolumBaslik(baslik: 'İndirim & outlet mağazaları', ikon: Icons.local_offer_outlined),
+
+        // Ülke filtreleri
+        SizedBox(
+          height: 34,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            itemCount: _ulkeler.length,
+            itemBuilder: (_, i) {
+              final (kod, isim) = _ulkeler[i];
+              final aktif = _seciliUlke == kod;
+              return GestureDetector(
+                onTap: () => setState(() => _seciliUlke = kod),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  margin: const EdgeInsets.only(right: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: aktif ? AppColors.red : Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: aktif ? AppColors.red : AppColors.divider,
+                      width: aktif ? 1.5 : 0.5,
+                    ),
+                  ),
+                  child: Text(isim,
+                      style: GoogleFonts.dmSans(
+                          fontSize: 12,
+                          fontWeight: aktif ? FontWeight.w600 : FontWeight.w400,
+                          color: aktif ? Colors.white : AppColors.textPrimary)),
+                ),
+              );
+            },
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // Mağaza kartları
+        SizedBox(
+          height: 158,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+            itemCount: filtreli.length,
+            itemBuilder: (_, i) => _MagazaKarti(magaza: filtreli[i]),
+          ),
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+}
+
+class _Magaza {
+  final String isim;
+  final String bayrak;
+  final String ulkeAdi;
+  final String ulkeKod;
+  final int arkaplanRenk;
+  final int yaziRenk;
+  final String url;
+  const _Magaza(this.isim, this.bayrak, this.ulkeAdi, this.ulkeKod, this.arkaplanRenk, this.yaziRenk, this.url);
+}
+
+class _MagazaKarti extends StatelessWidget {
+  final _Magaza magaza;
+  const _MagazaKarti({required this.magaza});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => launchUrl(Uri.parse(magaza.url), mode: LaunchMode.externalApplication),
+      child: Container(
+        width: 140,
+        margin: const EdgeInsets.only(right: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.divider, width: 0.5),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6, offset: const Offset(0, 2))],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Renkli üst alan
+            Container(
+              height: 68,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Color(magaza.arkaplanRenk),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
+              ),
+              alignment: Alignment.center,
+              child: Text(magaza.isim,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.dmSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(magaza.yaziRenk))),
+            ),
+            // Alt bilgi
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('${magaza.bayrak} ${magaza.ulkeAdi}',
+                      style: GoogleFonts.dmSans(fontSize: 11, color: AppColors.textSecondary)),
+                  const SizedBox(height: 6),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 5),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppColors.red, width: 0.5),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text('İndirimleri Gör',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.red)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── İlk İlan Banner ───────────────────────────────────────────────────────────
+
+class _IlkIlanBanner extends StatelessWidget {
+  const _IlkIlanBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Image.asset(
+          'assets/images/ilk_ilan.png',
+          width: double.infinity,
+          fit: BoxFit.fitWidth,
+          errorBuilder: (_, _, _) => const SizedBox.shrink(),
+        ),
+      ),
     );
   }
 }
