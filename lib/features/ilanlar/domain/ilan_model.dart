@@ -4,6 +4,14 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'ilan_model.freezed.dart';
 part 'ilan_model.g.dart';
 
+// ── İlan durumları ────────────────────────────────────────────────────────────
+
+class IlanDurum {
+  static const String onayBekliyor = 'onayBekliyor';
+  static const String yayinda      = 'yayinda';
+  static const String reddedildi   = 'reddedildi';
+}
+
 class TimestampConverter implements JsonConverter<DateTime?, Object?> {
   const TimestampConverter();
 
@@ -35,7 +43,9 @@ abstract class IlanModel with _$IlanModel {
     @Default('diger') String kategori,
     required String kullaniciId,
     @Default('Kullanıcı') String kullaniciAd,
-    @Default(true) bool aktif,
+    @Default(false) bool aktif,
+    @Default(IlanDurum.onayBekliyor) String durum,
+    @Default('') String redSebebi,
     @TimestampConverter() DateTime? tarih,
     @TimestampConverter() DateTime? olusturmaTarihi,
     @Default('') String resimUrl,
@@ -50,7 +60,6 @@ abstract class IlanModel with _$IlanModel {
     @Default([]) List<String> kategoriYolu,
     @Default('') String cinsiyet,
     @Default('') String beden,
-    // Denormalized owner attributes for Sana Özel filtering
     String? sahipIstekTeslimatTercihi,
     @Default(false) bool sahipDutyFree,
   }) = _IlanModel;
@@ -68,7 +77,9 @@ abstract class IlanModel with _$IlanModel {
       kategori:        data['kategori']     as String? ?? 'diger',
       kullaniciId:     data['kullaniciId']  as String? ?? '',
       kullaniciAd:     data['kullaniciAd']  as String? ?? 'Kullanıcı',
-      aktif:           data['aktif']        as bool?   ?? true,
+      aktif:           data['aktif']        as bool?   ?? false,
+      durum:           data['durum']        as String? ?? IlanDurum.onayBekliyor,
+      redSebebi:       data['redSebebi']    as String? ?? '',
       tarih:           (data['tarih']       as Timestamp?)?.toDate(),
       olusturmaTarihi: (data['olusturmaTarihi'] as Timestamp?)?.toDate(),
       resimUrl:        data['resimUrl']      as String? ?? '',
@@ -93,7 +104,6 @@ abstract class IlanModel with _$IlanModel {
 }
 
 extension IlanModelX on IlanModel {
-  /// Grid/liste görünümleri için küçük resim. Thumbnail varsa onu döner.
   String get gridResim {
     if (resimThumbUrl.isNotEmpty) return resimThumbUrl;
     if (resimUrl.isNotEmpty) return resimUrl;
@@ -118,14 +128,16 @@ extension IlanModelX on IlanModel {
     'kategori':        kategori,
     'kullaniciId':     kullaniciId,
     'kullaniciAd':     kullaniciAd,
-    'aktif':           aktif,
+    'aktif':           false,           // Cloud Function onaylayana kadar false
+    'durum':           IlanDurum.onayBekliyor,
     'tasimaTercihi':   tasimaTercihi,
     'kullaniciPuan':   kullaniciPuan,
     'anaKategori':     anaKategori,
     'kategoriYolu':    kategoriYolu,
     if (cinsiyet.isNotEmpty) 'cinsiyet': cinsiyet,
     if (beden.isNotEmpty)    'beden':    beden,
-    if (sahipIstekTeslimatTercihi != null) 'sahipIstekTeslimatTercihi': sahipIstekTeslimatTercihi,
+    if (sahipIstekTeslimatTercihi != null)
+      'sahipIstekTeslimatTercihi': sahipIstekTeslimatTercihi,
     if (sahipDutyFree) 'sahipDutyFree': sahipDutyFree,
     if (tarih != null) 'tarih': Timestamp.fromDate(tarih!),
     'olusturmaTarihi': FieldValue.serverTimestamp(),

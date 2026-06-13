@@ -2,8 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:material_symbols_icons/symbols.dart';
-import 'package:iste_v3/shared/constants/app_colors.dart';
+
 
 // ── Veri modeli ───────────────────────────────────────────────────────────────
 
@@ -107,12 +106,15 @@ class DunyaTrendleriBolum extends StatefulWidget {
 
 class _DunyaTrendleriBolumState extends State<DunyaTrendleriBolum> {
   _TrendKat _aktifKat = _TrendKat.tumu;
+  bool _tumunuGor = false;
 
   @override
   Widget build(BuildContext context) {
     final filtreli = _aktifKat == _TrendKat.tumu
         ? _trendler
         : _trendler.where((t) => t.kat == _aktifKat).toList();
+    final gosterilen = _tumunuGor ? filtreli : filtreli.take(10).toList();
+    final kalanSayi = filtreli.length - 10;
 
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 20, 12, 8),
@@ -159,7 +161,7 @@ class _DunyaTrendleriBolumState extends State<DunyaTrendleriBolum> {
                 final (_, isim, kat) = _filtreler[i];
                 final aktif = _aktifKat == kat;
                 return GestureDetector(
-                  onTap: () => setState(() => _aktifKat = kat),
+                  onTap: () => setState(() { _aktifKat = kat; _tumunuGor = false; }),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
                     margin: const EdgeInsets.only(right: 6),
@@ -186,14 +188,14 @@ class _DunyaTrendleriBolumState extends State<DunyaTrendleriBolum> {
           const SizedBox(height: 14),
 
           // Trend listesi
-          ...filtreli.asMap().entries.map((e) {
+          ...gosterilen.asMap().entries.map((e) {
             final i = e.key;
             final t = e.value;
             final hot = i < 3;
             return Container(
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                border: i < filtreli.length - 1
+                border: i < gosterilen.length - 1 || kalanSayi > 0
                     ? const Border(bottom: BorderSide(color: Color(0xFF222222), width: 0.5))
                     : null,
               ),
@@ -252,6 +254,47 @@ class _DunyaTrendleriBolumState extends State<DunyaTrendleriBolum> {
               ),
             );
           }),
+
+          // Devamını gör butonu
+          if (!_tumunuGor && kalanSayi > 0)
+            GestureDetector(
+              onTap: () => setState(() => _tumunuGor = true),
+              child: Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('$kalanSayi trend daha gör',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 12, fontWeight: FontWeight.w500,
+                            color: const Color(0xFF888888))),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.keyboard_arrow_down_rounded,
+                        size: 16, color: Color(0xFF888888)),
+                  ],
+                ),
+              ),
+            ),
+
+          if (_tumunuGor)
+            GestureDetector(
+              onTap: () => setState(() => _tumunuGor = false),
+              child: Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Daha az göster',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 12, fontWeight: FontWeight.w500,
+                            color: const Color(0xFF888888))),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.keyboard_arrow_up_rounded,
+                        size: 16, color: Color(0xFF888888)),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );

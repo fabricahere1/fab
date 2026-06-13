@@ -10,12 +10,10 @@ import '../../../shared/constants/app_constants.dart';
 
 part 'ilan_repository.g.dart';
 
-// Pagination cursor — DocumentSnapshot yerine DateTime kullanılır
-// Böylece data katmanı dışına Firestore tipi sızmaz
 class IlanSayfasi {
   final List<IlanModel> ilanlar;
-  final DateTime? sonTarih;   // startAfter cursor
-  final String? sonId;        // tiebreaker
+  final DateTime? sonTarih;
+  final String? sonId;
   final bool bitti;
 
   const IlanSayfasi({
@@ -48,9 +46,6 @@ class IlanRepository {
 
   CollectionReference get _col => firestore.collection(Collections.ilanlar);
 
-  // ── Tekil ilan ────────────────────────────────────────────────────────────
-
-  /// Bildirimden açılırken veya deep link ile sadece ilanId bilindiğinde kullanılır.
   Stream<IlanModel?> ilanStream(String ilanId) {
     return _col.doc(ilanId).snapshots().map((doc) {
       if (!doc.exists) return null;
@@ -58,10 +53,6 @@ class IlanRepository {
     });
   }
 
-  // ── Liste ─────────────────────────────────────────────────────────────────
-
-  /// Cache-first: önce cache'den dener, boşsa server'dan çeker.
-  /// [forceServer] true ise cache atlanır, direkt server'dan çeker.
   Future<IlanSayfasi> istekIlanlariniGetir({
     String? kategori,
     int limit = Pagination.ilanSayfaBoyutu,
@@ -97,8 +88,6 @@ class IlanRepository {
     );
   }
 
-  /// Direkt sunucudan çeker — cache'i atlar.
-  /// Arka plan güncelleme için kullanılır.
   Future<IlanSayfasi> istekIlanlariniGetirSunucu({
     String? kategori,
     int limit = Pagination.ilanSayfaBoyutu,
@@ -203,7 +192,6 @@ class IlanRepository {
     );
   }
 
-  // DocumentSnapshot yerine DateTime cursor kullanır
   Future<IlanSayfasi> sonrakiSayfayiGetir({
     required String tip,
     required DateTime sonTarih,
@@ -242,7 +230,7 @@ class IlanRepository {
         .map((snap) => snap.docs.map(IlanModel.fromFirestore).toList());
   }
 
-  /// Full resim: max 1200px, %85 kalite → 200-500 KB
+  /// Full resim: max 1080px, %75 kalite → 100-300 KB
   Future<File> _resimSikistir(File dosya, int index) async {
     final tempDir = await getTemporaryDirectory();
     final hedefYol =
@@ -250,15 +238,15 @@ class IlanRepository {
     final sonuc = await FlutterImageCompress.compressAndGetFile(
       dosya.absolute.path,
       hedefYol,
-      quality: 85,
-      minWidth: 1200,
-      minHeight: 1200,
+      quality: 75,
+      minWidth: 1080,
+      minHeight: 1080,
       format: CompressFormat.jpeg,
     );
     return sonuc != null ? File(sonuc.path) : dosya;
   }
 
-  /// Thumbnail: max 400px, %70 kalite → 20-40 KB (grid görünümü için)
+  /// Thumbnail: max 300px, %65 kalite → 10-25 KB
   Future<File> _thumbnailOlustur(File dosya) async {
     final tempDir = await getTemporaryDirectory();
     final hedefYol =
@@ -266,9 +254,9 @@ class IlanRepository {
     final sonuc = await FlutterImageCompress.compressAndGetFile(
       dosya.absolute.path,
       hedefYol,
-      quality: 70,
-      minWidth: 400,
-      minHeight: 400,
+      quality: 65,
+      minWidth: 300,
+      minHeight: 300,
       format: CompressFormat.jpeg,
     );
     return sonuc != null ? File(sonuc.path) : dosya;
@@ -281,63 +269,95 @@ class IlanRepository {
   }) async {
     final user = auth.currentUser;
     if (user == null) throw Exception('Giriş yapılmamış');
-    final List<String> resimUrller = [];
+
+    final ts = DateTime.now().millisecondsSinceEpoch;
     final List<Reference> yuklenenRefler = [];
     String thumbUrl = '';
     Reference? thumbRef;
-    final ts = DateTime.now().millisecondsSinceEpoch;
+
     try {
-      for (int i = 0; i < resimler.length; i++) {
+      // ── 1. Tüm resimleri paralel sıkıştır ───────────────────────────────
+      final sikistirilmisler = await Future.wait(
+        List.generate(resimler.length, (i) => _resimSikistir(resimler[i], i)),
+      );
+
+      // ── 2. Tüm resimleri paralel yükle ──────────────────────────────────
+      final refs = List.generate(resimler.length, (i) => storage
+          .ref()
+          .child(StoragePaths.ilanResimleri)
+          .child('${user.uid}_${ts}_$i.jpg'));
+
+      // Progress takibi için her resim için ayrı progress tutuyoruz
+      final progresses = List<double>.filled(resimler.length, 0.0);
+
+      final uploadFutures = List.generate(resimler.length, (i) async {
         onProgress?.call(i, 0.0);
-        final sikistirilmis = await _resimSikistir(resimler[i], i);
-        final ref = storage
-            .ref()
-            .child(StoragePaths.ilanResimleri)
-            .child('${user.uid}_${ts}_$i.jpg');
-        final task = ref.putFile(sikistirilmis);
+        final task = refs[i].putFile(sikistirilmisler[i]);
         task.snapshotEvents.listen((snap) {
-          onProgress?.call(i, snap.bytesTransferred / snap.totalBytes);
+          progresses[i] = snap.bytesTransferred / snap.totalBytes;
+          // Toplam progress ortalamasını bildir
+          final toplamProgress =
+              progresses.reduce((a, b) => a + b) / progresses.length;
+          onProgress?.call(i, toplamProgress);
         });
         await task;
-        yuklenenRefler.add(ref);
-        resimUrller.add(await ref.getDownloadURL());
+        yuklenenRefler.add(refs[i]);
+      });
 
-        // Sadece ilk resim için thumbnail üret ve yükle
-        if (i == 0) {
-          final thumb = await _thumbnailOlustur(resimler[i]);
+      // ── 3. Thumbnail paralel başlat (ilk resim için) ─────────────────────
+      Future<void>? thumbFuture;
+      if (resimler.isNotEmpty) {
+        thumbFuture = () async {
+          final thumb = await _thumbnailOlustur(resimler[0]);
           thumbRef = storage
               .ref()
               .child(StoragePaths.ilanThumbnailleri)
               .child('${user.uid}_${ts}_thumb.jpg');
-          await thumbRef.putFile(thumb);
-          thumbUrl = await thumbRef.getDownloadURL();
-        }
+          await thumbRef!.putFile(thumb);
+          thumbUrl = await thumbRef!.getDownloadURL();
+        }();
       }
+
+      // ── 4. Tüm yüklemeleri bekle ─────────────────────────────────────────
+      await Future.wait([
+        ...uploadFutures,
+        if (thumbFuture != null) thumbFuture,
+      ]);
+
+      // ── 5. Download URL'leri paralel al ──────────────────────────────────
+      final resimUrller = await Future.wait(
+        refs.map((ref) => ref.getDownloadURL()),
+      );
+
+      // ── 6. Kullanıcı puanını çek ─────────────────────────────────────────
+      final kullaniciDoc = await firestore
+          .collection(Collections.kullanicilar)
+          .doc(user.uid)
+          .get();
+      final kullaniciPuan =
+          (kullaniciDoc.data()?['ortalamaPuan'] as num?)?.toDouble() ?? 0.0;
+
+      // ── 7. Firestore'a kaydet ─────────────────────────────────────────────
+      final ilanData =
+          ilan.copyWith(kullaniciPuan: kullaniciPuan).toFirestore();
+      if (resimUrller.isNotEmpty) {
+        ilanData['resimUrl'] = resimUrller.first;
+        ilanData['resimUrller'] = resimUrller;
+        if (thumbUrl.isNotEmpty) ilanData['resimThumbUrl'] = thumbUrl;
+      }
+
+      final ref = await _col.add(ilanData);
+      return ref.id;
     } catch (e) {
       // Upload yarıda kestiyse yüklenmiş dosyaları temizle
       for (final ref in yuklenenRefler) {
         await ref.delete().catchError((_) {});
       }
       if (thumbRef != null) {
-        await thumbRef.delete().catchError((_) {});
+        await thumbRef!.delete().catchError((_) {});
       }
       rethrow;
     }
-    // Kullanıcının güncel puanını çek
-    final kullaniciDoc = await firestore
-        .collection(Collections.kullanicilar)
-        .doc(user.uid)
-        .get();
-    final kullaniciPuan = (kullaniciDoc.data()?['ortalamaPuan'] as num?)?.toDouble() ?? 0.0;
-
-    final ilanData = ilan.copyWith(kullaniciPuan: kullaniciPuan).toFirestore();
-    if (resimUrller.isNotEmpty) {
-      ilanData['resimUrl']      = resimUrller.first;
-      ilanData['resimUrller']   = resimUrller;
-      if (thumbUrl.isNotEmpty) ilanData['resimThumbUrl'] = thumbUrl;
-    }
-    final ref = await _col.add(ilanData);
-    return ref.id;
   }
 
   Future<void> ilanGuncelle(String ilanId, Map<String, dynamic> data) =>
@@ -434,7 +454,6 @@ class IlanRepository {
     });
   }
 
-  /// 12 saatlik throttle ile görüntülenme sayısını artırır.
   Future<bool> goruntulenmeyiKaydet({
     required String kullaniciId,
     required String ilanId,

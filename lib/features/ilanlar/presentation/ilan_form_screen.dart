@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../domain/ilan_model.dart';
 import '../providers/ilan_provider.dart';
+import 'widgets/ilan_yukleme_overlay.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
@@ -453,7 +454,7 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
 
           AnimatedBuilder(
             animation: _sheetAnim,
-            builder: (_, _) {
+            builder: (_, __) {
               final sheetH = screenH * _sheetAnim.value;
               return Positioned(
                 bottom: 0, left: 0, right: 0,
@@ -575,6 +576,12 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
                 ),
               );
             },
+          ),
+
+          // ── Yükleme overlay ─────────────────────────────────────────────
+          IlanYuklemeOverlay(
+            aktif: yukleniyor,
+            progress: progress,
           ),
         ],
       ),
@@ -926,30 +933,6 @@ class _AdimDetayIcerik extends StatelessWidget {
             ],
           ),
         ),
-        if (yukleniyor && yeniResimler.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Text('Yükleniyor...',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 13, color: AppColors.textSecondary)),
-              const Spacer(),
-              Text('%${(progress * 100).toInt()}',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 13, fontWeight: FontWeight.w600)),
-            ],
-          ),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress,
-              color: AppColors.textPrimary,
-              backgroundColor: AppColors.divider,
-              minHeight: 3,
-            ),
-          ),
-        ],
         const SizedBox(height: 20),
       ],
     );
@@ -1105,7 +1088,7 @@ class BedenCinsiyetBolum extends StatelessWidget {
   final ValueChanged<String> onPantolonBelDegis;
   final ValueChanged<String> onPantolonBoyDegis;
 
-  const BedenCinsiyetBolum({super.key, 
+  const BedenCinsiyetBolum({super.key,
     required this.tip,
     required this.cinsiyet,
     required this.beden,
@@ -1135,7 +1118,6 @@ class BedenCinsiyetBolum extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Cinsiyet
         _formEtiket('Cinsiyet *'),
         const SizedBox(height: 8),
         Wrap(
@@ -1167,8 +1149,6 @@ class BedenCinsiyetBolum extends StatelessWidget {
           }).toList(),
         ),
         const SizedBox(height: 20),
-
-        // Beden — Pantolon ise bel + boy
         if (tip == BedenTipi.pantolon) ...[
           _formEtiket('Beden (Bel / Boy) *'),
           const SizedBox(height: 8),
@@ -1226,8 +1206,7 @@ class BedenCinsiyetBolum extends StatelessWidget {
             }).toList(),
           ),
         ],
-        const SizedBox(height: 8),
-        const SizedBox(height: 20),
+        const SizedBox(height: 28),
       ],
     );
   }
@@ -1239,7 +1218,7 @@ class DropdownBeden extends StatelessWidget {
   final List<String> secenekler;
   final ValueChanged<String> onDegis;
 
-  const DropdownBeden({super.key, 
+  const DropdownBeden({super.key,
     required this.hint,
     required this.secili,
     required this.secenekler,
