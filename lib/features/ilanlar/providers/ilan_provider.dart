@@ -342,6 +342,40 @@ class IlanOlustur extends _$IlanOlustur {
       return null;
     }
   }
+
+  /// İlanı (gerekiyorsa yeni resimlerle) günceller. Yükleme overlay'i görünsün
+  /// diye [IlanOlusturState]'i sürer. Kayıttan sonra sunucudaki
+  /// `ilanGuncellemeModerasyon` (onUpdate) içeriği yeniden modere edip uygunsa
+  /// yayınlar, uygunsuzsa yayından kaldırır.
+  Future<bool> guncelle(
+    String ilanId,
+    Map<String, dynamic> data, {
+    List<File> yeniResimler = const [],
+    List<String> mevcutResimler = const [],
+  }) async {
+    state = const IlanOlusturState(yukleniyor: true, yuklemeProgress: 0.1);
+    try {
+      await ref.read(ilanRepositoryProvider).ilanResimliGuncelle(
+        ilanId: ilanId,
+        data: data,
+        yeniResimler: yeniResimler,
+        mevcutResimler: mevcutResimler,
+        onProgress: (index, progress) {
+          state = state.copyWith(
+            yuklenenResimIndex: index,
+            yuklemeProgress: progress,
+          );
+        },
+      );
+      state = const IlanOlusturState(yukleniyor: true, yuklemeProgress: 1.0);
+      await Future.delayed(const Duration(milliseconds: 800));
+      state = const IlanOlusturState();
+      return true;
+    } catch (e) {
+      state = IlanOlusturState(hata: e.toString());
+      return false;
+    }
+  }
 }
 
 // ── Tekil ilan stream ─────────────────────────────────────────────────────────

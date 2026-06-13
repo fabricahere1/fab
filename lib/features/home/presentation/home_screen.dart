@@ -1,5 +1,7 @@
 // lib/features/home/presentation/home_screen.dart
 
+import 'dart:io' show Platform;
+
 import 'package:flutter/cupertino.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/material.dart';
@@ -184,7 +186,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         bottomNavigationBar: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeOutCubic,
-          height: ref.watch(navBarGizliProvider)
+          // iOS'ta scroll ile gizlenip görünür; Android'de her zaman sabit.
+          height: (ref.watch(navBarGizliProvider) && !Platform.isAndroid)
               ? 0
               : 62 + bottomPadding,
           child: ClipRect(child: Container(

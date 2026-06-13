@@ -183,7 +183,7 @@ class _Halka extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: ctrl,
-      builder: (_, __) {
+      builder: (_, _) {
         final tur = tersine
             ? -ctrl.value * hiz
             : ctrl.value * hiz;

@@ -248,7 +248,7 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
         : _beden;
 
     if (_duzenlemeModuMu) {
-      await ref.read(ilanIslemleriProvider.notifier).guncelle(
+      final basarili = await ref.read(ilanOlusturProvider.notifier).guncelle(
         widget.duzenlenecekIlan!.id,
         {
           'nereden':      _neredenFarketmez ? 'Farketmez' : _neredenCtrl.text.trim(),
@@ -262,11 +262,19 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
           'cinsiyet': _cinsiyet,
           'beden':    bedenDeger,
         },
+        yeniResimler: _yeniResimler,
+        mevcutResimler: _mevcutResimler,
       );
       if (!mounted) return;
-      Navigator.pop(context);
-      AppSnackBar.basari(context, 'İlan güncellendi!');
-      ref.read(istekIlanlarProvider.notifier).yenile();
+      if (basarili) {
+        Navigator.pop(context);
+        AppSnackBar.basari(context,
+            'İlanınız güncellendi. İnceleme sonucu uygun görülürse yayınlanacaktır.');
+        ref.read(istekIlanlarProvider.notifier).yenile();
+        ref.read(tasiyiciIlanlarProvider.notifier).yenile();
+      } else {
+        _snack('İlan güncellenemedi. Tekrar deneyin.');
+      }
     } else {
       final profilSnapshot = await ref.read(kullaniciBilgiProvider(user.uid).future);
       final ilan = IlanModel(
@@ -454,7 +462,7 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
 
           AnimatedBuilder(
             animation: _sheetAnim,
-            builder: (_, __) {
+            builder: (_, _) {
               final sheetH = screenH * _sheetAnim.value;
               return Positioned(
                 bottom: 0, left: 0, right: 0,

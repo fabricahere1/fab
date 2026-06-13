@@ -321,7 +321,7 @@ class IlanRepository {
       // ── 4. Tüm yüklemeleri bekle ─────────────────────────────────────────
       await Future.wait([
         ...uploadFutures,
-        if (thumbFuture != null) thumbFuture,
+        ?thumbFuture,
       ]);
 
       // ── 5. Download URL'leri paralel al ──────────────────────────────────
@@ -363,27 +363,78 @@ class IlanRepository {
   Future<void> ilanGuncelle(String ilanId, Map<String, dynamic> data) =>
       _col.doc(ilanId).update(data);
 
+  /// İlanı (gerekiyorsa yeni resimlerle) günceller.
+  /// [mevcutResimler] korunan eski URL'ler, [yeniResimler] eklenen yerel dosyalar.
+  /// Sıkıştırıp yükler, `resimUrl`/`resimUrller` alanlarını yeniden kurar.
+  /// Resimler değiştiğinde sunucudaki `ilanGuncellemeModerasyon` Vision ile tekrar denetler.
+  Future<void> ilanResimliGuncelle({
+    required String ilanId,
+    required Map<String, dynamic> data,
+    List<File> yeniResimler = const [],
+    List<String> mevcutResimler = const [],
+    void Function(int index, double progress)? onProgress,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) throw Exception('Giriş yapılmamış');
+
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    final List<String> yeniUrller = [];
+    String? yeniThumbUrl;
+
+    if (yeniResimler.isNotEmpty) {
+      // Paralel sıkıştır + yükle
+      final sikistirilmisler = await Future.wait(
+        List.generate(yeniResimler.length, (i) => _resimSikistir(yeniResimler[i], i)),
+      );
+      final refs = List.generate(
+        yeniResimler.length,
+        (i) => storage
+            .ref()
+            .child(StoragePaths.ilanResimleri)
+            .child('${user.uid}_${ts}_d$i.jpg'),
+      );
+      final progresses = List<double>.filled(yeniResimler.length, 0.0);
+      await Future.wait(List.generate(yeniResimler.length, (i) async {
+        onProgress?.call(i, 0.0);
+        final task = refs[i].putFile(sikistirilmisler[i]);
+        task.snapshotEvents.listen((snap) {
+          progresses[i] = snap.bytesTransferred / snap.totalBytes;
+          onProgress?.call(
+              i, progresses.reduce((a, b) => a + b) / progresses.length);
+        });
+        await task;
+      }));
+      yeniUrller.addAll(await Future.wait(refs.map((r) => r.getDownloadURL())));
+
+      // İlk resim yeni (yerel) bir dosyaysa thumbnail üret
+      if (mevcutResimler.isEmpty) {
+        final thumb = await _thumbnailOlustur(yeniResimler.first);
+        final thumbRef = storage
+            .ref()
+            .child(StoragePaths.ilanThumbnailleri)
+            .child('${user.uid}_${ts}_thumb.jpg');
+        await thumbRef.putFile(thumb);
+        yeniThumbUrl = await thumbRef.getDownloadURL();
+      }
+    }
+
+    final tumResimler = [...mevcutResimler, ...yeniUrller];
+    if (tumResimler.isNotEmpty) {
+      data['resimUrl'] = tumResimler.first;
+      data['resimUrller'] = tumResimler;
+      if (yeniThumbUrl != null) data['resimThumbUrl'] = yeniThumbUrl;
+    }
+
+    await _col.doc(ilanId).update(data);
+  }
+
   Future<void> ilanSil(String ilanId) async {
-    final batch = firestore.batch();
-    batch.delete(_col.doc(ilanId));
-
-    final favoriler = await firestore
-        .collection(Collections.favoriler)
-        .where('ilanId', isEqualTo: ilanId)
-        .get();
-    for (final doc in favoriler.docs) {
-      batch.delete(doc.reference);
-    }
-
-    final goruntulenmeler = await firestore
-        .collection(Collections.goruntulenmeler)
-        .where('ilanId', isEqualTo: ilanId)
-        .get();
-    for (final doc in goruntulenmeler.docs) {
-      batch.delete(doc.reference);
-    }
-
-    await batch.commit();
+    // Sadece ilanın kendi dokümanını sil — sahibi için kurallarca her zaman izinli.
+    // İlişkili favoriler/goruntulenmeler temizliği sunucudaki `ilanSilindi`
+    // (onDelete) Cloud Function'ında yapılır; çünkü diğer kullanıcıların favori
+    // kayıtlarını client'tan `where ilanId==` ile sorgulamak güvenlik
+    // kurallarınca reddedilir ve tüm silme işlemini patlatır.
+    await _col.doc(ilanId).delete();
   }
 
   Future<void> ilanPasifYap(String ilanId) =>

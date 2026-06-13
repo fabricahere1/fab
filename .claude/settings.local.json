@@ -28,7 +28,8 @@
       "Bash(cat)",
       "Read(//tmp/**)",
       "Bash(xargs grep *)",
-      "Bash(xargs wc -l)"
+      "Bash(xargs wc -l)",
+      "Bash(dart fix *)"
     ]
   }
 }

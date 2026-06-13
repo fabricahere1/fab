@@ -21,13 +21,6 @@ enum _RozetTipi { goruntulenme, favori, yeni, eta, dutyFree }
 class KesfetVitrinTab extends ConsumerWidget {
   const KesfetVitrinTab({super.key});
 
-  Future<void> _yenile(WidgetRef ref) async {
-    await Future.wait([
-      ref.read(istekIlanlarProvider.notifier).yenile(),
-      ref.read(tasiyiciIlanlarProvider.notifier).yenile(),
-    ]);
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final goruntulenen = ref.watch(kesfetEnCokGoruntulenenProvider);

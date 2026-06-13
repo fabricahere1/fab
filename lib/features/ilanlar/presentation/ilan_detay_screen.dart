@@ -195,8 +195,22 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
       onayMetin: 'Sil',
     );
     if (onay == true && mounted) {
-      await ref.read(ilanIslemleriProvider.notifier).sil(ilanId);
-      if (mounted) context.pop();
+      final messenger = ScaffoldMessenger.of(context);
+      try {
+        await ref.read(ilanIslemleriProvider.notifier).sil(ilanId);
+        if (mounted) context.pop();
+        messenger.showSnackBar(SnackBar(
+          content: Text('İlan silindi.', style: GoogleFonts.dmSans()),
+          behavior: SnackBarBehavior.floating,
+        ));
+      } catch (e) {
+        messenger.showSnackBar(SnackBar(
+          content: Text('İlan silinemedi. Tekrar deneyin.',
+              style: GoogleFonts.dmSans()),
+          backgroundColor: AppColors.red,
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
     }
   }
 

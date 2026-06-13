@@ -17,7 +17,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:iste_v3/core/cache/app_cache_manager.dart';
 import 'package:iste_v3/shared/constants/app_constants.dart';
 import 'package:iste_v3/features/home/presentation/kesfet_vitrin_tab.dart'
-    show CicekBaslikPainter, CicekTipi, KartZeminPainter;
+    show CicekTipi, KartZeminPainter;
 import 'package:iste_v3/features/home/presentation/kesfet_bolum_detay_screen.dart';
 import 'package:iste_v3/features/profil/presentation/profil_duzenle_screen.dart';
 

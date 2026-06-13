@@ -281,32 +281,6 @@ class _GuzergahlarBolum extends StatelessWidget {
   final List<Guzergah> guzergahlar;
   const _GuzergahlarBolum({required this.guzergahlar});
 
-  static const _bayraklar = <String, String>{
-    'new york': '🇺🇸', 'los angeles': '🇺🇸', 'chicago': '🇺🇸', 'miami': '🇺🇸',
-    'houston': '🇺🇸', 'boston': '🇺🇸', 'san francisco': '🇺🇸', 'washington': '🇺🇸',
-    'usa': '🇺🇸', 'abd': '🇺🇸', 'new jersey': '🇺🇸', 'seattle': '🇺🇸',
-    'londra': '🇬🇧', 'london': '🇬🇧', 'manchester': '🇬🇧', 'uk': '🇬🇧', 'ingiltere': '🇬🇧',
-    'paris': '🇫🇷', 'lyon': '🇫🇷', 'fransa': '🇫🇷',
-    'berlin': '🇩🇪', 'münih': '🇩🇪', 'frankfurt': '🇩🇪', 'almanya': '🇩🇪',
-    'amsterdam': '🇳🇱', 'hollanda': '🇳🇱',
-    'dubai': '🇦🇪', 'abu dhabi': '🇦🇪', 'bae': '🇦🇪',
-    'tokyo': '🇯🇵', 'osaka': '🇯🇵', 'japonya': '🇯🇵',
-    'milano': '🇮🇹', 'roma': '🇮🇹', 'italya': '🇮🇹',
-    'madrid': '🇪🇸', 'barcelona': '🇪🇸', 'ispanya': '🇪🇸',
-    'stockholm': '🇸🇪', 'isveç': '🇸🇪',
-    'zürih': '🇨🇭', 'cenevre': '🇨🇭', 'isviçre': '🇨🇭',
-    'toronto': '🇨🇦', 'vancouver': '🇨🇦', 'kanada': '🇨🇦',
-    'sidney': '🇦🇺', 'melbourne': '🇦🇺', 'avustralya': '🇦🇺',
-    'seul': '🇰🇷', 'güney kore': '🇰🇷',
-    'şangay': '🇨🇳', 'pekin': '🇨🇳', 'çin': '🇨🇳',
-  };
-
-  String _bayrak(String sehir) {
-    final k = sehir.toLowerCase().trim();
-    for (final e in _bayraklar.entries) { if (k.contains(e.key)) return e.value; }
-    return '✈️';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -438,12 +412,12 @@ class _GuzergahlarBolum extends StatelessWidget {
 // ── Beyaz SVG uçak ikonu ──────────────────────────────────────────────────────
 
 class _UcakIkonu extends StatelessWidget {
-  final double size;
-  final Color renk;
-  const _UcakIkonu({this.size = 20, this.renk = const Color(0xFF5B8DB8)});
+  const _UcakIkonu();
 
   @override
   Widget build(BuildContext context) {
+    const double size = 20;
+    const Color renk = Color(0xFF5B8DB8);
     return SizedBox(
       width: size,
       height: size,

@@ -68,6 +68,7 @@ class BedenDonusturuculBolum extends StatefulWidget {
 class _BedenDonusturucuBolumState extends State<BedenDonusturuculBolum> {
   _TabTipi _aktifTab = _TabTipi.kadinUst;
   String? _seciliBeden;
+  bool _acik = false;
 
   void _tabDegistir(_TabTipi tip) {
     setState(() { _aktifTab = tip; _seciliBeden = null; });
@@ -82,17 +83,28 @@ class _BedenDonusturucuBolumState extends State<BedenDonusturuculBolum> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Başlık
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-          child: Row(children: [
-            const Icon(Symbols.straighten, size: 16, color: AppColors.red),
-            const SizedBox(width: 6),
-            Text('Bedenini bul',
-                style: GoogleFonts.notoSans(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
-          ]),
+        // Başlık — tıklanınca tabloyu aç/kapatır
+        GestureDetector(
+          onTap: () => setState(() => _acik = !_acik),
+          behavior: HitTestBehavior.opaque,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+            child: Row(children: [
+              const Icon(Symbols.straighten, size: 16, color: AppColors.red),
+              const SizedBox(width: 6),
+              Text('Bedenini bul',
+                  style: GoogleFonts.notoSans(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
+              const SizedBox(width: 4),
+              AnimatedRotation(
+                turns: _acik ? 0.5 : 0,
+                duration: const Duration(milliseconds: 200),
+                child: const Icon(Symbols.expand_more, size: 22, color: AppColors.red),
+              ),
+            ]),
+          ),
         ),
 
+        if (_acik) ...[
         // Tab bar
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -135,6 +147,7 @@ class _BedenDonusturucuBolumState extends State<BedenDonusturuculBolum> {
         ),
 
         const SizedBox(height: 8),
+        ],
       ],
     );
   }

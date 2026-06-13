@@ -1,4 +1,4 @@
-﻿// lib/features/profil/presentation/profil_duzenle_screen.dart
+// lib/features/profil/presentation/profil_duzenle_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -110,7 +110,11 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
 
   void _bedenToggle(List<String> liste, String deger) {
     setState(() {
-      if (liste.contains(deger)) liste.remove(deger); else liste.add(deger);
+      if (liste.contains(deger)) {
+        liste.remove(deger);
+      } else {
+        liste.add(deger);
+      }
     });
   }
 

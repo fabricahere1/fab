@@ -287,31 +287,81 @@ export const ilanModerasyonu = functions
     }
   });
 
-// ── Algolia ───────────────────────────────────────────────────────────────────
+// ── İlan güncelleme moderasyonu ───────────────────────────────────────────────
+// Her içerik düzenlemesinde (metin/resim) yeniden modere eder:
+//  • Reddedilmiş ilan uygun hale gelirse → yayınlanır.
+//  • Yayındaki ilan uygunsuz hale getirilirse → yayından kaldırılır (reddedilir).
 
-export const ilanEklendi = functions
+export const ilanGuncellemeModerasyon = functions
   .region("europe-west1")
+  .runWith({ timeoutSeconds: 180, memory: "512MB" })
   .firestore.document("ilanlar/{ilanId}")
-  .onCreate(async (snap, context) => {
-    const data = snap.data();
-    if (!data) return;
-    await algoliaClient.saveObject({
-      indexName: ALGOLIA_INDEX,
-      body: {
-        objectID:        context.params.ilanId,
-        urun:            data.urun            ?? "",
-        nereden:         data.nereden         ?? "",
-        nereye:          data.nereye          ?? "",
-        kategori:        data.kategori        ?? "",
-        anaKategori:     data.anaKategori     ?? "",
-        kategoriYolu:    data.kategoriYolu    ?? [],
-        tip:             data.tip             ?? "",
-        aktif:           data.aktif           ?? false,
-        resimUrl:        (data.resimUrller && data.resimUrller.length > 0) ? data.resimUrller[0] : (data.resimUrl ?? ""),
-        olusturmaTarihi: data.olusturmaTarihi?.toMillis() ?? Date.now(),
-      },
-    });
+  .onUpdate(async (change, context) => {
+    const ilanId = context.params.ilanId;
+    const once = change.before.data();
+    const sonra = change.after.data();
+    if (!once || !sonra) return;
+
+    // Sadece içerik (metin/resim) gerçekten değiştiğinde modere et. Böylece
+    // favoriSayisi/goruntulenme veya moderasyonun kendi durum/aktif/redSebebi
+    // yazımları yeniden moderasyonu tetiklemez → sonsuz döngü olmaz.
+    const icerikDegisti =
+      once.urun !== sonra.urun ||
+      once.notlar !== sonra.notlar ||
+      once.nereden !== sonra.nereden ||
+      once.nereye !== sonra.nereye ||
+      JSON.stringify(once.resimUrller ?? []) !== JSON.stringify(sonra.resimUrller ?? []);
+    if (!icerikDegisti) return;
+
+    const ilanRef = db.collection("ilanlar").doc(ilanId);
+    const oncedenReddedilmis = sonra.durum === "reddedildi";
+    const redBaslik = oncedenReddedilmis ? "İlanın yayınlanamadı" : "İlanın yayından kaldırıldı";
+
+    try {
+      // 1. Metin kontrolü
+      const tumMetin = [
+        sonra.urun ?? "",
+        sonra.notlar ?? "",
+        sonra.nereden ?? "",
+        sonra.nereye ?? "",
+      ].join(" ");
+      const metinSonuc = metinKontrol(tumMetin);
+      if (!metinSonuc.uygun) {
+        await ilanRef.update({ aktif: false, durum: "reddedildi", redSebebi: metinSonuc.sebep });
+        await bildirimGonder(sonra.kullaniciId, redBaslik, metinSonuc.sebep, "ilan_red", ilanId);
+        return;
+      }
+
+      // 2. Resim kontrolü (Vision API)
+      const resimUrller = (sonra.resimUrller as string[]) ?? [];
+      const resimSonuc = await resimKontrol(resimUrller);
+      if (!resimSonuc.uygun) {
+        await ilanRef.update({ aktif: false, durum: "reddedildi", redSebebi: resimSonuc.sebep });
+        await bildirimGonder(sonra.kullaniciId, redBaslik, resimSonuc.sebep, "ilan_red", ilanId);
+        return;
+      }
+
+      // 3. Uygun → yayında olduğundan emin ol (zaten yayındaysa gereksiz yazma yok)
+      if (sonra.durum !== "yayinda" || sonra.aktif !== true || (sonra.redSebebi ?? "") !== "") {
+        await ilanRef.update({ aktif: true, durum: "yayinda", redSebebi: "" });
+        // Bildirim sadece daha önce reddedilmiş bir ilan yeniden yayınlanınca anlamlı.
+        if (oncedenReddedilmis) {
+          await bildirimGonder(
+            sonra.kullaniciId,
+            "İlanın yayınlandı! 🎉",
+            `"${sonra.urun || sonra.nereden + " → " + sonra.nereye}" ilanın artık yayında.`,
+            "ilan_onayla",
+            ilanId,
+          );
+        }
+      }
+    } catch (e) {
+      // Moderasyon hatasında ilanın mevcut durumunu değiştirmeden bırak.
+      console.error("Güncelleme moderasyon hatası:", e);
+    }
   });
+
+// ── Algolia ───────────────────────────────────────────────────────────────────
 
 export const ilanGuncellendi = functions
   .region("europe-west1")
@@ -342,10 +392,27 @@ export const ilanSilindi = functions
   .region("europe-west1")
   .firestore.document("ilanlar/{ilanId}")
   .onDelete(async (snap, context) => {
-    await algoliaClient.deleteObject({
-      indexName: ALGOLIA_INDEX,
-      objectID:  context.params.ilanId,
-    });
+    const ilanId = context.params.ilanId;
+
+    // Algolia'dan kaldır
+    try {
+      await algoliaClient.deleteObject({ indexName: ALGOLIA_INDEX, objectID: ilanId });
+    } catch (e) {
+      console.warn("Algolia silme hatası:", e);
+    }
+
+    // İlişkili favoriler ve goruntulenmeler temizliği (admin yetkisiyle — kuralları bypass eder)
+    for (const koleksiyon of ["favoriler", "goruntulenmeler"]) {
+      try {
+        const iliskili = await db.collection(koleksiyon).where("ilanId", "==", ilanId).get();
+        if (iliskili.empty) continue;
+        const batch = db.batch();
+        iliskili.docs.forEach((d) => batch.delete(d.ref));
+        await batch.commit();
+      } catch (e) {
+        console.warn(`${koleksiyon} temizleme hatası:`, e);
+      }
+    }
   });
 
 export const algoliaTopluAktar = functions

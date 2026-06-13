@@ -16,8 +16,6 @@ import '../../ilanlar/providers/ilan_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/widgets/avatar_widget.dart';
 import 'package:flutter/rendering.dart';
-import 'package:go_router/go_router.dart';
-import '../../../router/app_router.dart';
 
 class ProfilScreen extends ConsumerStatefulWidget {
   const ProfilScreen({super.key});
@@ -102,7 +100,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
     final reddedilenSayi = ilanlarAsync.when(
       data: (liste) => liste.where((i) => i.durum == IlanDurum.reddedildi).length,
       loading: () => 0,
-      error: (_, __) => 0,
+      error: (_, _) => 0,
     );
 
     return Scaffold(
@@ -192,7 +190,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                           );
                         },
                         loading: () => const SizedBox.shrink(),
-                        error: (_, __) => const SizedBox.shrink(),
+                        error: (_, _) => const SizedBox.shrink(),
                       ),
                     ],
                   ),
@@ -309,7 +307,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
               );
             },
             loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
           ),
 
           // ── Hesabım ───────────────────────────────────
@@ -435,7 +433,7 @@ class _ReddedilenIlanlarScreen extends ConsumerWidget {
       ),
       body: ilanlarAsync.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.red, strokeWidth: 2)),
-        error: (_, __) => Center(
+        error: (_, _) => Center(
           child: Text('Bir hata oluştu.', style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
         ),
         data: (ilanlar) {
@@ -686,7 +684,7 @@ class _BekleyenDegerlendirmelerScreen extends ConsumerWidget {
       ),
       body: bekleyenlerAsync.when(
         loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF81C784), strokeWidth: 2)),
-        error: (_, __) => Center(
+        error: (_, _) => Center(
           child: Text('Bir hata oluştu.', style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
         ),
         data: (liste) {
@@ -739,7 +737,7 @@ class _BekleyenKarti extends ConsumerWidget {
 
     return sohbetAsync.when(
       loading: () => const SizedBox(height: 72),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
       data: (sohbet) {
         if (sohbet.isEmpty) return const SizedBox.shrink();
         final kullanicilar = List<String>.from(sohbet['kullanicilar'] ?? []);
