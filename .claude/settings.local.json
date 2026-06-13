@@ -27,7 +27,8 @@
       "mcp__ide__getDiagnostics",
       "Bash(cat)",
       "Read(//tmp/**)",
-      "Bash(xargs grep *)"
+      "Bash(xargs grep *)",
+      "Bash(xargs wc -l)"
     ]
   }
 }
