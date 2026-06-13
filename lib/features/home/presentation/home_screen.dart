@@ -228,7 +228,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ? Icon(Symbols.chat_bubble, size: 24, fill: _selectedIndex == 2 ? 1 : 0, weight: 300,
                               color: _selectedIndex == 2 ? AppColors.red : Colors.black)
                           : Badge(
-                              label: Text(toplamOkunmamis > 99 ? '99+' : '\$toplamOkunmamis',
+                              label: Text(toplamOkunmamis > 99 ? '99+' : '$toplamOkunmamis',
                                   style: GoogleFonts.dmSans(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w600)),
                               backgroundColor: AppColors.red,
                               child: Icon(Symbols.chat_bubble, size: 24, fill: _selectedIndex == 2 ? 1 : 0, weight: 300,

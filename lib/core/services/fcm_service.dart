@@ -28,6 +28,8 @@ class FcmService {
 
   StreamSubscription<User?>? _authSub;
   StreamSubscription<String>? _tokenSub;
+  StreamSubscription<RemoteMessage>? _messageSub;
+  StreamSubscription<RemoteMessage>? _openedAppSub;
 
   /// [onBildirimAc] — bildirime tıklanınca çağrılır (router erişimi için
   /// main.dart'tan inject edilir).
@@ -47,12 +49,12 @@ class FcmService {
     });
 
     // 4. Foreground — in-app banner
-    FirebaseMessaging.onMessage.listen((message) {
+    _messageSub = FirebaseMessaging.onMessage.listen((message) {
       _foregroundMesajIsle(message, onBildirimAc);
     });
 
     // 5. Arka planda bildirime tıklandı
-    FirebaseMessaging.onMessageOpenedApp.listen(onBildirimAc);
+    _openedAppSub = FirebaseMessaging.onMessageOpenedApp.listen(onBildirimAc);
 
     // 6. Uygulama kapalıyken bildirime tıklanıp açıldı
     final initialMessage = await _messaging.getInitialMessage();
@@ -135,5 +137,7 @@ class FcmService {
   void dispose() {
     _authSub?.cancel();
     _tokenSub?.cancel();
+    _messageSub?.cancel();
+    _openedAppSub?.cancel();
   }
 }

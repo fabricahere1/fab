@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -341,6 +342,39 @@ class IlanOlustur extends _$IlanOlustur {
       state = IlanOlusturState(hata: e.toString());
       return null;
     }
+  }
+
+  /// Moderasyon sonucunu bekler. [ilanId] için Firestore'u dinler;
+  /// "yayinda" veya "reddedildi" durumuna ulaşınca tamamlanır.
+  /// [zaman asimi] içinde sonuç gelmezse null döner.
+  /// Moderasyon sonucunu bekler: true=yayında, false=reddedildi, null=timeout
+  Future<bool?> durumBekle(String ilanId, {Duration timeout = const Duration(seconds: 40)}) {
+    final completer = Completer<bool?>();
+    final firestore = ref.read(ilanRepositoryProvider).firestore;
+    StreamSubscription? sub;
+    Timer? timer;
+
+    timer = Timer(timeout, () {
+      sub?.cancel();
+      if (!completer.isCompleted) completer.complete(null);
+    });
+
+    sub = firestore.collection('ilanlar').doc(ilanId).snapshots().listen(
+      (snap) {
+        final durum = snap.data()?['durum'] as String?;
+        if (durum == 'yayinda' || durum == 'reddedildi') {
+          timer?.cancel();
+          sub?.cancel();
+          if (!completer.isCompleted) completer.complete(durum == 'yayinda');
+        }
+      },
+      onError: (_) {
+        timer?.cancel();
+        if (!completer.isCompleted) completer.complete(null);
+      },
+    );
+
+    return completer.future;
   }
 
   /// İlanı (gerekiyorsa yeni resimlerle) günceller. Yükleme overlay'i görünsün

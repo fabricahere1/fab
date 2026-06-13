@@ -85,8 +85,13 @@ class MesajRepository {
       'degerlendirmeYapildi': false,
       'islemDurumlari':       {'iletisimBasladi': true},
       'olusturmaTarihi':      FieldValue.serverTimestamp(),
-      'okunmamis':            {karsiId: FieldValue.increment(1)},
     }, SetOptions(merge: true));
+
+    // okunmamis sadece karsiId'nin sayacını artır; diğer kullanıcının sayacına dokunma
+    batch.set(sohbetRef, {
+      'okunmamis': {karsiId: FieldValue.increment(1)},
+    }, SetOptions(mergeFields: [FieldPath(['okunmamis', karsiId])]));
+
 
     batch.set(mesajRef, {
       'metin':     metin,

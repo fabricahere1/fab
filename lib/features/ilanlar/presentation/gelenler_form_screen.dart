@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../domain/ilan_model.dart';
 import '../providers/ilan_provider.dart';
-import 'widgets/ilan_yukleme_overlay.dart';
+import 'widgets/ilan_overlay_widget.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
@@ -37,6 +37,8 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
   String _beden    = '';
   String _pantolonBel = '';
   String _pantolonBoy = '';
+  bool? _basarili;
+  bool  _overlayAktif = false;
 
   String get _kayitKategoriKey =>
       _kategoriYolu.isNotEmpty ? _kategoriYolu.last : 'diger';
@@ -179,19 +181,31 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
       sahipDutyFree: profilSnapshot?.dutyFreeIlgileniyor ?? false,
     );
 
+    setState(() => _overlayAktif = true);
     final id = await ref.read(ilanOlusturProvider.notifier).olustur(
       ilan: ilan,
       resimler: _resimler,
     );
 
     if (!mounted) return;
+    if (id == null) {
+      setState(() => _basarili = false);
+      return;
+    }
+    final yayinda = await ref.read(ilanOlusturProvider.notifier).durumBekle(id);
+    if (!mounted) return;
+    setState(() => _basarili = yayinda ?? false);
+  }
 
-    if (id != null) {
-      Navigator.pop(context);
-      AppSnackBar.basari(context, 'İlan başarıyla yayınlandı!');
+  void _overlayTamamlandi() {
+    final basarili = _basarili ?? false;
+    setState(() { _overlayAktif = false; _basarili = null; });
+    Navigator.pop(context);
+    if (basarili) {
+      AppSnackBar.basari(context, 'İlanınız yayınlanmıştır');
       ref.read(tasiyiciIlanlarProvider.notifier).yenile();
     } else {
-      _snack('İlan yayınlanamadı. Tekrar deneyin.');
+      AppSnackBar.basari(context, 'İlanınız yayın için uygun değildir, lütfen kontrol edip yeniden deneyin');
     }
   }
 
@@ -199,9 +213,6 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final yukleniyor = ref.watch(ilanOlusturProvider).yukleniyor;
-    final progress   = ref.watch(ilanOlusturProvider).yuklemeProgress;
-
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
@@ -726,7 +737,7 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
                       width: double.infinity,
                       height: 54,
                       child: ElevatedButton(
-                        onPressed: yukleniyor ? null : _ilanVer,
+                        onPressed: _overlayAktif ? null : _ilanVer,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.red,
                           foregroundColor: Colors.white,
@@ -735,7 +746,7 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        child: yukleniyor
+                        child: _overlayAktif
                             ? const SizedBox(
                                 width: 22, height: 22,
                                 child: CircularProgressIndicator(
@@ -761,8 +772,9 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
 
           // ── Yükleme overlay ──────────────────────────────
           IlanYuklemeOverlay(
-            aktif: yukleniyor,
-            progress: progress,
+            aktif: _overlayAktif,
+            basarili: _basarili,
+            onTamamlandi: _overlayTamamlandi,
           ),
         ],
       ),

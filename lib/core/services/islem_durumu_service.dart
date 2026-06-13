@@ -49,6 +49,14 @@ class IslemDurumuService {
         .where('kullanicilar', arrayContains: user.uid)
         .snapshots()
         .listen((snap) {
+      // Cancel listeners for sohbets no longer in the query
+      final mevcutIds = snap.docs.map((d) => d.id).toSet();
+      final kaldirilan = _islemListeners.keys.toSet().difference(mevcutIds);
+      for (final id in kaldirilan) {
+        _islemListeners.remove(id)?.cancel();
+        _oncekiDurumlar.remove(id);
+      }
+
       for (final doc in snap.docs) {
         final sohbetId = doc.id;
         if (_islemListeners.containsKey(sohbetId)) continue;

@@ -145,7 +145,7 @@ final class IlanOlusturProvider
   }
 }
 
-String _$ilanOlusturHash() => r'a2cae6a720e7f66be2e0332357a5d0d17167bda1';
+String _$ilanOlusturHash() => r'2a2c5953291b5b4f6e6b2c560bc6693339d85b84';
 
 abstract class _$IlanOlustur extends $Notifier<IlanOlusturState> {
   IlanOlusturState build();

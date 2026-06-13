@@ -118,28 +118,6 @@ async function resimKontrol(resimUrller: string[]): Promise<{ uygun: boolean; se
   return { uygun: true, sebep: "" };
 }
 
-// ── Güven skoru kontrolü ──────────────────────────────────────────────────────
-
-async function guvenSkoruKontrol(kullaniciId: string): Promise<boolean> {
-  const kullaniciSnap = await db.collection("kullanicilar").doc(kullaniciId).get();
-  if (!kullaniciSnap.exists) return false;
-  const data = kullaniciSnap.data()!;
-  const puan = (data.ortalamaPuan as number) ?? 0;
-  const degerlendirmeSayisi = (data.degerlendirmeSayisi as number) ?? 0;
-  const ilanSayisi = (data.ilanSayisi as number) ?? 0;
-
-  // İlk ilanı — doğrudan onayla (henüz geçmişi yok)
-  if (ilanSayisi === 0) return true;
-
-  // 3+ değerlendirme ve 4.0+ puan → otomatik onayla
-  if (degerlendirmeSayisi >= 3 && puan >= 4.0) return true;
-
-  // Yeni kullanıcı ama temiz içerik — onayla
-  if (degerlendirmeSayisi < 3 && puan === 0) return true;
-
-  return false;
-}
-
 // ── FCM bildirimi ─────────────────────────────────────────────────────────────
 
 async function bildirimGonder(
@@ -192,18 +170,19 @@ export const ilanModerasyonu = functions
 
       const metinSonuc = metinKontrol(tumMetin);
       if (!metinSonuc.uygun) {
-        await ilanRef.update({
-          aktif: false,
-          durum: "reddedildi",
-          redSebebi: metinSonuc.sebep,
-        });
-        await bildirimGonder(
-          data.kullaniciId,
-          "İlanın yayınlanamadı",
-          metinSonuc.sebep,
-          "ilan_red",
-          ilanId,
-        );
+        await ilanRef.update({ aktif: false, durum: "reddedildi", redSebebi: metinSonuc.sebep });
+        await Promise.all([
+          bildirimGonder(data.kullaniciId, "İlanın yayınlanamadı", metinSonuc.sebep, "ilan_red", ilanId),
+          db.collection("bildirimler").add({
+            kullaniciId: data.kullaniciId,
+            tip:         "ilan_red",
+            baslik:      "İlanın yayınlanamadı",
+            icerik:      metinSonuc.sebep,
+            okundu:      false,
+            tarih:       admin.firestore.FieldValue.serverTimestamp(),
+            hedefId:     ilanId,
+          }),
+        ]);
         return;
       }
 
@@ -211,54 +190,50 @@ export const ilanModerasyonu = functions
       const resimUrller = (data.resimUrller as string[]) ?? [];
       const resimSonuc = await resimKontrol(resimUrller);
       if (!resimSonuc.uygun) {
-        await ilanRef.update({
-          aktif: false,
-          durum: "reddedildi",
-          redSebebi: resimSonuc.sebep,
-        });
-        await bildirimGonder(
-          data.kullaniciId,
-          "İlanın yayınlanamadı",
-          resimSonuc.sebep,
-          "ilan_red",
-          ilanId,
-        );
+        await ilanRef.update({ aktif: false, durum: "reddedildi", redSebebi: resimSonuc.sebep });
+        await Promise.all([
+          bildirimGonder(data.kullaniciId, "İlanın yayınlanamadı", resimSonuc.sebep, "ilan_red", ilanId),
+          db.collection("bildirimler").add({
+            kullaniciId: data.kullaniciId,
+            tip:         "ilan_red",
+            baslik:      "İlanın yayınlanamadı",
+            icerik:      resimSonuc.sebep,
+            okundu:      false,
+            tarih:       admin.firestore.FieldValue.serverTimestamp(),
+            hedefId:     ilanId,
+          }),
+        ]);
         return;
       }
 
-      // 3. Güven skoru kontrolü
-      const guvenliMi = await guvenSkoruKontrol(data.kullaniciId);
-
-      if (guvenliMi) {
-        // 2 dakika bekle, sonra otomatik onayla
-        await new Promise(resolve => setTimeout(resolve, 2 * 60 * 1000));
-        await ilanRef.update({
-          aktif: true,
-          durum: "yayinda",
-        });
-        await bildirimGonder(
+      // 3. Metin ve resim geçti → anında yayınla
+      await ilanRef.update({
+        aktif: true,
+        durum: "yayinda",
+      });
+      // Loading bar 10 saniye sürdüğü için bildirimi 10.5 saniye geciktir
+      await new Promise((r) => setTimeout(r, 10500));
+      const ilanAdi = data.urun || `${data.nereden} → ${data.nereye}`;
+      await Promise.all([
+        bildirimGonder(
           data.kullaniciId,
           "İlanın yayınlandı! 🎉",
-          `"${data.urun || data.nereden + " → " + data.nereye}" ilanın aktif.`,
+          `"${ilanAdi}" ilanın aktif.`,
           "ilan_onayla",
           ilanId,
-        );
-      } else {
-        // Manuel onay kuyruğuna al
-        await ilanRef.update({
-          aktif: false,
-          durum: "onayBekliyor",
-        });
-        await bildirimGonder(
-          data.kullaniciId,
-          "İlanın incelemeye alındı",
-          "İlanın kısa süre içinde incelenecek ve yayınlanacak.",
-          "ilan_bekliyor",
-          ilanId,
-        );
-      }
+        ),
+        db.collection("bildirimler").add({
+          kullaniciId: data.kullaniciId,
+          tip:         "ilan_onayla",
+          baslik:      "İlanın yayınlandı! 🎉",
+          icerik:      `"${ilanAdi}" ilanın aktif.`,
+          okundu:      false,
+          tarih:       admin.firestore.FieldValue.serverTimestamp(),
+          hedefId:     ilanId,
+        }),
+      ]);
 
-      // 4. Algolia'ya ekle (sadece aktifse)
+      // 4. Algolia'ya ekle
       await algoliaClient.saveObject({
         indexName: ALGOLIA_INDEX,
         body: {
@@ -270,8 +245,8 @@ export const ilanModerasyonu = functions
           anaKategori:     data.anaKategori     ?? "",
           kategoriYolu:    data.kategoriYolu    ?? [],
           tip:             data.tip             ?? "",
-          aktif:           guvenliMi,
-          durum:           guvenliMi ? "yayinda" : "onayBekliyor",
+          aktif:           true,
+          durum:           "yayinda",
           resimUrl:        resimUrller.length > 0 ? resimUrller[0] : (data.resimUrl ?? ""),
           olusturmaTarihi: data.olusturmaTarihi?.toMillis() ?? Date.now(),
         },
@@ -279,11 +254,8 @@ export const ilanModerasyonu = functions
 
     } catch (e) {
       console.error("Moderasyon hatası:", e);
-      // Hata durumunda ilanı yayınla (kullanıcıyı bekletme)
-      await ilanRef.update({
-        aktif: true,
-        durum: "yayinda",
-      });
+      // Hata durumunda manuel incelemeye al
+      await ilanRef.update({ aktif: false, durum: "onayBekliyor" });
     }
   });
 

@@ -6,7 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../domain/ilan_model.dart';
 import '../providers/ilan_provider.dart';
-import 'widgets/ilan_yukleme_overlay.dart';
+import 'widgets/ilan_overlay_widget.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
@@ -49,6 +49,8 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
   final List<File> _yeniResimler   = [];
   List<String>     _mevcutResimler = [];
   final _picker = ImagePicker();
+  bool? _basarili;
+  bool  _overlayAktif = false;
 
   static const _sheetYukseklikleri = [0.45, 0.60, 0.60];
 
@@ -276,6 +278,7 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
         _snack('İlan güncellenemedi. Tekrar deneyin.');
       }
     } else {
+      setState(() => _overlayAktif = true);
       final profilSnapshot = await ref.read(kullaniciBilgiProvider(user.uid).future);
       final ilan = IlanModel(
         id: '', tip: widget.tip,
@@ -298,13 +301,26 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
         ilan: ilan, resimler: _yeniResimler,
       );
       if (!mounted) return;
-      if (id != null) {
-        Navigator.pop(context);
-        AppSnackBar.basari(context, 'İlan başarıyla yayınlandı!');
-        ref.read(istekIlanlarProvider.notifier).yenile();
-      } else {
-        _snack('İlan yayınlanamadı. Tekrar deneyin.');
+      if (id == null) {
+        setState(() => _basarili = false);
+        return;
       }
+      // Moderasyon sonucunu bekle (Cloud Function yayında/reddedildi yapar)
+      final yayinda = await ref.read(ilanOlusturProvider.notifier).durumBekle(id);
+      if (!mounted) return;
+      setState(() => _basarili = yayinda ?? false);
+    }
+  }
+
+  void _overlayTamamlandi() {
+    final basarili = _basarili ?? false;
+    setState(() { _overlayAktif = false; _basarili = null; });
+    Navigator.pop(context);
+    if (basarili) {
+      AppSnackBar.basari(context, 'İlanınız yayınlanmıştır');
+      ref.read(istekIlanlarProvider.notifier).yenile();
+    } else {
+      AppSnackBar.basari(context, 'İlanınız yayın için uygun değildir, lütfen kontrol edip yeniden deneyin');
     }
   }
 
@@ -588,8 +604,10 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
 
           // ── Yükleme overlay ─────────────────────────────────────────────
           IlanYuklemeOverlay(
-            aktif: yukleniyor,
+            aktif: _overlayAktif,
             progress: progress,
+            basarili: _basarili,
+            onTamamlandi: _overlayTamamlandi,
           ),
         ],
       ),
