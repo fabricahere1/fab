@@ -146,7 +146,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         child: FloatingActionButton.extended(
                           heroTag: 'gelen',
                           onPressed: () {
-                            setState(() => _fabAcik = false);
+                            setState(() { _fabAcik = false; _selectedIndex = 1; });
                             Navigator.push(context, CupertinoPageRoute(
                               builder: (_) => const GelenlerFormScreen(),
                             ));

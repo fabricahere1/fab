@@ -207,54 +207,60 @@ export const ilanModerasyonu = functions
       }
 
       // 3. Metin ve resim geçti → anında yayınla
-      await ilanRef.update({
-        aktif: true,
-        durum: "yayinda",
-      });
-      // Loading bar 10 saniye sürdüğü için bildirimi 10.5 saniye geciktir
-      await new Promise((r) => setTimeout(r, 10500));
-      const ilanAdi = data.urun || `${data.nereden} → ${data.nereye}`;
-      await Promise.all([
-        bildirimGonder(
-          data.kullaniciId,
-          "İlanın yayınlandı! 🎉",
-          `"${ilanAdi}" ilanın aktif.`,
-          "ilan_onayla",
-          ilanId,
-        ),
-        db.collection("bildirimler").add({
-          kullaniciId: data.kullaniciId,
-          tip:         "ilan_onayla",
-          baslik:      "İlanın yayınlandı! 🎉",
-          icerik:      `"${ilanAdi}" ilanın aktif.`,
-          okundu:      false,
-          tarih:       admin.firestore.FieldValue.serverTimestamp(),
-          hedefId:     ilanId,
-        }),
-      ]);
+      await ilanRef.update({ aktif: true, durum: "yayinda" });
 
-      // 4. Algolia'ya ekle
-      await algoliaClient.saveObject({
-        indexName: ALGOLIA_INDEX,
-        body: {
-          objectID:        ilanId,
-          urun:            data.urun            ?? "",
-          nereden:         data.nereden         ?? "",
-          nereye:          data.nereye          ?? "",
-          kategori:        data.kategori        ?? "",
-          anaKategori:     data.anaKategori     ?? "",
-          kategoriYolu:    data.kategoriYolu    ?? [],
-          tip:             data.tip             ?? "",
-          aktif:           true,
-          durum:           "yayinda",
-          resimUrl:        resimUrller.length > 0 ? resimUrller[0] : (data.resimUrl ?? ""),
-          olusturmaTarihi: data.olusturmaTarihi?.toMillis() ?? Date.now(),
-        },
-      });
+      // 4. Bildirim — hata olursa ilanı geri alma, sadece logla
+      const ilanAdi = data.urun || `${data.nereden} → ${data.nereye}`;
+      setTimeout(async () => {
+        try {
+          await Promise.all([
+            bildirimGonder(
+              data.kullaniciId,
+              "İlanın yayınlandı! 🎉",
+              `"${ilanAdi}" ilanın aktif.`,
+              "ilan_onayla",
+              ilanId,
+            ),
+            db.collection("bildirimler").add({
+              kullaniciId: data.kullaniciId,
+              tip:         "ilan_onayla",
+              baslik:      "İlanın yayınlandı! 🎉",
+              icerik:      `"${ilanAdi}" ilanın aktif.`,
+              okundu:      false,
+              tarih:       admin.firestore.FieldValue.serverTimestamp(),
+              hedefId:     ilanId,
+            }),
+          ]);
+        } catch (e) {
+          console.warn("Bildirim gönderilemedi:", e);
+        }
+      }, 10500);
+
+      // 5. Algolia — hata olursa ilanı geri alma, sadece logla
+      try {
+        await algoliaClient.saveObject({
+          indexName: ALGOLIA_INDEX,
+          body: {
+            objectID:        ilanId,
+            urun:            data.urun            ?? "",
+            nereden:         data.nereden         ?? "",
+            nereye:          data.nereye          ?? "",
+            kategori:        data.kategori        ?? "",
+            anaKategori:     data.anaKategori     ?? "",
+            kategoriYolu:    data.kategoriYolu    ?? [],
+            tip:             data.tip             ?? "",
+            aktif:           true,
+            durum:           "yayinda",
+            resimUrl:        resimUrller.length > 0 ? resimUrller[0] : (data.resimUrl ?? ""),
+            olusturmaTarihi: data.olusturmaTarihi?.toMillis() ?? Date.now(),
+          },
+        });
+      } catch (e) {
+        console.warn("Algolia hatası:", e);
+      }
 
     } catch (e) {
       console.error("Moderasyon hatası:", e);
-      // Hata durumunda manuel incelemeye al
       await ilanRef.update({ aktif: false, durum: "onayBekliyor" });
     }
   });

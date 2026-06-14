@@ -57,7 +57,19 @@ class _IlanYuklemeOverlayState extends State<IlanYuklemeOverlay>
     _progressAnim = _seq.animate(_progressCtr);
 
     _progressCtr.addStatusListener((status) {
-      if (status == AnimationStatus.completed) _kontrolEt();
+      if (status != AnimationStatus.completed) return;
+      if (widget.basarili != null) {
+        _kontrolEt();
+      } else {
+        // basarili henüz gelmedi — 5 saniye daha bekle (red kararı gelebilir)
+        // 5 saniye sonra hâlâ null ise optimistik başarılı say
+        Future.delayed(const Duration(seconds: 5), () {
+          if (mounted && !_tamamlandiCagrildi) {
+            _tamamlandiCagrildi = true;
+            widget.onTamamlandi?.call();
+          }
+        });
+      }
     });
   }
 

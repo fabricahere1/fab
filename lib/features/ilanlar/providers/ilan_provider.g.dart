@@ -124,7 +124,7 @@ final class IlanOlusturProvider
         argument: null,
         retry: null,
         name: r'ilanOlusturProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -145,7 +145,7 @@ final class IlanOlusturProvider
   }
 }
 
-String _$ilanOlusturHash() => r'2a2c5953291b5b4f6e6b2c560bc6693339d85b84';
+String _$ilanOlusturHash() => r'd041787584c84d5897fc5edc0ac70e0e73d7cfce';
 
 abstract class _$IlanOlustur extends $Notifier<IlanOlusturState> {
   IlanOlusturState build();

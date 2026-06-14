@@ -313,12 +313,13 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
   }
 
   void _overlayTamamlandi() {
-    final basarili = _basarili ?? false;
+    final basarili = _basarili ?? true; // null = timeout = optimistik başarılı
     setState(() { _overlayAktif = false; _basarili = null; });
     Navigator.pop(context);
     if (basarili) {
       AppSnackBar.basari(context, 'İlanınız yayınlanmıştır');
       ref.read(istekIlanlarProvider.notifier).yenile();
+      Future.delayed(const Duration(seconds: 3), ref.read(istekIlanlarProvider.notifier).yenile);
     } else {
       AppSnackBar.basari(context, 'İlanınız yayın için uygun değildir, lütfen kontrol edip yeniden deneyin');
     }

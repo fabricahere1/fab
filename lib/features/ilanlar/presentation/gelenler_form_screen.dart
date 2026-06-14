@@ -182,28 +182,36 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
     );
 
     setState(() => _overlayAktif = true);
-    final id = await ref.read(ilanOlusturProvider.notifier).olustur(
-      ilan: ilan,
-      resimler: _resimler,
-    );
+    try {
+      final id = await ref.read(ilanOlusturProvider.notifier).olustur(
+        ilan: ilan,
+        resimler: _resimler,
+      );
 
-    if (!mounted) return;
-    if (id == null) {
-      setState(() => _basarili = false);
-      return;
+      if (!mounted) return;
+      if (id == null) {
+        setState(() => _basarili = false);
+        return;
+      }
+      final yayinda = await ref.read(ilanOlusturProvider.notifier).durumBekle(id);
+      if (!mounted) return;
+      setState(() => _basarili = yayinda ?? false);
+    } catch (e) {
+      if (mounted) setState(() => _basarili = false);
     }
-    final yayinda = await ref.read(ilanOlusturProvider.notifier).durumBekle(id);
-    if (!mounted) return;
-    setState(() => _basarili = yayinda ?? false);
   }
 
   void _overlayTamamlandi() {
-    final basarili = _basarili ?? false;
+    final basarili = _basarili ?? true;
+    final tasiyiciNotifier = ref.read(tasiyiciIlanlarProvider.notifier);
     setState(() { _overlayAktif = false; _basarili = null; });
     Navigator.pop(context);
     if (basarili) {
       AppSnackBar.basari(context, 'İlanınız yayınlanmıştır');
-      ref.read(tasiyiciIlanlarProvider.notifier).yenile();
+      tasiyiciNotifier.yenile();
+      // Firestore compound-index propagation can lag a second or two;
+      // a second fetch ensures the new ilan appears without manual refresh.
+      Future.delayed(const Duration(seconds: 3), tasiyiciNotifier.yenile);
     } else {
       AppSnackBar.basari(context, 'İlanınız yayın için uygun değildir, lütfen kontrol edip yeniden deneyin');
     }

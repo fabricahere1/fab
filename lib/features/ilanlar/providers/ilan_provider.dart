@@ -315,7 +315,7 @@ class IlanOlusturState {
       );
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 class IlanOlustur extends _$IlanOlustur {
   @override
   IlanOlusturState build() => const IlanOlusturState();
