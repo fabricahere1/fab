@@ -1,13 +1,14 @@
-﻿// lib/features/ilanlar/presentation/widgets/ilan_yukleme_overlay.dart
+// lib/features/ilanlar/presentation/widgets/ilan_yukleme_overlay.dart
 // ignore_for_file: unused_element
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../../../core/services/banner_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class IlanYuklemeOverlay extends StatefulWidget {
   final bool aktif;
-  final double progress; // eski API — iç zamanlayıcı kullanılıyor
-  final bool? basarili;  // null=yükleniyor, true=onaylandı, false=reddedildi
+  final double progress; // eski API — kullanılmıyor
+  final bool? basarili;  // null=bekleniyor, true=onaylandı, false=reddedildi
   final VoidCallback? onTamamlandi;
 
   const IlanYuklemeOverlay({
@@ -25,49 +26,72 @@ class IlanYuklemeOverlay extends StatefulWidget {
 class _IlanYuklemeOverlayState extends State<IlanYuklemeOverlay>
     with TickerProviderStateMixin {
   late final AnimationController _halkaCtr;
-  late final AnimationController _progressCtr;
-  late final Animation<double> _progressAnim;
+
+  // Faz 1: 10 saniyede 0→1 (bar değeri 0→%80 olarak yorumlanır)
+  late final AnimationController _phase1Ctr;
+  late final Animation<double> _phase1Anim;
+
+  // Faz 2: basarili gelince %80→%100 hızla tamamla
+  late final AnimationController _phase2Ctr;
+
+  bool _tebriklerAktif = false;
   bool _tamamlandiCagrildi = false;
 
-  // Toplam 10 saniye:
-  //  0→25% hızlı (1s) | bekle (1.5s) | 25→50% hızlı (1s) | bekle (1.5s)
-  // 50→75% hızlı (1s) | bekle (1.5s) | 75→100% normal (3.5s)
+  double get _barValue => _phase1Anim.value * 0.8 + _phase2Ctr.value * 0.2;
+
+  String get _asamaMetni {
+    final p = _barValue;
+    if (p < 0.20) return 'İlanınız alınıyor';
+    if (p < 0.40) return 'İlanınız alındı';
+    if (p < 0.60) return 'İlanınız inceleniyor';
+    if (p < 0.80) return 'İlanınız değerlendiriliyor';
+    if (widget.basarili == null) return 'İlanınız değerlendiriliyor';
+    if (widget.basarili!) return 'İlanınız yayına hazırlanıyor';
+    return 'İlanınız ilan verme kurallarına\nuygun değildir';
+  }
+
+  // Faz 1 sahte ilerleme ritmi: hızlı → bekle → hızlı → bekle → hızlı → bekle → yavaş
   static final _seq = TweenSequence<double>([
     TweenSequenceItem(tween: Tween(begin: 0.00, end: 0.25).chain(CurveTween(curve: Curves.easeOut)), weight: 10),
-    TweenSequenceItem(tween: Tween(begin: 0.25, end: 0.25), weight: 15),
+    TweenSequenceItem(tween: ConstantTween(0.25), weight: 15),
     TweenSequenceItem(tween: Tween(begin: 0.25, end: 0.50).chain(CurveTween(curve: Curves.easeOut)), weight: 10),
-    TweenSequenceItem(tween: Tween(begin: 0.50, end: 0.50), weight: 15),
+    TweenSequenceItem(tween: ConstantTween(0.50), weight: 15),
     TweenSequenceItem(tween: Tween(begin: 0.50, end: 0.75).chain(CurveTween(curve: Curves.easeOut)), weight: 10),
-    TweenSequenceItem(tween: Tween(begin: 0.75, end: 0.75), weight: 15),
+    TweenSequenceItem(tween: ConstantTween(0.75), weight: 15),
     TweenSequenceItem(tween: Tween(begin: 0.75, end: 1.00).chain(CurveTween(curve: Curves.easeInOut)), weight: 35),
   ]);
 
   @override
   void initState() {
     super.initState();
-    _halkaCtr = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat();
 
-    _progressCtr = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 10),
-    );
-    _progressAnim = _seq.animate(_progressCtr);
+    _halkaCtr = AnimationController(vsync: this, duration: const Duration(seconds: 3))..repeat();
 
-    _progressCtr.addStatusListener((status) {
+    _phase1Ctr = AnimationController(vsync: this, duration: const Duration(seconds: 10));
+    _phase1Anim = _seq.animate(_phase1Ctr);
+
+    _phase2Ctr = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+
+    _phase1Ctr.addStatusListener((status) {
       if (status != AnimationStatus.completed) return;
-      if (widget.basarili != null) {
-        _kontrolEt();
-      } else {
-        // basarili henüz gelmedi — 5 saniye daha bekle (red kararı gelebilir)
-        // 5 saniye sonra hâlâ null ise optimistik başarılı say
-        Future.delayed(const Duration(seconds: 5), () {
-          if (mounted && !_tamamlandiCagrildi) {
+      if (widget.basarili != null) _baslaFaz2();
+    });
+
+    _phase2Ctr.addStatusListener((status) {
+      if (status != AnimationStatus.completed) return;
+      if (_tamamlandiCagrildi) return;
+      if (widget.basarili == true) {
+        setState(() => _tebriklerAktif = true);
+        Future.delayed(const Duration(milliseconds: 2500), () {
+          if (mounted) {
             _tamamlandiCagrildi = true;
             widget.onTamamlandi?.call();
           }
+        });
+      } else {
+        _tamamlandiCagrildi = true;
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) widget.onTamamlandi?.call();
         });
       }
     });
@@ -79,42 +103,37 @@ class _IlanYuklemeOverlayState extends State<IlanYuklemeOverlay>
 
     if (widget.aktif && !old.aktif) {
       _tamamlandiCagrildi = false;
-      _progressCtr.forward(from: 0);
+      _tebriklerAktif = false;
+      _phase1Ctr.forward(from: 0);
+      _phase2Ctr.reset();
+      BannerService.instance.sustur();
     }
     if (!widget.aktif && old.aktif) {
-      _progressCtr.reset();
+      _phase1Ctr.reset();
+      _phase2Ctr.reset();
       _tamamlandiCagrildi = false;
+      _tebriklerAktif = false;
+      BannerService.instance.aktifEt();
     }
+
     if (widget.basarili != old.basarili && widget.basarili != null) {
-      _kontrolEt();
+      if (_phase1Ctr.status == AnimationStatus.completed) {
+        _baslaFaz2();
+      }
     }
   }
 
-  void _kontrolEt() {
+  void _baslaFaz2() {
     if (_tamamlandiCagrildi) return;
-    if (widget.basarili != null && _progressCtr.value >= 1.0) {
-      _tamamlandiCagrildi = true;
-      Future.delayed(const Duration(milliseconds: 800), () {
-        if (mounted) widget.onTamamlandi?.call();
-      });
-    }
+    _phase2Ctr.forward(from: 0);
   }
 
   @override
   void dispose() {
     _halkaCtr.dispose();
-    _progressCtr.dispose();
+    _phase1Ctr.dispose();
+    _phase2Ctr.dispose();
     super.dispose();
-  }
-
-  String get _asamaMetni {
-    final p = _progressAnim.value;
-    if (p < 0.25) return 'İlanınız alınıyor';
-    if (p < 0.50) return 'İlanınız alındı';
-    if (p < 0.75) return 'İlanınız inceleniyor';
-    if (widget.basarili == null) return 'İlanınız değerlendiriliyor';
-    if (widget.basarili!) return 'İlanınız yayına hazırlanıyor';
-    return 'İlanınız ilan verme kurallarına\nuygun değildir';
   }
 
   @override
@@ -127,88 +146,115 @@ class _IlanYuklemeOverlayState extends State<IlanYuklemeOverlay>
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Koyu arka plan
             Container(color: Colors.black.withValues(alpha: 0.55)),
 
-            // Merkez içerik
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Logo + halkalar
-                  SizedBox(
-                    width: 100,
-                    height: 100,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        _Halka(ctrl: _halkaCtr, renk: const Color(0xFFE24B4A), boyut: 100, hiz: 1.0, tersine: false),
-                        _Halka(ctrl: _halkaCtr, renk: const Color(0xFFFAC775), boyut: 78,  hiz: 0.7, tersine: true),
-                        _Halka(ctrl: _halkaCtr, renk: const Color(0xFF5DCAA5), boyut: 56,  hiz: 0.5, tersine: false),
-                        Image.asset(
-                          'assets/images/logo_beyaz.png',
-                          width: 36,
-                          height: 36,
-                          fit: BoxFit.contain,
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Aşama yazısı
-                  AnimatedBuilder(
-                    animation: _progressAnim,
-                    builder: (_, _) => Text(
-                      _asamaMetni,
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.dmSans(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
+            // Yükleme içeriği — her zaman build'de, tebrikler aktifken gizle
+            AnimatedOpacity(
+              opacity: _tebriklerAktif ? 0.0 : 1.0,
+              duration: const Duration(milliseconds: 250),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 100,
+                      height: 100,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          _Halka(ctrl: _halkaCtr, renk: const Color(0xFFE24B4A), boyut: 100, hiz: 1.0, tersine: false),
+                          _Halka(ctrl: _halkaCtr, renk: const Color(0xFFFAC775), boyut: 78,  hiz: 0.7, tersine: true),
+                          _Halka(ctrl: _halkaCtr, renk: const Color(0xFF5DCAA5), boyut: 56,  hiz: 0.5, tersine: false),
+                          Image.asset('assets/images/logo_beyaz.png', width: 36, height: 36, fit: BoxFit.contain),
+                        ],
                       ),
                     ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Sahte yükleme barı
-                  AnimatedBuilder(
-                    animation: _progressAnim,
-                    builder: (_, _) {
-                      final p = _progressAnim.value;
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 32),
-                        child: Column(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(99),
-                              child: LinearProgressIndicator(
-                                value: p,
-                                backgroundColor: Colors.white.withValues(alpha: 0.2),
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  widget.basarili == false && p >= 0.75
-                                      ? const Color(0xFFE24B4A)
-                                      : Colors.white,
+                    const SizedBox(height: 24),
+                    AnimatedBuilder(
+                      animation: Listenable.merge([_phase1Anim, _phase2Ctr]),
+                      builder: (_, _) => Text(
+                        _asamaMetni,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    AnimatedBuilder(
+                      animation: Listenable.merge([_phase1Anim, _phase2Ctr]),
+                      builder: (_, _) {
+                        final p = _barValue;
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Column(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(99),
+                                child: LinearProgressIndicator(
+                                  value: p,
+                                  backgroundColor: Colors.white.withValues(alpha: 0.2),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    widget.basarili == false && p >= 0.75
+                                        ? const Color(0xFFE24B4A)
+                                        : Colors.white,
+                                  ),
+                                  minHeight: 7,
                                 ),
-                                minHeight: 7,
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '%${(p * 100).toInt()}',
-                              style: GoogleFonts.dmSans(
-                                fontSize: 13,
-                                color: Colors.white.withValues(alpha: 0.55),
+                              const SizedBox(height: 8),
+                              Text(
+                                '%${(p * 100).toInt()}',
+                                style: GoogleFonts.dmSans(fontSize: 13, color: Colors.white.withValues(alpha: 0.55)),
                               ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Tebrikler katmanı — üstte, aktif olunca fade in
+            AnimatedOpacity(
+              opacity: _tebriklerAktif ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 350),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF5DCAA5),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF5DCAA5).withValues(alpha: 0.45),
+                              blurRadius: 28,
+                              spreadRadius: 6,
                             ),
                           ],
                         ),
-                      );
-                    },
+                        child: const Icon(Icons.check_rounded, color: Colors.white, size: 44),
+                      ),
+                      const SizedBox(height: 28),
+                      Text(
+                        'Tebrikler! 🎉',
+                        style: GoogleFonts.dmSans(fontSize: 28, fontWeight: FontWeight.w800, color: Colors.white),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'İlanınız artık yayında',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white.withValues(alpha: 0.85)),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ],

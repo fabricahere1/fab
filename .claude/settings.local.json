@@ -32,7 +32,8 @@
       "Bash(dart fix *)",
       "Bash(cat \"C:/src/iste_v3/lib/features/ilanlar/presentation/widgets/ilan_yukleme_overlay.dart\")",
       "Bash(cp /tmp/overlay_backup.dart \"C:/src/iste_v3/lib/features/ilanlar/presentation/widgets/ilan_yukleme_overlay.dart\")",
-      "Bash(firebase deploy *)"
+      "Bash(firebase deploy *)",
+      "Bash(npm run *)"
     ]
   }
 }

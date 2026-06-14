@@ -14,6 +14,26 @@ class BannerService {
   static final BannerService instance = BannerService._();
 
   OverlayEntry? _mevcutBanner;
+  bool _susturuldu = false;
+  Map<String, dynamic>? _bekleyenBanner;
+
+  /// Overlay aktifken bannerları beklet
+  void sustur() => _susturuldu = true;
+
+  /// Overlay kapanınca bekleyen varsa göster
+  void aktifEt() {
+    _susturuldu = false;
+    if (_bekleyenBanner != null) {
+      final b = _bekleyenBanner!;
+      _bekleyenBanner = null;
+      goster(
+        baslik: b['baslik'] as String,
+        icerik: b['icerik'] as String,
+        tip: b['tip'] as String,
+        onTap: b['onTap'] as VoidCallback?,
+      );
+    }
+  }
 
   /// Genel banner — başlık + içerik + ikon tipi
   void goster({
@@ -22,6 +42,10 @@ class BannerService {
     String tip = 'bilgi', // 'mesaj' | 'degerlendirme' | 'islem' | 'bilgi'
     VoidCallback? onTap,
   }) {
+    if (_susturuldu) {
+      _bekleyenBanner = {'baslik': baslik, 'icerik': icerik, 'tip': tip, 'onTap': onTap};
+      return;
+    }
     _kapat();
 
     final overlay = navigatorKey.currentState?.overlay;

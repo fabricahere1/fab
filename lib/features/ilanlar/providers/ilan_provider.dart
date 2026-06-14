@@ -171,6 +171,11 @@ class IstekIlanlar extends _$IstekIlanlar {
     );
   }
 
+  void ilanEkle(IlanModel ilan) {
+    if (state.ilanlar.any((i) => i.id == ilan.id)) return;
+    state = state.copyWith(ilanlar: [ilan, ...state.ilanlar]);
+  }
+
   void engellenenlerGuncelle(List<String> engellenenler) {
     state = state.copyWith(engellenenler: engellenenler);
   }
@@ -279,6 +284,11 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
         return i;
       }).toList(),
     );
+  }
+
+  void ilanEkle(IlanModel ilan) {
+    if (state.ilanlar.any((i) => i.id == ilan.id)) return;
+    state = state.copyWith(ilanlar: [ilan, ...state.ilanlar]);
   }
 
   void engellenenlerGuncelle(List<String> engellenenler) {

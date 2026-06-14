@@ -211,30 +211,28 @@ export const ilanModerasyonu = functions
 
       // 4. Bildirim — hata olursa ilanı geri alma, sadece logla
       const ilanAdi = data.urun || `${data.nereden} → ${data.nereye}`;
-      setTimeout(async () => {
-        try {
-          await Promise.all([
-            bildirimGonder(
-              data.kullaniciId,
-              "İlanın yayınlandı! 🎉",
-              `"${ilanAdi}" ilanın aktif.`,
-              "ilan_onayla",
-              ilanId,
-            ),
-            db.collection("bildirimler").add({
-              kullaniciId: data.kullaniciId,
-              tip:         "ilan_onayla",
-              baslik:      "İlanın yayınlandı! 🎉",
-              icerik:      `"${ilanAdi}" ilanın aktif.`,
-              okundu:      false,
-              tarih:       admin.firestore.FieldValue.serverTimestamp(),
-              hedefId:     ilanId,
-            }),
-          ]);
-        } catch (e) {
-          console.warn("Bildirim gönderilemedi:", e);
-        }
-      }, 10500);
+      try {
+        await Promise.all([
+          bildirimGonder(
+            data.kullaniciId,
+            "İlanın yayınlandı! 🎉",
+            `"${ilanAdi}" ilanın aktif.`,
+            "ilan_onayla",
+            ilanId,
+          ),
+          db.collection("bildirimler").add({
+            kullaniciId: data.kullaniciId,
+            tip:         "ilan_onayla",
+            baslik:      "İlanın yayınlandı! 🎉",
+            icerik:      `"${ilanAdi}" ilanın aktif.`,
+            okundu:      false,
+            tarih:       admin.firestore.FieldValue.serverTimestamp(),
+            hedefId:     ilanId,
+          }),
+        ]);
+      } catch (e) {
+        console.warn("Bildirim gönderilemedi:", e);
+      }
 
       // 5. Algolia — hata olursa ilanı geri alma, sadece logla
       try {

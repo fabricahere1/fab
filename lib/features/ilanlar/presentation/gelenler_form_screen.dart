@@ -193,6 +193,8 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
         setState(() => _basarili = false);
         return;
       }
+      // Optimistic insert: ilan anında listede görünsün, CF sonucu beklenmez
+      ref.read(tasiyiciIlanlarProvider.notifier).ilanEkle(ilan.copyWith(id: id, aktif: true));
       final yayinda = await ref.read(ilanOlusturProvider.notifier).durumBekle(id);
       if (!mounted) return;
       setState(() => _basarili = yayinda ?? false);
@@ -207,11 +209,7 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
     setState(() { _overlayAktif = false; _basarili = null; });
     Navigator.pop(context);
     if (basarili) {
-      AppSnackBar.basari(context, 'İlanınız yayınlanmıştır');
       tasiyiciNotifier.yenile();
-      // Firestore compound-index propagation can lag a second or two;
-      // a second fetch ensures the new ilan appears without manual refresh.
-      Future.delayed(const Duration(seconds: 3), tasiyiciNotifier.yenile);
     } else {
       AppSnackBar.basari(context, 'İlanınız yayın için uygun değildir, lütfen kontrol edip yeniden deneyin');
     }
