@@ -26,12 +26,16 @@ class BannerService {
     if (_bekleyenBanner != null) {
       final b = _bekleyenBanner!;
       _bekleyenBanner = null;
-      goster(
-        baslik: b['baslik'] as String,
-        icerik: b['icerik'] as String,
-        tip: b['tip'] as String,
-        onTap: b['onTap'] as VoidCallback?,
-      );
+      // Widget ağacı teardown aşamasında olabilir (dispose'dan çağrılır),
+      // bir sonraki frame'e ertele
+      Future.delayed(const Duration(milliseconds: 100), () {
+        goster(
+          baslik: b['baslik'] as String,
+          icerik: b['icerik'] as String,
+          tip: b['tip'] as String,
+          onTap: b['onTap'] as VoidCallback?,
+        );
+      });
     }
   }
 
