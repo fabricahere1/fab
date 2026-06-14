@@ -113,7 +113,6 @@ class _IlanYuklemeOverlayState extends State<IlanYuklemeOverlay>
       _phase2Ctr.reset();
       _tamamlandiCagrildi = false;
       _tebriklerAktif = false;
-      BannerService.instance.aktifEt();
     }
 
     if (widget.basarili != old.basarili && widget.basarili != null) {
@@ -130,6 +129,7 @@ class _IlanYuklemeOverlayState extends State<IlanYuklemeOverlay>
 
   @override
   void dispose() {
+    BannerService.instance.aktifEt();
     _halkaCtr.dispose();
     _phase1Ctr.dispose();
     _phase2Ctr.dispose();
