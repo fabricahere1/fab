@@ -6,31 +6,19 @@ import '../../auth/providers/auth_provider.dart';
 part 'bildirim_provider.g.dart';
 
 /// Kullanıcının tüm bildirimlerini real-time dinler.
-/// [keepAlive] ile tab değişimlerinde dispose olmaz, Firestore bağlantısı korunur.
-/// uid null olduğunda (çıkış yapıldığında) provider temizlenir.
-@Riverpod(keepAlive: true)
+/// uid değişince (hesap geçişi) provider otomatik yeniden başlar.
+@riverpod
 Stream<List<BildirimModel>> bildirimler(Ref ref) {
   final uid = ref.watch(currentUserProvider)?.uid;
-
-  if (uid == null) {
-    Future.microtask(() => ref.invalidateSelf());
-    return const Stream.empty();
-  }
-
+  if (uid == null) return const Stream.empty();
   return ref.watch(bildirimRepositoryProvider).bildirimlerStream(uid);
 }
 
 /// Okunmamış bildirim sayısı — navigation badge için.
-/// [keepAlive] ile uygulama boyunca aktif kalır.
 @Riverpod(keepAlive: true)
 Stream<int> okunmamisBildirimSayi(Ref ref) {
   final uid = ref.watch(currentUserProvider)?.uid;
-
-  if (uid == null) {
-    Future.microtask(() => ref.invalidateSelf());
-    return Stream.value(0);
-  }
-
+  if (uid == null) return Stream.value(0);
   return ref.watch(bildirimRepositoryProvider).okunmamisSayiStream(uid);
 }
 

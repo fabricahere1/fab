@@ -215,7 +215,7 @@ export const ilanModerasyonu = functions
         await Promise.all([
           bildirimGonder(
             data.kullaniciId,
-            "İlanın yayınlandı! 🎉",
+            "İlanın yayınlandı",
             `"${ilanAdi}" ilanın aktif.`,
             "ilan_onayla",
             ilanId,
@@ -223,7 +223,7 @@ export const ilanModerasyonu = functions
           db.collection("bildirimler").add({
             kullaniciId: data.kullaniciId,
             tip:         "ilan_onayla",
-            baslik:      "İlanın yayınlandı! 🎉",
+            baslik:      "İlanın yayınlandı",
             icerik:      `"${ilanAdi}" ilanın aktif.`,
             okundu:      false,
             tarih:       admin.firestore.FieldValue.serverTimestamp(),
@@ -324,7 +324,7 @@ export const ilanGuncellemeModerasyon = functions
         if (oncedenReddedilmis) {
           await bildirimGonder(
             sonra.kullaniciId,
-            "İlanın yayınlandı! 🎉",
+            "İlanın yayınlandı",
             `"${sonra.urun || sonra.nereden + " → " + sonra.nereye}" ilanın artık yayında.`,
             "ilan_onayla",
             ilanId,

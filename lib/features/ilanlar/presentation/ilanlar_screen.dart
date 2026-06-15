@@ -20,6 +20,7 @@ import 'widgets/filtre_ekrani.dart';
 import 'widgets/ilan_karti.dart';
 import 'widgets/swipe_karti.dart';
 import 'package:iste_v3/features/ilanlar/presentation/favoriler_screen.dart';
+import 'ilan_detay_screen.dart';
 
 enum SiralamaTipi { enYeni, enEski, enCokFavorilenen, onayliIstekci }
 
@@ -365,6 +366,12 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
                                   ),
                                 ),
                               ),
+                            ),
+                            const SliverToBoxAdapter(
+                              child: SizedBox(height: 10),
+                            ),
+                            const SliverToBoxAdapter(
+                              child: _Son24SaatBolumu(),
                             ),
                             SliverPadding(
                               padding: const EdgeInsets.all(10),
@@ -812,10 +819,205 @@ class _IsteklerHeader extends StatelessWidget {
               ),
             ),
 
-          // Satır 5: Neden İSTE barı
-          const SizedBox(height: 28, child: NedenIsteBar()),
+          const NedenIsteBar(),
         ],
       ),
+    );
+  }
+}
+
+// ── Son 24 Saat Bölümü ────────────────────────────────────────────────────────
+
+class _Son24SaatBolumu extends ConsumerWidget {
+  const _Son24SaatBolumu();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(son24SaatIlanlarProvider);
+
+    return async.when(
+      loading: () => _Son24SaatSkeleton(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (ilanlar) {
+        if (ilanlar.isEmpty) return const SizedBox.shrink();
+
+        const cardW = 130.0;
+        const cardH = 170.0;
+
+        return Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF90CAF9), Color(0xFFEBF5FF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          padding: const EdgeInsets.only(top: 10, bottom: 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: Text(
+                  'Son 24 saatte eklendi',
+                  style: GoogleFonts.dmSans(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: cardH,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: ilanlar.length,
+                  itemBuilder: (context, i) {
+                    final ilan = ilanlar[i];
+                    return GestureDetector(
+                      onTap: () => Navigator.push(
+                        context,
+                        CupertinoPageRoute(
+                          builder: (_) => IlanDetayScreen(ilanId: ilan.id),
+                        ),
+                      ),
+                      child: Container(
+                        width: cardW,
+                        height: cardH,
+                        margin: const EdgeInsets.only(right: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.15),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: cardW,
+                              height: 100,
+                              child: ilan.gridResim.isNotEmpty
+                                  ? CachedNetworkImage(
+                                      imageUrl: ilan.gridResim,
+                                      cacheManager: AppCacheManager.instance,
+                                      width: cardW,
+                                      height: 100,
+                                      fit: BoxFit.cover,
+                                      errorWidget: (ctx, url, err) =>
+                                          _PlaceholderImage(w: cardW, h: 100),
+                                    )
+                                  : _PlaceholderImage(w: cardW, h: 100),
+                            ),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(8, 6, 8, 4),
+                                child: Text(
+                                  ilan.urun.isNotEmpty ? ilan.urun : ilan.nereden,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.dmSans(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(8, 0, 8, 6),
+                              child: Text(
+                                '${ilan.nereden} → ${ilan.nereye}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.dmSans(
+                                  fontSize: 10,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _Son24SaatSkeleton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF90CAF9), Color(0xFFBBDEFB)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      padding: const EdgeInsets.only(top: 18, bottom: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Container(
+              width: 160,
+              height: 14,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(7),
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 170,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: 5,
+              itemBuilder: (ctx, i) => Container(
+                width: 130,
+                height: 170,
+                margin: const EdgeInsets.only(right: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.35),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlaceholderImage extends StatelessWidget {
+  final double w;
+  final double h;
+  const _PlaceholderImage({required this.w, required this.h});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: w,
+      height: h,
+      color: const Color(0xFFEEEEEE),
+      child: const Icon(Icons.image_outlined,
+          size: 28, color: Color(0xFFCCCCCC)),
     );
   }
 }

@@ -8,6 +8,9 @@ import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/utils/app_snackbar.dart';
 import '../../../shared/widgets/avatar_widget.dart';
+import 'sss_screen.dart';
+import 'kullanim_kosullari_screen.dart';
+import 'gizlilik_politikasi_screen.dart';
 
 class AyarlarScreen extends ConsumerStatefulWidget {
   const AyarlarScreen({super.key});
@@ -178,13 +181,21 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
               _SatirOge(
                 icon: Icons.privacy_tip_outlined,
                 label: 'Gizlilik Politikası',
-                onTap: () {},
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const GizlilikPolitikasiScreen()),
+                ),
               ),
               _Ayrac(),
               _SatirOge(
                 icon: Icons.description_outlined,
                 label: 'Kullanım Koşulları',
-                onTap: () {},
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const KullanimKosullariScreen()),
+                ),
               ),
             ],
           ),
@@ -231,7 +242,10 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
               _SatirOge(
                 icon: Icons.help_outline,
                 label: 'Sık Sorulan Sorular',
-                onTap: () {},
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SssScreen()),
+                ),
               ),
             ],
           ),
@@ -438,92 +452,15 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
   }
 
   Future<void> _iletisimDialog() async {
-    final konuCtrl  = TextEditingController();
-    final mesajCtrl = TextEditingController();
-
-    await showDialog(
+    await showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Bize Ulaşın',
-            style: GoogleFonts.dmSans(
-                fontSize: 16, fontWeight: FontWeight.w600)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: konuCtrl,
-              style: GoogleFonts.dmSans(fontSize: 14),
-              decoration: InputDecoration(
-                hintText: 'Konu başlığı',
-                hintStyle: GoogleFonts.dmSans(
-                    color: AppColors.textHint, fontSize: 13),
-                filled: true,
-                fillColor: AppColors.surface,
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.divider)),
-                enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.divider)),
-                focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(
-                        color: AppColors.primary, width: 1.5)),
-                contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 10),
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: mesajCtrl,
-              maxLines: 4,
-              style: GoogleFonts.dmSans(fontSize: 14),
-              decoration: InputDecoration(
-                hintText: 'Mesajınız...',
-                hintStyle: GoogleFonts.dmSans(
-                    color: AppColors.textHint, fontSize: 13),
-                filled: true,
-                fillColor: AppColors.surface,
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.divider)),
-                enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.divider)),
-                focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(
-                        color: AppColors.primary, width: 1.5)),
-                contentPadding: const EdgeInsets.all(12),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('İptal',
-                style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
-          ),
-          TextButton(
-            onPressed: () {
-              if (konuCtrl.text.trim().isEmpty ||
-                  mesajCtrl.text.trim().isEmpty) {
-                return;
-              }
-              Navigator.pop(ctx);
-              AppSnackBar.basari(context, 'Mesajınız iletildi, teşekkürler!');
-            },
-            child: Text('Gönder',
-                style: GoogleFonts.dmSans(
-                    color: AppColors.red, fontWeight: FontWeight.w600)),
-          ),
-        ],
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _BizeUlasinSheet(
+        onGonderildi: () =>
+            AppSnackBar.basari(context, 'Mesajınız iletildi, teşekkürler!'),
       ),
     );
-    konuCtrl.dispose();
-    mesajCtrl.dispose();
   }
 
   Future<void> _hesapSilDialog() async {
@@ -984,6 +921,199 @@ class _SwitchSatir extends StatelessWidget {
             activeThumbColor: AppColors.red,
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Bize Ulaşın Bottom Sheet ──────────────────────────────
+
+class _BizeUlasinSheet extends StatefulWidget {
+  final VoidCallback onGonderildi;
+  const _BizeUlasinSheet({required this.onGonderildi});
+
+  @override
+  State<_BizeUlasinSheet> createState() => _BizeUlasinSheetState();
+}
+
+class _BizeUlasinSheetState extends State<_BizeUlasinSheet> {
+  static const _kategoriler = [
+    (ikon: Icons.bug_report_outlined,  etiket: 'Teknik sorun bildirimi',   hint: 'Lütfen yaşadığınız problemi kısaca açıklayın.'),
+    (ikon: Icons.flag_outlined,        etiket: 'Kullanıcı şikayeti',       hint: 'Lütfen ne olduğunu yazın.'),
+    (ikon: Icons.lightbulb_outline,    etiket: 'Öneri veya geri bildirim', hint: 'Önerilerinizi sabırsızlıkla bekliyoruz :)'),
+    (ikon: Icons.help_outline_rounded, etiket: 'Hesap ile ilgili sorun',   hint: 'Sorununuzu dinliyoruz.'),
+    (ikon: Icons.gavel_outlined,       etiket: 'Kural ihlali bildirimi',   hint: 'Sizi dinliyoruz.'),
+    (ikon: Icons.more_horiz_rounded,   etiket: 'Diğer',                    hint: 'Diğer her şey için de buradayız.'),
+  ];
+
+  String? _secilenKategori;
+  final _mesajCtrl = TextEditingController();
+  bool _gonderildi = false;
+
+  @override
+  void dispose() {
+    _mesajCtrl.dispose();
+    super.dispose();
+  }
+
+  void _gonder() {
+    if (_mesajCtrl.text.trim().isEmpty) return;
+    Navigator.pop(context);
+    widget.onGonderildi();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.fromLTRB(24, 0, 24, 24 + bottom),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 12),
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.divider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Bize Ulaşın',
+              style: GoogleFonts.dmSans(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Kategori kartları
+            if (_secilenKategori == null) ...[
+              ...List.generate(_kategoriler.length, (i) {
+                final k = _kategoriler[i];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: InkWell(
+                    onTap: () => setState(() => _secilenKategori = k.etiket),
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.divider),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(k.ikon, size: 22, color: AppColors.textSecondary),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Text(
+                              k.etiket,
+                              style: GoogleFonts.dmSans(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right_rounded,
+                              size: 20, color: AppColors.textSecondary),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ] else ...[
+              GestureDetector(
+                onTap: () => setState(() {
+                  _secilenKategori = null;
+                  _mesajCtrl.clear();
+                }),
+                child: Row(
+                  children: [
+                    const Icon(Icons.arrow_back_ios_new_rounded,
+                        size: 14, color: AppColors.textSecondary),
+                    const SizedBox(width: 6),
+                    Text(
+                      _secilenKategori!,
+                      style: GoogleFonts.dmSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _mesajCtrl,
+                maxLines: 6,
+                autofocus: true,
+                style: GoogleFonts.dmSans(fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: _kategoriler
+                      .firstWhere((k) => k.etiket == _secilenKategori,
+                          orElse: () => _kategoriler.last)
+                      .hint,
+                  hintStyle: GoogleFonts.dmSans(
+                      color: AppColors.textHint, fontSize: 13),
+                  filled: true,
+                  fillColor: AppColors.surface,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.divider),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.divider),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                        color: AppColors.textSecondary, width: 1.5),
+                  ),
+                  contentPadding: const EdgeInsets.all(14),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _gonder,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.textPrimary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    'Gönder',
+                    style: GoogleFonts.dmSans(
+                        fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

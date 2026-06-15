@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/auth_provider.dart';
 import '../../../shared/constants/app_colors.dart';
+import '../../profil/presentation/kullanim_kosullari_screen.dart';
+import '../../profil/presentation/gizlilik_politikasi_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -109,21 +111,50 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
 
                 const SizedBox(height: 32),
-                Text(
-                  'Devam ederek Kullanım Koşulları\'nı ve\nGizlilik Politikası\'nı kabul etmiş olursun.',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.dmSans(
-                    fontSize: 11,
-                    color: Colors.white38,
-                    height: 1.7,
-                  ),
-                ),
+                _KosullarMetni(context: context),
                 const SizedBox(height: 16),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+// ── Koşullar Metni ─────────────────────────────────────────
+
+class _KosullarMetni extends StatelessWidget {
+  final BuildContext context;
+  const _KosullarMetni({required this.context});
+
+  void _ac(Widget ekran) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => ekran));
+  }
+
+  @override
+  Widget build(BuildContext ctx) {
+    final style = GoogleFonts.dmSans(fontSize: 11, color: Colors.white38, height: 1.7);
+    const linkStyle = TextStyle(
+      decoration: TextDecoration.underline,
+      decorationColor: Colors.white38,
+    );
+
+    return Wrap(
+      alignment: WrapAlignment.center,
+      children: [
+        Text('Devam ederek ', style: style),
+        GestureDetector(
+          onTap: () => _ac(const KullanimKosullariScreen()),
+          child: Text('Kullanım Koşulları', style: style.merge(linkStyle)),
+        ),
+        Text('\'nı ve ', style: style),
+        GestureDetector(
+          onTap: () => _ac(const GizlilikPolitikasiScreen()),
+          child: Text('Gizlilik Politikası', style: style.merge(linkStyle)),
+        ),
+        Text('\'nı kabul etmiş olursun.', style: style),
+      ],
     );
   }
 }

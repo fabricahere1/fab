@@ -314,7 +314,7 @@ class _SonucIcerik extends StatelessWidget {
   Widget build(BuildContext context) {
     final renk = basarili ? const Color(0xFF5DCAA5) : const Color(0xFFE24B4A);
     final ikon = basarili ? Icons.check_rounded : Icons.close_rounded;
-    final baslik = basarili ? 'Tebrikler! 🎉' : 'İlan Yayınlanamadı';
+    final baslik = basarili ? 'Tebrikler!' : 'İlan Yayınlanamadı';
     final aciklama = basarili
         ? 'İlanınız artık yayında'
         : 'İlanınız ilan verme kurallarına uygun olmadığı için yayınlanamadı. Lütfen kontrol edip tekrar deneyin.';

@@ -109,60 +109,29 @@ class IlanRepository {
     );
   }
 
+  Future<List<IlanModel>> son24SaatIlanlariniGetir({int limit = 15}) async {
+    final sinir = Timestamp.fromDate(
+        DateTime.now().subtract(const Duration(hours: 24)));
+    final q = _col
+        .where('tip', isEqualTo: IlanTip.istek)
+        .where('aktif', isEqualTo: true)
+        .where('olusturmaTarihi', isGreaterThanOrEqualTo: sinir)
+        .orderBy('olusturmaTarihi', descending: true)
+        .limit(limit);
+    try {
+      final cache = await q.get(const GetOptions(source: Source.cache));
+      if (cache.docs.isNotEmpty) {
+        return cache.docs.map(IlanModel.fromFirestore).toList();
+      }
+    } catch (_) {}
+    final snap = await q.get(const GetOptions(source: Source.server));
+    return snap.docs.map(IlanModel.fromFirestore).toList();
+  }
+
   Future<IlanSayfasi> tasiyiciIlanlariniGetir({
-    bool tariheGore = true,
     int limit = Pagination.ilanSayfaBoyutu,
     bool forceServer = false,
   }) async {
-    if (tariheGore) {
-      final bugun = DateTime.now();
-      final bugunTimestamp = Timestamp.fromDate(
-        DateTime(bugun.year, bugun.month, bugun.day),
-      );
-      final gelecekQ = _col
-          .where('tip', isEqualTo: IlanTip.tasiyici)
-          .where('aktif', isEqualTo: true)
-          .where('tarih', isGreaterThanOrEqualTo: bugunTimestamp)
-          .orderBy('tarih', descending: false)
-          .limit(limit);
-      final gecmisQ = _col
-          .where('tip', isEqualTo: IlanTip.tasiyici)
-          .where('aktif', isEqualTo: true)
-          .where('tarih', isLessThan: bugunTimestamp)
-          .orderBy('tarih', descending: true)
-          .limit(10);
-
-      QuerySnapshot gelecek;
-      QuerySnapshot gecmis;
-      if (forceServer) {
-        gelecek = await gelecekQ.get(const GetOptions(source: Source.server));
-        gecmis  = await gecmisQ.get(const GetOptions(source: Source.server));
-      } else {
-        try {
-          gelecek = await gelecekQ.get(const GetOptions(source: Source.cache));
-          gecmis  = await gecmisQ.get(const GetOptions(source: Source.cache));
-          if (gelecek.docs.isEmpty && gecmis.docs.isEmpty) {
-            gelecek = await gelecekQ.get(const GetOptions(source: Source.server));
-            gecmis  = await gecmisQ.get(const GetOptions(source: Source.server));
-          }
-        } catch (_) {
-          gelecek = await gelecekQ.get(const GetOptions(source: Source.server));
-          gecmis  = await gecmisQ.get(const GetOptions(source: Source.server));
-        }
-      }
-
-      final ilanlar = [
-        ...gelecek.docs.map(IlanModel.fromFirestore),
-        ...gecmis.docs.map(IlanModel.fromFirestore),
-      ];
-      return IlanSayfasi(
-        ilanlar: ilanlar,
-        sonTarih: ilanlar.isNotEmpty ? ilanlar.last.tarih : null,
-        sonId: ilanlar.isNotEmpty ? ilanlar.last.id : null,
-        bitti: gelecek.docs.length < limit,
-      );
-    }
-
     final q = _col
         .where('tip', isEqualTo: IlanTip.tasiyici)
         .where('aktif', isEqualTo: true)

@@ -236,7 +236,34 @@ class AuthRepository {
       batch.delete(doc.reference);
     }
 
+    // Bildirimleri sil
+    final bildirimlerSnap = await firestore
+        .collection(Collections.bildirimler)
+        .where('kullaniciId', isEqualTo: uid)
+        .get();
+    for (final doc in bildirimlerSnap.docs) {
+      batch.delete(doc.reference);
+    }
+
     await batch.commit();
+
+    // Sohbetler ve mesajlar — subcollection içerdiğinden ayrı siliniyor
+    final sohbetlerSnap = await firestore
+        .collection(Collections.sohbetler)
+        .where('kullanicilar', arrayContains: uid)
+        .get();
+
+    for (final sohbet in sohbetlerSnap.docs) {
+      final mesajlarSnap = await sohbet.reference
+          .collection(Collections.mesajlar)
+          .get();
+      final mesajBatch = firestore.batch();
+      for (final mesaj in mesajlarSnap.docs) {
+        mesajBatch.delete(mesaj.reference);
+      }
+      mesajBatch.delete(sohbet.reference);
+      await mesajBatch.commit();
+    }
 
     try { await _googleSignIn.signOut(); } catch (_) {}
     await user.delete();

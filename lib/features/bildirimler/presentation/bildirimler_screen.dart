@@ -20,6 +20,9 @@ class BildirimlerScreen extends ConsumerStatefulWidget {
 class _BildirimlerScreenState extends ConsumerState<BildirimlerScreen>
     with AutomaticKeepAliveClientMixin {
 
+  // Optimistic: Firestore'u beklemeden anında okundu göster
+  final _okunduIdler = <String>{};
+
   @override
   bool get wantKeepAlive => true;
 
@@ -29,21 +32,26 @@ class _BildirimlerScreenState extends ConsumerState<BildirimlerScreen>
     final bildirimlerAsync = ref.watch(bildirimlerProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: const Color(0xFFF4F4F4),
       appBar: AppBar(
         title: Text(
           'Bildirimler',
-          style: GoogleFonts.dmSans(fontWeight: FontWeight.w700),
+          style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 17),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
           TextButton(
-            onPressed: () =>
-                ref.read(bildirimProvider.notifier).tumunuOkunduIsaretle(),
+            onPressed: () {
+              final bildirimler = bildirimlerAsync.asData?.value ?? [];
+              setState(() {
+                _okunduIdler.addAll(bildirimler.map((b) => b.id));
+              });
+              ref.read(bildirimProvider.notifier).tumunuOkunduIsaretle();
+            },
             child: Text(
-              'Tümünü Oku',
-              style: GoogleFonts.dmSans(
+              'Tümünü oku',
+              style: GoogleFonts.inter(
                 color: AppColors.red,
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
@@ -56,15 +64,12 @@ class _BildirimlerScreenState extends ConsumerState<BildirimlerScreen>
         skipLoadingOnReload: true,
         skipError: true,
         loading: () => const Center(
-          child: CircularProgressIndicator(
-            color: AppColors.red,
-            strokeWidth: 2,
-          ),
+          child: CircularProgressIndicator(color: AppColors.red, strokeWidth: 2),
         ),
         error: (_, _) => Center(
           child: Text(
             'Bildirimler yüklenemedi.',
-            style: GoogleFonts.dmSans(color: AppColors.textSecondary),
+            style: GoogleFonts.inter(color: AppColors.textSecondary),
           ),
         ),
         data: (bildirimler) {
@@ -73,30 +78,32 @@ class _BildirimlerScreenState extends ConsumerState<BildirimlerScreen>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
-                    Icons.notifications_none_outlined,
-                    size: 64,
-                    color: AppColors.divider,
-                  ),
+                  const Icon(Icons.notifications_none_outlined,
+                      size: 64, color: AppColors.divider),
                   const SizedBox(height: 16),
                   Text(
                     'Henüz bildirim yok',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 15,
-                      color: AppColors.textSecondary,
-                    ),
+                    style: GoogleFonts.inter(
+                        fontSize: 14, color: AppColors.textSecondary),
                   ),
                 ],
               ),
             );
           }
 
-          return ListView.separated(
+          return ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
             itemCount: bildirimler.length,
-            separatorBuilder: (_, _) =>
-                const Divider(height: 1, indent: 72),
-            itemBuilder: (context, index) => RepaintBoundary(
-              child: _BildirimSatiri(bildirim: bildirimler[index]),
+            itemBuilder: (context, index) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: RepaintBoundary(
+                child: _BildirimSatiri(
+                  bildirim: bildirimler[index],
+                  okunduIdler: _okunduIdler,
+                  onOkundu: () => setState(
+                      () => _okunduIdler.add(bildirimler[index].id)),
+                ),
+              ),
             ),
           );
         },
@@ -107,8 +114,14 @@ class _BildirimlerScreenState extends ConsumerState<BildirimlerScreen>
 
 class _BildirimSatiri extends ConsumerWidget {
   final BildirimModel bildirim;
+  final Set<String> okunduIdler;
+  final VoidCallback onOkundu;
 
-  const _BildirimSatiri({required this.bildirim});
+  const _BildirimSatiri({
+    required this.bildirim,
+    required this.okunduIdler,
+    required this.onOkundu,
+  });
 
   Future<void> _navigate(BuildContext context, WidgetRef ref) async {
     // ── Mesaj bildirimi → sohbet ekranı ──────────────────────────────────
@@ -226,13 +239,7 @@ class _BildirimSatiri extends ConsumerWidget {
         BildirimTip.anlasildi     => Icons.handshake_outlined,
       };
 
-  Color get _ikonRenk => switch (bildirim.tip) {
-        BildirimTip.mesaj         => AppColors.primary,
-        BildirimTip.ilan          => AppColors.red,
-        BildirimTip.sistem        => Colors.amber,
-        BildirimTip.degerlendirme => const Color(0xFF81C784),
-        BildirimTip.anlasildi     => AppColors.red,
-      };
+  Color get _ikonRenk => const Color(0xFF666666);
 
   String _zamanYazi(DateTime? tarih) {
     if (tarih == null) return '';
@@ -246,6 +253,8 @@ class _BildirimSatiri extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final okundu = bildirim.okundu || okunduIdler.contains(bildirim.id);
+
     return Dismissible(
       key: Key(bildirim.id),
       direction: DismissDirection.endToStart,
@@ -254,80 +263,101 @@ class _BildirimSatiri extends ConsumerWidget {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        color: AppColors.red,
+        decoration: BoxDecoration(
+          color: AppColors.red,
+          borderRadius: BorderRadius.circular(14),
+        ),
         child: const Icon(Icons.delete_outline, color: Colors.white),
       ),
-      child: InkWell(
+      child: GestureDetector(
         onTap: () {
-          if (!bildirim.okundu) {
+          if (!okundu) {
+            onOkundu();
             ref.read(bildirimProvider.notifier).okunduIsaretle(bildirim.id);
           }
           _navigate(context, ref);
         },
-        child: ColoredBox(
-          color: bildirim.okundu
-              ? Colors.white
-              : AppColors.red.withValues(alpha: 0.04),
-          child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _IkonCircle(ikon: _ikon, renk: _ikonRenk),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+        child: Container(
+          decoration: BoxDecoration(
+            color: okundu ? Colors.white : const Color(0xFFEDEDED),
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Sol şerit — okunmamış
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    width: okundu ? 0 : 4,
+                    color: _ikonRenk,
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 13),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          _IkonCircle(ikon: _ikon, renk: _ikonRenk),
+                          const SizedBox(width: 12),
                           Expanded(
-                            child: Text(
-                              bildirim.baslik,
-                              style: GoogleFonts.dmSans(
-                                fontSize: 14,
-                                fontWeight: bildirim.okundu
-                                    ? FontWeight.w500
-                                    : FontWeight.w700,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            _zamanYazi(bildirim.tarih),
-                            style: GoogleFonts.dmSans(
-                              fontSize: 11,
-                              color: AppColors.textSecondary,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        bildirim.baslik,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 13,
+                                          fontWeight: okundu
+                                              ? FontWeight.w500
+                                              : FontWeight.w700,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _zamanYazi(bildirim.tarih),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 10.5,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  bildirim.icerik,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                    height: 1.5,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        bildirim.icerik,
-                        style: GoogleFonts.dmSans(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                          height: 1.4,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                if (!bildirim.okundu)
-                  Container(
-                    width: 8,
-                    height: 8,
-                    margin: const EdgeInsets.only(left: 8, top: 4),
-                    decoration: const BoxDecoration(
-                      color: AppColors.red,
-                      shape: BoxShape.circle,
                     ),
                   ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -345,8 +375,8 @@ class _IkonCircle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: BoxDecoration(
-        color: renk.withValues(alpha: 0.1),
+      decoration: const BoxDecoration(
+        color: Color(0xFFEEEEEE),
         shape: BoxShape.circle,
       ),
       child: SizedBox(

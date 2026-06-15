@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../providers/auth_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../router/app_router.dart';
+import '../../profil/presentation/kullanim_kosullari_screen.dart';
  
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -21,6 +22,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
  
   bool _sifreGizli = true;
   bool _sifreTekrarGizli = true;
+  bool _kosullariKabul = false;
   String _hata = '';
  
   @override
@@ -52,6 +54,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
     if (sifre != sifreTekrar) {
       setState(() => _hata = 'Şifreler eşleşmiyor.');
+      return false;
+    }
+    if (!_kosullariKabul) {
+      setState(() => _hata = 'Kullanım koşullarını kabul etmeniz gerekmektedir.');
       return false;
     }
     return true;
@@ -218,7 +224,61 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
  
               SizedBox(height: h * 0.01),
- 
+
+              GestureDetector(
+                onTap: () => setState(() => _kosullariKabul = !_kosullariKabul),
+                behavior: HitTestBehavior.opaque,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: Checkbox(
+                        value: _kosullariKabul,
+                        onChanged: (v) => setState(() => _kosullariKabul = v ?? false),
+                        activeColor: AppColors.primary,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(
+                            'Okudum, ',
+                            style: GoogleFonts.dmSans(fontSize: 13, color: AppColors.textSecondary),
+                          ),
+                          GestureDetector(
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const KullanimKosullariScreen()),
+                            ),
+                            child: Text(
+                              'Kullanım Koşulları',
+                              style: GoogleFonts.dmSans(
+                                fontSize: 13,
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                                decorationColor: AppColors.primary,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            '\'nı kabul ediyorum.',
+                            style: GoogleFonts.dmSans(fontSize: 13, color: AppColors.textSecondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: h * 0.02),
+
               SizedBox(
                 width: double.infinity,
                 height: 52,

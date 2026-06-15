@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/ilan_repository.dart';
@@ -51,7 +50,7 @@ class IlanListeState {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 class IstekIlanlar extends _$IstekIlanlar {
   bool _ilkYuklemeYapildi = false;
 
@@ -81,7 +80,6 @@ class IstekIlanlar extends _$IstekIlanlar {
         Future.delayed(const Duration(seconds: 8), _arkaGuncelleIstekIlanlar);
       }
     } catch (e) {
-      debugPrint('İstek ilanları yükleme hatası: $e');
       if (deneme < 2) {
         await Future.delayed(const Duration(seconds: 2));
         _ilkYukle(deneme: deneme + 1);
@@ -122,8 +120,7 @@ class IstekIlanlar extends _$IstekIlanlar {
         dahaFazlaVar: !sonuc.bitti,
         yukleniyor: false,
       );
-    } catch (e) {
-      debugPrint('İstek ilanları yenileme hatası: $e');
+    } catch (_) {
       state = state.copyWith(yukleniyor: false);
     }
   }
@@ -138,7 +135,7 @@ class IstekIlanlar extends _$IstekIlanlar {
         siralama: 'olusturma',
       );
       state = state.copyWith(
-        ilanlar: [...state.ilanlar, ...sonuc.ilanlar],
+        ilanlar: [...state.ilanlar, ...sonuc.ilanlar.where((i) => !state.ilanlar.any((m) => m.id == i.id))],
         sonTarih: sonuc.sonTarih ?? state.sonTarih,
         dahaFazlaVar: !sonuc.bitti,
         yukleniyor: false,
@@ -199,9 +196,7 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
   Future<void> _ilkYukle({int deneme = 0}) async {
     state = state.copyWith(yukleniyor: true);
     try {
-      final sonuc = await _repo.tasiyiciIlanlariniGetir(
-        tariheGore: false,
-      );
+      final sonuc = await _repo.tasiyiciIlanlariniGetir();
       state = state.copyWith(
         ilanlar: sonuc.ilanlar,
         sonTarih: sonuc.sonTarih,
@@ -209,7 +204,6 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
         yukleniyor: false,
       );
     } catch (e) {
-      debugPrint('Taşıyıcı ilanları yükleme hatası: $e');
       if (deneme < 2) {
         await Future.delayed(const Duration(seconds: 2));
         _ilkYukle(deneme: deneme + 1);
@@ -222,10 +216,7 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
   Future<void> yenile() async {
     state = IlanListeState(siralama: state.siralama, yukleniyor: true);
     try {
-      final sonuc = await _repo.tasiyiciIlanlariniGetir(
-        tariheGore: false,
-        forceServer: true,
-      );
+      final sonuc = await _repo.tasiyiciIlanlariniGetir(forceServer: true);
       state = IlanListeState(
         ilanlar: sonuc.ilanlar,
         sonTarih: sonuc.sonTarih,
@@ -247,7 +238,7 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
         siralama: state.siralama,
       );
       state = state.copyWith(
-        ilanlar: [...state.ilanlar, ...sonuc.ilanlar],
+        ilanlar: [...state.ilanlar, ...sonuc.ilanlar.where((i) => !state.ilanlar.any((m) => m.id == i.id))],
         sonTarih: sonuc.sonTarih ?? state.sonTarih,
         dahaFazlaVar: !sonuc.bitti,
         yukleniyor: false,
@@ -255,12 +246,6 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
     } catch (_) {
       state = state.copyWith(yukleniyor: false);
     }
-  }
-
-  Future<void> siralamaGuncelle(String yeniSiralama) async {
-    if (state.siralama == yeniSiralama) return;
-    state = IlanListeState(siralama: yeniSiralama);
-    await _ilkYukle();
   }
 
   void ilanFavoriSayisiGuncelle(String ilanId, int delta) {
@@ -427,6 +412,13 @@ class IlanOlustur extends _$IlanOlustur {
 @riverpod
 Stream<IlanModel?> ilanById(Ref ref, String ilanId) {
   return ref.watch(ilanRepositoryProvider).ilanStream(ilanId);
+}
+
+// ── Son 24 saat ilanları ─────────────────────────────────────────────────────
+
+@riverpod
+Future<List<IlanModel>> son24SaatIlanlar(Ref ref) {
+  return ref.watch(ilanRepositoryProvider).son24SaatIlanlariniGetir();
 }
 
 // ── Favori provider'lar ───────────────────────────────────────────────────────

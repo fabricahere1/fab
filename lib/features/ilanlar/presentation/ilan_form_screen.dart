@@ -305,9 +305,6 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
         setState(() => _basarili = false);
         return;
       }
-      // Optimistic insert: ilan anında listede görünsün, CF sonucu beklenmez
-      ref.read(istekIlanlarProvider.notifier).ilanEkle(ilan.copyWith(id: id, aktif: true));
-      // Moderasyon sonucunu bekle (Cloud Function yayında/reddedildi yapar)
       final yayinda = await ref.read(ilanOlusturProvider.notifier).durumBekle(id);
       if (!mounted) return;
       setState(() => _basarili = yayinda ?? true);
@@ -316,13 +313,13 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
 
   void _overlayTamamlandi() {
     final basarili = _basarili ?? true;
-    final istekNotifier = ref.read(istekIlanlarProvider.notifier);
+    final notifier = ref.read(istekIlanlarProvider.notifier);
     setState(() { _overlayAktif = false; _basarili = null; });
     Navigator.pop(context);
     if (basarili) {
-      istekNotifier.yenile();
+      notifier.yenile();
     } else {
-      AppSnackBar.basari(context, 'İlanınız yayın için uygun değildir, lütfen kontrol edip yeniden deneyin');
+      AppSnackBar.hata(context, 'İlanınız yayın için uygun değildir, lütfen kontrol edip yeniden deneyin');
     }
   }
 

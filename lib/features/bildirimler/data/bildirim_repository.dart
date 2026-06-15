@@ -23,7 +23,7 @@ class BildirimRepository {
         .where('kullaniciId', isEqualTo: kullaniciId)
         .orderBy('tarih', descending: true)
         .limit(50)
-        .snapshots()
+        .snapshots(includeMetadataChanges: false)
         .map((snap) => snap.docs
             .map((doc) => BildirimModel.fromFirestore(doc))
             .toList());

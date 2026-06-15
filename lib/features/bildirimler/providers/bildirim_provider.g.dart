@@ -9,15 +9,13 @@ part of 'bildirim_provider.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 /// Kullanıcının tüm bildirimlerini real-time dinler.
-/// [keepAlive] ile tab değişimlerinde dispose olmaz, Firestore bağlantısı korunur.
-/// uid null olduğunda (çıkış yapıldığında) provider temizlenir.
+/// uid değişince (hesap geçişi) provider otomatik yeniden başlar.
 
 @ProviderFor(bildirimler)
 final bildirimlerProvider = BildirimlerProvider._();
 
 /// Kullanıcının tüm bildirimlerini real-time dinler.
-/// [keepAlive] ile tab değişimlerinde dispose olmaz, Firestore bağlantısı korunur.
-/// uid null olduğunda (çıkış yapıldığında) provider temizlenir.
+/// uid değişince (hesap geçişi) provider otomatik yeniden başlar.
 
 final class BildirimlerProvider
     extends
@@ -30,15 +28,14 @@ final class BildirimlerProvider
         $FutureModifier<List<BildirimModel>>,
         $StreamProvider<List<BildirimModel>> {
   /// Kullanıcının tüm bildirimlerini real-time dinler.
-  /// [keepAlive] ile tab değişimlerinde dispose olmaz, Firestore bağlantısı korunur.
-  /// uid null olduğunda (çıkış yapıldığında) provider temizlenir.
+  /// uid değişince (hesap geçişi) provider otomatik yeniden başlar.
   BildirimlerProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'bildirimlerProvider',
-        isAutoDispose: false,
+        isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -58,22 +55,19 @@ final class BildirimlerProvider
   }
 }
 
-String _$bildirimlerHash() => r'818b64acbaad44d1503e5214dd93b3ea15cb31b3';
+String _$bildirimlerHash() => r'45abe9374d338b31e4996cdb3c707a4106b0db9e';
 
 /// Okunmamış bildirim sayısı — navigation badge için.
-/// [keepAlive] ile uygulama boyunca aktif kalır.
 
 @ProviderFor(okunmamisBildirimSayi)
 final okunmamisBildirimSayiProvider = OkunmamisBildirimSayiProvider._();
 
 /// Okunmamış bildirim sayısı — navigation badge için.
-/// [keepAlive] ile uygulama boyunca aktif kalır.
 
 final class OkunmamisBildirimSayiProvider
     extends $FunctionalProvider<AsyncValue<int>, int, Stream<int>>
     with $FutureModifier<int>, $StreamProvider<int> {
   /// Okunmamış bildirim sayısı — navigation badge için.
-  /// [keepAlive] ile uygulama boyunca aktif kalır.
   OkunmamisBildirimSayiProvider._()
     : super(
         from: null,
@@ -100,7 +94,7 @@ final class OkunmamisBildirimSayiProvider
 }
 
 String _$okunmamisBildirimSayiHash() =>
-    r'b4f591d0a85ca7d718686a3b1c54179f1c9428d5';
+    r'c74335f3f0c942d6b4dd8b3014ffdf11e9c1718f';
 
 /// Bildirim işlemleri — okuma, silme, gönderme.
 

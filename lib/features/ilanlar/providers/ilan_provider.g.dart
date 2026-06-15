@@ -20,7 +20,7 @@ final class IstekIlanlarProvider
         argument: null,
         retry: null,
         name: r'istekIlanlarProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -41,7 +41,7 @@ final class IstekIlanlarProvider
   }
 }
 
-String _$istekIlanlarHash() => r'da7b0a73b47907c9d269a98f00748d40ca3ea0dd';
+String _$istekIlanlarHash() => r'cfb4033f1fd0ad9b27bf3949d8f209766e28dab8';
 
 abstract class _$IstekIlanlar extends $Notifier<IlanListeState> {
   IlanListeState build();
@@ -93,7 +93,7 @@ final class TasiyiciIlanlarProvider
   }
 }
 
-String _$tasiyiciIlanlarHash() => r'7eab74c145453fc8d54b38ce251e5a1bcf28e5fe';
+String _$tasiyiciIlanlarHash() => r'cdf96efcc8e5e80caad613921afb973f977a1fc9';
 
 abstract class _$TasiyiciIlanlar extends $Notifier<IlanListeState> {
   IlanListeState build();
@@ -238,6 +238,45 @@ final class IlanByIdFamily extends $Family
   @override
   String toString() => r'ilanByIdProvider';
 }
+
+@ProviderFor(son24SaatIlanlar)
+final son24SaatIlanlarProvider = Son24SaatIlanlarProvider._();
+
+final class Son24SaatIlanlarProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<IlanModel>>,
+          List<IlanModel>,
+          FutureOr<List<IlanModel>>
+        >
+    with $FutureModifier<List<IlanModel>>, $FutureProvider<List<IlanModel>> {
+  Son24SaatIlanlarProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'son24SaatIlanlarProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$son24SaatIlanlarHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<List<IlanModel>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<IlanModel>> create(Ref ref) {
+    return son24SaatIlanlar(ref);
+  }
+}
+
+String _$son24SaatIlanlarHash() => r'fd977ab21f94538d7d39f8cb091b0be974f250da';
 
 @ProviderFor(favoriler)
 final favorilerProvider = FavorilerProvider._();
