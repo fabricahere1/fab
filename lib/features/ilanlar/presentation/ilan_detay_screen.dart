@@ -479,6 +479,7 @@ class _IlanDetayIcerik extends ConsumerWidget {
                           onPageChanged: onResimDegis,
                           itemBuilder: (_, i) => _ResimWidget(
                             url: resimler[i],
+                            thumbUrl: ilan.resimThumbUrl,
                             tumResimler: resimler,
                             baslangicIndex: i,
                           ),
@@ -1176,9 +1177,10 @@ class _CircleIconButton extends StatelessWidget {
 
 class _ResimWidget extends StatelessWidget {
   final String url;
+  final String thumbUrl;
   final List<String> tumResimler;
   final int baslangicIndex;
-  const _ResimWidget({required this.url, required this.tumResimler, required this.baslangicIndex});
+  const _ResimWidget({required this.url, required this.thumbUrl, required this.tumResimler, required this.baslangicIndex});
 
   @override
   Widget build(BuildContext context) {
@@ -1202,7 +1204,16 @@ class _ResimWidget extends StatelessWidget {
           fadeInDuration: Duration.zero,
           fadeOutDuration: Duration.zero,
           memCacheWidth: MediaQuery.of(context).size.width.toInt(),
-          placeholder: (_, _) => const SizedBox.shrink(),
+          placeholder: (_, _) => thumbUrl.isNotEmpty
+              ? CachedNetworkImage(
+                  cacheManager: AppCacheManager.instance,
+                  imageUrl: thumbUrl,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                  fadeInDuration: Duration.zero,
+                )
+              : const SizedBox.shrink(),
           errorWidget: (_, _, _) => const Icon(Icons.image_outlined,
               color: AppColors.textHint, size: 48),
         ),

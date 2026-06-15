@@ -909,20 +909,26 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: RefreshIndicator(
-        color: AppColors.red,
-        onRefresh: () => ref.read(tasiyiciIlanlarProvider.notifier).yenile(),
-        child: CustomScrollView(
-          controller: _scrollController,
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(child: header),
-            SliverPadding(
-              padding: const EdgeInsets.only(top: 10),
-              sliver: listeWidget,
+      body: Column(
+        children: [
+          header,
+          Expanded(
+            child: RefreshIndicator(
+              color: AppColors.red,
+              onRefresh: () => ref.read(tasiyiciIlanlarProvider.notifier).yenile(),
+              child: CustomScrollView(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverPadding(
+                    padding: const EdgeInsets.only(top: 10),
+                    sliver: listeWidget,
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

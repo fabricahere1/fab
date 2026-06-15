@@ -181,7 +181,7 @@ class IstekIlanlar extends _$IstekIlanlar {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 class TasiyiciIlanlar extends _$TasiyiciIlanlar {
   bool _ilkYuklemeYapildi = false;
 
@@ -200,7 +200,7 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
     state = state.copyWith(yukleniyor: true);
     try {
       final sonuc = await _repo.tasiyiciIlanlariniGetir(
-        tariheGore: state.siralama == 'tarih',
+        tariheGore: false,
       );
       state = state.copyWith(
         ilanlar: sonuc.ilanlar,
@@ -223,7 +223,7 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
     state = IlanListeState(siralama: state.siralama, yukleniyor: true);
     try {
       final sonuc = await _repo.tasiyiciIlanlariniGetir(
-        tariheGore: state.siralama == 'tarih',
+        tariheGore: false,
         forceServer: true,
       );
       state = IlanListeState(

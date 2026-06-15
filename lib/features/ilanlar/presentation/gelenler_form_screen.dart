@@ -197,7 +197,7 @@ class _GelenlerFormScreenState extends ConsumerState<GelenlerFormScreen> {
       ref.read(tasiyiciIlanlarProvider.notifier).ilanEkle(ilan.copyWith(id: id, aktif: true));
       final yayinda = await ref.read(ilanOlusturProvider.notifier).durumBekle(id);
       if (!mounted) return;
-      setState(() => _basarili = yayinda ?? false);
+      setState(() => _basarili = yayinda ?? true);
     } catch (e) {
       if (mounted) setState(() => _basarili = false);
     }
