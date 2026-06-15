@@ -34,7 +34,7 @@ class _IlanYuklemeOverlayState extends State<IlanYuklemeOverlay>
   late final AnimationController _tamamlaCtr;
   late final AnimationController _gecissCtr;
   late final AnimationController _sallaCtr;
-  late final AnimationController _geriSayimCtr; // 10sn geri sayım bar
+  late final AnimationController _geriSayimCtr;
 
   static final _seq = TweenSequence<double>([
     TweenSequenceItem(tween: Tween(begin: 0.00, end: 0.25).chain(CurveTween(curve: Curves.easeOut)), weight: 10),
@@ -58,13 +58,13 @@ class _IlanYuklemeOverlayState extends State<IlanYuklemeOverlay>
   void initState() {
     super.initState();
 
-    _halkaCtr    = AnimationController(vsync: this, duration: const Duration(seconds: 3))..repeat();
-    _barCtr      = AnimationController(vsync: this, duration: const Duration(seconds: 10));
-    _barAnim     = _seq.animate(_barCtr);
-    _tamamlaCtr  = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
-    _gecissCtr   = AnimationController(vsync: this, duration: const Duration(milliseconds: 350));
-    _sallaCtr    = AnimationController(vsync: this, duration: const Duration(milliseconds: 700));
-    _geriSayimCtr = AnimationController(vsync: this, duration: const Duration(seconds: 10));
+    _halkaCtr        = AnimationController(vsync: this, duration: const Duration(seconds: 3))..repeat();
+    _barCtr          = AnimationController(vsync: this, duration: const Duration(seconds: 10));
+    _barAnim         = _seq.animate(_barCtr);
+    _tamamlaCtr      = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _gecissCtr       = AnimationController(vsync: this, duration: const Duration(milliseconds: 350));
+    _sallaCtr        = AnimationController(vsync: this, duration: const Duration(milliseconds: 700));
+    _geriSayimCtr    = AnimationController(vsync: this, duration: const Duration(seconds: 10));
 
     _barCtr.addStatusListener((s) {
       if (s == AnimationStatus.completed && _basariliGeldi) _baslaFaz2();
@@ -223,7 +223,6 @@ class _YuklemeIcerik extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Dönen halkalar + kırmızı logo
             SizedBox(
               width: 100,
               height: 100,
@@ -278,6 +277,18 @@ class _YuklemeIcerik extends StatelessWidget {
                   ],
                 );
               },
+            ),
+
+            const SizedBox(height: 20),
+
+            Text(
+              'İçerik kontrolü yapıyoruz, neredeyse bitti...',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.dmSans(
+                fontSize: 12,
+                color: const Color(0xFF999999),
+                fontStyle: FontStyle.italic,
+              ),
             ),
           ],
         ),
