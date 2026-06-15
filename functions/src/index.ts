@@ -2,6 +2,7 @@ import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import { algoliasearch } from "algoliasearch";
 import * as vision from "@google-cloud/vision";
+import * as nodemailer from "nodemailer";
 
 admin.initializeApp();
 
@@ -510,4 +511,52 @@ export const degerlendirmeBildirimiGonder = functions
         notification: { channelId: "genel" },
       },
     });
+  });
+
+// ── Bize Ulaşın — Email Gönder ────────────────────────────────────────────────
+
+export const iletisimGonder = functions
+  .region("europe-west1")
+  .https.onCall(async (data, context) => {
+    if (!context.auth) {
+      throw new functions.https.HttpsError("unauthenticated", "Giriş yapmalısın.");
+    }
+
+    const { konu, mesaj, gonderenAd, gonderenEmail } = data as {
+      konu: string;
+      mesaj: string;
+      gonderenAd: string;
+      gonderenEmail: string;
+    };
+
+    if (!konu || !mesaj) {
+      throw new functions.https.HttpsError("invalid-argument", "Konu ve mesaj zorunlu.");
+    }
+
+    const gmailKullanici = process.env.GMAIL_KULLANICI;
+    const gmailSifre     = process.env.GMAIL_SIFRE;
+
+    if (!gmailKullanici || !gmailSifre) {
+      throw new functions.https.HttpsError("internal", "Email yapılandırması eksik.");
+    }
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user: gmailKullanici, pass: gmailSifre },
+    });
+
+    await transporter.sendMail({
+      from: `"İste App" <${gmailKullanici}>`,
+      to: gmailKullanici,
+      subject: `[İste Destek] ${konu}`,
+      html: `
+        <h3>${konu}</h3>
+        <p><b>Gönderen:</b> ${gonderenAd} (${gonderenEmail})</p>
+        <p><b>Kullanıcı ID:</b> ${context.auth.uid}</p>
+        <hr/>
+        <p>${mesaj.replace(/\n/g, "<br/>")}</p>
+      `,
+    });
+
+    return { success: true };
   });

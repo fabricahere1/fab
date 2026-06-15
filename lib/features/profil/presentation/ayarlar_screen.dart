@@ -8,6 +8,7 @@ import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/utils/app_snackbar.dart';
 import '../../../shared/widgets/avatar_widget.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'sss_screen.dart';
 import 'kullanim_kosullari_screen.dart';
 import 'gizlilik_politikasi_screen.dart';
@@ -928,15 +929,15 @@ class _SwitchSatir extends StatelessWidget {
 
 // ── Bize Ulaşın Bottom Sheet ──────────────────────────────
 
-class _BizeUlasinSheet extends StatefulWidget {
+class _BizeUlasinSheet extends ConsumerStatefulWidget {
   final VoidCallback onGonderildi;
   const _BizeUlasinSheet({required this.onGonderildi});
 
   @override
-  State<_BizeUlasinSheet> createState() => _BizeUlasinSheetState();
+  ConsumerState<_BizeUlasinSheet> createState() => _BizeUlasinSheetState();
 }
 
-class _BizeUlasinSheetState extends State<_BizeUlasinSheet> {
+class _BizeUlasinSheetState extends ConsumerState<_BizeUlasinSheet> {
   static const _kategoriler = [
     (ikon: Icons.bug_report_outlined,  etiket: 'Teknik sorun bildirimi',   hint: 'Lütfen yaşadığınız problemi kısaca açıklayın.'),
     (ikon: Icons.flag_outlined,        etiket: 'Kullanıcı şikayeti',       hint: 'Lütfen ne olduğunu yazın.'),
@@ -948,7 +949,7 @@ class _BizeUlasinSheetState extends State<_BizeUlasinSheet> {
 
   String? _secilenKategori;
   final _mesajCtrl = TextEditingController();
-  bool _gonderildi = false;
+  bool _gonderiyor = false;
 
   @override
   void dispose() {
@@ -956,10 +957,35 @@ class _BizeUlasinSheetState extends State<_BizeUlasinSheet> {
     super.dispose();
   }
 
-  void _gonder() {
-    if (_mesajCtrl.text.trim().isEmpty) return;
-    Navigator.pop(context);
-    widget.onGonderildi();
+  Future<void> _gonder() async {
+    if (_mesajCtrl.text.trim().isEmpty || _gonderiyor) return;
+    setState(() => _gonderiyor = true);
+
+    try {
+      final user = ref.read(currentUserProvider);
+      await FirebaseFunctions.instanceFor(region: 'europe-west1')
+          .httpsCallable('iletisimGonder')
+          .call({
+        'konu': _secilenKategori ?? 'Diğer',
+        'mesaj': _mesajCtrl.text.trim(),
+        'gonderenAd': user?.displayName ?? 'Bilinmiyor',
+        'gonderenEmail': user?.email ?? '',
+      });
+
+      if (mounted) {
+        Navigator.pop(context);
+        widget.onGonderildi();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _gonderiyor = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Gönderilemedi, tekrar dene.',
+              style: GoogleFonts.dmSans()),
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    }
   }
 
   @override
@@ -1096,7 +1122,7 @@ class _BizeUlasinSheetState extends State<_BizeUlasinSheet> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _gonder,
+                  onPressed: _gonderiyor ? null : _gonder,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.textPrimary,
                     foregroundColor: Colors.white,
@@ -1104,11 +1130,18 @@ class _BizeUlasinSheetState extends State<_BizeUlasinSheet> {
                         borderRadius: BorderRadius.circular(14)),
                     elevation: 0,
                   ),
-                  child: Text(
-                    'Gönder',
-                    style: GoogleFonts.dmSans(
-                        fontSize: 15, fontWeight: FontWeight.w600),
-                  ),
+                  child: _gonderiyor
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2),
+                        )
+                      : Text(
+                          'Gönder',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 15, fontWeight: FontWeight.w600),
+                        ),
                 ),
               ),
             ],
