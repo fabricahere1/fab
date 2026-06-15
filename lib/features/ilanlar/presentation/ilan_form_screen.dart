@@ -607,7 +607,6 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
           // ── Yükleme overlay ─────────────────────────────────────────────
           IlanYuklemeOverlay(
             aktif: _overlayAktif,
-            progress: progress,
             basarili: _basarili,
             onTamamlandi: _overlayTamamlandi,
           ),

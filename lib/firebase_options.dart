@@ -54,10 +54,9 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyCPZmpHNl2T8CJKZ6R5IEJLxc42-UPOxKA',
-    appId: '1:783365190841:android:1e3df8a724817498059768',
+    appId: '1:783365190841:android:6a6d87a303b3e9a4059768',
     messagingSenderId: '783365190841',
     projectId: 'bring-in-3a17c',
     storageBucket: 'bring-in-3a17c.firebasestorage.app',
   );
-
 }
