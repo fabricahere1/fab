@@ -79,12 +79,12 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
 
   String get _benimUid => ref.read(currentUserProvider)?.uid ?? '';
 
-  Future<void> _favorToggle(IlanModel ilan, bool favorideMi) async {
+  void _favorToggle(IlanModel ilan, bool favorideMi) {
     if (_benimUid.isEmpty) return;
     if (favorideMi) {
-      await ref.read(favoriProvider.notifier).cikar(ilan.id);
+      ref.read(favoriProvider.notifier).cikar(ilan.id);
     } else {
-      await ref.read(favoriProvider.notifier).ekle(ilan);
+      ref.read(favoriProvider.notifier).ekle(ilan);
     }
   }
 
@@ -423,10 +423,9 @@ class _IlanDetayIcerik extends ConsumerWidget {
     final uid = ref.watch(currentUserProvider)?.uid;
     final benimIlan = uid != null && uid.isNotEmpty && ilan.kullaniciId.isNotEmpty && uid == ilan.kullaniciId;
 
-    final favoriAsync = uid != null && !benimIlan
-        ? ref.watch(ilanFavorideMiProvider(ilan.id))
-        : const AsyncData(false);
-    final favorideMi = favoriAsync.value ?? false;
+    final favorideMi = uid != null && !benimIlan
+        ? ref.watch(favoriliIlanIdlerProvider).contains(ilan.id)
+        : false;
 
     final favoriSayisi =
         ref.watch(ilanFavoriSayisiProvider(ilan.id)).value ?? ilan.favoriSayisi;

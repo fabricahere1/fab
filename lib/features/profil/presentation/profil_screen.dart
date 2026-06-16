@@ -12,6 +12,7 @@ import '../../degerlendirme/presentation/degerlendirmeler_liste_screen.dart';
 import '../../degerlendirme/providers/degerlendirme_provider.dart';
 import '../../degerlendirme/presentation/degerlendirme_screen.dart';
 import '../../ilanlar/domain/ilan_model.dart';
+import 'takip_listesi_screen.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/widgets/avatar_widget.dart';
@@ -219,9 +220,27 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                     ),
                     child: Row(
                       children: [
-                        _StatKutu(sayi: profil.takipciSayisi.toString(), label: 'Takipçi'),
+                        _StatKutu(
+                          sayi: profil.takipciSayisi.toString(),
+                          label: 'Takipçi',
+                          onTap: () => Navigator.push(context, MaterialPageRoute(
+                            builder: (_) => TakipListesiScreen(
+                              kullaniciId: profil.id,
+                              baslangicTab: TakipListeTipi.takipcilar,
+                            ),
+                          )),
+                        ),
                         _StatAyrac(),
-                        _StatKutu(sayi: profil.takipSayisi.toString(), label: 'Takip'),
+                        _StatKutu(
+                          sayi: profil.takipSayisi.toString(),
+                          label: 'Takip',
+                          onTap: () => Navigator.push(context, MaterialPageRoute(
+                            builder: (_) => TakipListesiScreen(
+                              kullaniciId: profil.id,
+                              baslangicTab: TakipListeTipi.takipEdilenler,
+                            ),
+                          )),
+                        ),
                         _StatAyrac(),
                         _StatKutu(sayi: profil.degerlendirmeSayisi.toString(), label: 'Değerlendirme'),
                       ],
@@ -814,18 +833,22 @@ class _BekleyenKarti extends ConsumerWidget {
 class _StatKutu extends StatelessWidget {
   final String sayi;
   final String label;
-  const _StatKutu({required this.sayi, required this.label});
+  final VoidCallback? onTap;
+  const _StatKutu({required this.sayi, required this.label, this.onTap});
 
   @override
   Widget build(BuildContext context) => Expanded(
-    child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      child: Column(
-        children: [
-          Text(sayi, style: GoogleFonts.dmSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-          const SizedBox(height: 2),
-          Text(label, style: GoogleFonts.dmSans(fontSize: 11, color: AppColors.textSecondary)),
-        ],
+    child: GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        child: Column(
+          children: [
+            Text(sayi, style: GoogleFonts.dmSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+            const SizedBox(height: 2),
+            Text(label, style: GoogleFonts.dmSans(fontSize: 11, color: AppColors.textSecondary)),
+          ],
+        ),
       ),
     ),
   );

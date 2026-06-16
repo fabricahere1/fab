@@ -264,11 +264,11 @@ class KullaniciProfilScreen extends ConsumerWidget {
                                   width: double.infinity,
                                   height: 44,
                                   child: OutlinedButton.icon(
-                                    onPressed: () async {
+                                    onPressed: () {
                                       if (takipEdiyor) {
-                                        await ref.read(takipIslemleriProvider.notifier).takipiBirak(kullaniciId);
+                                        ref.read(takipIslemleriProvider.notifier).takipiBirak(kullaniciId);
                                       } else {
-                                        await ref.read(takipIslemleriProvider.notifier).takipEt(kullaniciId);
+                                        ref.read(takipIslemleriProvider.notifier).takipEt(kullaniciId);
                                       }
                                     },
                                     style: OutlinedButton.styleFrom(

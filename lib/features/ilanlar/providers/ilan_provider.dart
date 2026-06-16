@@ -470,17 +470,40 @@ class BreadcrumbKategoriFiltresi extends _$BreadcrumbKategoriFiltresi {
   void temizle() => state = [];
 }
 
+// ── Optimistik favori state ───────────────────────────────────────────────────
+
+@Riverpod(keepAlive: true)
+class OptimistikFavori extends _$OptimistikFavori {
+  @override
+  Map<String, bool> build() => {}; // ilanId → true:eklendi / false:çıkarıldı
+
+  void ekle(String ilanId) => state = {...state, ilanId: true};
+  void cikar(String ilanId) => state = {...state, ilanId: false};
+  void temizle(String ilanId) {
+    final yeni = Map<String, bool>.from(state)..remove(ilanId);
+    state = yeni;
+  }
+}
+
 @riverpod
 Set<String> favoriliIlanIdler(Ref ref) {
-  final fav = ref.watch(favorilerProvider);
-  return fav.when(
+  final fav       = ref.watch(favorilerProvider);
+  final optimistik = ref.watch(optimistikFavoriProvider);
+
+  final base = fav.when(
     data: (liste) => liste
         .map((f) => f['ilanId'] as String? ?? '')
         .where((id) => id.isNotEmpty)
         .toSet(),
-    loading: () => {},
-    error: (_, _) => {},
+    loading: () => <String>{},
+    error: (_, _) => <String>{},
   );
+
+  final sonuc = Set<String>.from(base);
+  optimistik.forEach((id, eklendi) {
+    if (eklendi) { sonuc.add(id); } else { sonuc.remove(id); }
+  });
+  return sonuc;
 }
 
 // ── Favori işlemleri ──────────────────────────────────────────────────────────
@@ -496,17 +519,27 @@ class FavoriNotifier extends _$FavoriNotifier {
   Future<void> ekle(IlanModel ilan) async {
     final uid = _uid;
     if (uid.isEmpty) return;
-    await _repo.favoriyeEkle(kullaniciId: uid, ilan: ilan);
-    ref.read(istekIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilan.id, 1);
-    ref.read(tasiyiciIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilan.id, 1);
+    ref.read(optimistikFavoriProvider.notifier).ekle(ilan.id);
+    try {
+      await _repo.favoriyeEkle(kullaniciId: uid, ilan: ilan);
+      ref.read(istekIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilan.id, 1);
+      ref.read(tasiyiciIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilan.id, 1);
+    } catch (_) {
+      ref.read(optimistikFavoriProvider.notifier).temizle(ilan.id);
+    }
   }
 
   Future<void> cikar(String ilanId) async {
     final uid = _uid;
     if (uid.isEmpty) return;
-    await _repo.favoridanCikar(kullaniciId: uid, ilanId: ilanId);
-    ref.read(istekIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilanId, -1);
-    ref.read(tasiyiciIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilanId, -1);
+    ref.read(optimistikFavoriProvider.notifier).cikar(ilanId);
+    try {
+      await _repo.favoridanCikar(kullaniciId: uid, ilanId: ilanId);
+      ref.read(istekIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilanId, -1);
+      ref.read(tasiyiciIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilanId, -1);
+    } catch (_) {
+      ref.read(optimistikFavoriProvider.notifier).temizle(ilanId);
+    }
   }
 }
 

@@ -247,9 +247,6 @@ class _FavoriButon extends ConsumerStatefulWidget {
 
 class _FavoriButonState extends ConsumerState<_FavoriButon>
     with SingleTickerProviderStateMixin {
-  // Optimistic local state — sadece işlem süresince kullanılır
-  bool? _localFavori;
-  bool _islem = false;
   late AnimationController _ctrl;
   late Animation<double> _scale;
 
@@ -271,56 +268,43 @@ class _FavoriButonState extends ConsumerState<_FavoriButon>
     super.dispose();
   }
 
-  Future<void> _toglle(bool mevcutDurum) async {
-    if (_islem) return;
-    _islem = true;
-
-    final yeniDurum = !mevcutDurum;
-    setState(() => _localFavori = yeniDurum);
+  void _toglle(bool mevcutDurum) {
     _ctrl.forward().then((_) => _ctrl.reverse());
-
-    try {
-      if (yeniDurum) {
-        await ref.read(favoriProvider.notifier).ekle(widget.ilan);
-      } else {
-        await ref.read(favoriProvider.notifier).cikar(widget.ilan.id);
-      }
-    } catch (e) {
-      debugPrint('Favori işlemi hatası: $e');
-      if (mounted) setState(() => _localFavori = mevcutDurum);
-    } finally {
-      if (mounted) setState(() => _islem = false);
+    if (mevcutDurum) {
+      ref.read(favoriProvider.notifier).cikar(widget.ilan.id);
+    } else {
+      ref.read(favoriProvider.notifier).ekle(widget.ilan);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final favoriliIdler = ref.watch(favoriliIlanIdlerProvider);
-    // İşlem süresince optimistic state'i göster, aksi halde stream'den al
-    final gosterilen = _islem
-        ? (_localFavori ?? favoriliIdler.contains(widget.ilan.id))
-        : favoriliIdler.contains(widget.ilan.id);
+    final gosterilen = ref.watch(favoriliIlanIdlerProvider).contains(widget.ilan.id);
 
     return GestureDetector(
       onTap: () => _toglle(gosterilen),
-      child: ScaleTransition(
-        scale: _scale,
-        child: Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.22),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.25),
-              width: 0.5,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: ScaleTransition(
+          scale: _scale,
+          child: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.22),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.25),
+                width: 0.5,
+              ),
             ),
-          ),
-          child: Icon(
-            Symbols.favorite,
-            fill: gosterilen ? 1 : 0,
-            weight: 200,
-            color: gosterilen ? AppColors.red : Colors.white,
-            size: 20,
+            child: Icon(
+              Symbols.favorite,
+              fill: gosterilen ? 1 : 0,
+              weight: 200,
+              color: gosterilen ? AppColors.red : Colors.white,
+              size: 20,
+            ),
           ),
         ),
       ),

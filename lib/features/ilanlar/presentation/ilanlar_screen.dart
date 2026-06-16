@@ -19,6 +19,7 @@ import '../../../shared/widgets/neden_iste_bar.dart';
 import 'widgets/filtre_ekrani.dart';
 import 'widgets/ilan_karti.dart';
 import 'widgets/swipe_karti.dart';
+import 'dart:async';
 import 'package:iste_v3/features/ilanlar/presentation/favoriler_screen.dart';
 import 'ilan_detay_screen.dart';
 
@@ -52,6 +53,8 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
   List<String> _seciliKategoriYolu = [];
   String       _aramaMetni        = '';
   bool         _aramaGizli        = false;
+  bool         _filtreYukleniyor  = false;
+  Timer?       _filtreTimer;
 
   @override
   bool get wantKeepAlive => true;
@@ -92,10 +95,22 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
 
   @override
   void dispose() {
+    _filtreTimer?.cancel();
     _scrollController.dispose();
     _aramaCtrl.dispose();
     _kategoriScrollCtrl.dispose();
     super.dispose();
+  }
+
+  void _filtreUygula(VoidCallback degistir) {
+    _filtreTimer?.cancel();
+    setState(() {
+      degistir();
+      _filtreYukleniyor = true;
+    });
+    _filtreTimer = Timer(const Duration(milliseconds: 600), () {
+      if (mounted) setState(() => _filtreYukleniyor = false);
+    });
   }
 
   bool get _filtrAktif => _seciliKategoriYolu.isNotEmpty;
@@ -208,7 +223,7 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
   }
 
   void _anaKategoriSec(String anaKey) {
-    setState(() {
+    _filtreUygula(() {
       if (_seciliAnaKey == anaKey) {
         _seciliKategoriYolu = [];
       } else {
@@ -262,7 +277,8 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
           }
         },
       );
-    } else if (state.yukleniyor && ilanlar.isEmpty) {
+    } else if ((state.yukleniyor && ilanlar.isEmpty) ||
+        (_filtreYukleniyor && ilanlar.isEmpty)) {
       ilanWidget = SliverToBoxAdapter(
           child: ShimmerGrid(kolonSayisi: mod.kolonSayisi));
     } else if (ilanlar.isEmpty) {

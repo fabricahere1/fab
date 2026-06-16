@@ -372,6 +372,283 @@ final class IlanlarimProvider
 
 String _$ilanlarimHash() => r'e4590c00e1002eb544b796ca09f105886a89ab59';
 
+@ProviderFor(takipciIdleri)
+final takipciIdleriProvider = TakipciIdleriFamily._();
+
+final class TakipciIdleriProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<String>>,
+          List<String>,
+          Stream<List<String>>
+        >
+    with $FutureModifier<List<String>>, $StreamProvider<List<String>> {
+  TakipciIdleriProvider._({
+    required TakipciIdleriFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'takipciIdleriProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$takipciIdleriHash();
+
+  @override
+  String toString() {
+    return r'takipciIdleriProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<String>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<String>> create(Ref ref) {
+    final argument = this.argument as String;
+    return takipciIdleri(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is TakipciIdleriProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$takipciIdleriHash() => r'ee4fb3be5ef06950b82d857c905c07c083c234f2';
+
+final class TakipciIdleriFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<String>>, String> {
+  TakipciIdleriFamily._()
+    : super(
+        retry: null,
+        name: r'takipciIdleriProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  TakipciIdleriProvider call(String kullaniciId) =>
+      TakipciIdleriProvider._(argument: kullaniciId, from: this);
+
+  @override
+  String toString() => r'takipciIdleriProvider';
+}
+
+@ProviderFor(takipEdilenIdleri)
+final takipEdilenIdleriProvider = TakipEdilenIdleriFamily._();
+
+final class TakipEdilenIdleriProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<String>>,
+          List<String>,
+          Stream<List<String>>
+        >
+    with $FutureModifier<List<String>>, $StreamProvider<List<String>> {
+  TakipEdilenIdleriProvider._({
+    required TakipEdilenIdleriFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'takipEdilenIdleriProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$takipEdilenIdleriHash();
+
+  @override
+  String toString() {
+    return r'takipEdilenIdleriProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<String>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<String>> create(Ref ref) {
+    final argument = this.argument as String;
+    return takipEdilenIdleri(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is TakipEdilenIdleriProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$takipEdilenIdleriHash() => r'53515c95005fa69fcff5d987bbcd0189f17deea6';
+
+final class TakipEdilenIdleriFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<String>>, String> {
+  TakipEdilenIdleriFamily._()
+    : super(
+        retry: null,
+        name: r'takipEdilenIdleriProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  TakipEdilenIdleriProvider call(String kullaniciId) =>
+      TakipEdilenIdleriProvider._(argument: kullaniciId, from: this);
+
+  @override
+  String toString() => r'takipEdilenIdleriProvider';
+}
+
+@ProviderFor(kullaniciBilgisi)
+final kullaniciBilgisiProvider = KullaniciBilgisiFamily._();
+
+final class KullaniciBilgisiProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<KullaniciModel?>,
+          KullaniciModel?,
+          FutureOr<KullaniciModel?>
+        >
+    with $FutureModifier<KullaniciModel?>, $FutureProvider<KullaniciModel?> {
+  KullaniciBilgisiProvider._({
+    required KullaniciBilgisiFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'kullaniciBilgisiProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$kullaniciBilgisiHash();
+
+  @override
+  String toString() {
+    return r'kullaniciBilgisiProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<KullaniciModel?> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<KullaniciModel?> create(Ref ref) {
+    final argument = this.argument as String;
+    return kullaniciBilgisi(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is KullaniciBilgisiProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$kullaniciBilgisiHash() => r'30553ff1b2be11234482d1c3921ac2b6d8eb0397';
+
+final class KullaniciBilgisiFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<KullaniciModel?>, String> {
+  KullaniciBilgisiFamily._()
+    : super(
+        retry: null,
+        name: r'kullaniciBilgisiProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  KullaniciBilgisiProvider call(String uid) =>
+      KullaniciBilgisiProvider._(argument: uid, from: this);
+
+  @override
+  String toString() => r'kullaniciBilgisiProvider';
+}
+
+@ProviderFor(OptimistikTakip)
+final optimistikTakipProvider = OptimistikTakipProvider._();
+
+final class OptimistikTakipProvider
+    extends $NotifierProvider<OptimistikTakip, Map<String, bool>> {
+  OptimistikTakipProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'optimistikTakipProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$optimistikTakipHash();
+
+  @$internal
+  @override
+  OptimistikTakip create() => OptimistikTakip();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(Map<String, bool> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<Map<String, bool>>(value),
+    );
+  }
+}
+
+String _$optimistikTakipHash() => r'b347687a2ded5f8bcf6c26f13000d4c14a950da3';
+
+abstract class _$OptimistikTakip extends $Notifier<Map<String, bool>> {
+  Map<String, bool> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<Map<String, bool>, Map<String, bool>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<Map<String, bool>, Map<String, bool>>,
+              Map<String, bool>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
 @ProviderFor(takipEdiyorMu)
 final takipEdiyorMuProvider = TakipEdiyorMuFamily._();
 
@@ -421,7 +698,7 @@ final class TakipEdiyorMuProvider
   }
 }
 
-String _$takipEdiyorMuHash() => r'9d5d7bb2f3fb261b27ff9be7ba96e244ee454559';
+String _$takipEdiyorMuHash() => r'1f89e5ebd027b26b1316601f0aee525ac23d16eb';
 
 final class TakipEdiyorMuFamily extends $Family
     with $FunctionalFamilyOverride<Stream<bool>, String> {
@@ -473,7 +750,7 @@ final class TakipIslemleriProvider
   }
 }
 
-String _$takipIslemleriHash() => r'06c8b897d47f37bec39fd0cf223bf15c04e08fc9';
+String _$takipIslemleriHash() => r'da0b70da7e0c83b7c138ab97a0f7bea3ac57ead9';
 
 abstract class _$TakipIslemleri extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();

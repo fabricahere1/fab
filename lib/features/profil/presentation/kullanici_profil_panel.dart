@@ -284,11 +284,11 @@ class _KullaniciProfilPanelState extends ConsumerState<KullaniciProfilPanel>
                                             width: double.infinity,
                                             height: 44,
                                             child: OutlinedButton.icon(
-                                              onPressed: () async {
+                                              onPressed: () {
                                                 if (takipEdiyor) {
-                                                  await ref.read(takipIslemleriProvider.notifier).takipiBirak(widget.kullaniciId);
+                                                  ref.read(takipIslemleriProvider.notifier).takipiBirak(widget.kullaniciId);
                                                 } else {
-                                                  await ref.read(takipIslemleriProvider.notifier).takipEt(widget.kullaniciId);
+                                                  ref.read(takipIslemleriProvider.notifier).takipEt(widget.kullaniciId);
                                                 }
                                               },
                                               style: OutlinedButton.styleFrom(

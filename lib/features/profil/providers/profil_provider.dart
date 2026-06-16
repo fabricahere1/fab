@@ -162,12 +162,50 @@ Stream<List<IlanModel>> ilanlarim(Ref ref) {
   return ref.watch(ilanRepositoryProvider).kullaniciIlanlarStream(uid);
 }
 
+// ── Takip listesi provider'ları ──────────────────────────────────────────────
+
+@riverpod
+Stream<List<String>> takipciIdleri(Ref ref, String kullaniciId) {
+  return ref.watch(kullaniciRepositoryProvider).takipciIdleriStream(kullaniciId);
+}
+
+@riverpod
+Stream<List<String>> takipEdilenIdleri(Ref ref, String kullaniciId) {
+  return ref.watch(kullaniciRepositoryProvider).takipEdilenIdleriStream(kullaniciId);
+}
+
+@riverpod
+Future<KullaniciModel?> kullaniciBilgisi(Ref ref, String uid) {
+  return ref.watch(kullaniciRepositoryProvider).kullaniciGetir(uid);
+}
+
+// ── Optimistik takip state ────────────────────────────────────────────────────
+
+@Riverpod(keepAlive: true)
+class OptimistikTakip extends _$OptimistikTakip {
+  @override
+  Map<String, bool> build() => {}; // takipEdilenId → true:takip / false:bırak
+
+  void takipEt(String id) => state = {...state, id: true};
+  void takipiBirak(String id) => state = {...state, id: false};
+  void temizle(String id) {
+    final yeni = Map<String, bool>.from(state)..remove(id);
+    state = yeni;
+  }
+}
+
 // ── Takip provider'ları ───────────────────────────────────────────────────────
 
 @riverpod
 Stream<bool> takipEdiyorMu(Ref ref, String takipEdilenId) {
   final uid = ref.watch(currentUserProvider)?.uid;
   if (uid == null) return Stream.value(false);
+
+  final optimistik = ref.watch(optimistikTakipProvider);
+  if (optimistik.containsKey(takipEdilenId)) {
+    return Stream.value(optimistik[takipEdilenId]!);
+  }
+
   return ref.watch(kullaniciRepositoryProvider).takipEdiyorMu(
     takipciId: uid,
     takipEdilenId: takipEdilenId,
@@ -187,12 +225,22 @@ class TakipIslemleri extends _$TakipIslemleri {
   Future<void> takipEt(String takipEdilenId) async {
     final uid = ref.read(currentUserProvider)?.uid;
     if (uid == null) return;
-    await _repo.takipEt(takipciId: uid, takipEdilenId: takipEdilenId);
+    ref.read(optimistikTakipProvider.notifier).takipEt(takipEdilenId);
+    try {
+      await _repo.takipEt(takipciId: uid, takipEdilenId: takipEdilenId);
+    } catch (_) {
+      ref.read(optimistikTakipProvider.notifier).temizle(takipEdilenId);
+    }
   }
 
   Future<void> takipiBirak(String takipEdilenId) async {
     final uid = ref.read(currentUserProvider)?.uid;
     if (uid == null) return;
-    await _repo.takipiBirak(takipciId: uid, takipEdilenId: takipEdilenId);
+    ref.read(optimistikTakipProvider.notifier).takipiBirak(takipEdilenId);
+    try {
+      await _repo.takipiBirak(takipciId: uid, takipEdilenId: takipEdilenId);
+    } catch (_) {
+      ref.read(optimistikTakipProvider.notifier).temizle(takipEdilenId);
+    }
   }
 }

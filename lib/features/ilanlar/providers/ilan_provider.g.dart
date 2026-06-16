@@ -641,6 +641,58 @@ abstract class _$BreadcrumbKategoriFiltresi extends $Notifier<List<String>> {
   }
 }
 
+@ProviderFor(OptimistikFavori)
+final optimistikFavoriProvider = OptimistikFavoriProvider._();
+
+final class OptimistikFavoriProvider
+    extends $NotifierProvider<OptimistikFavori, Map<String, bool>> {
+  OptimistikFavoriProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'optimistikFavoriProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$optimistikFavoriHash();
+
+  @$internal
+  @override
+  OptimistikFavori create() => OptimistikFavori();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(Map<String, bool> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<Map<String, bool>>(value),
+    );
+  }
+}
+
+String _$optimistikFavoriHash() => r'bece6372712d06df55a4ee231b8fb0b76f857688';
+
+abstract class _$OptimistikFavori extends $Notifier<Map<String, bool>> {
+  Map<String, bool> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<Map<String, bool>, Map<String, bool>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<Map<String, bool>, Map<String, bool>>,
+              Map<String, bool>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
 @ProviderFor(favoriliIlanIdler)
 final favoriliIlanIdlerProvider = FavoriliIlanIdlerProvider._();
 
@@ -680,7 +732,7 @@ final class FavoriliIlanIdlerProvider
   }
 }
 
-String _$favoriliIlanIdlerHash() => r'a18c9f8fac3da1192de2351098dcbea327a3aaaf';
+String _$favoriliIlanIdlerHash() => r'2cdb6eaffd2db12d88cfaa4d1f76704684258dbe';
 
 @ProviderFor(FavoriNotifier)
 final favoriProvider = FavoriNotifierProvider._();
@@ -714,7 +766,7 @@ final class FavoriNotifierProvider
   }
 }
 
-String _$favoriNotifierHash() => r'acf9c4eca2bc807bc3f564124d6e96f437789db9';
+String _$favoriNotifierHash() => r'c247c344d24807746332c6e2c1eb5381f7b6334c';
 
 abstract class _$FavoriNotifier extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();

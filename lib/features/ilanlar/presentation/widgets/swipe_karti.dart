@@ -621,33 +621,6 @@ class _OnKart extends StatelessWidget {
           ),
         ),
 
-        // Favori
-        Positioned(
-          top: 8, right: 14,
-          child: GestureDetector(
-            onTap: onFav,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 38, height: 38,
-              decoration: BoxDecoration(
-                color: isFav
-                    ? AppColors.red.withValues(alpha: 0.9)
-                    : Colors.white.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-                border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.25),
-                    width: 0.5),
-              ),
-              child: Icon(
-                isFav
-                    ? Icons.favorite_rounded
-                    : Icons.favorite_border_rounded,
-                color: Colors.white, size: 17,
-              ),
-            ),
-          ),
-        ),
-
         // Alt bilgi
         Positioned(
           left: 0, right: 0, bottom: 110,
@@ -769,7 +742,7 @@ class _KartArkaplan extends StatelessWidget {
       return CachedNetworkImage(
         cacheManager: AppCacheManager.instance,
         imageUrl: resimler.first,
-        fit: BoxFit.contain,
+        fit: BoxFit.cover,
         fadeInDuration: Duration.zero,
         fadeOutDuration: Duration.zero,
         placeholder: (_, _) => placeholder,
