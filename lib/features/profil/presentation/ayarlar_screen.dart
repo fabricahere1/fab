@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../degerlendirme/presentation/degerlendirmeler_liste_screen.dart';
 import '../../profil/providers/profil_provider.dart';
@@ -33,6 +35,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
   }
 
   Future<void> _bildirimlerYukle() async {
+    final uid = ref.read(currentUserProvider)?.uid;
+    // Önce local cache'den yükle (hızlı)
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _ilanBildirimleri   = prefs.getBool('bildirim_ilan')   ?? true;
@@ -40,11 +44,44 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       _sistemBildirimleri = prefs.getBool('bildirim_sistem') ?? true;
       _bildirimlerYuklendi = true;
     });
+    // Firestore'dan güncel değeri al (doğru kaynak)
+    if (uid == null) return;
+    try {
+      final snap = await FirebaseFirestore.instance
+          .collection('kullanicilar')
+          .doc(uid)
+          .get();
+      final tercipler = snap.data()?['bildirimTercihleri'] as Map<String, dynamic>?;
+      if (tercipler == null) return;
+      if (!mounted) return;
+      setState(() {
+        _mesajBildirimleri  = tercipler['mesaj']  as bool? ?? true;
+        _ilanBildirimleri   = tercipler['ilan']   as bool? ?? true;
+        _sistemBildirimleri = tercipler['sistem'] as bool? ?? true;
+      });
+      await prefs.setBool('bildirim_mesaj',  _mesajBildirimleri);
+      await prefs.setBool('bildirim_ilan',   _ilanBildirimleri);
+      await prefs.setBool('bildirim_sistem', _sistemBildirimleri);
+    } catch (_) {}
   }
 
   Future<void> _bildirimKaydet(String key, bool value) async {
+    // Local cache
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(key, value);
+    // Firestore'a yaz
+    final uid = ref.read(currentUserProvider)?.uid;
+    if (uid == null) return;
+    final firestoreKey = key.replaceFirst('bildirim_', '');
+    try {
+      await FirebaseFirestore.instance
+          .collection('kullanicilar')
+          .doc(uid)
+          .set(
+            {'bildirimTercihleri': {firestoreKey: value}},
+            SetOptions(merge: true),
+          );
+    } catch (_) {}
   }
 
   @override
@@ -501,6 +538,14 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
 
     if (onay != true || !mounted) return;
 
+    // 10 saniyelik geri sayım — iptal edilirse işlem durur
+    final devamEt = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const _GeriSayimDialog(),
+    );
+    if (devamEt != true || !mounted) return;
+
     if (googleGiris) {
       await _googleReAuth();
     } else {
@@ -642,6 +687,102 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
         AppSnackBar.hata(context, 'Hata oluştu. Tekrar dene.');
       }
     }
+  }
+}
+
+// ── 10 Saniyelik Geri Sayım Dialogu ──────────────────────
+
+class _GeriSayimDialog extends StatefulWidget {
+  const _GeriSayimDialog();
+
+  @override
+  State<_GeriSayimDialog> createState() => _GeriSayimDialogState();
+}
+
+class _GeriSayimDialogState extends State<_GeriSayimDialog> {
+  static const _sure = 10;
+  int _kalan = _sure;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) { t.cancel(); return; }
+      setState(() => _kalan--);
+      if (_kalan <= 0) {
+        t.cancel();
+        Navigator.of(context).pop(true);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ilerleme = _kalan / _sure;
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded, color: Color(0xFFE53935), size: 22),
+          const SizedBox(width: 8),
+          Text('Son şans!',
+              style: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w700)),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Hesabın $_kalan saniye içinde kalıcı olarak silinecek.',
+            style: GoogleFonts.dmSans(fontSize: 13, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: ilerleme,
+              minHeight: 8,
+              backgroundColor: const Color(0xFFFFCDD2),
+              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFE53935)),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '$_kalan sn',
+            style: GoogleFonts.dmSans(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFFE53935),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        SizedBox(
+          width: double.infinity,
+          child: TextButton(
+            style: TextButton.styleFrom(
+              backgroundColor: AppColors.surface,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('İptal Et',
+                style: GoogleFonts.dmSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary)),
+          ),
+        ),
+      ],
+    );
   }
 }
 

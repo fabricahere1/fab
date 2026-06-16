@@ -52,6 +52,7 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
   SiralamaTipi _siralama          = SiralamaTipi.enYeni;
   List<String> _seciliKategoriYolu = [];
   String       _aramaMetni        = '';
+  List<String> _seciliIstekSehirleri = [];
   bool         _aramaGizli        = false;
   bool         _filtreYukleniyor  = false;
   Timer?       _filtreTimer;
@@ -116,8 +117,10 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
   bool get _filtrAktif => _seciliKategoriYolu.isNotEmpty;
 
   String get _filtreBadgeMetni {
-    if (_seciliKategoriYolu.isEmpty) return '';
-    return kategoriYoluMetni(_seciliKategoriYolu);
+    final parcalar = <String>[];
+    if (_seciliKategoriYolu.isNotEmpty) parcalar.add(kategoriYoluMetni(_seciliKategoriYolu));
+    if (_seciliIstekSehirleri.isNotEmpty) parcalar.add(_seciliIstekSehirleri.join(', '));
+    return parcalar.join(' · ');
   }
 
   // Üst bar chip'leri için sadece ana kategori key'i
@@ -159,6 +162,13 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
           i.kategoriYolu.any((k) => gecerliKeyler.contains(k))).toList();
     }
 
+    // İstek şehri filtresi
+    if (_seciliIstekSehirleri.isNotEmpty) {
+      sonuc = sonuc.where((i) =>
+          _seciliIstekSehirleri.any((s) =>
+              i.nereye.toLowerCase().contains(s.toLowerCase()))).toList();
+    }
+
     // Arama filtresi
     if (_aramaMetni.isNotEmpty) {
       final q = _aramaMetni.toLowerCase();
@@ -172,15 +182,6 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
   }
 
   void _filtreAc() {
-    final ilanlar = ref.read(istekIlanlarProvider).filtrelenmis;
-    final ilanSayilari = <String, int>{};
-    for (final ana in kKategoriAgaci) {
-      final keyler = tumAltKeyler(ana.key);
-      ilanSayilari[ana.key] = ilanlar.where((i) =>
-        keyler.contains(i.kategori) ||
-        i.kategoriYolu.any((k) => keyler.contains(k))).length;
-    }
-
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
@@ -199,21 +200,20 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
             child: FiltreEkrani(
               seciliKategoriYolu: _seciliKategoriYolu,
               seciliSiralama: _siralama,
-              ilanSayilari: ilanSayilari,
-              ilanEtiket: 'aktif istek',
-              onKategoriSecildi: (yol) {
-                setState(() => _seciliKategoriYolu = yol);
-                Navigator.of(ctx).pop();
+              seciliIstekSehirleri: _seciliIstekSehirleri,
+              onUygula: (secim) {
+                setState(() {
+                  _seciliKategoriYolu  = secim.kategoriYolu;
+                  _siralama            = secim.siralama;
+                  _seciliIstekSehirleri = secim.istekSehirleri;
+                });
               },
               onTemizle: () {
                 setState(() {
-                  _seciliKategoriYolu = [];
-                  _siralama = SiralamaTipi.enYeni;
+                  _seciliKategoriYolu  = [];
+                  _siralama            = SiralamaTipi.enYeni;
+                  _seciliIstekSehirleri = [];
                 });
-                Navigator.of(ctx).pop();
-              },
-              onSiralamaSecildi: (tip) {
-                setState(() => _siralama = tip);
               },
             ),
           ),
@@ -860,16 +860,37 @@ class _Son24SaatBolumu extends ConsumerWidget {
         const cardW = 130.0;
         const cardH = 170.0;
 
-        return Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF90CAF9), Color(0xFFEBF5FF)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+        return Stack(
+          children: [
+            // Arka plan gradient
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF64B5F6), Color(0xFFBBDEFB)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              padding: const EdgeInsets.only(top: 10, bottom: 18),
+              child: const SizedBox(height: 210, width: double.infinity),
             ),
-          ),
-          padding: const EdgeInsets.only(top: 10, bottom: 18),
-          child: Column(
+            // Dekoratif turuncu ikonlar
+            Positioned(top: -8, right: 20,
+              child: Icon(Icons.flight_takeoff_rounded, size: 72, color: const Color(0xFFFF9800).withValues(alpha: 0.18))),
+            Positioned(top: 30, right: 110,
+              child: Icon(Icons.shopping_bag_outlined, size: 44, color: const Color(0xFFFF9800).withValues(alpha: 0.15))),
+            Positioned(bottom: 10, right: 60,
+              child: Icon(Icons.local_shipping_outlined, size: 52, color: const Color(0xFFFF9800).withValues(alpha: 0.14))),
+            Positioned(top: 15, left: 30,
+              child: Icon(Icons.location_on_outlined, size: 38, color: const Color(0xFFFF9800).withValues(alpha: 0.13))),
+            Positioned(bottom: 8, left: 80,
+              child: Icon(Icons.star_outline_rounded, size: 34, color: const Color(0xFFFF9800).withValues(alpha: 0.16))),
+            Positioned(top: 50, left: 150,
+              child: Icon(Icons.card_travel_outlined, size: 30, color: const Color(0xFFFF9800).withValues(alpha: 0.12))),
+            // Gerçek içerik
+            Container(
+              padding: const EdgeInsets.only(top: 10, bottom: 18),
+              child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
@@ -898,21 +919,23 @@ class _Son24SaatBolumu extends ConsumerWidget {
                           builder: (_) => IlanDetayScreen(ilanId: ilan.id),
                         ),
                       ),
-                      child: Container(
-                        width: cardW,
-                        height: cardH,
-                        margin: const EdgeInsets.only(right: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.15),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Column(
+                      child: Stack(
+                        children: [
+                        Container(
+                          width: cardW,
+                          height: cardH,
+                          margin: const EdgeInsets.only(right: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.15),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             SizedBox(
@@ -960,6 +983,40 @@ class _Son24SaatBolumu extends ConsumerWidget {
                             ),
                           ],
                         ),
+                        ),
+                        // "Yeni" badge
+                        Positioned(
+                          top: 6,
+                          right: 16,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF2400),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFFF2400)
+                                      .withValues(alpha: 0.45),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              'YENİ',
+                              style: GoogleFonts.poppins(
+                                fontSize: 8,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: 0.8,
+                                height: 1,
+                              ),
+                            ),
+                          ),
+                        ),
+                        ],
                       ),
                     );
                   },
@@ -967,6 +1024,8 @@ class _Son24SaatBolumu extends ConsumerWidget {
               ),
             ],
           ),
+        ),
+          ],
         );
       },
     );

@@ -90,34 +90,60 @@ class _TakipListesiScreenState extends ConsumerState<TakipListesiScreen>
   }
 }
 
-class _TakipListesi extends ConsumerWidget {
+class _TakipListesi extends ConsumerStatefulWidget {
   final String kullaniciId;
   final TakipListeTipi tip;
 
   const _TakipListesi({required this.kullaniciId, required this.tip});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final idlerAsync = tip == TakipListeTipi.takipcilar
-        ? ref.watch(takipciIdleriProvider(kullaniciId))
-        : ref.watch(takipEdilenIdleriProvider(kullaniciId));
+  ConsumerState<_TakipListesi> createState() => _TakipListesiState();
+}
+
+class _TakipListesiState extends ConsumerState<_TakipListesi> {
+  // Listeyi bir kez sabitliyoruz — stream güncellemesi satır SİLMESİN,
+  // sadece yeni eklenenler görünsün (Instagram davranışı).
+  List<String>? _sabitIdler;
+
+  @override
+  Widget build(BuildContext context) {
+    final idlerAsync = widget.tip == TakipListeTipi.takipcilar
+        ? ref.watch(takipciIdleriProvider(widget.kullaniciId))
+        : ref.watch(takipEdilenIdleriProvider(widget.kullaniciId));
 
     return idlerAsync.when(
-      loading: () => const Center(
-        child: CircularProgressIndicator(color: AppColors.red, strokeWidth: 2),
-      ),
+      loading: () {
+        if (_sabitIdler != null) {
+          return _liste(_sabitIdler!);
+        }
+        return const Center(
+          child: CircularProgressIndicator(color: AppColors.red, strokeWidth: 2),
+        );
+      },
       error: (_, _) => Center(
         child: Text('Yüklenemedi.',
             style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
       ),
       data: (idler) {
-        if (idler.isEmpty) {
+        if (_sabitIdler == null) {
+          // İlk yükleme — listeyi sabitle
+          _sabitIdler = List<String>.from(idler);
+        } else {
+          // Yeni eklenenler varsa ekle, ama mevcut satırları silme
+          for (final id in idler) {
+            if (!_sabitIdler!.contains(id)) {
+              _sabitIdler!.add(id);
+            }
+          }
+        }
+
+        if (_sabitIdler!.isEmpty) {
           return Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  tip == TakipListeTipi.takipcilar
+                  widget.tip == TakipListeTipi.takipcilar
                       ? Icons.people_outline_rounded
                       : Icons.person_search_outlined,
                   size: 56,
@@ -125,7 +151,7 @@ class _TakipListesi extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  tip == TakipListeTipi.takipcilar
+                  widget.tip == TakipListeTipi.takipcilar
                       ? 'Henüz takipçi yok'
                       : 'Henüz kimse takip edilmiyor',
                   style: GoogleFonts.dmSans(
@@ -136,14 +162,16 @@ class _TakipListesi extends ConsumerWidget {
           );
         }
 
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          itemCount: idler.length,
-          itemBuilder: (context, i) => _KullaniciSatiri(uid: idler[i]),
-        );
+        return _liste(_sabitIdler!);
       },
     );
   }
+
+  Widget _liste(List<String> idler) => ListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        itemCount: idler.length,
+        itemBuilder: (context, i) => _KullaniciSatiri(uid: idler[i]),
+      );
 }
 
 class _KullaniciSatiri extends ConsumerWidget {

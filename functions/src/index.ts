@@ -462,8 +462,12 @@ export const mesajBildirimiGonder = functions
     };
     const kullaniciSnap = await db.collection("kullanicilar").doc(aliciId).get();
     if (!kullaniciSnap.exists) return { success: false };
-    const fcmToken = kullaniciSnap.data()?.fcmToken as string | undefined;
+    const kullaniciData = kullaniciSnap.data() ?? {};
+    const fcmToken = kullaniciData.fcmToken as string | undefined;
     if (!fcmToken) return { success: false };
+    // Mesaj bildirimi kapalıysa gönderme
+    const mesajTercih = (kullaniciData.bildirimTercihleri?.mesaj ?? true) as boolean;
+    if (!mesajTercih) return { success: false };
     const bildirimMetin = metin && metin.trim().length > 0 ? metin.trim() : ilanBaslik;
     await admin.messaging().send({
       token: fcmToken,
@@ -496,8 +500,12 @@ export const degerlendirmeBildirimiGonder = functions
     const degerlendireninSnap = await db.collection("kullanicilar").doc(degerlendireninId).get();
     const degerlendireninAd = (degerlendireninSnap.data()?.adSoyad as string | undefined) ?? "Biri";
     const hedefSnap = await db.collection("kullanicilar").doc(hedefKullaniciId).get();
-    const fcmToken = hedefSnap.data()?.fcmToken as string | undefined;
+    const hedefData = hedefSnap.data() ?? {};
+    const fcmToken = hedefData.fcmToken as string | undefined;
     if (!fcmToken) return;
+    // Sistem bildirimi kapalıysa gönderme
+    const sistemTercih = (hedefData.bildirimTercihleri?.sistem ?? true) as boolean;
+    if (!sistemTercih) return;
     const yildizlar = "⭐".repeat(Math.min(puan, 5));
     await admin.messaging().send({
       token: fcmToken,

@@ -840,6 +840,7 @@ class _StatKutu extends StatelessWidget {
   Widget build(BuildContext context) => Expanded(
     child: GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 14),
         child: Column(
