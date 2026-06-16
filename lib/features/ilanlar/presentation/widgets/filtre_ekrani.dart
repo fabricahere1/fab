@@ -562,12 +562,15 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                       )
                     : ElevatedButton(
                         onPressed: () {
-                          widget.onUygula(FiltreSecimi(
+                          final secim = FiltreSecimi(
                             kategoriYolu: List.from(_modalKategori),
                             siralama: _modalSiralama,
                             istekSehirleri: List.from(_modalSehirler),
-                          ));
+                          );
                           Navigator.of(context).pop();
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            widget.onUygula(secim);
+                          });
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _turuncu,

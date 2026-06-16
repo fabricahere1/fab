@@ -202,16 +202,16 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
               seciliSiralama: _siralama,
               seciliIstekSehirleri: _seciliIstekSehirleri,
               onUygula: (secim) {
-                setState(() {
-                  _seciliKategoriYolu  = secim.kategoriYolu;
-                  _siralama            = secim.siralama;
+                _filtreUygula(() {
+                  _seciliKategoriYolu   = secim.kategoriYolu;
+                  _siralama             = secim.siralama;
                   _seciliIstekSehirleri = secim.istekSehirleri;
                 });
               },
               onTemizle: () {
-                setState(() {
-                  _seciliKategoriYolu  = [];
-                  _siralama            = SiralamaTipi.enYeni;
+                _filtreUygula(() {
+                  _seciliKategoriYolu   = [];
+                  _siralama             = SiralamaTipi.enYeni;
                   _seciliIstekSehirleri = [];
                 });
               },
@@ -277,8 +277,7 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
           }
         },
       );
-    } else if ((state.yukleniyor && ilanlar.isEmpty) ||
-        (_filtreYukleniyor && ilanlar.isEmpty)) {
+    } else if ((state.yukleniyor && ilanlar.isEmpty) || _filtreYukleniyor) {
       ilanWidget = SliverToBoxAdapter(
           child: ShimmerGrid(kolonSayisi: mod.kolonSayisi));
     } else if (ilanlar.isEmpty) {
