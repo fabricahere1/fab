@@ -19,61 +19,118 @@ const algoliaClient = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_API_KEY);
 // ── Yasaklı kelimeler ─────────────────────────────────────────────────────────
 
 const YASAKLI_KELIMELER: string[] = [
-  // Küfür / argo
-  "orospu","orsp","orosp","orospu cocugu","orospu çocuğu",
-  "siktir","s1kt1r","s1ktir","sikt1r","siктир",
-  "amk","amına","amina","amcık","amcik","bok","b0k",
-  "yarrak","yarak","y4rak","yarr4k",
-  "ibne","1bne","piç","pic","p1c","piçlik","piclik",
-  "götveren","gotveren","göt","got",
-  "oç","oc","pezevenk","pezeveng",
-  "kahpe","kahbe","kaltak","puşt","pust",
-  "gavat","g4vat","hıyar","hiyar",
-  "sürtük","surtuk","fahişe","fahise",
-  "şerefsiz","serefsiz","namussuz","haysiyetsiz",
-  "sex","seks","seksi","porn","porno","pornografi",
-  "penis","vajina","tecavüz","tecavuz",
-  "göğüs","gogus",
-  // Hakaret / aşağılama
-  "salak","s4lak","aptal","4ptal","ahmak","dangalak",
-  "gerizekalı","geri zekalı","gerizekalı",
-  "eşşek","esek","eşek","serseri",
-  "alçak","alcak","aşağılık","asagilik",
-  "rezil","kevaşe","kevase",
-  "köpek","kopek","domuz","katil",
-  "hırsız","hirsiz","dolandırıcı","dolandirici",
-  "sahtekâr","sahtekar",
-  // Spam
-  "whatsapp","watsap","w4tsapp",
-  "telegram","telgram",
-  "instagram","instgram",
-  "özelden yaz","ozelden yaz",
-  "para kazan","kolay para",
-  "garantili kazanç","garantili kazanc",
-  "yatırım fırsatı","yatirim firsati",
-  "ücretsiz kazan","bedava kazan",
-  // Kişisel bilgi
-  "telefon numarası","telefon numarasi",
-  "adresim","eve gel","buluşalım","bulusalaim","numaram",
+  // ── Temel kökler (normalize sonrası eşleşir) ──────────────────────────────
+  "sik","got","am","yarak","yarrak","orospu","ibne","pic","pust","kahpe",
+  "kaltak","orostoban","orostopol","pezevenk","pezeveng","pezevek","kevase",
+  "kevaşe","fahise","fahişe","surtuk","sürtük","gavat","kavat","kappe",
+  "kahbe","liboş","godoş","gotos","gotveren","dalyarak","dalyarrak",
+  "daltassak","tasak","tassak","tasak","taşak","taşşak","atmık","bızır",
+  "dingil","duduk","çük","malafat","sakso","saxo","dildo","pipi","pipis",
+  // ── am türevleri ──────────────────────────────────────────────────────────
+  "amk","amkafa","amcik","amcuk","amcığı","aminako","aminakoyarim",
+  "aminakoyim","amına","amina","amindan","amını","amsiz","amsız",
+  "amın oglu","amın oğlu","amına koy","amına koyarım","amına koyayım",
+  "amına sikem","amına sokam","amınakoyim","amınoğlu","amısına","amısını",
+  // ── sik türevleri ─────────────────────────────────────────────────────────
+  "siktir","siktirolgit","siktirgit","sikerim","sikeyim","sikiş","sikişme",
+  "sikilmis","sikilmiş","sikik","sikim","sikime","sikimle","sikimsonik",
+  "sikimtrak","sikmek","siksin","siksiz","siktiğim","siktiğimin",
+  "sittir","sittimin","s1kerim","s1ktir","sktrr",
+  // ── got türevleri ─────────────────────────────────────────────────────────
+  "gotelek","gotlalesi","gotlu","gotunden","gotune","gotunu","gotveren",
+  "götdeliği","götelek","götlek","götoğlanı","götoş","götten","götveren",
+  "götünekoyim","gotten","gtveren","koca got",
+  // ── yarak türevleri ───────────────────────────────────────────────────────
+  "yaraksız","yarragi","yarragimi","yarragina","yarragindan","yarrak",
+  "yarraminbası","yarrrak","yrrak",
+  // ── bok/osur ──────────────────────────────────────────────────────────────
+  "bok","boka","bokbok","bombok","boktan","sıçarım","sıçtığım","ossurduum",
+  "ossurmak","ossuruk","osuruk","osururum","agzina sicayim","ağzına sıçayım",
+  // ── hakaret ───────────────────────────────────────────────────────────────
+  "salak","aptal","ahmak","dangalak","gerizekalı","geri zekalı","gerzek",
+  "eşşek","eşek","esek","hıyar","hiyar","alçak","alcak","aşağılık",
+  "asagilik","rezil","namussuz","haysiyetsiz","şerefsiz","serefsiz",
+  "beyinsiz","kafasız","kafasiz","ebleh","embesil","idiot","idiyot",
+  "angut","atkafası","lavuk","yavşak","yavşaktır","yavuşak","zibidi",
+  "manyak","malak","dallama","serseri","sahtekâr","sahtekar","katil",
+  "hırsız","hirsiz","dolandırıcı","dolandirici","cenabet","cibiliyetsiz",
+  "cibilliyetini","cibilliyetsiz","dinsiz","imansız","imansz","ebleh",
+  "dalaksız","dingil","dkerim","geber","geberik","gebertir","gebermek",
+  "gebermiş","giberim","gibiş","revizyon","veled","veled i zina",
+  "veledizina","weledizina","weled","zulliyetini","zviyetini","zıkkımım",
+  // ── ana/baba hakaretleri ──────────────────────────────────────────────────
+  "anani sikerim","anani sikeyim","ananı sikerim","ananı sikeyim",
+  "ananın amı","ananın dölü","anasını","anasının am","anasının amı",
+  "anasının","anneni","annenin","babanı","babanın","babası pezevenk",
+  "bacını","bacının","ebeni","ebenin","ebeninki","ecdadını","ecdadini",
+  "sülaleni","sulaleni","sülalenizi","slaleni","laciye boyadım",
+  // ── cinsel içerik ─────────────────────────────────────────────────────────
+  "seks","seksi","sex","sexs","porno","porn","pornografi","tecavuz","tecavüz",
+  "vajina","vajinanı","penis","boşalmak","bosalmak","otuzbir","domalmak",
+  "domaltmak","domalmış","domal","domalan","domaldın","yogurtlayam",
+  "yoğurtlayam","meme","memelerini","sevişelim","azdım","azdır","azdırıcı",
+  "sakso","saxo","boner","kafam girsin",
+  // ── uyuşturucu ────────────────────────────────────────────────────────────
+  "eroin","esrar","kokain","bonzai","metamfetamin","uyusturucu",
+  // ── ingilizce küfür ───────────────────────────────────────────────────────
+  "fuck","fucker","fuckin","fucking","shit","bitch","ass","asshole",
+  "pussy","whore","bastard","goddamn","motherfucker","madafaka","idiot",
+  // ── spam / sosyal medya ───────────────────────────────────────────────────
+  "whatsapp","watsap","telegram","instagram","tiktok","snapchat","discord",
+  "signal","ozelden yaz","özelden yaz","para kazan","kolay para",
+  "garantili kazanc","garantili kazanç","yatirim firsati","yatırım fırsatı",
+  "ucretsiz kazan","ücretsiz kazan","bedava kazan","havale","eft",
+  "iban","hesap numarasi","kapida ode","kapida odeme",
+  // ── kişisel iletişim ──────────────────────────────────────────────────────
+  "numaram","adresim","eve gel","buluşalım","bulusalaim",
 ];
 
-// Rakam→harf, noktalama kaldır
-function normalizeMetin(metin: string): string {
-  return metin
-    .toLowerCase()
-    .replace(/0/g, "o").replace(/1/g, "i").replace(/3/g, "e")
-    .replace(/4/g, "a").replace(/5/g, "s").replace(/[@]/g, "a")
-    .replace(/[.\-_*\s]/g, "");
+// Tekrar eden harfleri teke indir: "sssikk" → "sik"
+function tekrariKaldir(metin: string): string {
+  return metin.replace(/(.)\1{2,}/g, "$1");
 }
 
+// Türkçe + rakam + sembol normalize
+function normalizeMetin(metin: string): string {
+  return tekrariKaldir(
+    metin
+      .toLowerCase()
+      // Türkçe karakterler
+      .replace(/ş/g, "s").replace(/ç/g, "c").replace(/ğ/g, "g")
+      .replace(/ü/g, "u").replace(/ö/g, "o").replace(/ı/g, "i")
+      // Rakam bypass
+      .replace(/0/g, "o").replace(/1/g, "i").replace(/3/g, "e")
+      .replace(/4/g, "a").replace(/5/g, "s").replace(/8/g, "b")
+      // Sembol bypass
+      .replace(/[@$]/g, "a").replace(/€/g, "e").replace(/\$/g, "s")
+      // Noktalama ve boşluk sil
+      .replace(/[.\-_*\s!?+]/g, "")
+  );
+}
+
+// Telefon numarası regex: 05xx, +90, 00 90 vb.
+const TELEFON_REGEX = /(\+90|0090|^0)?[\s\-.]?(5\d{2})[\s\-.]?(\d{3})[\s\-.]?(\d{2})[\s\-.]?(\d{2})/;
+
+// URL / link regex
+const URL_REGEX = /(https?:\/\/|www\.|\.com|\.net|\.org|\.io|bit\.ly|t\.me)/i;
+
 function metinKontrol(metin: string): { uygun: boolean; sebep: string } {
+  if (TELEFON_REGEX.test(metin)) {
+    return { uygun: false, sebep: "İlanda telefon numarası paylaşılamaz." };
+  }
+  if (URL_REGEX.test(metin)) {
+    return { uygun: false, sebep: "İlanda dış link paylaşılamaz." };
+  }
+
   const kucuk = metin.toLowerCase();
-  const norm = normalizeMetin(metin);
+  const norm  = normalizeMetin(metin);
+
   for (const kelime of YASAKLI_KELIMELER) {
     if (kucuk.includes(kelime) || norm.includes(normalizeMetin(kelime))) {
       return { uygun: false, sebep: "İlan açıklaması uygunsuz içerik barındırıyor." };
     }
   }
+
   if (metin.trim().length > 0 && metin.trim().length < 3) {
     return { uygun: false, sebep: "İlan açıklaması çok kısa." };
   }
@@ -89,30 +146,43 @@ async function resimKontrol(resimUrller: string[]): Promise<{ uygun: boolean; se
     return { uygun: true, sebep: "" };
   }
 
-  for (const url of resimUrller.slice(0, 4)) {
+  // LIKELY veya VERY_LIKELY → reddet
+  const riskliSeviyeler = new Set(["LIKELY", "VERY_LIKELY"]);
+
+  // Label Detection'da yasaklı etiketler
+  const YASAKLI_ETIKETLER = [
+    "gun","firearm","weapon","knife","rifle","pistol","explosive",
+    "drug","narcotics","cannabis","cocaine","heroin",
+    "nudity","explicit","pornography",
+  ];
+
+  for (const url of resimUrller.slice(0, 5)) {
     try {
-      const [result] = await visionClient.safeSearchDetection(url);
-      const safe = result.safeSearchAnnotation;
-      if (!safe) continue;
+      const [safeResult] = await visionClient.safeSearchDetection(url);
+      const safe = safeResult.safeSearchAnnotation;
 
-      // Sadece VERY_LIKELY ise reddet
-      const riskliSeviyeler = ["VERY_LIKELY"];
-      const adultStr = typeof safe.adult === "string" ? safe.adult : String(safe.adult ?? "");
-      const violenceStr = typeof safe.violence === "string" ? safe.violence : String(safe.violence ?? "");
-      const racyStr = typeof safe.racy === "string" ? safe.racy : String(safe.racy ?? "");
+      if (safe) {
+        const str = (v: unknown) => (typeof v === "string" ? v : String(v ?? ""));
+        if (
+          riskliSeviyeler.has(str(safe.adult)) ||
+          riskliSeviyeler.has(str(safe.violence)) ||
+          riskliSeviyeler.has(str(safe.racy))
+        ) {
+          return { uygun: false, sebep: "Resimlerden biri ya da birkaçı ilanınız için uygun değil." };
+        }
+      }
 
-      if (
-        riskliSeviyeler.includes(adultStr) ||
-        riskliSeviyeler.includes(violenceStr) ||
-        riskliSeviyeler.includes(racyStr)
-      ) {
-        return {
-          uygun: false,
-          sebep: "Resimlerden biri ya da birkaçı ilanınız için uygun değil.",
-        };
+      // Label detection — silah, uyuşturucu, müstehcen etiket kontrolü
+      const [labelResult] = await visionClient.labelDetection(url);
+      const etiketler = (labelResult.labelAnnotations ?? []).map(
+        (l) => (l.description ?? "").toLowerCase()
+      );
+      for (const etiket of etiketler) {
+        if (YASAKLI_ETIKETLER.some((y) => etiket.includes(y))) {
+          return { uygun: false, sebep: "Resimlerden biri ya da birkaçı ilanınız için uygun değil." };
+        }
       }
     } catch (e) {
-      // Vision API hatası — resmi geç, diğerine bak
       console.warn("Vision API hatası:", e);
     }
   }

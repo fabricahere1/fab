@@ -68,7 +68,6 @@ class IlanKarti extends ConsumerWidget {
     final kategoriAdiStr = kategoriAdi(guncelIlan.kategori);
     final uid            = ref.watch(currentUserProvider)?.uid;
     final gosterFavori   = uid != null && uid != guncelIlan.kullaniciId;
-    ref.watch(favoriliIlanIdlerProvider);
 
     return GestureDetector(
       onTap: () => Navigator.push(
@@ -279,7 +278,9 @@ class _FavoriButonState extends ConsumerState<_FavoriButon>
 
   @override
   Widget build(BuildContext context) {
-    final gosterilen = ref.watch(favoriliIlanIdlerProvider).contains(widget.ilan.id);
+    final gosterilen = ref.watch(
+      favoriliIlanIdlerProvider.select((ids) => ids.contains(widget.ilan.id)),
+    );
 
     return GestureDetector(
       onTap: () => _toglle(gosterilen),

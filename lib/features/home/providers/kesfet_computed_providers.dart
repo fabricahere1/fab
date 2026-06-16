@@ -142,6 +142,19 @@ KesfetIstatistik kesfetIstatistik(Ref ref) {
   );
 }
 
+// ── Keşfet grid — kategori filtreli tam liste ─────────────────────────────────
+
+@riverpod
+List<IlanModel> kesfetFiltreli(Ref ref, String? kategori) {
+  final istekler    = ref.watch(istekIlanlarProvider).filtrelenmis;
+  final tasiyicilar = ref.watch(tasiyiciIlanlarProvider).filtrelenmis;
+  final tumIlanlar  = [...istekler, ...tasiyicilar]
+    ..sort((a, b) => (b.olusturmaTarihi ?? DateTime(0))
+        .compareTo(a.olusturmaTarihi ?? DateTime(0)));
+  if (kategori == null) return tumIlanlar;
+  return tumIlanlar.where((i) => i.kategori == kategori).toList();
+}
+
 // ── Ülke bazlı ilan sayıları ──────────────────────────────────────────────────
 
 @riverpod

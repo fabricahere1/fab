@@ -33,19 +33,7 @@ class _KesfetTabState extends ConsumerState<KesfetTab> {
     final yakinGelenler  = ref.watch(yakinGelenIlanlarProvider);
     final topGuzergahlar = ref.watch(populerGuzergahlarProvider);
 
-    // Tüm ilanlar — kategori filtresi için
-    final istekler    = ref.watch(istekIlanlarProvider).filtrelenmis;
-    final tasiyicilar = ref.watch(tasiyiciIlanlarProvider).filtrelenmis;
-
-    final tumIlanlar = [...istekler, ...tasiyicilar]
-      ..sort((a, b) => (b.olusturmaTarihi ?? DateTime(0))
-          .compareTo(a.olusturmaTarihi ?? DateTime(0)));
-
-    final filtreliIlanlar = seciliKategori == null
-        ? tumIlanlar
-        : tumIlanlar
-            .where((i) => i.kategori == seciliKategori)
-            .toList();
+    final filtreliIlanlar = ref.watch(kesfetFiltreliProvider(seciliKategori));
 
     return CustomScrollView(
       slivers: [

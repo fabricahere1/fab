@@ -313,6 +313,84 @@ final class KesfetIstatistikProvider
 
 String _$kesfetIstatistikHash() => r'3b7fe43e94396eabd8cfbea427c590acb8eff822';
 
+@ProviderFor(kesfetFiltreli)
+final kesfetFiltreliProvider = KesfetFiltreliFamily._();
+
+final class KesfetFiltreliProvider
+    extends
+        $FunctionalProvider<List<IlanModel>, List<IlanModel>, List<IlanModel>>
+    with $Provider<List<IlanModel>> {
+  KesfetFiltreliProvider._({
+    required KesfetFiltreliFamily super.from,
+    required String? super.argument,
+  }) : super(
+         retry: null,
+         name: r'kesfetFiltreliProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$kesfetFiltreliHash();
+
+  @override
+  String toString() {
+    return r'kesfetFiltreliProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $ProviderElement<List<IlanModel>> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  List<IlanModel> create(Ref ref) {
+    final argument = this.argument as String?;
+    return kesfetFiltreli(ref, argument);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(List<IlanModel> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<List<IlanModel>>(value),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is KesfetFiltreliProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$kesfetFiltreliHash() => r'51bf4a6a1cac07923d522243eb3445c74fd50ccf';
+
+final class KesfetFiltreliFamily extends $Family
+    with $FunctionalFamilyOverride<List<IlanModel>, String?> {
+  KesfetFiltreliFamily._()
+    : super(
+        retry: null,
+        name: r'kesfetFiltreliProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  KesfetFiltreliProvider call(String? kategori) =>
+      KesfetFiltreliProvider._(argument: kategori, from: this);
+
+  @override
+  String toString() => r'kesfetFiltreliProvider';
+}
+
 @ProviderFor(ulkeIlanSayilari)
 final ulkeIlanSayilariProvider = UlkeIlanSayilariProvider._();
 
