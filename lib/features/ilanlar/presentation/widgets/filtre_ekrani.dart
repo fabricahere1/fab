@@ -25,12 +25,14 @@ const kTurkiyeSehirleri = [
 // ── Filtre sonuç veri sınıfı ──────────────────────────────────────────────────
 
 class FiltreSecimi {
-  final List<String> kategoriYolu;
+  final List<String> kategoriYolu;      // ana kategori yolu (gosterim icin)
+  final List<String> seciliAltKeyler;   // secili alt kategori keyleri (coklu)
   final SiralamaTipi siralama;
   final List<String> istekSehirleri;
 
   const FiltreSecimi({
     required this.kategoriYolu,
+    this.seciliAltKeyler = const [],
     required this.siralama,
     required this.istekSehirleri,
   });
@@ -40,6 +42,7 @@ class FiltreSecimi {
 
 class FiltreEkrani extends StatefulWidget {
   final List<String> seciliKategoriYolu;
+  final List<String> seciliAltKeyler;
   final SiralamaTipi seciliSiralama;
   final List<String> seciliIstekSehirleri;
   final void Function(FiltreSecimi secim) onUygula;
@@ -48,6 +51,7 @@ class FiltreEkrani extends StatefulWidget {
   const FiltreEkrani({
     super.key,
     required this.seciliKategoriYolu,
+    this.seciliAltKeyler = const [],
     required this.seciliSiralama,
     this.seciliIstekSehirleri = const [],
     required this.onUygula,
@@ -61,10 +65,11 @@ class FiltreEkrani extends StatefulWidget {
 class _FiltreEkraniState extends State<FiltreEkrani> {
   // _gezinmeYolu boşken → ana sayfa (grid + sıralama + şehir + Göster)
   // _gezinmeYolu doluyken → alt kategori listesi + Seç butonu
-  List<String>  _gezinmeYolu   = [];
-  // Alt kategori sayfasında geçici seçim (Seç'e basılınca _modalKategori'ye kopyalanır)
-  List<String>  _geciciKategori = [];
-  late List<String>  _modalKategori;
+  List<String>  _gezinmeYolu    = [];
+  // Alt kategorilerde coklu secim: key listesi
+  List<String>  _geciciAltKeyler = []; // gecici (Sec'e basilinca kalici olur)
+  List<String>  _modalAltKeyler  = []; // kalici secili alt keyler
+  late List<String>  _modalKategori;   // ana kategori yolu
   late SiralamaTipi  _modalSiralama;
   late List<String>  _modalSehirler;
 
@@ -73,27 +78,27 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
   @override
   void initState() {
     super.initState();
-    _modalKategori  = List.from(widget.seciliKategoriYolu);
-    _geciciKategori = List.from(widget.seciliKategoriYolu);
-    _modalSiralama  = widget.seciliSiralama;
-    _modalSehirler  = List.from(widget.seciliIstekSehirleri);
-    // Eğer önceden seçim varsa gezinme yolunu başlat
-    if (widget.seciliKategoriYolu.isNotEmpty) {
-      _gezinmeYolu = [];  // Ana sayfadan başla her zaman
-    }
+    _modalKategori   = List.from(widget.seciliKategoriYolu);
+    _modalAltKeyler  = List.from(widget.seciliAltKeyler);
+    _geciciAltKeyler = List.from(widget.seciliAltKeyler);
+    _modalSiralama   = widget.seciliSiralama;
+    _modalSehirler   = List.from(widget.seciliIstekSehirleri);
   }
 
   bool get _altSayfada => _gezinmeYolu.isNotEmpty;
 
   bool get _herhangiSecildi =>
       _modalKategori.isNotEmpty ||
+      _modalAltKeyler.isNotEmpty ||
       _modalSiralama != SiralamaTipi.enYeni ||
       _modalSehirler.isNotEmpty;
 
   // Göster butonundaki özet metin
   String get _gosterMetni {
     final parcalar = <String>[];
-    if (_modalKategori.isNotEmpty) {
+    if (_modalAltKeyler.isNotEmpty) {
+      parcalar.add('${_modalAltKeyler.length} alt kategori');
+    } else if (_modalKategori.isNotEmpty) {
       parcalar.add(kategoriYoluMetni(_modalKategori));
     }
     if (_modalSiralama != SiralamaTipi.enYeni) {
@@ -137,16 +142,22 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
   // Ana grid'den bir kategoriye tıklanınca
   void _anaKategoriTiklandi(KategoriNode node) {
     if (node.yaprakMi) {
-      // Direkt yaprak — gecici seçim yap ve ana sayfada göster
+      // Direkt yaprak — toggle ekle/cikar
       setState(() {
-        _geciciKategori = [node.key];
-        _modalKategori  = [node.key];
+        if (_modalAltKeyler.contains(node.key)) {
+          _modalAltKeyler.remove(node.key);
+          if (_modalAltKeyler.isEmpty) _modalKategori = [];
+        } else {
+          _modalAltKeyler.add(node.key);
+          _modalKategori = [node.key]; // gosterim icin
+        }
+        _geciciAltKeyler = List.from(_modalAltKeyler);
       });
     } else {
-      // Alt kategorileri olan — alt sayfaya geç
+      // Alt kategorileri olan — alt sayfaya gec
       setState(() {
-        _gezinmeYolu    = [node.key];
-        _geciciKategori = List.from(_modalKategori); // mevcut seçimi koru
+        _gezinmeYolu     = [node.key];
+        _geciciAltKeyler = List.from(_modalAltKeyler);
       });
     }
   }
@@ -154,7 +165,14 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
   // Alt sayfada bir kategoriye tıklanınca
   void _altKategoriTiklandi(KategoriNode node) {
     if (node.yaprakMi) {
-      setState(() => _geciciKategori = [..._gezinmeYolu, node.key]);
+      // Toggle: ekle veya cikar
+      setState(() {
+        if (_geciciAltKeyler.contains(node.key)) {
+          _geciciAltKeyler.remove(node.key);
+        } else {
+          _geciciAltKeyler.add(node.key);
+        }
+      });
     } else {
       setState(() {
         _gezinmeYolu = [..._gezinmeYolu, node.key];
@@ -165,44 +183,62 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
   // "Seç" butonuna basınca — gecici seçimi kalıcı yap, ana sayfaya dön
   void _secimOnayla() {
     setState(() {
-      _modalKategori = List.from(_geciciKategori);
-      _gezinmeYolu   = [];
+      _modalAltKeyler = List.from(_geciciAltKeyler);
+      // modalKategori gosterim icin guncelle
+      if (_modalAltKeyler.isNotEmpty) {
+        _modalKategori = List.from(_gezinmeYolu);
+      } else {
+        _modalKategori = [];
+      }
+      _gezinmeYolu = [];
     });
   }
 
   // Alt sayfada "Tüm X Ürünleri" seçilince
   void _tumunuSec() {
-    setState(() => _geciciKategori = List.from(_gezinmeYolu));
+    // Bu seviyedeki tum yaprak keyleri bul
+    final nodes = _mevcutNodes();
+    final yaprakKeyler = nodes
+        .where((n) => n.yaprakMi)
+        .map((n) => n.key)
+        .toList();
+    setState(() {
+      // Hepsi zaten seciliyse temizle, degilse hepsini ekle
+      final hepsiSecili = yaprakKeyler.every((k) => _geciciAltKeyler.contains(k));
+      if (hepsiSecili) {
+        for (final k in yaprakKeyler) { _geciciAltKeyler.remove(k); }
+      } else {
+        for (final k in yaprakKeyler) {
+          if (!_geciciAltKeyler.contains(k)) _geciciAltKeyler.add(k);
+        }
+      }
+    });
   }
 
-  bool _altNodeSeciliMi(KategoriNode node) => _geciciKategori.contains(node.key);
+  bool _altNodeSeciliMi(KategoriNode node) => _geciciAltKeyler.contains(node.key);
 
   bool _tumSeciliMi() {
-    if (_geciciKategori.isEmpty || _gezinmeYolu.isEmpty) return false;
-    return _geciciKategori.length == _gezinmeYolu.length &&
-        _geciciKategori.last == _gezinmeYolu.last;
+    final nodes = _mevcutNodes();
+    final yaprakKeyler = nodes.where((n) => n.yaprakMi).map((n) => n.key).toList();
+    if (yaprakKeyler.isEmpty) return false;
+    return yaprakKeyler.every((k) => _geciciAltKeyler.contains(k));
   }
 
-  bool get _geciciSecimVar => _geciciKategori.isNotEmpty &&
-      _geciciKategori.first == _gezinmeYolu.first;
+  bool get _geciciSecimVar => _geciciAltKeyler.isNotEmpty;
 
   // Ana kategori kartı için turuncu alt metin (seçili alt kategori varsa)
   String? _kartSecimMetni(KategoriNode anaNode) {
-    if (_modalKategori.isEmpty) return null;
-    if (!_modalKategori.contains(anaNode.key)) {
-      // Bu ana kategorinin alt keylerinde seçim var mı?
-      final altKeyler = tumAltKeyler(anaNode.key);
-      final seciliAlt = _modalKategori.lastOrNull;
-      if (seciliAlt == null) return null;
-      if (!altKeyler.contains(seciliAlt) && _modalKategori.first != anaNode.key) return null;
-      if (_modalKategori.first != anaNode.key) return null;
+    // Bu ana kategoriye ait secili alt keyler
+    final altKeyler = tumAltKeyler(anaNode.key);
+    final seciliSayisi = _modalAltKeyler
+        .where((k) => altKeyler.contains(k))
+        .length;
+    if (seciliSayisi == 0) return null;
+    if (seciliSayisi == 1) {
+      final key = _modalAltKeyler.firstWhere((k) => altKeyler.contains(k));
+      return kategoriNodeBul(key)?.ad ?? key;
     }
-    if (_modalKategori.first != anaNode.key) return null;
-
-    if (_modalKategori.length == 1) return 'Tümü seçili';
-    final seciliKey = _modalKategori.last;
-    final seciliNode = kategoriNodeBul(seciliKey);
-    return seciliNode?.ad ?? seciliKey;
+    return '$seciliSayisi alt kategori';
   }
 
   void _sehirDialogAc() async {
@@ -287,8 +323,8 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                         } else {
                           // En üst alt seviyedeyiz — ana sayfaya dön, geçici seçimi iptal et
                           setState(() {
-                            _gezinmeYolu    = [];
-                            _geciciKategori = List.from(_modalKategori);
+                            _gezinmeYolu     = [];
+                            _geciciAltKeyler = List.from(_modalAltKeyler);
                           });
                         }
                       },
@@ -315,10 +351,12 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                     GestureDetector(
                       onTap: () {
                         setState(() {
-                          _modalKategori = [];
-                          _modalSiralama = SiralamaTipi.enYeni;
-                          _modalSehirler = [];
-                          _gezinmeYolu   = [];
+                          _modalKategori   = [];
+                          _modalAltKeyler  = [];
+                          _geciciAltKeyler = [];
+                          _modalSiralama   = SiralamaTipi.enYeni;
+                          _modalSehirler   = [];
+                          _gezinmeYolu     = [];
                         });
                         widget.onTemizle();
                       },
@@ -563,9 +601,10 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                     : ElevatedButton(
                         onPressed: () {
                           final secim = FiltreSecimi(
-                            kategoriYolu: List.from(_modalKategori),
-                            siralama: _modalSiralama,
-                            istekSehirleri: List.from(_modalSehirler),
+                            kategoriYolu:    List.from(_modalKategori),
+                            seciliAltKeyler: List.from(_modalAltKeyler),
+                            siralama:        _modalSiralama,
+                            istekSehirleri:  List.from(_modalSehirler),
                           );
                           Navigator.of(context).pop();
                           WidgetsBinding.instance.addPostFrameCallback((_) {
