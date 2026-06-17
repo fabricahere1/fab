@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../shared/constants/app_colors.dart';
 import '../../../../shared/constants/app_constants.dart';
 import '../ilanlar_screen.dart';
+import '../../../arama/data/arama_service.dart';
 
 // Türkiye'nin 81 ili
 const kTurkiyeSehirleri = [
@@ -25,16 +26,18 @@ const kTurkiyeSehirleri = [
 // ── Filtre sonuç veri sınıfı ──────────────────────────────────────────────────
 
 class FiltreSecimi {
-  final List<String> kategoriYolu;      // ana kategori yolu (gosterim icin)
-  final List<String> seciliAltKeyler;   // secili alt kategori keyleri (coklu)
+  final List<String> kategoriYolu;
+  final List<String> seciliAltKeyler;
   final SiralamaTipi siralama;
   final List<String> istekSehirleri;
+  final String ulkeSehir; // Türkiye dışı serbest metin
 
   const FiltreSecimi({
     required this.kategoriYolu,
     this.seciliAltKeyler = const [],
     required this.siralama,
     required this.istekSehirleri,
+    this.ulkeSehir = '',
   });
 }
 
@@ -63,17 +66,23 @@ class FiltreEkrani extends StatefulWidget {
 }
 
 class _FiltreEkraniState extends State<FiltreEkrani> {
-  // _gezinmeYolu boşken → ana sayfa (grid + sıralama + şehir + Göster)
-  // _gezinmeYolu doluyken → alt kategori listesi + Seç butonu
   List<String>  _gezinmeYolu    = [];
-  // Alt kategorilerde coklu secim: key listesi
-  List<String>  _geciciAltKeyler = []; // gecici (Sec'e basilinca kalici olur)
-  List<String>  _modalAltKeyler  = []; // kalici secili alt keyler
-  late List<String>  _modalKategori;   // ana kategori yolu
+  List<String>  _geciciAltKeyler = [];
+  List<String>  _modalAltKeyler  = [];
+  late List<String>  _modalKategori;
+  // Kilitli ana kategori key'i — seçim yapılan ana kategorinin key'i
+  // Başka ana kategoriye tıklanınca eski seçimler sıfırlanır
+  String?       _kilitliAnaKey;
   late SiralamaTipi  _modalSiralama;
   late List<String>  _modalSehirler;
 
   static const _turuncu = Color(0xFFFF6600);
+  static const _maviLink = Color(0xFF1565C0);
+
+  String _modalUlkeSehir = '';          // serbest metin (ülke/şehir)
+  List<String> _ulkeSehirOneriler = []; // Algolia'dan gelen öneriler
+  bool _ulkeSehirYukleniyor = false;
+  final _ulkeSehirCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -83,6 +92,10 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
     _geciciAltKeyler = List.from(widget.seciliAltKeyler);
     _modalSiralama   = widget.seciliSiralama;
     _modalSehirler   = List.from(widget.seciliIstekSehirleri);
+    // Eğer önceden seçim varsa hangi ana kategoriye ait olduğunu bul
+    if (_modalAltKeyler.isNotEmpty && widget.seciliKategoriYolu.isNotEmpty) {
+      _kilitliAnaKey = widget.seciliKategoriYolu.first;
+    }
   }
 
   bool get _altSayfada => _gezinmeYolu.isNotEmpty;
@@ -91,9 +104,9 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
       _modalKategori.isNotEmpty ||
       _modalAltKeyler.isNotEmpty ||
       _modalSiralama != SiralamaTipi.enYeni ||
-      _modalSehirler.isNotEmpty;
+      _modalSehirler.isNotEmpty ||
+      _modalUlkeSehir.isNotEmpty;
 
-  // Göster butonundaki özet metin
   String get _gosterMetni {
     final parcalar = <String>[];
     if (_modalAltKeyler.isNotEmpty) {
@@ -108,6 +121,9 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
       parcalar.add(_modalSehirler.length == 1
           ? _modalSehirler.first
           : '${_modalSehirler.length} şehir');
+    }
+    if (_modalUlkeSehir.isNotEmpty) {
+      parcalar.add(_modalUlkeSehir);
     }
     if (parcalar.isEmpty) return 'Göster';
     return 'Göster  ·  ${parcalar.join(' · ')}';
@@ -139,33 +155,51 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
         .join(' › ');
   }
 
-  // Ana grid'den bir kategoriye tıklanınca
+  // Bir ana kategorinin kilitli olup olmadığını kontrol et
+  // Kilitli değilse veya bu ana kategoriyse true döner
+  bool _anaKategoriAktifMi(String anaKey) {
+    if (_kilitliAnaKey == null) return true;
+    return _kilitliAnaKey == anaKey;
+  }
+
   void _anaKategoriTiklandi(KategoriNode node) {
     if (node.yaprakMi) {
-      // Direkt yaprak — toggle ekle/cikar
       setState(() {
         if (_modalAltKeyler.contains(node.key)) {
+          // Seçimi kaldır
           _modalAltKeyler.remove(node.key);
-          if (_modalAltKeyler.isEmpty) _modalKategori = [];
+          if (_modalAltKeyler.isEmpty) {
+            _modalKategori = [];
+            _kilitliAnaKey = null;
+          }
         } else {
+          // Farklı ana kategoriden seçim — önceki seçimleri sıfırla
+          final buAnaKey = node.key; // yaprak olduğu için key direkt ana key
+          if (_kilitliAnaKey != null && _kilitliAnaKey != buAnaKey) {
+            _modalAltKeyler.clear();
+          }
           _modalAltKeyler.add(node.key);
-          _modalKategori = [node.key]; // gosterim icin
+          _modalKategori = [node.key];
+          _kilitliAnaKey = buAnaKey;
         }
         _geciciAltKeyler = List.from(_modalAltKeyler);
       });
     } else {
-      // Alt kategorileri olan — alt sayfaya gec
+      // Alt kategorileri olan — farklı ana kategoriyse önceki seçimleri sıfırla
       setState(() {
+        if (_kilitliAnaKey != null && _kilitliAnaKey != node.key) {
+          _modalAltKeyler.clear();
+          _modalKategori = [];
+          _kilitliAnaKey = null;
+        }
         _gezinmeYolu     = [node.key];
         _geciciAltKeyler = List.from(_modalAltKeyler);
       });
     }
   }
 
-  // Alt sayfada bir kategoriye tıklanınca
   void _altKategoriTiklandi(KategoriNode node) {
     if (node.yaprakMi) {
-      // Toggle: ekle veya cikar
       setState(() {
         if (_geciciAltKeyler.contains(node.key)) {
           _geciciAltKeyler.remove(node.key);
@@ -180,30 +214,27 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
     }
   }
 
-  // "Seç" butonuna basınca — gecici seçimi kalıcı yap, ana sayfaya dön
   void _secimOnayla() {
     setState(() {
       _modalAltKeyler = List.from(_geciciAltKeyler);
-      // modalKategori gosterim icin guncelle
       if (_modalAltKeyler.isNotEmpty) {
         _modalKategori = List.from(_gezinmeYolu);
+        _kilitliAnaKey = _gezinmeYolu.isNotEmpty ? _gezinmeYolu.first : null;
       } else {
         _modalKategori = [];
+        _kilitliAnaKey = null;
       }
       _gezinmeYolu = [];
     });
   }
 
-  // Alt sayfada "Tüm X Ürünleri" seçilince
   void _tumunuSec() {
-    // Bu seviyedeki tum yaprak keyleri bul
     final nodes = _mevcutNodes();
     final yaprakKeyler = nodes
         .where((n) => n.yaprakMi)
         .map((n) => n.key)
         .toList();
     setState(() {
-      // Hepsi zaten seciliyse temizle, degilse hepsini ekle
       final hepsiSecili = yaprakKeyler.every((k) => _geciciAltKeyler.contains(k));
       if (hepsiSecili) {
         for (final k in yaprakKeyler) { _geciciAltKeyler.remove(k); }
@@ -226,9 +257,7 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
 
   bool get _geciciSecimVar => _geciciAltKeyler.isNotEmpty;
 
-  // Ana kategori kartı için turuncu alt metin (seçili alt kategori varsa)
   String? _kartSecimMetni(KategoriNode anaNode) {
-    // Bu ana kategoriye ait secili alt keyler
     final altKeyler = tumAltKeyler(anaNode.key);
     final seciliSayisi = _modalAltKeyler
         .where((k) => altKeyler.contains(k))
@@ -239,6 +268,217 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
       return kategoriNodeBul(key)?.ad ?? key;
     }
     return '$seciliSayisi alt kategori';
+  }
+
+
+  // ── Türkiye dışı popup ───────────────────────────────────────────────────────
+
+  void _turkiyeDisiDialogAc() async {
+    final ctrl    = TextEditingController(text: _modalUlkeSehir);
+    String secili = _modalUlkeSehir;
+    List<String> oneriler = [];
+    bool yukleniyor = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dlgCtx) => StatefulBuilder(
+        builder: (dlgCtx, setDlg) => AlertDialog(
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16)),
+          insetPadding: const EdgeInsets.symmetric(
+              horizontal: 10, vertical: 40),
+          title: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text('Türkiye Dışı',
+                style: GoogleFonts.dmSans(
+                    fontSize: 18, fontWeight: FontWeight.w700)),
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 320,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Arama kutusu
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.divider),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.public_outlined,
+                          size: 18, color: Color(0xFF1565C0)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: ctrl,
+                          autofocus: true,
+                          style: GoogleFonts.dmSans(fontSize: 14),
+                          decoration: InputDecoration(
+                            hintText: 'Ülke veya şehir girin',
+                            hintStyle: GoogleFonts.dmSans(
+                                fontSize: 14,
+                                color: AppColors.textHint),
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                                vertical: 8),
+                          ),
+                          onChanged: (v) async {
+                            if (v.trim().isEmpty) {
+                              setDlg(() {
+                                oneriler = [];
+                                secili   = '';
+                              });
+                              return;
+                            }
+                            setDlg(() => yukleniyor = true);
+                            try {
+                              final sonuclar = await algoliaAra(
+                                  v, katFiltre: null);
+                              final nereyeler = sonuclar
+                                  .map((s) => s.nereye)
+                                  .where((n) => n.isNotEmpty)
+                                  .toSet()
+                                  .where((n) =>
+                                      !kTurkiyeSehirleri.contains(n))
+                                  .toList();
+                              setDlg(() {
+                                oneriler    = nereyeler;
+                                yukleniyor  = false;
+                              });
+                            } catch (_) {
+                              setDlg(() => yukleniyor = false);
+                            }
+                          },
+                        ),
+                      ),
+                      if (yukleniyor)
+                        const SizedBox(
+                          width: 16, height: 16,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 1.5,
+                              color: Color(0xFF1565C0)),
+                        )
+                      else if (ctrl.text.isNotEmpty)
+                        GestureDetector(
+                          onTap: () {
+                            ctrl.clear();
+                            setDlg(() {
+                              oneriler = [];
+                              secili   = '';
+                            });
+                          },
+                          child: const Icon(Icons.close,
+                              size: 16,
+                              color: AppColors.textSecondary),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // Öneriler
+                if (oneriler.isNotEmpty)
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 300),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: oneriler.length > 6
+                          ? 6
+                          : oneriler.length,
+                      itemBuilder: (_, i) => InkWell(
+                        onTap: () {
+                          ctrl.text = oneriler[i];
+                          setDlg(() {
+                            secili   = oneriler[i];
+                            oneriler = [];
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 4, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: secili == oneriler[i]
+                                ? const Color(0xFF1565C0)
+                                    .withValues(alpha: 0.06)
+                                : Colors.transparent,
+                            border: Border(
+                              bottom: BorderSide(
+                                color: AppColors.divider
+                                    .withValues(alpha: 0.4),
+                                width: 0.5,
+                              ),
+                            ),
+                          ),
+                          child: Row(children: [
+                            const Icon(Icons.location_on_outlined,
+                                size: 16,
+                                color: Color(0xFF1565C0)),
+                            const SizedBox(width: 8),
+                            Text(oneriler[i],
+                                style: GoogleFonts.dmSans(
+                                    fontSize: 14)),
+                          ]),
+                        ),
+                      ),
+                    ),
+                  ),
+                // Seçili göster
+                if (secili.isNotEmpty && oneriler.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Row(children: [
+                      const Icon(Icons.check_circle,
+                          size: 14, color: Color(0xFF1565C0)),
+                      const SizedBox(width: 4),
+                      Text(
+                        '$secili seçildi',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 12,
+                            color: const Color(0xFF1565C0),
+                            fontWeight: FontWeight.w500),
+                      ),
+                    ]),
+                  ),
+              ],
+            ), // Column
+          ), // SizedBox
+          actions: [
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _modalUlkeSehir = '';
+                  _ulkeSehirCtrl.clear();
+                });
+                Navigator.pop(dlgCtx);
+              },
+              child: Text('Temizle',
+                  style: GoogleFonts.dmSans(
+                      color: AppColors.textSecondary)),
+            ),
+            TextButton(
+              onPressed: (secili.isNotEmpty || ctrl.text.trim().isNotEmpty)
+                  ? () {
+                      final deger = secili.isNotEmpty
+                          ? secili
+                          : ctrl.text.trim();
+                      setState(() => _modalUlkeSehir = deger);
+                      Navigator.pop(dlgCtx);
+                    }
+                  : null,
+              child: Text('Tamam',
+                  style: GoogleFonts.dmSans(
+                      color: _maviLink,
+                      fontWeight: FontWeight.w600)),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _sehirDialogAc() async {
@@ -321,7 +561,6 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                           setState(() => _gezinmeYolu =
                               _gezinmeYolu.sublist(0, _gezinmeYolu.length - 1));
                         } else {
-                          // En üst alt seviyedeyiz — ana sayfaya dön, geçici seçimi iptal et
                           setState(() {
                             _gezinmeYolu     = [];
                             _geciciAltKeyler = List.from(_modalAltKeyler);
@@ -354,8 +593,12 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                           _modalKategori   = [];
                           _modalAltKeyler  = [];
                           _geciciAltKeyler = [];
+                          _kilitliAnaKey   = null;
                           _modalSiralama   = SiralamaTipi.enYeni;
                           _modalSehirler   = [];
+                          _modalUlkeSehir  = '';
+                          _ulkeSehirOneriler = [];
+                          _ulkeSehirCtrl.clear();
                           _gezinmeYolu     = [];
                         });
                         widget.onTemizle();
@@ -398,7 +641,6 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                     ? const EdgeInsets.fromLTRB(14, 14, 14, 0)
                     : EdgeInsets.zero,
                 children: [
-                  // Ana seviye: 2'li grid
                   if (anaGorunu)
                     GridView.builder(
                       shrinkWrap: true,
@@ -411,10 +653,17 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                         childAspectRatio: 1.55,
                       ),
                       itemCount: nodes.length,
-                      itemBuilder: (_, i) => _buildAnaKart(nodes[i], onTap: () => _anaKategoriTiklandi(nodes[i])),
+                      itemBuilder: (_, i) {
+                        final node   = nodes[i];
+                        final aktif  = _anaKategoriAktifMi(node.key);
+                        return _buildAnaKart(
+                          node,
+                          aktif: aktif,
+                          onTap: () => _anaKategoriTiklandi(node),
+                        );
+                      },
                     ),
 
-                  // Alt seviye: liste
                   if (!anaGorunu) ...[
                     _KategoriSatiri(
                       ad: 'Tüm "$baslik" Ürünleri',
@@ -434,7 +683,6 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                         )),
                   ],
 
-                  // ── Sıralama (sadece ana görünümde) ─────────────────────────
                   if (anaGorunu) ...[
                     const SizedBox(height: 8),
                     const Divider(height: 1, color: AppColors.divider),
@@ -448,48 +696,12 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                     ),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(14, 0, 14, 4),
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: SiralamaTipi.values.map((tip) {
-                          final secili = _modalSiralama == tip;
-                          return GestureDetector(
-                            onTap: () =>
-                                setState(() => _modalSiralama = tip),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: secili
-                                    ? _turuncu.withValues(alpha: 0.08)
-                                    : Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: secili
-                                      ? _turuncu
-                                      : const Color(0xFFE0E0E0),
-                                  width: secili ? 1.5 : 1,
-                                ),
-                              ),
-                              child: Text(
-                                tip.label,
-                                style: GoogleFonts.dmSans(
-                                  fontSize: 13,
-                                  fontWeight: secili
-                                      ? FontWeight.w600
-                                      : FontWeight.w400,
-                                  color: secili
-                                      ? _turuncu
-                                      : AppColors.textPrimary,
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
+                      child: _SiralamaSegmented(
+                        secili: _modalSiralama,
+                        onSecim: (tip) => setState(() => _modalSiralama = tip),
                       ),
                     ),
 
-                    // ── İstek Şehri ──────────────────────────────────────────
                     const SizedBox(height: 8),
                     const Divider(height: 1, color: AppColors.divider),
                     Padding(
@@ -512,6 +724,22 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                                       color: _turuncu,
                                       fontWeight: FontWeight.w500)),
                             ),
+                          if (_modalSehirler.isNotEmpty) const SizedBox(width: 12),
+                          GestureDetector(
+                            onTap: _turkiyeDisiDialogAc,
+                            child: Text(
+                              _modalUlkeSehir.isNotEmpty
+                                  ? _modalUlkeSehir
+                                  : 'Türkiye dışı',
+                              style: GoogleFonts.dmSans(
+                                fontSize: 13,
+                                color: _maviLink,
+                                fontWeight: FontWeight.w500,
+                                decoration: TextDecoration.underline,
+                                decorationColor: _maviLink,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -565,12 +793,13 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                         ),
                       ),
                     ),
+
                   ],
                 ],
               ),
             ),
 
-            // ── Alt buton: Seç (alt sayfa) / Göster (ana sayfa) ──────────────
+            // ── Alt buton ─────────────────────────────────────────────────────
             Container(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
               decoration: BoxDecoration(
@@ -605,6 +834,7 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                             seciliAltKeyler: List.from(_modalAltKeyler),
                             siralama:        _modalSiralama,
                             istekSehirleri:  List.from(_modalSehirler),
+                            ulkeSehir:       _modalUlkeSehir,
                           );
                           Navigator.of(context).pop();
                           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -634,75 +864,79 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
     );
   }
 
-  Widget _buildAnaKart(KategoriNode node, {required VoidCallback onTap}) {
+  Widget _buildAnaKart(KategoriNode node, {required bool aktif, required VoidCallback onTap}) {
     final secimMetni = _kartSecimMetni(node);
     final secili     = secimMetni != null;
+    final soluk      = !aktif && !secili;
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: secili
-              ? _turuncu.withValues(alpha: 0.04)
-              : Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: secili ? _turuncu.withValues(alpha: 0.5) : const Color(0xFFEEEEEE),
-            width: secili ? 1.5 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 200),
+        opacity: soluk ? 0.35 : 1.0,
+        child: Container(
+          decoration: BoxDecoration(
+            color: secili
+                ? _turuncu.withValues(alpha: 0.04)
+                : Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: secili
+                  ? _turuncu.withValues(alpha: 0.5)
+                  : const Color(0xFFEEEEEE),
+              width: secili ? 1.5 : 1,
             ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Row(
-                children: [
-                  if (node.emoji.isNotEmpty) ...[
-                    Text(node.emoji,
-                        style: const TextStyle(fontSize: 22)),
-                    const SizedBox(width: 8),
-                  ],
-                  Expanded(
-                    child: Text(
-                      node.ad,
-                      style: TextStyle(
-                        fontFamily: 'SF Pro Display',
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: secili
-                            ? _turuncu
-                            : AppColors.textPrimary,
-                        height: 1.2,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  children: [
+                    if (node.emoji.isNotEmpty) ...[
+                      Text(node.emoji, style: const TextStyle(fontSize: 22)),
+                      const SizedBox(width: 8),
+                    ],
+                    Expanded(
+                      child: Text(
+                        node.ad,
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Display',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: secili ? _turuncu : AppColors.textPrimary,
+                          height: 1.2,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
+                  ],
+                ),
+                if (secimMetni != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    '✓ $secimMetni',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: _turuncu,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
-              ),
-              if (secimMetni != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  '✓ $secimMetni',
-                  style: GoogleFonts.dmSans(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: _turuncu,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -747,20 +981,15 @@ class _KategoriSatiri extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    ad,
-                    style: GoogleFonts.dmSans(
-                      fontSize: 14,
-                      fontWeight: (secili || vurgulu)
-                          ? FontWeight.w600
-                          : FontWeight.w400,
-                      color: secili ? renk : AppColors.textPrimary,
-                    ),
-                  ),
-                ],
+              child: Text(
+                ad,
+                style: GoogleFonts.dmSans(
+                  fontSize: 14,
+                  fontWeight: (secili || vurgulu)
+                      ? FontWeight.w600
+                      : FontWeight.w400,
+                  color: secili ? renk : AppColors.textPrimary,
+                ),
               ),
             ),
             if (secili)
@@ -787,16 +1016,13 @@ class FiltreBosBekran extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.search_off_outlined,
-              size: 64, color: AppColors.divider),
+          const Icon(Icons.search_off_outlined, size: 64, color: AppColors.divider),
           const SizedBox(height: 16),
           Text('Sonuç bulunamadı',
-              style: GoogleFonts.dmSans(
-                  fontSize: 15, color: AppColors.textSecondary)),
+              style: GoogleFonts.dmSans(fontSize: 15, color: AppColors.textSecondary)),
           const SizedBox(height: 8),
           Text('Filtre veya aramayı temizlemeyi deneyin',
-              style: GoogleFonts.dmSans(
-                  fontSize: 13, color: AppColors.textHint)),
+              style: GoogleFonts.dmSans(fontSize: 13, color: AppColors.textHint)),
           const SizedBox(height: 24),
           OutlinedButton(
             onPressed: onTemizle,
@@ -819,16 +1045,13 @@ class IlanBosEkran extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.inbox_outlined,
-              size: 64, color: AppColors.divider),
+          const Icon(Icons.inbox_outlined, size: 64, color: AppColors.divider),
           const SizedBox(height: 16),
           Text('Henüz ilan yok',
-              style: GoogleFonts.dmSans(
-                  fontSize: 15, color: AppColors.textSecondary)),
+              style: GoogleFonts.dmSans(fontSize: 15, color: AppColors.textSecondary)),
           const SizedBox(height: 8),
           Text('İlk ilanı sen ver!',
-              style: GoogleFonts.dmSans(
-                  fontSize: 13, color: AppColors.textHint)),
+              style: GoogleFonts.dmSans(fontSize: 13, color: AppColors.textHint)),
           const SizedBox(height: 24),
           OutlinedButton(
             onPressed: onYenile,
@@ -836,6 +1059,66 @@ class IlanBosEkran extends StatelessWidget {
                 style: GoogleFonts.dmSans(color: AppColors.primary)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Sıralama Dropdown ─────────────────────────────────────────────────────────
+
+// ── Sıralama Segmented Control ────────────────────────────────────────────────
+
+class _SiralamaSegmented extends StatelessWidget {
+  final SiralamaTipi secili;
+  final ValueChanged<SiralamaTipi> onSecim;
+
+  const _SiralamaSegmented({
+    required this.secili,
+    required this.onSecim,
+  });
+
+  static const _turuncu = Color(0xFFFF6600);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF2F2F2),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: SiralamaTipi.values.map((tip) {
+          final seciliMi = secili == tip;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => onSecim(tip),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: seciliMi ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  border: seciliMi
+                      ? Border.all(
+                          color: const Color(0xFFE0E0E0),
+                          width: 0.5,
+                        )
+                      : null,
+                ),
+                child: Text(
+                  tip.label,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.dmSans(
+                    fontSize: 12,
+                    fontWeight: seciliMi ? FontWeight.w600 : FontWeight.w400,
+                    color: seciliMi ? _turuncu : AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }

@@ -288,6 +288,35 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
             ],
           ),
 
+          // ── Admin ───────────────────────────────────
+          if (user?.email == 'fabricahere@gmail.com')
+            _BolumBasligi('Admin'),
+          if (user?.email == 'fabricahere@gmail.com')
+            _Kart(
+              children: [
+                _SatirOge(
+                  icon: Icons.sync_outlined,
+                  label: 'Algolia Toplu Aktar',
+                  iconColor: Colors.blue,
+                  onTap: () async {
+                    try {
+                      await FirebaseFunctions
+                          .instanceFor(region: 'europe-west1')
+                          .httpsCallable('algoliaTopluAktar')
+                          .call({});
+                      if (context.mounted) {
+                        AppSnackBar.basari(context, 'Aktarım tamamlandı.');
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        AppSnackBar.hata(context, 'Hata: $e');
+                      }
+                    }
+                  },
+                ),
+              ],
+            ),
+
           // ── Tehlikeli Bölge ─────────────────────────
           _BolumBasligi('Tehlikeli Bölge'),
           _Kart(

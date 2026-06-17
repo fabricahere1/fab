@@ -24,15 +24,15 @@ import 'dart:async';
 import 'package:iste_v3/features/ilanlar/presentation/favoriler_screen.dart';
 import 'ilan_detay_screen.dart';
 
-enum SiralamaTipi { enYeni, enEski, enCokFavorilenen, onayliIstekci }
+enum SiralamaTipi { enYeni, enEski, enCokFavorilenen, onerilen }
 
 extension SiralamaTipiX on SiralamaTipi {
   String get label {
     switch (this) {
       case SiralamaTipi.enYeni:           return 'En yeni';
       case SiralamaTipi.enEski:           return 'En eski';
-      case SiralamaTipi.enCokFavorilenen: return 'En cok favorilenen';
-      case SiralamaTipi.onayliIstekci:    return 'Onayli istekci';
+      case SiralamaTipi.enCokFavorilenen: return 'Favori';
+      case SiralamaTipi.onerilen:    return 'Önerilen';
     }
   }
 
@@ -41,7 +41,7 @@ extension SiralamaTipiX on SiralamaTipi {
       case SiralamaTipi.enYeni:           return 'enYeni';
       case SiralamaTipi.enEski:           return 'enEski';
       case SiralamaTipi.enCokFavorilenen: return 'enCokFavorilenen';
-      case SiralamaTipi.onayliIstekci:    return 'enYeni';
+      case SiralamaTipi.onerilen:    return 'onerilen';
     }
   }
 }
@@ -121,6 +121,7 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
   List<String> _seciliKategoriYolu   = [];
   List<String> _seciliAltKeyler      = [];
   List<String> _seciliIstekSehirleri = [];
+  String       _seciliUlkeSehir      = '';
   bool         _aramaGizli           = false;
   Timer?       _filtreTimer;
 
@@ -142,6 +143,14 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
   void _onScroll() {
     final pos = _scrollController.position;
     final simdi = pos.pixels;
+
+    // En tepedeyken her zaman header'ı göster
+    if (simdi <= 0) {
+      if (_aramaGizli) setState(() => _aramaGizli = false);
+      ref.read(navBarGizliProvider.notifier).goster();
+      _sonScrollPixel = 0;
+      return;
+    }
 
     if (pos.userScrollDirection == ScrollDirection.reverse) {
       _sonScrollPixel = simdi;
@@ -177,6 +186,17 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
 
     final sayfa = sifirla ? 0 : _algoliaState.mevcutSayfa + 1;
 
+    if (sifirla) {
+      setState(() {
+        _aramaGizli = false;
+        _sonScrollPixel = 0;
+      });
+      ref.read(navBarGizliProvider.notifier).goster();
+      // Scroll'u en başa al
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(0);
+      }
+    }
     setState(() {
       _algoliaState = _algoliaState.copyWith(
         yukleniyor: true,
@@ -189,6 +209,7 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
         kategoriYolu:    _seciliKategoriYolu,
         seciliAltKeyler: _seciliAltKeyler,
         sehirler:        _seciliIstekSehirleri,
+        ulkeSehir:       _seciliUlkeSehir,
         siralama:     _siralama.algoliaKey,
         ilanTipi:     'istek',
         sayfa:        sayfa,
@@ -207,8 +228,8 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
       if (_siralama == SiralamaTipi.enCokFavorilenen) {
         yeniIlanlar.sort((a, b) => b.favoriSayisi.compareTo(a.favoriSayisi));
       }
-      // onayliIstekci icin siralama
-      if (_siralama == SiralamaTipi.onayliIstekci) {
+      // onerilen icin siralama
+      if (_siralama == SiralamaTipi.onerilen) {
         yeniIlanlar.sort((a, b) {
           final aOnayliMi = a.kullaniciPuan >= 4.0;
           final bOnayliMi = b.kullaniciPuan >= 4.0;
@@ -253,7 +274,8 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
   bool get _filtrAktif =>
       _seciliKategoriYolu.isNotEmpty ||
       _seciliAltKeyler.isNotEmpty ||
-      _seciliIstekSehirleri.isNotEmpty;
+      _seciliIstekSehirleri.isNotEmpty ||
+      _seciliUlkeSehir.isNotEmpty;
 
 
 
@@ -287,6 +309,9 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
                   _seciliAltKeyler      = secim.seciliAltKeyler;
                   _siralama             = secim.siralama;
                   _seciliIstekSehirleri = secim.istekSehirleri;
+                  _seciliUlkeSehir      = secim.ulkeSehir.isNotEmpty
+                      ? secim.ulkeSehir[0].toUpperCase() + secim.ulkeSehir.substring(1)
+                      : '';
                 });
               },
               onTemizle: () {
@@ -295,6 +320,7 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
                   _seciliAltKeyler      = [];
                   _siralama             = SiralamaTipi.enYeni;
                   _seciliIstekSehirleri = [];
+                  _seciliUlkeSehir      = '';
                 });
               },
             ),
@@ -344,12 +370,17 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
       ilanWidget = SliverToBoxAdapter(
           child: ShimmerGrid(kolonSayisi: mod.kolonSayisi));
     } else if (ilanlar.isEmpty) {
-      ilanWidget = SliverToBoxAdapter(
+      ilanWidget = SliverFillRemaining(
+        hasScrollBody: false,
         child: _filtrAktif
-            ? FiltreBosBekran(onTemizle: () => _filtreUygula(() {
-                _seciliKategoriYolu   = [];
-                _seciliIstekSehirleri = [];
-              }))
+            ? FiltreBosBekran(onTemizle: () {
+                _filtreUygula(() {
+                  _seciliKategoriYolu   = [];
+                  _seciliAltKeyler      = [];
+                  _seciliIstekSehirleri = [];
+                  _seciliUlkeSehir      = '';
+                });
+              })
             : IlanBosEkran(onYenile: () => _algoliaYukle(sifirla: true)),
       );
     } else {
@@ -405,13 +436,19 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
                 aramaGizli: _aramaGizli && !isSwipe,
                 filtrAktif: _filtrAktif,
                 seciliAnaKey: _seciliAnaKey,
+                seciliUlkeSehir: _seciliUlkeSehir,
+                onUlkeSehirTemizle: () => _filtreUygula(() {
+                  _seciliUlkeSehir = '';
+                }),
                 onAramaChanged: (_) {},
                 onAramaSifirla: () {},
                 onFiltreAc: _filtreAc,
                 onKategoriSec: _anaKategoriSec,
                 onFiltreSifirla: () => _filtreUygula(() {
-                  _seciliKategoriYolu = [];
-                  _seciliAltKeyler    = [];
+                  _seciliKategoriYolu   = [];
+                  _seciliAltKeyler      = [];
+                  _seciliIstekSehirleri = [];
+                  _seciliUlkeSehir      = '';
                 }),
 
                 kategoriScrollCtrl: _kategoriScrollCtrl,
@@ -577,6 +614,8 @@ class _IsteklerHeader extends StatelessWidget {
   final bool aramaGizli;
   final bool filtrAktif;
   final String? seciliAnaKey;
+  final String seciliUlkeSehir;
+  final VoidCallback onUlkeSehirTemizle;
   final ScrollController kategoriScrollCtrl;
   final ValueChanged<String> onAramaChanged;
   final VoidCallback onAramaSifirla;
@@ -590,6 +629,8 @@ class _IsteklerHeader extends StatelessWidget {
     required this.aramaGizli,
     required this.filtrAktif,
     required this.seciliAnaKey,
+    required this.seciliUlkeSehir,
+    required this.onUlkeSehirTemizle,
     required this.kategoriScrollCtrl,
     required this.onAramaChanged,
     required this.onAramaSifirla,
@@ -744,7 +785,7 @@ class _IsteklerHeader extends StatelessWidget {
               itemCount: kKategoriAgaci.length + 1,
               itemBuilder: (context, i) {
                 if (i == 0) {
-                  final secili = seciliAnaKey == null;
+                  final secili = seciliAnaKey == null && seciliUlkeSehir.isEmpty;
                   return GestureDetector(
                     onTap: () { if (!secili) onFiltreSifirla(); },
                     child: AnimatedContainer(
@@ -832,6 +873,50 @@ class _IsteklerHeader extends StatelessWidget {
             ),
           ),
 
+          // Türkiye dışı seçim badge
+          if (seciliUlkeSehir.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 2, 12, 4),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1565C0).withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                          color: const Color(0xFF1565C0).withValues(alpha: 0.3)),
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      const Icon(Icons.public_outlined,
+                          size: 12, color: Color(0xFF1565C0)),
+                      const SizedBox(width: 4),
+                      Text(
+                        seciliUlkeSehir,
+                        style: GoogleFonts.dmSans(
+                            fontSize: 12,
+                            color: const Color(0xFF1565C0),
+                            fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(width: 6),
+                      GestureDetector(
+                        onTap: onUlkeSehirTemizle,
+                        child: Text(
+                          'Temizle',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 11,
+                              color: const Color(0xFF1565C0),
+                              fontWeight: FontWeight.w600,
+                              decoration: TextDecoration.underline,
+                              decorationColor: const Color(0xFF1565C0)),
+                        ),
+                      ),
+                    ]),
+                  ),
+                ],
+              ),
+            ),
           const NedenIsteBar(),
         ],
       ),
@@ -862,7 +947,7 @@ class _Son24SaatBolumu extends ConsumerWidget {
             Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF64B5F6), Color(0xFFBBDEFB)],
+                  colors: [Color(0xFF1565C0), Color(0xFF1E88E5)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -871,17 +956,23 @@ class _Son24SaatBolumu extends ConsumerWidget {
               child: const SizedBox(height: 210, width: double.infinity),
             ),
             Positioned(top: -8, right: 20,
-              child: Icon(Icons.flight_takeoff_rounded, size: 72, color: const Color(0xFFFF9800).withValues(alpha: 0.18))),
-            Positioned(top: 30, right: 110,
-              child: Icon(Icons.shopping_bag_outlined, size: 44, color: const Color(0xFFFF9800).withValues(alpha: 0.15))),
-            Positioned(bottom: 10, right: 60,
-              child: Icon(Icons.local_shipping_outlined, size: 52, color: const Color(0xFFFF9800).withValues(alpha: 0.14))),
-            Positioned(top: 15, left: 30,
-              child: Icon(Icons.location_on_outlined, size: 38, color: const Color(0xFFFF9800).withValues(alpha: 0.13))),
-            Positioned(bottom: 8, left: 80,
-              child: Icon(Icons.star_outline_rounded, size: 34, color: const Color(0xFFFF9800).withValues(alpha: 0.16))),
-            Positioned(top: 50, left: 150,
-              child: Icon(Icons.card_travel_outlined, size: 30, color: const Color(0xFFFF9800).withValues(alpha: 0.12))),
+              child: Icon(Icons.flight_takeoff_rounded, size: 80, color: const Color(0xFFFF9800).withValues(alpha: 0.45))),
+            Positioned(top: 25, right: 115,
+              child: Icon(Icons.shopping_bag_outlined, size: 52, color: const Color(0xFFFF9800).withValues(alpha: 0.40))),
+            Positioned(bottom: 8, right: 55,
+              child: Icon(Icons.local_shipping_outlined, size: 58, color: const Color(0xFFFF9800).withValues(alpha: 0.38))),
+            Positioned(top: 10, left: 25,
+              child: Icon(Icons.location_on_outlined, size: 44, color: const Color(0xFFFF9800).withValues(alpha: 0.40))),
+            Positioned(bottom: 6, left: 75,
+              child: Icon(Icons.star_outline_rounded, size: 40, color: const Color(0xFFFF9800).withValues(alpha: 0.42))),
+            Positioned(top: 45, left: 145,
+              child: Icon(Icons.card_travel_outlined, size: 36, color: const Color(0xFFFF9800).withValues(alpha: 0.38))),
+            Positioned(top: 5, right: 195,
+              child: Icon(Icons.redeem_outlined, size: 34, color: const Color(0xFFFF9800).withValues(alpha: 0.35))),
+            Positioned(bottom: 12, right: 190,
+              child: Icon(Icons.airplane_ticket_outlined, size: 38, color: const Color(0xFFFF9800).withValues(alpha: 0.37))),
+            Positioned(top: 60, right: 20,
+              child: Icon(Icons.card_giftcard_outlined, size: 30, color: const Color(0xFFFF9800).withValues(alpha: 0.33))),
             Container(
               padding: const EdgeInsets.only(top: 10, bottom: 18),
               child: Column(
@@ -1031,7 +1122,7 @@ class _Son24SaatSkeleton extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF90CAF9), Color(0xFFBBDEFB)],
+          colors: [Color(0xFF1565C0), Color(0xFF1E88E5)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),

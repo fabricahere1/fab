@@ -74,6 +74,43 @@ Future<List<AramaSonucu>> algoliaAra(String sorgu, {String? katFiltre}) async {
     ],
   };
 
+// ── Türkiye dışı yer arama (sadece nereye alanında arar) ──────────────────────
+
+Future<List<String>> algoliaYerAra(String sorgu) async {
+  if (sorgu.trim().isEmpty) return [];
+
+  // ilanlar_nereye index'i — sadece nereye alanı searchable
+  final url = Uri.parse(
+    'https://$_kAlgoliaAppId-dsn.algolia.net/1/indexes/ilanlar_nereye/query',
+  );
+
+  final response = await http.post(
+    url,
+    headers: {
+      'X-Algolia-Application-Id': _kAlgoliaAppId,
+      'X-Algolia-API-Key': _kAlgoliaSearchKey,
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({
+      'query': sorgu,
+      'hitsPerPage': 50,
+      'attributesToRetrieve': ['nereye'],
+    }),
+  );
+
+  if (response.statusCode != 200) return [];
+  final data = jsonDecode(response.body) as Map<String, dynamic>;
+  final hits = data['hits'] as List<dynamic>? ?? [];
+
+  return hits
+      .map((h) => (h as Map<String, dynamic>)['nereye'] as String? ?? '')
+      .where((n) => n.isNotEmpty)
+      .toSet()
+      .where((n) => !kTurkiyeSehirleri.any(
+          (s) => s.toLowerCase() == n.toLowerCase()))
+      .toList();
+}
+
   if (katFiltre != null) {
     final altKeyler = tumAltKeyler(katFiltre);
     final filterParts = altKeyler
@@ -105,15 +142,21 @@ Future<List<AramaSonucu>> algoliaAra(String sorgu, {String? katFiltre}) async {
 
 Future<AlgoliaFiltreSonucu> algoliaFiltrele({
   List<String> kategoriYolu    = const [],
-  List<String> seciliAltKeyler = const [], // coklu alt kategori secimi
+  List<String> seciliAltKeyler = const [],
   List<String> sehirler        = const [],
+  String ulkeSehir = '',           // Türkiye dışı serbest metin
   String siralama  = 'enYeni',
   String ilanTipi  = 'istek',
   int sayfa        = 0,
   int hitsPerPage  = 24,
 }) async {
+  // Sıralamaya göre doğru index'i seç
+  final indexAdi = siralama == 'enCokFavorilenen'
+      ? 'ilanlar_favori'
+      : _kAlgoliaIndex;
+
   final url = Uri.parse(
-    'https://$_kAlgoliaAppId-dsn.algolia.net/1/indexes/$_kAlgoliaIndex/query',
+    'https://$_kAlgoliaAppId-dsn.algolia.net/1/indexes/$indexAdi/query',
   );
 
   // ── Filter oluştur ────────────────────────────────────────────────────────
@@ -151,6 +194,10 @@ Future<AlgoliaFiltreSonucu> algoliaFiltrele({
         .map((s) => 'nereye:"$s"')
         .join(' OR ');
     filterParcalar.add('($sehirFilter)');
+  }
+  // Türkiye dışı serbest metin filtresi
+  if (ulkeSehir.isNotEmpty) {
+    filterParcalar.add('nereye:"$ulkeSehir"');
   }
 
   final filtreler = filterParcalar.join(' AND ');
