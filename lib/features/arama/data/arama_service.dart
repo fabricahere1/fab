@@ -74,12 +74,35 @@ Future<List<AramaSonucu>> algoliaAra(String sorgu, {String? katFiltre}) async {
     ],
   };
 
+  if (katFiltre != null) {
+    final altKeyler = tumAltKeyler(katFiltre);
+    final filterParts = altKeyler
+        .map((k) => 'kategoriYolu:$k OR kategori:$k')
+        .join(' OR ');
+    body['filters'] = filterParts;
+  }
+
+  final response = await http.post(
+    url,
+    headers: {
+      'X-Algolia-Application-Id': _kAlgoliaAppId,
+      'X-Algolia-API-Key': _kAlgoliaSearchKey,
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode(body),
+  );
+
+  if (response.statusCode != 200) return [];
+  final data = jsonDecode(response.body) as Map<String, dynamic>;
+  final hits = data['hits'] as List<dynamic>? ?? [];
+  return hits.map((h) => AramaSonucu.fromJson(h as Map<String, dynamic>)).toList();
+}
+
 // ── Türkiye dışı yer arama (sadece nereye alanında arar) ──────────────────────
 
 Future<List<String>> algoliaYerAra(String sorgu) async {
   if (sorgu.trim().isEmpty) return [];
 
-  // ilanlar_nereye index'i — sadece nereye alanı searchable
   final url = Uri.parse(
     'https://$_kAlgoliaAppId-dsn.algolia.net/1/indexes/ilanlar_nereye/query',
   );
@@ -109,30 +132,6 @@ Future<List<String>> algoliaYerAra(String sorgu) async {
       .where((n) => !kTurkiyeSehirleri.any(
           (s) => s.toLowerCase() == n.toLowerCase()))
       .toList();
-}
-
-  if (katFiltre != null) {
-    final altKeyler = tumAltKeyler(katFiltre);
-    final filterParts = altKeyler
-        .map((k) => 'kategoriYolu:$k OR kategori:$k')
-        .join(' OR ');
-    body['filters'] = filterParts;
-  }
-
-  final response = await http.post(
-    url,
-    headers: {
-      'X-Algolia-Application-Id': _kAlgoliaAppId,
-      'X-Algolia-API-Key': _kAlgoliaSearchKey,
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode(body),
-  );
-
-  if (response.statusCode != 200) return [];
-  final data = jsonDecode(response.body) as Map<String, dynamic>;
-  final hits = data['hits'] as List<dynamic>? ?? [];
-  return hits.map((h) => AramaSonucu.fromJson(h as Map<String, dynamic>)).toList();
 }
 
 // ── Filtreleme (ilanlar ekrani icin) ─────────────────────────────────────────

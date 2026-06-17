@@ -660,7 +660,7 @@ class _IsteklerHeader extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(14, 10, 12, 4),
                 child: Row(
                   children: [
-                    Image.asset('assets/images/logo.png', height: 48),
+                    Image.asset('assets/images/logo.png', height: 40),
                     const Spacer(),
                     GestureDetector(
                       onTap: () => Navigator.of(context).push(
@@ -707,27 +707,34 @@ class _IsteklerHeader extends StatelessWidget {
                           ),
                         ),
                         child: Container(
-                          height: 44,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF5F5F5),
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
+                            ),
                             borderRadius: BorderRadius.circular(22),
-                            border: Border.all(
-                                color: const Color(0xFFEEEEEE), width: 1),
                           ),
-                          child: Row(
-                            children: [
-                              const SizedBox(width: 14),
-                              const Icon(Icons.search_rounded,
-                                  size: 18,
-                                  color: Color(0xFFCCCCCC)),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Ne gelsin istersin ?',
-                                style: GoogleFonts.dmSans(
-                                    color: const Color(0xFFCCCCCC),
-                                    fontSize: 13),
-                              ),
-                            ],
+                          padding: const EdgeInsets.all(0.5),
+                          child: Container(
+                            height: 43,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF5F5F5),
+                              borderRadius: BorderRadius.circular(21.5),
+                            ),
+                            child: Row(
+                              children: [
+                                const SizedBox(width: 14),
+                                const Icon(Icons.search_rounded,
+                                    size: 18,
+                                    color: Color(0xFFCCCCCC)),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Ne gelsin istersin ?',
+                                  style: GoogleFonts.dmSans(
+                                      color: const Color(0xFFCCCCCC),
+                                      fontSize: 13),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),

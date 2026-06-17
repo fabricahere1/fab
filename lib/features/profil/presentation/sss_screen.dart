@@ -109,7 +109,7 @@ class _SssScreenState extends State<SssScreen> {
       body: ListView.separated(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         itemCount: _sorular.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 8),
+        separatorBuilder: (_, _) => const SizedBox(height: 8),
         itemBuilder: (context, i) {
           final acik = _acik.contains(i);
           final item = _sorular[i];

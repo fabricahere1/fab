@@ -80,10 +80,6 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
   static const _maviLink = Color(0xFF1565C0);
 
   String _modalUlkeSehir = '';          // serbest metin (ülke/şehir)
-  List<String> _ulkeSehirOneriler = []; // Algolia'dan gelen öneriler
-  bool _ulkeSehirYukleniyor = false;
-  final _ulkeSehirCtrl = TextEditingController();
-
   @override
   void initState() {
     super.initState();
@@ -274,211 +270,22 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
   // ── Türkiye dışı popup ───────────────────────────────────────────────────────
 
   void _turkiyeDisiDialogAc() async {
-    final ctrl    = TextEditingController(text: _modalUlkeSehir);
-    String secili = _modalUlkeSehir;
-    List<String> oneriler = [];
-    bool yukleniyor = false;
-
-    await showDialog<void>(
-      context: context,
-      builder: (dlgCtx) => StatefulBuilder(
-        builder: (dlgCtx, setDlg) => AlertDialog(
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16)),
-          insetPadding: const EdgeInsets.symmetric(
-              horizontal: 10, vertical: 40),
-          title: Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text('Türkiye Dışı',
-                style: GoogleFonts.dmSans(
-                    fontSize: 18, fontWeight: FontWeight.w700)),
-          ),
-          content: SizedBox(
-            width: double.maxFinite,
-            height: 320,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Arama kutusu
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.divider),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.public_outlined,
-                          size: 18, color: Color(0xFF1565C0)),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          controller: ctrl,
-                          autofocus: true,
-                          style: GoogleFonts.dmSans(fontSize: 14),
-                          decoration: InputDecoration(
-                            hintText: 'Ülke veya şehir girin',
-                            hintStyle: GoogleFonts.dmSans(
-                                fontSize: 14,
-                                color: AppColors.textHint),
-                            border: InputBorder.none,
-                            isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(
-                                vertical: 8),
-                          ),
-                          onChanged: (v) async {
-                            if (v.trim().isEmpty) {
-                              setDlg(() {
-                                oneriler = [];
-                                secili   = '';
-                              });
-                              return;
-                            }
-                            setDlg(() => yukleniyor = true);
-                            try {
-                              final sonuclar = await algoliaAra(
-                                  v, katFiltre: null);
-                              final nereyeler = sonuclar
-                                  .map((s) => s.nereye)
-                                  .where((n) => n.isNotEmpty)
-                                  .toSet()
-                                  .where((n) =>
-                                      !kTurkiyeSehirleri.contains(n))
-                                  .toList();
-                              setDlg(() {
-                                oneriler    = nereyeler;
-                                yukleniyor  = false;
-                              });
-                            } catch (_) {
-                              setDlg(() => yukleniyor = false);
-                            }
-                          },
-                        ),
-                      ),
-                      if (yukleniyor)
-                        const SizedBox(
-                          width: 16, height: 16,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 1.5,
-                              color: Color(0xFF1565C0)),
-                        )
-                      else if (ctrl.text.isNotEmpty)
-                        GestureDetector(
-                          onTap: () {
-                            ctrl.clear();
-                            setDlg(() {
-                              oneriler = [];
-                              secili   = '';
-                            });
-                          },
-                          child: const Icon(Icons.close,
-                              size: 16,
-                              color: AppColors.textSecondary),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // Öneriler
-                if (oneriler.isNotEmpty)
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 300),
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: oneriler.length > 6
-                          ? 6
-                          : oneriler.length,
-                      itemBuilder: (_, i) => InkWell(
-                        onTap: () {
-                          ctrl.text = oneriler[i];
-                          setDlg(() {
-                            secili   = oneriler[i];
-                            oneriler = [];
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 4, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: secili == oneriler[i]
-                                ? const Color(0xFF1565C0)
-                                    .withValues(alpha: 0.06)
-                                : Colors.transparent,
-                            border: Border(
-                              bottom: BorderSide(
-                                color: AppColors.divider
-                                    .withValues(alpha: 0.4),
-                                width: 0.5,
-                              ),
-                            ),
-                          ),
-                          child: Row(children: [
-                            const Icon(Icons.location_on_outlined,
-                                size: 16,
-                                color: Color(0xFF1565C0)),
-                            const SizedBox(width: 8),
-                            Text(oneriler[i],
-                                style: GoogleFonts.dmSans(
-                                    fontSize: 14)),
-                          ]),
-                        ),
-                      ),
-                    ),
-                  ),
-                // Seçili göster
-                if (secili.isNotEmpty && oneriler.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Row(children: [
-                      const Icon(Icons.check_circle,
-                          size: 14, color: Color(0xFF1565C0)),
-                      const SizedBox(width: 4),
-                      Text(
-                        '$secili seçildi',
-                        style: GoogleFonts.dmSans(
-                            fontSize: 12,
-                            color: const Color(0xFF1565C0),
-                            fontWeight: FontWeight.w500),
-                      ),
-                    ]),
-                  ),
-              ],
-            ), // Column
-          ), // SizedBox
-          actions: [
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _modalUlkeSehir = '';
-                  _ulkeSehirCtrl.clear();
-                });
-                Navigator.pop(dlgCtx);
-              },
-              child: Text('Temizle',
-                  style: GoogleFonts.dmSans(
-                      color: AppColors.textSecondary)),
-            ),
-            TextButton(
-              onPressed: (secili.isNotEmpty || ctrl.text.trim().isNotEmpty)
-                  ? () {
-                      final deger = secili.isNotEmpty
-                          ? secili
-                          : ctrl.text.trim();
-                      setState(() => _modalUlkeSehir = deger);
-                      Navigator.pop(dlgCtx);
-                    }
-                  : null,
-              child: Text('Tamam',
-                  style: GoogleFonts.dmSans(
-                      color: _maviLink,
-                      fontWeight: FontWeight.w600)),
-            ),
-          ],
+    final sonuc = await Navigator.push<String>(
+      context,
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black54,
+        pageBuilder: (_, __, ___) => _TurkiyeDisiAramaEkrani(
+          mevcutSecim: _modalUlkeSehir,
         ),
+        transitionsBuilder: (_, anim, __, child) =>
+            FadeTransition(opacity: anim, child: child),
+        transitionDuration: const Duration(milliseconds: 200),
       ),
     );
+    if (sonuc != null) {
+      setState(() => _modalUlkeSehir = sonuc == '__temizle__' ? '' : sonuc);
+    }
   }
 
   void _sehirDialogAc() async {
@@ -597,8 +404,6 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                           _modalSiralama   = SiralamaTipi.enYeni;
                           _modalSehirler   = [];
                           _modalUlkeSehir  = '';
-                          _ulkeSehirOneriler = [];
-                          _ulkeSehirCtrl.clear();
                           _gezinmeYolu     = [];
                         });
                         widget.onTemizle();
@@ -1119,6 +924,191 @@ class _SiralamaSegmented extends StatelessWidget {
             ),
           );
         }).toList(),
+      ),
+    );
+  }
+}
+
+
+// ── Türkiye Dışı Arama Ekranı ─────────────────────────────────────────────────
+
+class _TurkiyeDisiAramaEkrani extends StatefulWidget {
+  final String mevcutSecim;
+  const _TurkiyeDisiAramaEkrani({required this.mevcutSecim});
+
+  @override
+  State<_TurkiyeDisiAramaEkrani> createState() =>
+      _TurkiyeDisiAramaEkraniState();
+}
+
+class _TurkiyeDisiAramaEkraniState extends State<_TurkiyeDisiAramaEkrani> {
+  late final TextEditingController _ctrl;
+  List<String> _oneriler = [];
+  bool _yukleniyor = false;
+  static const _mavi = Color(0xFF1565C0);
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: widget.mevcutSecim);
+    if (widget.mevcutSecim.isNotEmpty) _ara(widget.mevcutSecim);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _ara(String v) async {
+    if (v.trim().isEmpty) {
+      setState(() { _oneriler = []; _yukleniyor = false; });
+      return;
+    }
+    setState(() => _yukleniyor = true);
+    try {
+      final sonuclar = await algoliaYerAra(v);
+      if (mounted) setState(() { _oneriler = sonuclar; _yukleniyor = false; });
+    } catch (_) {
+      if (mounted) setState(() => _yukleniyor = false);
+    }
+  }
+
+  void _sec(String yer) {
+    Navigator.pop(context, yer);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final statusH = MediaQuery.of(context).padding.top;
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          // ── Arama çubuğu ──────────────────────────────────────────────────
+          Container(
+            color: Colors.white,
+            padding: EdgeInsets.fromLTRB(8, statusH + 8, 8, 8),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                      size: 20, color: AppColors.textPrimary),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                Expanded(
+                  child: Container(
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F5F5),
+                      borderRadius: BorderRadius.circular(22),
+                    ),
+                    child: TextField(
+                      controller: _ctrl,
+                      autofocus: true,
+                      style: GoogleFonts.dmSans(fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: 'Ülke veya şehir girin...',
+                        hintStyle: GoogleFonts.dmSans(
+                            fontSize: 14, color: AppColors.textHint),
+                        prefixIcon: const Icon(Icons.public_outlined,
+                            size: 18, color: _mavi),
+                        suffixIcon: _ctrl.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.close,
+                                    size: 18, color: AppColors.textSecondary),
+                                onPressed: () {
+                                  _ctrl.clear();
+                                  setState(() => _oneriler = []);
+                                },
+                              )
+                            : null,
+                        border: InputBorder.none,
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      onChanged: _ara,
+                      onSubmitted: (v) {
+                        if (v.trim().isNotEmpty) _sec(v.trim());
+                      },
+                    ),
+                  ),
+                ),
+                if (widget.mevcutSecim.isNotEmpty)
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, '__temizle__'),
+                    child: Text('Temizle',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 13, color: AppColors.textSecondary)),
+                  ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: AppColors.divider),
+
+          // ── Sonuçlar ──────────────────────────────────────────────────────
+          Expanded(
+            child: _yukleniyor
+                ? const Center(
+                    child: SizedBox(
+                      width: 20, height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: _mavi),
+                    ),
+                  )
+                : _oneriler.isEmpty && _ctrl.text.isNotEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.location_off_outlined,
+                                size: 48, color: AppColors.divider),
+                            const SizedBox(height: 12),
+                            Text('Öneri bulunamadı',
+                                style: GoogleFonts.dmSans(
+                                    fontSize: 14,
+                                    color: AppColors.textSecondary)),
+                            const SizedBox(height: 4),
+                            GestureDetector(
+                              onTap: () => _sec(_ctrl.text.trim()),
+                              child: Text(
+                                '"${_ctrl.text.trim()}" ile devam et',
+                                style: GoogleFonts.dmSans(
+                                    fontSize: 13,
+                                    color: _mavi,
+                                    fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: _oneriler.length,
+                        itemBuilder: (_, i) => InkWell(
+                          onTap: () => _sec(_oneriler[i]),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 14),
+                            decoration: BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(
+                                    color: AppColors.divider
+                                        .withValues(alpha: 0.5),
+                                    width: 0.5),
+                              ),
+                            ),
+                            child: Row(children: [
+                              const Icon(Icons.location_on_outlined,
+                                  size: 18, color: _mavi),
+                              const SizedBox(width: 12),
+                              Text(_oneriler[i],
+                                  style: GoogleFonts.dmSans(fontSize: 15)),
+                            ]),
+                          ),
+                        ),
+                      ),
+          ),
+        ],
       ),
     );
   }
