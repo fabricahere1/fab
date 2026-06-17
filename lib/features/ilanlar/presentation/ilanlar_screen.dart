@@ -931,7 +931,7 @@ class _Son24SaatBolumu extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(son24SaatIlanlarProvider);
+    final async = ref.watch(haftaninEnleriProvider);
 
     return async.when(
       loading: () => _Son24SaatSkeleton(),
@@ -939,21 +939,22 @@ class _Son24SaatBolumu extends ConsumerWidget {
       data: (ilanlar) {
         if (ilanlar.isEmpty) return const SizedBox.shrink();
 
-        const cardW = 130.0;
-        const cardH = 170.0;
+        const cardW = 140.0;
+        const cardH = 200.0;
 
         return Stack(
           children: [
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF1565C0), Color(0xFF1E88E5)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+            Positioned.fill(
+              bottom: 10, // 10px kısa
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF1565C0), Color(0xFF1E88E5)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                 ),
               ),
-              padding: const EdgeInsets.only(top: 10, bottom: 18),
-              child: const SizedBox(height: 210, width: double.infinity),
             ),
             Positioned(top: -8, right: 20,
               child: Icon(Icons.flight_takeoff_rounded, size: 80, color: const Color(0xFFFF9800).withValues(alpha: 0.45))),
@@ -974,19 +975,41 @@ class _Son24SaatBolumu extends ConsumerWidget {
             Positioned(top: 60, right: 20,
               child: Icon(Icons.card_giftcard_outlined, size: 30, color: const Color(0xFFFF9800).withValues(alpha: 0.33))),
             Container(
-              padding: const EdgeInsets.only(top: 10, bottom: 18),
+              padding: const EdgeInsets.only(top: 10, bottom: 28),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                    child: Text(
-                      'Son 24 saatte eklendi',
-                      style: GoogleFonts.dmSans(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            "Haftanın Öne Çıkanları",
+                            style: GoogleFonts.playfairDisplay(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            CupertinoPageRoute(
+                              builder: (_) => const _HaftaninEnleriEkrani(),
+                            ),
+                          ),
+                          child: Text(
+                            'Tümünü Gör →',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white.withValues(alpha: 0.85),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   SizedBox(
@@ -1012,6 +1035,7 @@ class _Son24SaatBolumu extends ConsumerWidget {
                                 margin: const EdgeInsets.only(right: 10),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
                                   boxShadow: [
                                     BoxShadow(
                                       color: Colors.black.withValues(alpha: 0.15),
@@ -1023,20 +1047,24 @@ class _Son24SaatBolumu extends ConsumerWidget {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    SizedBox(
-                                      width: cardW,
-                                      height: 100,
-                                      child: ilan.gridResim.isNotEmpty
-                                          ? CachedNetworkImage(
-                                              imageUrl: ilan.gridResim,
-                                              cacheManager: AppCacheManager.instance,
-                                              width: cardW,
-                                              height: 100,
-                                              fit: BoxFit.cover,
-                                              errorWidget: (ctx, url, err) =>
-                                                  _PlaceholderImage(w: cardW, h: 100),
-                                            )
-                                          : _PlaceholderImage(w: cardW, h: 100),
+                                    ClipRRect(
+                                      borderRadius: const BorderRadius.vertical(
+                                          top: Radius.circular(12)),
+                                      child: SizedBox(
+                                        width: cardW,
+                                        height: 115,
+                                        child: ilan.gridResim.isNotEmpty
+                                            ? CachedNetworkImage(
+                                                imageUrl: ilan.gridResim,
+                                                cacheManager: AppCacheManager.instance,
+                                                width: cardW,
+                                                height: 115,
+                                                fit: BoxFit.cover,
+                                                errorWidget: (ctx, url, err) =>
+                                                    _PlaceholderImage(w: cardW, h: 115),
+                                              )
+                                            : _PlaceholderImage(w: cardW, h: 115),
+                                      ),
                                     ),
                                     Expanded(
                                       child: Padding(
@@ -1046,7 +1074,7 @@ class _Son24SaatBolumu extends ConsumerWidget {
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
                                           style: GoogleFonts.dmSans(
-                                            fontSize: 11,
+                                            fontSize: 13,
                                             fontWeight: FontWeight.w600,
                                             color: AppColors.textPrimary,
                                             height: 1.3,
@@ -1177,6 +1205,54 @@ class _PlaceholderImage extends StatelessWidget {
       color: const Color(0xFFEEEEEE),
       child: const Icon(Icons.image_outlined,
           size: 28, color: Color(0xFFCCCCCC)),
+    );
+  }
+}
+
+// ── Haftanın En'leri Tam Ekran ────────────────────────────────────────────────
+
+class _HaftaninEnleriEkrani extends ConsumerWidget {
+  const _HaftaninEnleriEkrani();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(haftaninEnleriProvider);
+
+    return Scaffold(
+      backgroundColor: AppColors.surface,
+      appBar: AppBar(
+        title: Text(
+          "Haftanın En İyileri",
+          style: GoogleFonts.playfairDisplay(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new,
+              color: AppColors.textPrimary, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: async.when(
+        loading: () => const Center(
+            child: CircularProgressIndicator(color: AppColors.red)),
+        error: (_, _) => const Center(child: Text('Yüklenemedi')),
+        data: (ilanlar) => MasonryGridView.count(
+          crossAxisCount: 2,
+          mainAxisSpacing: 10,
+          crossAxisSpacing: 10,
+          padding: const EdgeInsets.all(10),
+          itemCount: ilanlar.length,
+          itemBuilder: (context, i) => IlanKarti(
+            ilan: ilanlar[i],
+            resimYukseklikleri: kResimYukseklikleri,
+          ),
+        ),
+      ),
     );
   }
 }

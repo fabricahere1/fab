@@ -41,7 +41,7 @@ final class IstekIlanlarProvider
   }
 }
 
-String _$istekIlanlarHash() => r'cfb4033f1fd0ad9b27bf3949d8f209766e28dab8';
+String _$istekIlanlarHash() => r'e6bc7be7c67eea0402be1dabbcb75c6f86bd6a25';
 
 abstract class _$IstekIlanlar extends $Notifier<IlanListeState> {
   IlanListeState build();
@@ -93,7 +93,7 @@ final class TasiyiciIlanlarProvider
   }
 }
 
-String _$tasiyiciIlanlarHash() => r'cdf96efcc8e5e80caad613921afb973f977a1fc9';
+String _$tasiyiciIlanlarHash() => r'be7ca9d24a5d93e1c373469974db0b96bfb7ce82';
 
 abstract class _$TasiyiciIlanlar extends $Notifier<IlanListeState> {
   IlanListeState build();
@@ -277,6 +277,45 @@ final class Son24SaatIlanlarProvider
 }
 
 String _$son24SaatIlanlarHash() => r'fd977ab21f94538d7d39f8cb091b0be974f250da';
+
+@ProviderFor(haftaninEnleri)
+final haftaninEnleriProvider = HaftaninEnleriProvider._();
+
+final class HaftaninEnleriProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<IlanModel>>,
+          List<IlanModel>,
+          FutureOr<List<IlanModel>>
+        >
+    with $FutureModifier<List<IlanModel>>, $FutureProvider<List<IlanModel>> {
+  HaftaninEnleriProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'haftaninEnleriProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$haftaninEnleriHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<List<IlanModel>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<IlanModel>> create(Ref ref) {
+    return haftaninEnleri(ref);
+  }
+}
+
+String _$haftaninEnleriHash() => r'9f01918edefcd89d9674cafd1586e6e0e8314f3e';
 
 @ProviderFor(favoriler)
 final favorilerProvider = FavorilerProvider._();

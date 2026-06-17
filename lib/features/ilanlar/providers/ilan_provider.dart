@@ -423,6 +423,13 @@ Future<List<IlanModel>> son24SaatIlanlar(Ref ref) {
   return ref.watch(ilanRepositoryProvider).son24SaatIlanlariniGetir();
 }
 
+// ── Haftanın en'leri ─────────────────────────────────────────────────────────
+
+@riverpod
+Future<List<IlanModel>> haftaninEnleri(Ref ref) {
+  return ref.watch(ilanRepositoryProvider).haftaninEnleriGetir();
+}
+
 // ── Favori provider'lar ───────────────────────────────────────────────────────
 
 @riverpod

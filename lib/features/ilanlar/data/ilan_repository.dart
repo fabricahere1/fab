@@ -128,6 +128,55 @@ class IlanRepository {
     return snap.docs.map(IlanModel.fromFirestore).toList();
   }
 
+  /// Son 7 günün en yüksek puanlı ilanları (onerilenPuan'a göre)
+  Future<List<IlanModel>> haftaninEnleriGetir({int limit = 15}) async {
+    final sinir = Timestamp.fromDate(
+        DateTime.now().subtract(const Duration(days: 7)));
+    final q = _col
+        .where('tip', isEqualTo: IlanTip.istek)
+        .where('aktif', isEqualTo: true)
+        .where('olusturmaTarihi', isGreaterThanOrEqualTo: sinir)
+        .orderBy('olusturmaTarihi', descending: true)
+        .limit(50); // fazla çek, sonra puana göre sırala
+    try {
+      final cache = await q.get(const GetOptions(source: Source.cache));
+      if (cache.docs.isNotEmpty) {
+        final ilanlar = cache.docs.map(IlanModel.fromFirestore).toList();
+        return _puanaGoreSirala(ilanlar, limit);
+      }
+    } catch (_) {}
+    final snap = await q.get(const GetOptions(source: Source.server));
+    final ilanlar = snap.docs.map(IlanModel.fromFirestore).toList();
+    return _puanaGoreSirala(ilanlar, limit);
+  }
+
+  List<IlanModel> _puanaGoreSirala(List<IlanModel> ilanlar, int limit) {
+    // onerilenPuan formülü: favori×3 + goruntuleme×1 + kullaniciPuan×5 + tazelik + resim
+    ilanlar.sort((a, b) {
+      final pA = _hesapla(a);
+      final pB = _hesapla(b);
+      return pB.compareTo(pA);
+    });
+    return ilanlar.take(limit).toList();
+  }
+
+  double _hesapla(IlanModel i) {
+    final gunFark = DateTime.now().difference(
+        i.olusturmaTarihi ?? DateTime.now()).inDays.toDouble();
+    double tazelik = 0;
+    if (gunFark < 1) tazelik = 10;
+    else if (gunFark < 3) tazelik = 6;
+    else if (gunFark < 7) tazelik = 3;
+    final resimPuan = i.resimUrller.length >= 5 ? 5.0
+        : i.resimUrller.length >= 3 ? 3.0
+        : i.resimUrller.isNotEmpty ? 1.0 : 0.0;
+    return i.favoriSayisi * 3 +
+        i.goruntulenmeSayisi * 1 +
+        i.kullaniciPuan * 5 +
+        tazelik +
+        resimPuan;
+  }
+
   Future<IlanSayfasi> tasiyiciIlanlariniGetir({
     int limit = Pagination.ilanSayfaBoyutu,
     bool forceServer = false,
