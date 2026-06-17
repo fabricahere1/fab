@@ -1,6 +1,7 @@
 // lib/features/ilanlar/presentation/ilanlar_screen.dart
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -660,7 +661,7 @@ class _IsteklerHeader extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(14, 10, 12, 4),
                 child: Row(
                   children: [
-                    Image.asset('assets/images/logo.png', height: 40),
+                    Image.asset('assets/images/logo.png', height: 38),
                     const Spacer(),
                     GestureDetector(
                       onTap: () => Navigator.of(context).push(
@@ -671,9 +672,11 @@ class _IsteklerHeader extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(6),
                         child: const Icon(
-                          Icons.favorite_border,
+                          Symbols.favorite,
                           color: AppColors.textPrimary,
                           size: 22,
+                          weight: 200,
+                          fill: 0,
                         ),
                       ),
                     ),
@@ -866,14 +869,25 @@ class _IsteklerHeader extends StatelessWidget {
                           : null,
                     ),
                     alignment: Alignment.center,
-                    child: Text('${kat.emoji} ${kat.ad}',
-                        style: GoogleFonts.dmSans(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: secili
-                              ? Colors.white
-                              : AppColors.textPrimary,
-                        )),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _kategoriIkon(kat.key),
+                          size: 15,
+                          color: secili ? Colors.white : AppColors.textSecondary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(kat.ad,
+                            style: GoogleFonts.dmSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                              color: secili
+                                  ? Colors.white
+                                  : AppColors.textPrimary,
+                            )),
+                      ],
+                    ),
                   ),
                 );
               },
@@ -1261,5 +1275,18 @@ class _HaftaninEnleriEkrani extends ConsumerWidget {
         ),
       ),
     );
+  }
+}
+
+// Kategori ikon mapping — Material Symbols w100
+IconData _kategoriIkon(String key) {
+  switch (key) {
+    case 'kadin':       return Symbols.face_3;
+    case 'erkek':       return Symbols.face;
+    case 'cocuk':       return Symbols.face_retouching_natural;
+    case 'ev':          return Symbols.cottage;
+    case 'elektronik':  return Symbols.headphones;
+    case 'supplement':  return Symbols.vaccines;
+    default:            return Symbols.package_2;
   }
 }

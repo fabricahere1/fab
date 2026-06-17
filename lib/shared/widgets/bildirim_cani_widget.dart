@@ -19,8 +19,8 @@ class BildirimCaniWidget extends ConsumerWidget {
     final ikon = Icon(
       Symbols.notifications,
       color: ikonRenk,
-      size: 24,
-      weight: 300,
+      size: 22,
+      weight: 200,
       opticalSize: 24,
       fill: 0,
     );
