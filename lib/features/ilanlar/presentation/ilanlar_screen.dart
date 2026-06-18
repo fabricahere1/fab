@@ -720,7 +720,7 @@ class _IsteklerHeader extends StatelessWidget {
                           child: Container(
                             height: 43,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF5F5F5),
+                              color: Colors.white,
                               borderRadius: BorderRadius.circular(21.5),
                             ),
                             child: Row(
@@ -881,7 +881,7 @@ class _IsteklerHeader extends StatelessWidget {
                         Text(kat.ad,
                             style: GoogleFonts.dmSans(
                               fontSize: 12,
-                              fontWeight: FontWeight.w400,
+                              fontWeight: FontWeight.w600,
                               color: secili
                                   ? Colors.white
                                   : AppColors.textPrimary,
