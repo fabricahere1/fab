@@ -47,7 +47,7 @@ class AlgoliaFiltreSonucu {
   final int toplamSayfa;
   final int mevcutSayfa;
   final int toplamSonuc;
-  final Map<String, int> kategoriFacets; // key -> ilan sayisi
+  final Map<String, int> kategoriFacets;
 
   const AlgoliaFiltreSonucu({
     required this.ilanlar,
@@ -58,7 +58,7 @@ class AlgoliaFiltreSonucu {
   });
 }
 
-// ── Arama (arama ekranı icin) ─────────────────────────────────────────────────
+// ── Arama (arama ekranı için) ─────────────────────────────────────────────────
 
 Future<List<AramaSonucu>> algoliaAra(String sorgu, {String? katFiltre}) async {
   if (sorgu.trim().isEmpty && katFiltre == null) return [];
@@ -76,12 +76,35 @@ Future<List<AramaSonucu>> algoliaAra(String sorgu, {String? katFiltre}) async {
     ],
   };
 
+  if (katFiltre != null) {
+    final altKeyler = tumAltKeyler(katFiltre);
+    final filterParts = altKeyler
+        .map((k) => 'kategoriYolu:$k OR kategori:$k')
+        .join(' OR ');
+    body['filters'] = filterParts;
+  }
+
+  final response = await http.post(
+    url,
+    headers: {
+      'X-Algolia-Application-Id': _kAlgoliaAppId,
+      'X-Algolia-API-Key': _kAlgoliaSearchKey,
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode(body),
+  );
+
+  if (response.statusCode != 200) return [];
+  final data = jsonDecode(response.body) as Map<String, dynamic>;
+  final hits = data['hits'] as List<dynamic>? ?? [];
+  return hits.map((h) => AramaSonucu.fromJson(h as Map<String, dynamic>)).toList();
+}
+
 // ── Türkiye dışı yer arama (sadece nereye alanında arar) ──────────────────────
 
 Future<List<String>> algoliaYerAra(String sorgu) async {
   if (sorgu.trim().isEmpty) return [];
 
-  // ilanlar_nereye index'i — sadece nereye alanı searchable
   final url = Uri.parse(
     'https://$_kAlgoliaAppId-dsn.algolia.net/1/indexes/ilanlar_nereye/query',
   );
@@ -113,7 +136,6 @@ Future<List<String>> algoliaYerAra(String sorgu) async {
           (s) => s.toLowerCase() == n.toLowerCase()))
       .toList();
 
-  // Sorguyla başlayanlar öne, sonra alfabetik
   liste.sort((a, b) {
     final aBasliyor = a.toLowerCase().startsWith(sorguKucuk);
     final bBasliyor = b.toLowerCase().startsWith(sorguKucuk);
@@ -125,46 +147,18 @@ Future<List<String>> algoliaYerAra(String sorgu) async {
   return liste;
 }
 
-  if (katFiltre != null) {
-    final altKeyler = tumAltKeyler(katFiltre);
-    final filterParts = altKeyler
-        .map((k) => 'kategoriYolu:$k OR kategori:$k')
-        .join(' OR ');
-    body['filters'] = filterParts;
-  }
-
-  final response = await http.post(
-    url,
-    headers: {
-      'X-Algolia-Application-Id': _kAlgoliaAppId,
-      'X-Algolia-API-Key': _kAlgoliaSearchKey,
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode(body),
-  );
-
-  if (response.statusCode != 200) return [];
-  final data = jsonDecode(response.body) as Map<String, dynamic>;
-  final hits = data['hits'] as List<dynamic>? ?? [];
-  return hits.map((h) => AramaSonucu.fromJson(h as Map<String, dynamic>)).toList();
-}
-
-// ── Filtreleme (ilanlar ekrani icin) ─────────────────────────────────────────
-//
-// Kategori, sehir, siralama ve sayfalama Algolia sunucusunda yapilir.
-// [sayfa] 0-indexed. [hitsPerPage] sayfa basina ilan sayisi.
+// ── Filtreleme (ilanlar ekranı için) ─────────────────────────────────────────
 
 Future<AlgoliaFiltreSonucu> algoliaFiltrele({
   List<String> kategoriYolu    = const [],
   List<String> seciliAltKeyler = const [],
   List<String> sehirler        = const [],
-  String ulkeSehir = '',           // Türkiye dışı serbest metin
+  String ulkeSehir = '',
   String siralama  = 'enYeni',
   String ilanTipi  = 'istek',
   int sayfa        = 0,
   int hitsPerPage  = 24,
 }) async {
-  // Sıralamaya göre doğru index'i seç
   final indexAdi = siralama == 'enCokFavorilenen'
       ? 'ilanlar_favori'
       : _kAlgoliaIndex;
@@ -173,25 +167,17 @@ Future<AlgoliaFiltreSonucu> algoliaFiltrele({
     'https://$_kAlgoliaAppId-dsn.algolia.net/1/indexes/$indexAdi/query',
   );
 
-  // ── Filter oluştur ────────────────────────────────────────────────────────
   final List<String> filterParcalar = [];
-
-  // Aktif ve yayinda olan ilanlar
   filterParcalar.add('aktif:true');
   filterParcalar.add('durum:yayinda');
-
-  // İlan tipi (istek veya tasiyici)
   filterParcalar.add('tip:$ilanTipi');
 
-  // Kategori filtresi
   if (seciliAltKeyler.isNotEmpty) {
-    // Coklu alt kategori secimi - her birini OR ile birlestir
     final katFilter = seciliAltKeyler
         .map((k) => 'kategoriYolu:$k OR kategori:$k')
         .join(' OR ');
     filterParcalar.add('($katFilter)');
   } else if (kategoriYolu.isNotEmpty) {
-    // Tek ana kategori - tum alt keyleri dahil et
     final sonKey = kategoriYolu.last;
     final altKeyler = tumAltKeyler(sonKey);
     if (altKeyler.isNotEmpty) {
@@ -202,24 +188,16 @@ Future<AlgoliaFiltreSonucu> algoliaFiltrele({
     }
   }
 
-  // Şehir filtresi — nereye alaninda arar
   if (sehirler.isNotEmpty) {
-    final sehirFilter = sehirler
-        .map((s) => 'nereye:"$s"')
-        .join(' OR ');
+    final sehirFilter = sehirler.map((s) => 'nereye:"$s"').join(' OR ');
     filterParcalar.add('($sehirFilter)');
   }
-  // Türkiye dışı serbest metin filtresi
   if (ulkeSehir.isNotEmpty) {
     filterParcalar.add('nereye:"$ulkeSehir"');
   }
 
   final filtreler = filterParcalar.join(' AND ');
 
-  // ── Siralama ──────────────────────────────────────────────────────────────
-  // Algolia replica index kullanmak yerine numericFilters ile siralama yapiyoruz.
-  // Ana index olusturmaTarihi DESC siralali (en yeni).
-  // Diger siralamalari client-side yapiyoruz (kucuk veri setleri icin yeterli).
   final body = <String, dynamic>{
     'query': '',
     'filters': filtreler,
@@ -232,13 +210,6 @@ Future<AlgoliaFiltreSonucu> algoliaFiltrele({
     ],
     'facets': ['anaKategori'],
   };
-
-  // En eskiye gore siralama icin sort replica kullanmak yerine
-  // olusturmaTarihi ASC sorgusu gonderiyoruz
-  if (siralama == 'enEski') {
-    // Algolia'da varsayilan DESC — ASC icin replica lazim, yoksa client-side
-    // Simdilik hitsPerPage kadar alip client sort yapiyoruz
-  }
 
   final response = await http.post(
     url,
@@ -261,7 +232,6 @@ Future<AlgoliaFiltreSonucu> algoliaFiltrele({
       .map((h) => h as Map<String, dynamic>)
       .toList();
 
-  // Facet sayilarini parse et
   final facetsRaw = data['facets'] as Map<String, dynamic>?;
   final anaKategoriFacets = facetsRaw?['anaKategori'] as Map<String, dynamic>? ?? {};
   final kategoriFacets = anaKategoriFacets.map(

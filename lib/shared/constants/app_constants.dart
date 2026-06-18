@@ -410,3 +410,25 @@ const kBedenCocuk = [
   '2-3 yaş', '3-4 yaş', '4-5 yaş', '5-6 yaş',
   '6-8 yaş', '8-10 yaş', '10-12 yaş', '12-14 yaş',
 ];
+
+enum SiralamaTipi { enYeni, enEski, enCokFavorilenen, onerilen }
+
+extension SiralamaTipiX on SiralamaTipi {
+  String get label {
+    switch (this) {
+      case SiralamaTipi.enYeni:           return 'En yeni';
+      case SiralamaTipi.enEski:           return 'En eski';
+      case SiralamaTipi.enCokFavorilenen: return 'Favori';
+      case SiralamaTipi.onerilen:         return 'Önerilen';
+    }
+  }
+
+  String get algoliaKey {
+    switch (this) {
+      case SiralamaTipi.enYeni:           return 'enYeni';
+      case SiralamaTipi.enEski:           return 'enEski';
+      case SiralamaTipi.enCokFavorilenen: return 'enCokFavorilenen';
+      case SiralamaTipi.onerilen:         return 'onerilen';
+    }
+  }
+}

@@ -20,7 +20,7 @@ class BildirimCaniWidget extends ConsumerWidget {
       Symbols.notifications,
       color: ikonRenk,
       size: 22,
-      weight: 300,
+      weight: 200,
       opticalSize: 24,
       fill: 0,
     );

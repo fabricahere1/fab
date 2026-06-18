@@ -25,27 +25,7 @@ import 'dart:async';
 import 'package:iste_v3/features/ilanlar/presentation/favoriler_screen.dart';
 import 'ilan_detay_screen.dart';
 
-enum SiralamaTipi { enYeni, enEski, enCokFavorilenen, onerilen }
 
-extension SiralamaTipiX on SiralamaTipi {
-  String get label {
-    switch (this) {
-      case SiralamaTipi.enYeni:           return 'En yeni';
-      case SiralamaTipi.enEski:           return 'En eski';
-      case SiralamaTipi.enCokFavorilenen: return 'Favori';
-      case SiralamaTipi.onerilen:    return 'Önerilen';
-    }
-  }
-
-  String get algoliaKey {
-    switch (this) {
-      case SiralamaTipi.enYeni:           return 'enYeni';
-      case SiralamaTipi.enEski:           return 'enEski';
-      case SiralamaTipi.enCokFavorilenen: return 'enCokFavorilenen';
-      case SiralamaTipi.onerilen:    return 'onerilen';
-    }
-  }
-}
 
 // ── Algolia filtre state ───────────────────────────────────────────────────────
 
@@ -295,8 +275,8 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
       barrierLabel: '',
       barrierColor: Colors.black54,
       transitionDuration: const Duration(milliseconds: 250),
-      pageBuilder: (_, _, _) => const SizedBox.shrink(),
-      transitionBuilder: (ctx, anim, _, _) {
+      pageBuilder: (_, __, ___) => const SizedBox.shrink(),
+      transitionBuilder: (ctx, anim, ___, child) {
         final slide = Tween<Offset>(
           begin: const Offset(1, 0), end: Offset.zero,
         ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic));
@@ -667,7 +647,7 @@ class _IsteklerHeader extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(14, 10, 12, 4),
                 child: Row(
                   children: [
-                    Image.asset('assets/images/logo.png', height: 48),
+                    Image.asset('assets/images/logo.png', height: 38),
                     const Spacer(),
                     GestureDetector(
                       onTap: () => Navigator.of(context).push(

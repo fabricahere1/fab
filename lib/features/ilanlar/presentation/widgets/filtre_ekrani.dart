@@ -4,24 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../shared/constants/app_colors.dart';
 import '../../../../shared/constants/app_constants.dart';
-import '../ilanlar_screen.dart';
 import '../../../arama/data/arama_service.dart';
 
-// Türkiye'nin 81 ili
-const kTurkiyeSehirleri = [
-  'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Amasya', 'Ankara', 'Antalya',
-  'Artvin', 'Aydın', 'Balıkesir', 'Bilecik', 'Bingöl', 'Bitlis', 'Bolu',
-  'Burdur', 'Bursa', 'Çanakkale', 'Çankırı', 'Çorum', 'Denizli', 'Diyarbakır',
-  'Edirne', 'Elazığ', 'Erzincan', 'Erzurum', 'Eskişehir', 'Gaziantep', 'Giresun',
-  'Gümüşhane', 'Hakkari', 'Hatay', 'Isparta', 'İçel (Mersin)', 'İstanbul',
-  'İzmir', 'Kars', 'Kastamonu', 'Kayseri', 'Kırklareli', 'Kırşehir', 'Kocaeli',
-  'Konya', 'Kütahya', 'Malatya', 'Manisa', 'Kahramanmaraş', 'Mardin', 'Muğla',
-  'Muş', 'Nevşehir', 'Niğde', 'Ordu', 'Rize', 'Sakarya', 'Samsun', 'Siirt',
-  'Sinop', 'Sivas', 'Tekirdağ', 'Tokat', 'Trabzon', 'Tunceli', 'Şanlıurfa',
-  'Uşak', 'Van', 'Yozgat', 'Zonguldak', 'Aksaray', 'Bayburt', 'Karaman',
-  'Kırıkkale', 'Batman', 'Şırnak', 'Bartın', 'Ardahan', 'Iğdır', 'Yalova',
-  'Karabük', 'Kilis', 'Osmaniye', 'Düzce',
-];
 
 // ── Filtre sonuç veri sınıfı ──────────────────────────────────────────────────
 
@@ -353,9 +337,23 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
     final baslik     = _seviyeBasligi();
     final anaGorunu  = !_altSayfada;
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
+    return PopScope(
+      canPop: !_altSayfada,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _altSayfada) {
+          setState(() {
+            if (_gezinmeYolu.length > 1) {
+              _gezinmeYolu = _gezinmeYolu.sublist(0, _gezinmeYolu.length - 1);
+            } else {
+              _gezinmeYolu     = [];
+              _geciciAltKeyler = List.from(_modalAltKeyler);
+            }
+          });
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
         child: Column(
           children: [
             // ── Header ────────────────────────────────────────────────────────
@@ -668,83 +666,109 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
           ],
         ),
       ),
+      ),
     );
   }
 
   Widget _buildAnaKart(KategoriNode node, {required bool aktif, required VoidCallback onTap}) {
-    final secimMetni = _kartSecimMetni(node);
-    final secili     = secimMetni != null;
-    final soluk      = !aktif && !secili;
+    final secimMetni  = _kartSecimMetni(node);
+    final secili      = secimMetni != null;
+    final soluk       = !aktif && !secili;
+    final ilanSayisi  = widget.kategoriFacets[node.key];
 
     return GestureDetector(
       onTap: onTap,
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 200),
         opacity: soluk ? 0.35 : 1.0,
-        child: Container(
-          decoration: BoxDecoration(
-            color: secili
-                ? _turuncu.withValues(alpha: 0.04)
-                : Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: secili
-                  ? _turuncu.withValues(alpha: 0.5)
-                  : const Color(0xFFEEEEEE),
-              width: secili ? 1.5 : 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+        child: Stack(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: secili
+                    ? _turuncu.withValues(alpha: 0.04)
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: secili
+                      ? _turuncu.withValues(alpha: 0.5)
+                      : const Color(0xFFEEEEEE),
+                  width: secili ? 1.5 : 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Row(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    if (node.emoji.isNotEmpty) ...[
-                      Text(node.emoji, style: const TextStyle(fontSize: 22)),
-                      const SizedBox(width: 8),
-                    ],
-                    Expanded(
-                      child: Text(
-                        node.ad,
-                        style: TextStyle(
-                          fontFamily: 'SF Pro Display',
-                          fontSize: 13,
+                    Row(
+                      children: [
+                        if (node.emoji.isNotEmpty) ...[
+                          Text(node.emoji, style: const TextStyle(fontSize: 22)),
+                          const SizedBox(width: 8),
+                        ],
+                        Expanded(
+                          child: Text(
+                            node.ad,
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Display',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: secili ? _turuncu : AppColors.textPrimary,
+                              height: 1.2,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (secimMetni != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        '✓ $secimMetni',
+                        style: GoogleFonts.dmSans(
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: secili ? _turuncu : AppColors.textPrimary,
-                          height: 1.2,
+                          color: _turuncu,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                    ),
+                    ],
                   ],
                 ),
-                if (secimMetni != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    '✓ $secimMetni',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: _turuncu,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ],
+              ),
             ),
-          ),
+            if (ilanSayisi != null && ilanSayisi > 0)
+              Positioned(
+                top: 6,
+                right: 6,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: secili ? _turuncu : const Color(0xFF666666),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    ilanSayisi > 999 ? '999+' : '$ilanSayisi',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
