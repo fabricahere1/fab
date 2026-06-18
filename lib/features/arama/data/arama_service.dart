@@ -47,12 +47,14 @@ class AlgoliaFiltreSonucu {
   final int toplamSayfa;
   final int mevcutSayfa;
   final int toplamSonuc;
+  final Map<String, int> kategoriFacets; // key -> ilan sayisi
 
   const AlgoliaFiltreSonucu({
     required this.ilanlar,
     required this.toplamSayfa,
     required this.mevcutSayfa,
     required this.toplamSonuc,
+    this.kategoriFacets = const {},
   });
 }
 
@@ -73,6 +75,55 @@ Future<List<AramaSonucu>> algoliaAra(String sorgu, {String? katFiltre}) async {
       'tip', 'resimUrl', 'kategoriYolu',
     ],
   };
+
+// ── Türkiye dışı yer arama (sadece nereye alanında arar) ──────────────────────
+
+Future<List<String>> algoliaYerAra(String sorgu) async {
+  if (sorgu.trim().isEmpty) return [];
+
+  // ilanlar_nereye index'i — sadece nereye alanı searchable
+  final url = Uri.parse(
+    'https://$_kAlgoliaAppId-dsn.algolia.net/1/indexes/ilanlar_nereye/query',
+  );
+
+  final response = await http.post(
+    url,
+    headers: {
+      'X-Algolia-Application-Id': _kAlgoliaAppId,
+      'X-Algolia-API-Key': _kAlgoliaSearchKey,
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({
+      'query': sorgu,
+      'hitsPerPage': 50,
+      'attributesToRetrieve': ['nereye'],
+    }),
+  );
+
+  if (response.statusCode != 200) return [];
+  final data = jsonDecode(response.body) as Map<String, dynamic>;
+  final hits = data['hits'] as List<dynamic>? ?? [];
+
+  final sorguKucuk = sorgu.toLowerCase();
+  final liste = hits
+      .map((h) => (h as Map<String, dynamic>)['nereye'] as String? ?? '')
+      .where((n) => n.isNotEmpty)
+      .toSet()
+      .where((n) => !kTurkiyeSehirleri.any(
+          (s) => s.toLowerCase() == n.toLowerCase()))
+      .toList();
+
+  // Sorguyla başlayanlar öne, sonra alfabetik
+  liste.sort((a, b) {
+    final aBasliyor = a.toLowerCase().startsWith(sorguKucuk);
+    final bBasliyor = b.toLowerCase().startsWith(sorguKucuk);
+    if (aBasliyor && !bBasliyor) return -1;
+    if (!aBasliyor && bBasliyor) return 1;
+    return a.toLowerCase().compareTo(b.toLowerCase());
+  });
+
+  return liste;
+}
 
   if (katFiltre != null) {
     final altKeyler = tumAltKeyler(katFiltre);
@@ -96,42 +147,6 @@ Future<List<AramaSonucu>> algoliaAra(String sorgu, {String? katFiltre}) async {
   final data = jsonDecode(response.body) as Map<String, dynamic>;
   final hits = data['hits'] as List<dynamic>? ?? [];
   return hits.map((h) => AramaSonucu.fromJson(h as Map<String, dynamic>)).toList();
-}
-
-// ── Türkiye dışı yer arama (sadece nereye alanında arar) ──────────────────────
-
-Future<List<String>> algoliaYerAra(String sorgu) async {
-  if (sorgu.trim().isEmpty) return [];
-
-  final url = Uri.parse(
-    'https://$_kAlgoliaAppId-dsn.algolia.net/1/indexes/ilanlar_nereye/query',
-  );
-
-  final response = await http.post(
-    url,
-    headers: {
-      'X-Algolia-Application-Id': _kAlgoliaAppId,
-      'X-Algolia-API-Key': _kAlgoliaSearchKey,
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode({
-      'query': sorgu,
-      'hitsPerPage': 50,
-      'attributesToRetrieve': ['nereye'],
-    }),
-  );
-
-  if (response.statusCode != 200) return [];
-  final data = jsonDecode(response.body) as Map<String, dynamic>;
-  final hits = data['hits'] as List<dynamic>? ?? [];
-
-  return hits
-      .map((h) => (h as Map<String, dynamic>)['nereye'] as String? ?? '')
-      .where((n) => n.isNotEmpty)
-      .toSet()
-      .where((n) => !kTurkiyeSehirleri.any(
-          (s) => s.toLowerCase() == n.toLowerCase()))
-      .toList();
 }
 
 // ── Filtreleme (ilanlar ekrani icin) ─────────────────────────────────────────
@@ -215,6 +230,7 @@ Future<AlgoliaFiltreSonucu> algoliaFiltrele({
       'anaKategori', 'kategoriYolu', 'tip', 'aktif', 'durum',
       'resimUrl', 'olusturmaTarihi',
     ],
+    'facets': ['anaKategori'],
   };
 
   // En eskiye gore siralama icin sort replica kullanmak yerine
@@ -245,10 +261,18 @@ Future<AlgoliaFiltreSonucu> algoliaFiltrele({
       .map((h) => h as Map<String, dynamic>)
       .toList();
 
+  // Facet sayilarini parse et
+  final facetsRaw = data['facets'] as Map<String, dynamic>?;
+  final anaKategoriFacets = facetsRaw?['anaKategori'] as Map<String, dynamic>? ?? {};
+  final kategoriFacets = anaKategoriFacets.map(
+    (k, v) => MapEntry(k, (v as num).toInt()),
+  );
+
   return AlgoliaFiltreSonucu(
-    ilanlar:     hits,
-    toplamSayfa: data['nbPages']  as int? ?? 1,
-    mevcutSayfa: data['page']     as int? ?? 0,
-    toplamSonuc: data['nbHits']   as int? ?? 0,
+    ilanlar:        hits,
+    toplamSayfa:    data['nbPages']  as int? ?? 1,
+    mevcutSayfa:    data['page']     as int? ?? 0,
+    toplamSonuc:    data['nbHits']   as int? ?? 0,
+    kategoriFacets: kategoriFacets,
   );
 }

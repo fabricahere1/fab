@@ -1,6 +1,7 @@
 // lib/features/ilanlar/presentation/gelenler_screen.dart
 
 import 'package:flutter/cupertino.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +12,7 @@ import '../providers/ilan_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart' as app_constants;
 import 'package:iste_v3/features/arama/presentation/arama_screen.dart';
+import 'package:iste_v3/features/arama/data/arama_service.dart';
 import '../../../shared/widgets/bildirim_cani_widget.dart';
 import '../../../shared/widgets/neden_iste_bar.dart';
 import 'package:go_router/go_router.dart';
@@ -19,6 +21,62 @@ import 'widgets/ilan_karti.dart';
 
 
 
+
+
+// ── Algolia state ─────────────────────────────────────────────────────────────
+
+class _GAlgoliaState {
+  final List<IlanModel> ilanlar;
+  final bool yukleniyor;
+  final bool dahaFazlaVar;
+  final int mevcutSayfa;
+
+  const _GAlgoliaState({
+    this.ilanlar      = const [],
+    this.yukleniyor   = false,
+    this.dahaFazlaVar = true,
+    this.mevcutSayfa  = 0,
+  });
+
+  _GAlgoliaState copyWith({
+    List<IlanModel>? ilanlar,
+    bool? yukleniyor,
+    bool? dahaFazlaVar,
+    int? mevcutSayfa,
+  }) => _GAlgoliaState(
+    ilanlar:      ilanlar      ?? this.ilanlar,
+    yukleniyor:   yukleniyor   ?? this.yukleniyor,
+    dahaFazlaVar: dahaFazlaVar ?? this.dahaFazlaVar,
+    mevcutSayfa:  mevcutSayfa  ?? this.mevcutSayfa,
+  );
+}
+
+IlanModel _gHittenIlan(Map<String, dynamic> hit) {
+  final resimUrller = (hit['resimUrller'] as List<dynamic>?)
+      ?.map((e) => e as String).toList() ?? [];
+  final kategoriYolu = (hit['kategoriYolu'] as List<dynamic>?)
+      ?.map((e) => e as String).toList() ?? [];
+  final tarihMs = hit['olusturmaTarihi'] as int?;
+  return IlanModel(
+    id:              hit['objectID']    as String? ?? '',
+    tip:             hit['tip']         as String? ?? '',
+    nereden:         hit['nereden']     as String? ?? '',
+    nereye:          hit['nereye']      as String? ?? '',
+    urun:            hit['urun']        as String? ?? '',
+    kategori:        hit['kategori']    as String? ?? 'diger',
+    anaKategori:     hit['anaKategori'] as String? ?? '',
+    kategoriYolu:    kategoriYolu,
+    resimUrl:        hit['resimUrl']    as String? ?? '',
+    resimUrller:     resimUrller,
+    aktif:           hit['aktif']       as bool?   ?? true,
+    durum:           hit['durum']       as String? ?? 'yayinda',
+    kullaniciId:     hit['kullaniciId'] as String? ?? '',
+    kullaniciAd:     hit['kullaniciAd'] as String? ?? '',
+    olusturmaTarihi: tarihMs != null
+        ? DateTime.fromMillisecondsSinceEpoch(tarihMs)
+        : null,
+  );
+}
 
 // ── Sıralama ──────────────────────────────────────────────────────────────────
 
@@ -43,14 +101,14 @@ class GelenlerScreen extends ConsumerStatefulWidget {
 class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
     with AutomaticKeepAliveClientMixin {
   final _scrollController   = ScrollController();
-  final _aramaCtrl          = TextEditingController();
   final _kategoriScrollCtrl = ScrollController();
 
-  String              _aramaMetni        = '';
   List<String>        _seciliKategoriYolu = [];
+  List<String>        _seciliAltKeyler    = [];
   bool                _aramaGizli        = false;
   GelenlerSiralama    _siralama          = GelenlerSiralama.enYeni;
-  List<String>        _seciliSehirler = [];
+  List<String>        _seciliSehirler    = [];
+  _GAlgoliaState      _algoliaState      = const _GAlgoliaState();
 
   @override
   bool get wantKeepAlive => true;
@@ -62,14 +120,68 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
     if (widget.initialKategoriYolu.isNotEmpty) {
       _seciliKategoriYolu = List<String>.from(widget.initialKategoriYolu);
     }
+    _algoliaYukle(sifirla: true);
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
-    _aramaCtrl.dispose();
     _kategoriScrollCtrl.dispose();
     super.dispose();
+  }
+
+  // ── Algolia ────────────────────────────────────────────────────────────────
+
+  Future<void> _algoliaYukle({bool sifirla = false}) async {
+    if (_algoliaState.yukleniyor) return;
+    if (!sifirla && !_algoliaState.dahaFazlaVar) return;
+
+    final sayfa = sifirla ? 0 : _algoliaState.mevcutSayfa + 1;
+
+    if (sifirla) {
+      setState(() { _aramaGizli = false; });
+      if (_scrollController.hasClients) _scrollController.jumpTo(0);
+    }
+
+    setState(() {
+      _algoliaState = _algoliaState.copyWith(
+        yukleniyor: true,
+        ilanlar: sifirla ? [] : _algoliaState.ilanlar,
+      );
+    });
+
+    try {
+      final sonuc = await algoliaFiltrele(
+        kategoriYolu:    _seciliKategoriYolu,
+        seciliAltKeyler: _seciliAltKeyler,
+        sehirler:        _seciliSehirler,
+        ulkeSehir:       '',
+        siralama:        _siralama == GelenlerSiralama.enEski ? 'enEski' : 'enYeni',
+        ilanTipi:        'tasiyici',
+        sayfa:           sayfa,
+        hitsPerPage:     24,
+      );
+
+      final yeniIlanlar = sonuc.ilanlar.map(_gHittenIlan).toList();
+      final mevcutIdler = _algoliaState.ilanlar.map((i) => i.id).toSet();
+      final benzersiz   = yeniIlanlar.where((i) => !mevcutIdler.contains(i.id)).toList();
+
+      setState(() {
+        _algoliaState = _GAlgoliaState(
+          ilanlar:      [..._algoliaState.ilanlar, ...benzersiz],
+          yukleniyor:   false,
+          dahaFazlaVar: sayfa < sonuc.toplamSayfa - 1,
+          mevcutSayfa:  sayfa,
+        );
+      });
+    } catch (_) {
+      setState(() => _algoliaState = _algoliaState.copyWith(yukleniyor: false));
+    }
+  }
+
+  void _filtreUygula(VoidCallback degistir) {
+    setState(() => degistir());
+    _algoliaYukle(sifirla: true);
   }
 
   double _sonScrollPixel = 0;
@@ -78,25 +190,34 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
   void _onScroll() {
     final pos = _scrollController.position;
     final simdi = pos.pixels;
+
+    if (simdi <= 0) {
+      if (_aramaGizli) setState(() => _aramaGizli = false);
+      ref.read(navBarGizliProvider.notifier).goster();
+      _sonScrollPixel = 0;
+      return;
+    }
+
     if (pos.userScrollDirection == ScrollDirection.reverse) {
       if (!_aramaGizli) setState(() => _aramaGizli = true);
       _sonScrollPixel = simdi;
       ref.read(navBarGizliProvider.notifier).gizle();
     } else if (pos.userScrollDirection == ScrollDirection.forward) {
-      if (_aramaGizli) setState(() => _aramaGizli = false);
       if (simdi < _sonScrollPixel - _gosterThreshold) {
         _sonScrollPixel = simdi;
+        if (_aramaGizli) setState(() => _aramaGizli = false);
         ref.read(navBarGizliProvider.notifier).goster();
       }
     }
-    if (pos.pixels >= pos.maxScrollExtent - 400) {
-      if (!ref.read(tasiyiciIlanlarProvider).yukleniyor) {
-        ref.read(tasiyiciIlanlarProvider.notifier).dahaFazlaYukle();
+
+    if (pos.pixels >= pos.maxScrollExtent - 200) {
+      if (!_algoliaState.yukleniyor && _algoliaState.dahaFazlaVar) {
+        _algoliaYukle();
       }
     }
   }
 
-  bool get _filtrAktif => _seciliSehirler.isNotEmpty || _seciliKategoriYolu.isNotEmpty || _siralama != GelenlerSiralama.enYeni;
+  bool get _filtrAktif => _seciliSehirler.isNotEmpty || _seciliKategoriYolu.isNotEmpty || _seciliAltKeyler.isNotEmpty || _siralama != GelenlerSiralama.enYeni;
 
   String? get _seciliAnaKey =>
       _seciliKategoriYolu.isNotEmpty ? _seciliKategoriYolu.first : null;
@@ -118,13 +239,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
       ).toList();
     }
 
-    if (_aramaMetni.isNotEmpty) {
-      final q = _aramaMetni.toLowerCase();
-      sonuc = sonuc.where((i) =>
-          i.urun.toLowerCase().contains(q) ||
-          i.nereden.toLowerCase().contains(q) ||
-          i.nereye.toLowerCase().contains(q)).toList();
-    }
+
     return sonuc;
   }
 
@@ -142,29 +257,21 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
   }
 
   void _anaKategoriSec(String anaKey) {
-    setState(() {
+    _filtreUygula(() {
       if (_seciliAnaKey == anaKey) {
         _seciliKategoriYolu = [];
+        _seciliAltKeyler    = [];
       } else {
         _seciliKategoriYolu = [anaKey];
+        _seciliAltKeyler    = [];
       }
     });
   }
 
-  Map<String, int> _ilanSayilariHesapla(List<IlanModel> ilanlar) {
-    final map = <String, int>{};
-    for (final ana in app_constants.kKategoriAgaci) {
-      final keyler = app_constants.tumAltKeyler(ana.key);
-      map[ana.key] = ilanlar.where((i) =>
-        keyler.contains(i.kategori) ||
-        i.kategoriYolu.any((k) => keyler.contains(k))
-      ).length;
-    }
-    return map;
-  }
+
 
   void _filtreAc() {
-    final ilanSayilari = _ilanSayilariHesapla(ref.read(tasiyiciIlanlarProvider).filtrelenmis);
+    final ilanSayilari = <String, int>{};
     var modalKategoriYolu = List<String>.from(_seciliKategoriYolu);
     var modalSiralama     = _siralama;
     var modalSehirler     = List<String>.from(_seciliSehirler);
@@ -478,12 +585,12 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: () {
-                              setState(() {
+                              Navigator.pop(ctx);
+                              _filtreUygula(() {
                                 _seciliKategoriYolu = modalKategoriYolu;
                                 _siralama           = modalSiralama;
                                 _seciliSehirler     = modalSehirler;
                               });
-                              Navigator.pop(ctx);
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.red,
@@ -514,12 +621,11 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final state   = ref.watch(tasiyiciIlanlarProvider);
-    final ilanlar = _sirala(_filtrele(state.filtrelenmis));
+    final ilanlar = _algoliaState.ilanlar;
     final statusH = MediaQuery.of(context).padding.top;
 
     Widget listeWidget;
-    if (state.yukleniyor && ilanlar.isEmpty) {
+    if (_algoliaState.yukleniyor && ilanlar.isEmpty) {
       listeWidget = const SliverToBoxAdapter(
         child: Center(child: Padding(
           padding: EdgeInsets.all(40),
@@ -529,7 +635,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
     } else if (ilanlar.isEmpty) {
       listeWidget = SliverToBoxAdapter(
         child: _BosEkran(
-          onYenile: () => ref.read(tasiyiciIlanlarProvider.notifier).yenile(),
+          onYenile: () => _algoliaYukle(sifirla: true),
         ),
       );
     } else {
@@ -568,7 +674,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
               padding: const EdgeInsets.fromLTRB(14, 10, 12, 4),
               child: Row(
                 children: [
-                  Image.asset('assets/images/logo.png', height: 48),
+                  Image.asset('assets/images/logo.png', height: 38),
                   const Spacer(),
                   GestureDetector(
                     onTap: () => Navigator.of(context).push(
@@ -579,9 +685,11 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       child: const Icon(
-                        Icons.favorite_border,
+                        Symbols.favorite,
                         color: AppColors.textPrimary,
-                        size: 22,
+                        size: 20,
+                        weight: 200,
+                        fill: 0,
                       ),
                     ),
                   ),
@@ -605,77 +713,44 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
               child: Row(
                 children: [
                   Expanded(
-                    child: Container(
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F5F5),
-                        borderRadius: BorderRadius.circular(22),
-                        border: Border.all(
-                            color: const Color(0xFFEEEEEE), width: 1),
+                    child: GestureDetector(
+                      onTap: () => Navigator.of(context).push(
+                        PageRouteBuilder(
+                          pageBuilder: (_, _, _) => const AramaScreen(),
+                          transitionsBuilder: (_, anim, _, child) =>
+                              FadeTransition(opacity: anim, child: child),
+                          transitionDuration: const Duration(milliseconds: 200),
+                        ),
                       ),
-                      child: Row(
-                        children: [
-                          const SizedBox(width: 14),
-                          Icon(Icons.search_rounded,
-                              size: 18,
-                              color: _aramaMetni.isNotEmpty
-                                  ? AppColors.red
-                                  : const Color(0xFFCCCCCC)),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextField(
-                              controller: _aramaCtrl,
-                              onChanged: (v) =>
-                                  setState(() => _aramaMetni = v),
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  PageRouteBuilder(
-                                    pageBuilder: (_, _, _) =>
-                                        const AramaScreen(),
-                                    transitionsBuilder:
-                                        (_, anim, _, child) =>
-                                            FadeTransition(
-                                                opacity: anim,
-                                                child: child),
-                                    transitionDuration:
-                                        const Duration(milliseconds: 200),
-                                  ),
-                                );
-                              },
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 13,
-                                  color: AppColors.textPrimary,
-                                  fontWeight: FontWeight.w500),
-                              decoration: InputDecoration(
-                                hintText: 'Güzergah veya ürün ara...',
-                                hintStyle: GoogleFonts.dmSans(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
+                          ),
+                          borderRadius: BorderRadius.circular(22),
+                        ),
+                        padding: const EdgeInsets.all(0.5),
+                        child: Container(
+                          height: 43,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(21.5),
+                          ),
+                          child: Row(
+                            children: [
+                              const SizedBox(width: 14),
+                              const Icon(Icons.search_rounded,
+                                  size: 18, color: Color(0xFFCCCCCC)),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Güzergah veya ürün ara...',
+                                style: GoogleFonts.dmSans(
                                     color: const Color(0xFFCCCCCC),
                                     fontSize: 13),
-                                border: InputBorder.none,
-                                isDense: true,
-                                contentPadding: EdgeInsets.zero,
                               ),
-                            ),
+                            ],
                           ),
-                          if (_aramaMetni.isNotEmpty) ...[
-                            GestureDetector(
-                              onTap: () {
-                                _aramaCtrl.clear();
-                                setState(() => _aramaMetni = '');
-                              },
-                              child: Container(
-                                width: 18, height: 18,
-                                margin: const EdgeInsets.only(right: 4),
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFCCCCCC),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.close_rounded,
-                                    size: 12, color: Colors.white),
-                              ),
-                            ),
-                          ],
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -811,12 +886,23 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                             : null,
                       ),
                       alignment: Alignment.center,
-                      child: Text('${kat.emoji} ${kat.ad}',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: secili ? Colors.white : AppColors.textPrimary,
-                          )),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _gelenlerKategoriIkon(kat.key),
+                            size: 15,
+                            color: secili ? Colors.white : AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(kat.ad,
+                              style: GoogleFonts.dmSans(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: secili ? Colors.white : AppColors.textPrimary,
+                              )),
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -915,7 +1001,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
           Expanded(
             child: RefreshIndicator(
               color: AppColors.red,
-              onRefresh: () => ref.read(tasiyiciIlanlarProvider.notifier).yenile(),
+              onRefresh: () => _algoliaYukle(sifirla: true),
               child: CustomScrollView(
                 controller: _scrollController,
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -924,6 +1010,19 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                     padding: const EdgeInsets.only(top: 10),
                     sliver: listeWidget,
                   ),
+                  if (_algoliaState.yukleniyor && ilanlar.isNotEmpty)
+                    const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: Center(
+                          child: SizedBox(
+                            width: 20, height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2, color: AppColors.red),
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -1188,5 +1287,16 @@ class _GelenlerDetayScreenState extends ConsumerState<GelenlerDetayScreen> {
                       ),
                 ),
     );
+  }
+}
+IconData _gelenlerKategoriIkon(String key) {
+  switch (key) {
+    case 'kadin':       return Symbols.face_3;
+    case 'erkek':       return Symbols.face;
+    case 'cocuk':       return Symbols.face_retouching_natural;
+    case 'ev':          return Symbols.cottage;
+    case 'elektronik':  return Symbols.headphones;
+    case 'supplement':  return Symbols.vaccines;
+    default:            return Symbols.package_2;
   }
 }

@@ -54,12 +54,14 @@ class _AlgoliaState {
   final bool yukleniyor;
   final bool dahaFazlaVar;
   final int mevcutSayfa;
+  final Map<String, int> kategoriFacets;
 
   const _AlgoliaState({
-    this.ilanlar      = const [],
-    this.yukleniyor   = false,
-    this.dahaFazlaVar = true,
-    this.mevcutSayfa  = 0,
+    this.ilanlar        = const [],
+    this.yukleniyor     = false,
+    this.dahaFazlaVar   = true,
+    this.mevcutSayfa    = 0,
+    this.kategoriFacets = const {},
   });
 
   _AlgoliaState copyWith({
@@ -67,11 +69,13 @@ class _AlgoliaState {
     bool? yukleniyor,
     bool? dahaFazlaVar,
     int? mevcutSayfa,
+    Map<String, int>? kategoriFacets,
   }) => _AlgoliaState(
-    ilanlar:      ilanlar      ?? this.ilanlar,
-    yukleniyor:   yukleniyor   ?? this.yukleniyor,
-    dahaFazlaVar: dahaFazlaVar ?? this.dahaFazlaVar,
-    mevcutSayfa:  mevcutSayfa  ?? this.mevcutSayfa,
+    ilanlar:        ilanlar        ?? this.ilanlar,
+    yukleniyor:     yukleniyor     ?? this.yukleniyor,
+    dahaFazlaVar:   dahaFazlaVar   ?? this.dahaFazlaVar,
+    mevcutSayfa:    mevcutSayfa    ?? this.mevcutSayfa,
+    kategoriFacets: kategoriFacets ?? this.kategoriFacets,
   );
 }
 
@@ -247,10 +251,11 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
 
       setState(() {
         _algoliaState = _AlgoliaState(
-          ilanlar:      [..._algoliaState.ilanlar, ...benzersizYeni],
-          yukleniyor:   false,
-          dahaFazlaVar: sayfa < sonuc.toplamSayfa - 1,
-          mevcutSayfa:  sayfa,
+          ilanlar:        [..._algoliaState.ilanlar, ...benzersizYeni],
+          yukleniyor:     false,
+          dahaFazlaVar:   sayfa < sonuc.toplamSayfa - 1,
+          mevcutSayfa:    sayfa,
+          kategoriFacets: sifirla ? sonuc.kategoriFacets : _algoliaState.kategoriFacets,
         );
       });
     } catch (_) {
@@ -304,6 +309,7 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
               seciliAltKeyler:      _seciliAltKeyler,
               seciliSiralama:       _siralama,
               seciliIstekSehirleri: _seciliIstekSehirleri,
+              kategoriFacets:       _algoliaState.kategoriFacets,
               onUygula: (secim) {
                 _filtreUygula(() {
                   _seciliKategoriYolu   = secim.kategoriYolu;
@@ -661,7 +667,7 @@ class _IsteklerHeader extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(14, 10, 12, 4),
                 child: Row(
                   children: [
-                    Image.asset('assets/images/logo.png', height: 38),
+                    Image.asset('assets/images/logo.png', height: 48),
                     const Spacer(),
                     GestureDetector(
                       onTap: () => Navigator.of(context).push(
@@ -675,7 +681,7 @@ class _IsteklerHeader extends StatelessWidget {
                           Symbols.favorite,
                           color: AppColors.textPrimary,
                           size: 22,
-                          weight: 200,
+                          weight: 400,
                           fill: 0,
                         ),
                       ),

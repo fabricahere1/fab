@@ -48,6 +48,7 @@ class FiltreEkrani extends StatefulWidget {
   final List<String> seciliAltKeyler;
   final SiralamaTipi seciliSiralama;
   final List<String> seciliIstekSehirleri;
+  final Map<String, int> kategoriFacets;
   final void Function(FiltreSecimi secim) onUygula;
   final VoidCallback onTemizle;
 
@@ -57,6 +58,7 @@ class FiltreEkrani extends StatefulWidget {
     this.seciliAltKeyler = const [],
     required this.seciliSiralama,
     this.seciliIstekSehirleri = const [],
+    this.kategoriFacets = const {},
     required this.onUygula,
     required this.onTemizle,
   });
