@@ -9,15 +9,15 @@ const double kKategoriBarYuksekligi = 46.0;
 
 // ── Sıralama enum ─────────────────────────────────────────────────────────────
 
-enum SiralamaTipi { enYeni, enEski, ucretArtan, ucretAzalan }
+enum AramaSiralamaTipi { enYeni, enEski, ucretArtan, ucretAzalan }
 
-extension SiralamaTipiX on SiralamaTipi {
+extension AramaSiralamaTipiX on AramaSiralamaTipi {
   String get label {
     switch (this) {
-      case SiralamaTipi.enYeni:      return 'En yeni';
-      case SiralamaTipi.enEski:      return 'En eski';
-      case SiralamaTipi.ucretArtan:  return 'Ücret: Düşük → Yüksek';
-      case SiralamaTipi.ucretAzalan: return 'Ücret: Yüksek → Düşük';
+      case AramaSiralamaTipi.enYeni:      return 'En yeni';
+      case AramaSiralamaTipi.enEski:      return 'En eski';
+      case AramaSiralamaTipi.ucretArtan:  return 'Ücret: Düşük → Yüksek';
+      case AramaSiralamaTipi.ucretAzalan: return 'Ücret: Yüksek → Düşük';
     }
   }
 }

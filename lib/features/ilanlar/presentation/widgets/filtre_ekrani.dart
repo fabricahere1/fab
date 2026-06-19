@@ -589,7 +589,20 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                 Row(
                   children: [
                     if (node.emoji.isNotEmpty) ...[
-                      Text(node.emoji, style: const TextStyle(fontSize: 22)),
+                      Container(
+                        width: 32,
+                        height: 32,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: kategoriRengi(node.key).withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(10),
+                          border: secili
+                              ? Border.all(color: kategoriRengi(node.key), width: 1.5)
+                              : null,
+                        ),
+                        child: Text(node.emoji,
+                            style: const TextStyle(fontSize: 18, height: 1)),
+                      ),
                       const SizedBox(width: 8),
                     ],
                     Expanded(

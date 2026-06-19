@@ -265,6 +265,7 @@ class _GelenlerFiltreEkraniState extends State<GelenlerFiltreEkrani> {
                           return _FiltreKategoriSatiri(
                             ad: node.ad,
                             ikon: gelenlerKategoriIkon(node.key),
+                            kategoriKey: node.key,
                             secili: secili,
                             derinlikOku: !node.yaprakMi,
                             ilanSayisi: ilanSayilari[node.key] ?? 0,
@@ -363,6 +364,7 @@ class _FiltreKategoriSatiri extends StatelessWidget {
   final int? ilanSayisi;
   final String? altBilgi;
   final IconData? ikon;
+  final String? kategoriKey;
 
   const _FiltreKategoriSatiri({
     required this.ad,
@@ -373,16 +375,18 @@ class _FiltreKategoriSatiri extends StatelessWidget {
     this.ilanSayisi,
     this.altBilgi,
     this.ikon,
+    this.kategoriKey,
   });
 
   @override
   Widget build(BuildContext context) {
+    final renk = app_constants.kategoriRengi(kategoriKey ?? '');
     return InkWell(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
-          color: secili ? AppColors.red.withValues(alpha: 0.05) : Colors.white,
+          color: secili ? renk.withValues(alpha: 0.06) : Colors.white,
           border: Border(
             bottom: BorderSide(
               color: AppColors.divider.withValues(alpha: 0.5),
@@ -393,8 +397,7 @@ class _FiltreKategoriSatiri extends StatelessWidget {
         child: Row(
           children: [
             if (ikon != null) ...[
-              Icon(ikon, size: 18,
-                  color: secili ? AppColors.red : AppColors.textSecondary),
+              Icon(ikon, size: 18, color: renk),
               const SizedBox(width: 12),
             ],
             Expanded(
@@ -409,7 +412,7 @@ class _FiltreKategoriSatiri extends StatelessWidget {
                         style: GoogleFonts.dmSans(
                           fontSize: 14,
                           fontWeight: (secili || vurgulu) ? FontWeight.w600 : FontWeight.w400,
-                          color: secili ? AppColors.red : AppColors.textPrimary,
+                          color: secili ? renk : AppColors.textPrimary,
                         ),
                       ),
                       if (ilanSayisi != null && ilanSayisi! > 0) ...[
@@ -432,7 +435,7 @@ class _FiltreKategoriSatiri extends StatelessWidget {
                       style: GoogleFonts.dmSans(
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.red,
+                        color: renk,
                       ),
                     ),
                   ],
@@ -440,7 +443,7 @@ class _FiltreKategoriSatiri extends StatelessWidget {
               ),
             ),
             if (secili)
-              const Icon(Icons.check, size: 16, color: AppColors.red)
+              Icon(Icons.check, size: 16, color: renk)
             else if (derinlikOku)
               const Icon(Icons.chevron_right, size: 20, color: AppColors.textSecondary),
           ],

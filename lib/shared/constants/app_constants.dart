@@ -1,5 +1,7 @@
 // lib/shared/constants/app_constants.dart
 
+import 'package:flutter/material.dart';
+
 /// Firestore koleksiyon adları.
 class Collections {
   Collections._();
@@ -430,5 +432,20 @@ extension SiralamaTipiX on SiralamaTipi {
       case SiralamaTipi.enCokFavorilenen: return 'enCokFavorilenen';
       case SiralamaTipi.onerilen:         return 'onerilen';
     }
+  }
+}
+
+// ── Kategori Rengi ───────────────────────────────────────────────────────────
+
+/// Her ana kategoriye sabit, tutarlı bir renk atar (kart/rozet arka planı için).
+Color kategoriRengi(String key) {
+  switch (key) {
+    case 'kadin':       return const Color(0xFFE91E8C); // pembe
+    case 'erkek':       return const Color(0xFF2979FF); // mavi
+    case 'cocuk':       return const Color(0xFFFF9100); // turuncu
+    case 'ev':          return const Color(0xFF8D6E63); // kahverengi
+    case 'elektronik':  return const Color(0xFF7C4DFF); // mor
+    case 'supplement':  return const Color(0xFFFFC107); // sarı
+    default:            return const Color(0xFF9E9E9E); // gri (diğer)
   }
 }

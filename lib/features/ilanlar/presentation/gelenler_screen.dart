@@ -336,7 +336,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                       child: const Icon(
                         Symbols.favorite,
                         color: AppColors.textPrimary,
-                        size: 20,
+                        size: 24,
                         weight: 200,
                         fill: 0,
                       ),

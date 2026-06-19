@@ -660,8 +660,8 @@ class _IsteklerHeader extends StatelessWidget {
                         child: const Icon(
                           Symbols.favorite,
                           color: AppColors.textPrimary,
-                          size: 22,
-                          weight: 400,
+                          size: 24,
+                          weight: 200,
                           fill: 0,
                         ),
                       ),
@@ -796,10 +796,10 @@ class _IsteklerHeader extends StatelessWidget {
                                 end: Alignment.bottomRight,
                               )
                             : null,
-                        color: secili ? null : Colors.transparent,
+                        color: secili ? null : Colors.white,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                            color: const Color(0xFFDDDDDD), width: 1),
+                            color: const Color(0xFFEEEEEE), width: 1),
                         boxShadow: secili
                             ? [BoxShadow(
                                 color: const Color(0xFFE53935)
@@ -810,7 +810,7 @@ class _IsteklerHeader extends StatelessWidget {
                             : null,
                       ),
                       alignment: Alignment.center,
-                      child: Text('Tumü',
+                      child: Text('Tümü',
                           style: GoogleFonts.dmSans(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -859,7 +859,7 @@ class _IsteklerHeader extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          _kategoriIkon(kat.key),
+                          kategoriIkon(kat.key),
                           size: 15,
                           color: secili ? Colors.white : AppColors.textSecondary,
                         ),
@@ -867,7 +867,7 @@ class _IsteklerHeader extends StatelessWidget {
                         Text(kat.ad,
                             style: GoogleFonts.dmSans(
                               fontSize: 12,
-                              fontWeight: FontWeight.w400,
+                              fontWeight: FontWeight.w600,
                               color: secili
                                   ? Colors.white
                                   : AppColors.textPrimary,
@@ -1265,7 +1265,7 @@ class _HaftaninEnleriEkrani extends ConsumerWidget {
 }
 
 // Kategori ikon mapping — Material Symbols w100
-IconData _kategoriIkon(String key) {
+IconData kategoriIkon(String key) {
   switch (key) {
     case 'kadin':       return Symbols.face_3;
     case 'erkek':       return Symbols.face;
