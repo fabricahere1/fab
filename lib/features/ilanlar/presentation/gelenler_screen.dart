@@ -20,6 +20,7 @@ import 'package:go_router/go_router.dart';
 import 'package:iste_v3/features/ilanlar/presentation/favoriler_screen.dart';
 import 'widgets/ilan_karti.dart';
 import '../../../shared/widgets/turkiye_disi_arama_ekrani.dart';
+import '../../../shared/widgets/sehir_secim_widget.dart';
 
 
 
@@ -465,168 +466,40 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
 
                         const Divider(height: 24),
 
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                          child: Row(
-                            children: [
-                              Text('Varış Şehri',
-                                  style: GoogleFonts.dmSans(
-                                      fontSize: 14, fontWeight: FontWeight.w700,
-                                      color: AppColors.textPrimary)),
-                              const Spacer(),
-                              if (modalSehirler.isNotEmpty)
-                                GestureDetector(
-                                  onTap: () => setModalState(() => modalSehirler = []),
-                                  child: Text('Temizle',
-                                      style: GoogleFonts.dmSans(
-                                          fontSize: 13, color: AppColors.red,
-                                          fontWeight: FontWeight.w500)),
-                                ),
-                              if (modalSehirler.isNotEmpty) const SizedBox(width: 12),
-                              GestureDetector(
-                                onTap: () async {
-                                  final sonuc = await Navigator.push<String>(
-                                    context,
-                                    PageRouteBuilder(
-                                      opaque: false,
-                                      barrierColor: Colors.black54,
-                                      pageBuilder: (_, __, ___) => TurkiyeDisiAramaEkrani(
-                                        mevcutSecim: modalUlkeSehir,
-                                      ),
-                                      transitionsBuilder: (_, anim, __, child) =>
-                                          FadeTransition(opacity: anim, child: child),
-                                    ),
-                                  );
-                                  if (sonuc != null) {
-                                    setModalState(() => modalUlkeSehir =
-                                        sonuc == '__temizle__' ? '' : sonuc);
-                                  }
-                                },
-                                child: Text(
-                                  modalUlkeSehir.isNotEmpty
-                                      ? modalUlkeSehir
-                                      : 'Türkiye dışı',
-                                  style: GoogleFonts.dmSans(
-                                    fontSize: 13,
-                                    color: const Color(0xFF1565C0),
-                                    fontWeight: FontWeight.w500,
-                                    decoration: TextDecoration.underline,
-                                    decorationColor: const Color(0xFF1565C0),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
-                          child: GestureDetector(
+                        SehirSecimBolumu(
+                          baslik: 'Varış Şehri',
+                          seciliSehirler: modalSehirler,
+                          onDegisti: (yeni) => setModalState(() => modalSehirler = yeni),
+                          renk: AppColors.red,
+                          sagWidget: GestureDetector(
                             onTap: () async {
-                              List<String> temp = List.from(modalSehirler);
-                              await showDialog<void>(
-                                context: context,
-                                builder: (dlgCtx) => StatefulBuilder(
-                                  builder: (dlgCtx, setDlg) => AlertDialog(
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16)),
-                                    title: Text('Varış Şehri',
-                                        style: GoogleFonts.dmSans(
-                                            fontSize: 16, fontWeight: FontWeight.w700)),
-                                    content: SizedBox(
-                                      width: double.maxFinite,
-                                      height: 340,
-                                      child: ListView(
-                                        children: [
-                                          CheckboxListTile(
-                                            dense: true,
-                                            title: Text('Tümü',
-                                                style: GoogleFonts.dmSans(fontSize: 14)),
-                                            value: temp.isEmpty,
-                                            activeColor: AppColors.red,
-                                            onChanged: (v) {
-                                              if (v == true) setDlg(() => temp.clear());
-                                            },
-                                          ),
-                                          ...app_constants.kTurkiyeSehirleri.map((s) =>
-                                            CheckboxListTile(
-                                              dense: true,
-                                              title: Text(s,
-                                                  style: GoogleFonts.dmSans(fontSize: 14)),
-                                              value: temp.contains(s),
-                                              activeColor: AppColors.red,
-                                              onChanged: (v) {
-                                                setDlg(() => v == true
-                                                    ? temp.add(s)
-                                                    : temp.remove(s));
-                                              },
-                                            )),
-                                        ],
-                                      ),
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(dlgCtx),
-                                        child: Text('İptal',
-                                            style: GoogleFonts.dmSans(
-                                                color: AppColors.textSecondary)),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          setModalState(() => modalSehirler = List.from(temp));
-                                          Navigator.pop(dlgCtx);
-                                        },
-                                        child: Text('Tamam',
-                                            style: GoogleFonts.dmSans(
-                                                color: AppColors.red,
-                                                fontWeight: FontWeight.w600)),
-                                      ),
-                                    ],
+                              final sonuc = await Navigator.push<String>(
+                                context,
+                                PageRouteBuilder(
+                                  opaque: false,
+                                  barrierColor: Colors.black54,
+                                  pageBuilder: (_, __, ___) => TurkiyeDisiAramaEkrani(
+                                    mevcutSecim: modalUlkeSehir,
                                   ),
+                                  transitionsBuilder: (_, anim, __, child) =>
+                                      FadeTransition(opacity: anim, child: child),
                                 ),
                               );
+                              if (sonuc != null) {
+                                setModalState(() => modalUlkeSehir =
+                                    sonuc == '__temizle__' ? '' : sonuc);
+                              }
                             },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 12),
-                              decoration: BoxDecoration(
-                                color: modalSehirler.isEmpty
-                                    ? AppColors.surface
-                                    : AppColors.red.withValues(alpha: 0.05),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: modalSehirler.isEmpty
-                                      ? AppColors.divider
-                                      : AppColors.red.withValues(alpha: 0.4),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.location_on_outlined,
-                                      size: 18,
-                                      color: modalSehirler.isEmpty
-                                          ? AppColors.textSecondary
-                                          : AppColors.red),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      modalSehirler.isEmpty
-                                          ? 'Tüm şehirler'
-                                          : modalSehirler.join(', '),
-                                      style: GoogleFonts.dmSans(
-                                        fontSize: 14,
-                                        color: modalSehirler.isEmpty
-                                            ? AppColors.textHint
-                                            : AppColors.textPrimary,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  Icon(Icons.keyboard_arrow_down_rounded,
-                                      size: 20,
-                                      color: modalSehirler.isEmpty
-                                          ? AppColors.textSecondary
-                                          : AppColors.red),
-                                ],
+                            child: Text(
+                              modalUlkeSehir.isNotEmpty
+                                  ? modalUlkeSehir
+                                  : 'Türkiye dışı',
+                              style: GoogleFonts.dmSans(
+                                fontSize: 13,
+                                color: const Color(0xFF1565C0),
+                                fontWeight: FontWeight.w500,
+                                decoration: TextDecoration.underline,
+                                decorationColor: const Color(0xFF1565C0),
                               ),
                             ),
                           ),

@@ -7,6 +7,7 @@ import '../../../../shared/constants/app_constants.dart';
 import '../ilanlar_screen.dart';
 import '../../../arama/data/arama_service.dart';
 import '../../../../shared/widgets/turkiye_disi_arama_ekrani.dart';
+import '../../../../shared/widgets/sehir_secim_widget.dart';
 
 // Türkiye'nin 81 ili
 const kTurkiyeSehirleri = [
@@ -291,61 +292,6 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
     }
   }
 
-  void _sehirDialogAc() async {
-    List<String> temp = List.from(_modalSehirler);
-    await showDialog<void>(
-      context: context,
-      builder: (dlgCtx) => StatefulBuilder(
-        builder: (dlgCtx, setDlg) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text('İstek Şehri',
-              style: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w700)),
-          content: SizedBox(
-            width: double.maxFinite,
-            height: 340,
-            child: ListView(
-              children: [
-                CheckboxListTile(
-                  dense: true,
-                  title: Text('Tümü', style: GoogleFonts.dmSans(fontSize: 14)),
-                  value: temp.isEmpty,
-                  activeColor: _turuncu,
-                  onChanged: (v) {
-                    if (v == true) setDlg(() => temp.clear());
-                  },
-                ),
-                ...kTurkiyeSehirleri.map((s) => CheckboxListTile(
-                  dense: true,
-                  title: Text(s, style: GoogleFonts.dmSans(fontSize: 14)),
-                  value: temp.contains(s),
-                  activeColor: _turuncu,
-                  onChanged: (v) {
-                    setDlg(() => v == true ? temp.add(s) : temp.remove(s));
-                  },
-                )),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dlgCtx),
-              child: Text('İptal',
-                  style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() => _modalSehirler = List.from(temp));
-                Navigator.pop(dlgCtx);
-              },
-              child: Text('Tamam',
-                  style: GoogleFonts.dmSans(
-                      color: _turuncu, fontWeight: FontWeight.w600)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -458,7 +404,7 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                         crossAxisCount: 2,
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 10,
-                        childAspectRatio: 1.55,
+                        childAspectRatio: 1.85,
                       ),
                       itemCount: nodes.length,
                       itemBuilder: (_, i) {
@@ -512,91 +458,23 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
 
                     const SizedBox(height: 8),
                     const Divider(height: 1, color: AppColors.divider),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-                      child: Row(
-                        children: [
-                          Text('İstek Şehri',
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary)),
-                          const Spacer(),
-                          if (_modalSehirler.isNotEmpty)
-                            GestureDetector(
-                              onTap: () =>
-                                  setState(() => _modalSehirler = []),
-                              child: Text('Temizle',
-                                  style: GoogleFonts.dmSans(
-                                      fontSize: 13,
-                                      color: _turuncu,
-                                      fontWeight: FontWeight.w500)),
-                            ),
-                          if (_modalSehirler.isNotEmpty) const SizedBox(width: 12),
-                          GestureDetector(
-                            onTap: _turkiyeDisiDialogAc,
-                            child: Text(
-                              _modalUlkeSehir.isNotEmpty
-                                  ? _modalUlkeSehir
-                                  : 'Türkiye dışı',
-                              style: GoogleFonts.dmSans(
-                                fontSize: 13,
-                                color: _maviLink,
-                                fontWeight: FontWeight.w500,
-                                decoration: TextDecoration.underline,
-                                decorationColor: _maviLink,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(14, 0, 14, 16),
-                      child: GestureDetector(
-                        onTap: _sehirDialogAc,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: _modalSehirler.isEmpty
-                                ? AppColors.surface
-                                : _turuncu.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: _modalSehirler.isEmpty
-                                  ? AppColors.divider
-                                  : _turuncu.withValues(alpha: 0.4),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.location_on_outlined,
-                                  size: 18,
-                                  color: _modalSehirler.isEmpty
-                                      ? AppColors.textSecondary
-                                      : _turuncu),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  _modalSehirler.isEmpty
-                                      ? 'Tüm şehirler'
-                                      : _modalSehirler.join(', '),
-                                  style: GoogleFonts.dmSans(
-                                    fontSize: 14,
-                                    color: _modalSehirler.isEmpty
-                                        ? AppColors.textHint
-                                        : AppColors.textPrimary,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              Icon(Icons.keyboard_arrow_down_rounded,
-                                  size: 20,
-                                  color: _modalSehirler.isEmpty
-                                      ? AppColors.textSecondary
-                                      : _turuncu),
-                            ],
+                    SehirSecimBolumu(
+                      baslik: 'İstek Şehri',
+                      seciliSehirler: _modalSehirler,
+                      onDegisti: (yeni) => setState(() => _modalSehirler = yeni),
+                      renk: _turuncu,
+                      sagWidget: GestureDetector(
+                        onTap: _turkiyeDisiDialogAc,
+                        child: Text(
+                          _modalUlkeSehir.isNotEmpty
+                              ? _modalUlkeSehir
+                              : 'Türkiye dışı',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 13,
+                            color: _maviLink,
+                            fontWeight: FontWeight.w500,
+                            decoration: TextDecoration.underline,
+                            decorationColor: _maviLink,
                           ),
                         ),
                       ),
@@ -703,7 +581,7 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
             ],
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
@@ -728,19 +606,17 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if ((widget.kategoriFacets[node.key] ?? 0) > 0) ...[
-                      const SizedBox(width: 4),
-                      Text(
-                        '(${widget.kategoriFacets[node.key]})',
-                        style: GoogleFonts.dmSans(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
+                if ((widget.kategoriFacets[node.key] ?? 0) > 0)
+                  Text(
+                    '(${widget.kategoriFacets[node.key]}) Aktif ilan',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                 if (secimMetni != null) ...[
                   const SizedBox(height: 4),
                   Text(
