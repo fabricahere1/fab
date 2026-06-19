@@ -867,7 +867,7 @@ class _IsteklerHeader extends StatelessWidget {
                         Text(kat.ad,
                             style: GoogleFonts.dmSans(
                               fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w400,
                               color: secili
                                   ? Colors.white
                                   : AppColors.textPrimary,
