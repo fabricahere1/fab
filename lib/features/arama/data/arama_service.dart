@@ -100,11 +100,26 @@ Future<List<AramaSonucu>> algoliaAra(String sorgu, {String? katFiltre}) async {
   return hits.map((h) => AramaSonucu.fromJson(h as Map<String, dynamic>)).toList();
 }
 
-// ── Türkiye dışı yer arama (sadece nereye alanında arar) ──────────────────────
+// ── Türkiye dışı yer arama ─────────────────────────────────────────────────────
+//
+// alan parametresi hangi Algolia field'ına bakılacağını belirler:
+// 'nereye' -> istekler ekranı (isteğin teslim edileceği yer)
+// 'nereden' -> gelenler ekranı (taşıyıcının geldiği yer)
+//
+// NOT: ilanlar_nereye index'i sadece 'nereye' alanını içerir. 'nereden' alanı
+// için ana 'ilanlar' index'i üzerinden sorgu yapılır (facet/distinct olmadan,
+// hits üzerinden manuel benzersizleştirme ile).
 
-Future<List<String>> algoliaYerAra(String sorgu) async {
+Future<List<String>> algoliaYerAra(String sorgu, {String alan = 'nereye'}) async {
   if (sorgu.trim().isEmpty) return [];
 
+  if (alan == 'nereden') {
+    return _algoliaYerAraNereden(sorgu);
+  }
+  return _algoliaYerAraNereye(sorgu);
+}
+
+Future<List<String>> _algoliaYerAraNereye(String sorgu) async {
   final url = Uri.parse(
     'https://$_kAlgoliaAppId-dsn.algolia.net/1/indexes/ilanlar_nereye/query',
   );
@@ -127,7 +142,6 @@ Future<List<String>> algoliaYerAra(String sorgu) async {
   final data = jsonDecode(response.body) as Map<String, dynamic>;
   final hits = data['hits'] as List<dynamic>? ?? [];
 
-  final sorguKucuk = sorgu.toLowerCase();
   final liste = hits
       .map((h) => (h as Map<String, dynamic>)['nereye'] as String? ?? '')
       .where((n) => n.isNotEmpty)
@@ -136,6 +150,48 @@ Future<List<String>> algoliaYerAra(String sorgu) async {
           (s) => s.toLowerCase() == n.toLowerCase()))
       .toList();
 
+  return _siralaOneriler(liste, sorgu);
+}
+
+Future<List<String>> _algoliaYerAraNereden(String sorgu) async {
+  // ilanlar_nereye index'i nereden alanını içermiyor, ana index'te ara.
+  final url = Uri.parse(
+    'https://$_kAlgoliaAppId-dsn.algolia.net/1/indexes/$_kAlgoliaIndex/query',
+  );
+
+  final response = await http.post(
+    url,
+    headers: {
+      'X-Algolia-Application-Id': _kAlgoliaAppId,
+      'X-Algolia-API-Key': _kAlgoliaSearchKey,
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({
+      'query': sorgu,
+      'restrictSearchableAttributes': ['nereden'],
+      'hitsPerPage': 100,
+      'attributesToRetrieve': ['nereden'],
+      'filters': 'tip:tasiyici AND aktif:true AND durum:yayinda',
+    }),
+  );
+
+  if (response.statusCode != 200) return [];
+  final data = jsonDecode(response.body) as Map<String, dynamic>;
+  final hits = data['hits'] as List<dynamic>? ?? [];
+
+  final liste = hits
+      .map((h) => (h as Map<String, dynamic>)['nereden'] as String? ?? '')
+      .where((n) => n.isNotEmpty)
+      .toSet()
+      .where((n) => !kTurkiyeSehirleri.any(
+          (s) => s.toLowerCase() == n.toLowerCase()))
+      .toList();
+
+  return _siralaOneriler(liste, sorgu);
+}
+
+List<String> _siralaOneriler(List<String> liste, String sorgu) {
+  final sorguKucuk = sorgu.toLowerCase();
   liste.sort((a, b) {
     final aBasliyor = a.toLowerCase().startsWith(sorguKucuk);
     final bBasliyor = b.toLowerCase().startsWith(sorguKucuk);
@@ -143,7 +199,6 @@ Future<List<String>> algoliaYerAra(String sorgu) async {
     if (!aBasliyor && bBasliyor) return 1;
     return a.toLowerCase().compareTo(b.toLowerCase());
   });
-
   return liste;
 }
 

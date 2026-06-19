@@ -19,6 +19,7 @@ import '../../../shared/widgets/neden_iste_bar.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iste_v3/features/ilanlar/presentation/favoriler_screen.dart';
 import 'widgets/ilan_karti.dart';
+import '../../../shared/widgets/turkiye_disi_arama_ekrani.dart';
 
 
 
@@ -489,8 +490,9 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                                     PageRouteBuilder(
                                       opaque: false,
                                       barrierColor: Colors.black54,
-                                      pageBuilder: (_, __, ___) => _GTurkiyeDisiAramaEkrani(
+                                      pageBuilder: (_, __, ___) => TurkiyeDisiAramaEkrani(
                                         mevcutSecim: modalUlkeSehir,
+                                        alan: 'nereden',
                                       ),
                                       transitionsBuilder: (_, anim, __, child) =>
                                           FadeTransition(opacity: anim, child: child),
@@ -969,14 +971,16 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
         ),
 
         // ── Aktif filtre badge'leri ──
-        if (_seciliKategoriYolu.isNotEmpty || _seciliSehirler.isNotEmpty)
+        if (_seciliKategoriYolu.isNotEmpty || _seciliAltKeyler.isNotEmpty ||
+            _seciliSehirler.isNotEmpty || _seciliUlkeSehir.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
-            child: Row(
+            child: Wrap(
+              spacing: 6,
+              runSpacing: 6,
               children: [
                 if (_seciliKategoriYolu.isNotEmpty)
                   Container(
-                    margin: const EdgeInsets.only(right: 6),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 3),
                     decoration: BoxDecoration(
@@ -986,7 +990,9 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
                       Flexible(
                         child: Text(
-                          app_constants.kategoriYoluMetni(_seciliKategoriYolu),
+                          _seciliAltKeyler.isNotEmpty
+                              ? '${_seciliAltKeyler.length} alt kategori'
+                              : app_constants.kategoriYoluMetni(_seciliKategoriYolu),
                           style: GoogleFonts.dmSans(
                               fontSize: 12,
                               color: AppColors.red,
@@ -997,7 +1003,10 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                       ),
                       const SizedBox(width: 6),
                       GestureDetector(
-                        onTap: () => setState(() => _seciliKategoriYolu = []),
+                        onTap: () => _filtreUygula(() {
+                          _seciliKategoriYolu = [];
+                          _seciliAltKeyler    = [];
+                        }),
                         child: const Icon(Icons.close_rounded,
                             size: 13, color: AppColors.red),
                       ),
@@ -1025,9 +1034,40 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                       ),
                       const SizedBox(width: 6),
                       GestureDetector(
-                        onTap: () => setState(() => _seciliSehirler = []),
+                        onTap: () => _filtreUygula(() => _seciliSehirler = []),
                         child: const Icon(Icons.close_rounded,
                             size: 13, color: AppColors.red),
+                      ),
+                    ]),
+                  ),
+                if (_seciliUlkeSehir.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1565C0).withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      const Icon(Icons.public_outlined,
+                          size: 12, color: Color(0xFF1565C0)),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          _seciliUlkeSehir,
+                          style: GoogleFonts.dmSans(
+                              fontSize: 12,
+                              color: const Color(0xFF1565C0),
+                              fontWeight: FontWeight.w500),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      GestureDetector(
+                        onTap: () => _filtreUygula(() => _seciliUlkeSehir = ''),
+                        child: const Icon(Icons.close_rounded,
+                            size: 13, color: Color(0xFF1565C0)),
                       ),
                     ]),
                   ),
@@ -1572,175 +1612,6 @@ class _GSiralamaSegmented extends StatelessWidget {
   }
 }
 
-// ── Gelenler Türkiye Dışı Arama Ekranı ───────────────────────────────────────
-
-class _GTurkiyeDisiAramaEkrani extends StatefulWidget {
-  final String mevcutSecim;
-  const _GTurkiyeDisiAramaEkrani({required this.mevcutSecim});
-
-  @override
-  State<_GTurkiyeDisiAramaEkrani> createState() => _GTurkiyeDisiAramaEkraniState();
-}
-
-class _GTurkiyeDisiAramaEkraniState extends State<_GTurkiyeDisiAramaEkrani> {
-  late final TextEditingController _ctrl;
-  List<String> _oneriler = [];
-  bool _yukleniyor = false;
-  static const _mavi = Color(0xFF1565C0);
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = TextEditingController(text: widget.mevcutSecim);
-    if (widget.mevcutSecim.isNotEmpty) _ara(widget.mevcutSecim);
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _ara(String v) async {
-    if (v.trim().isEmpty) {
-      setState(() { _oneriler = []; _yukleniyor = false; });
-      return;
-    }
-    setState(() => _yukleniyor = true);
-    try {
-      final sonuclar = await algoliaYerAra(v);
-      if (mounted) setState(() { _oneriler = sonuclar; _yukleniyor = false; });
-    } catch (_) {
-      if (mounted) setState(() => _yukleniyor = false);
-    }
-  }
-
-  void _sec(String yer) => Navigator.pop(context, yer);
-
-  @override
-  Widget build(BuildContext context) {
-    final statusH = MediaQuery.of(context).padding.top;
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          Container(
-            color: Colors.white,
-            padding: EdgeInsets.fromLTRB(8, statusH + 8, 8, 8),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                      size: 20, color: AppColors.textPrimary),
-                  onPressed: () => Navigator.pop(context),
-                ),
-                Expanded(
-                  child: Container(
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF5F5F5),
-                      borderRadius: BorderRadius.circular(22),
-                    ),
-                    child: TextField(
-                      controller: _ctrl,
-                      autofocus: true,
-                      style: GoogleFonts.dmSans(fontSize: 14),
-                      decoration: InputDecoration(
-                        hintText: 'Ülke veya şehir girin...',
-                        hintStyle: GoogleFonts.dmSans(
-                            fontSize: 14, color: AppColors.textHint),
-                        prefixIcon: const Icon(Icons.public_outlined,
-                            size: 18, color: _mavi),
-                        suffixIcon: _ctrl.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.close,
-                                    size: 18, color: AppColors.textSecondary),
-                                onPressed: () {
-                                  _ctrl.clear();
-                                  setState(() => _oneriler = []);
-                                },
-                              )
-                            : null,
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      onChanged: _ara,
-                      onSubmitted: (v) {
-                        if (v.trim().isNotEmpty) _sec(v.trim());
-                      },
-                    ),
-                  ),
-                ),
-                if (widget.mevcutSecim.isNotEmpty)
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, '__temizle__'),
-                    child: Text('Temizle',
-                        style: GoogleFonts.dmSans(
-                            fontSize: 13, color: AppColors.textSecondary)),
-                  ),
-              ],
-            ),
-          ),
-          const Divider(height: 1, color: AppColors.divider),
-          Expanded(
-            child: _yukleniyor
-                ? const Center(
-                    child: SizedBox(width: 20, height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: _mavi)))
-                : _oneriler.isEmpty && _ctrl.text.isNotEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.location_off_outlined,
-                                size: 48, color: AppColors.divider),
-                            const SizedBox(height: 12),
-                            Text('Öneri bulunamadı',
-                                style: GoogleFonts.dmSans(
-                                    fontSize: 14, color: AppColors.textSecondary)),
-                            const SizedBox(height: 4),
-                            GestureDetector(
-                              onTap: () => _sec(_ctrl.text.trim()),
-                              child: Text(
-                                '"${_ctrl.text.trim()}" ile devam et',
-                                style: GoogleFonts.dmSans(
-                                    fontSize: 13, color: _mavi,
-                                    fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        itemCount: _oneriler.length,
-                        itemBuilder: (_, i) => InkWell(
-                          onTap: () => _sec(_oneriler[i]),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 14),
-                            decoration: BoxDecoration(
-                              border: Border(
-                                bottom: BorderSide(
-                                    color: AppColors.divider.withValues(alpha: 0.5),
-                                    width: 0.5),
-                              ),
-                            ),
-                            child: Row(children: [
-                              const Icon(Icons.location_on_outlined,
-                                  size: 18, color: _mavi),
-                              const SizedBox(width: 12),
-                              Text(_oneriler[i],
-                                  style: GoogleFonts.dmSans(fontSize: 15)),
-                            ]),
-                          ),
-                        ),
-                      ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 IconData _gelenlerKategoriIkon(String key) {
   switch (key) {
     case 'kadin':       return Symbols.face_3;

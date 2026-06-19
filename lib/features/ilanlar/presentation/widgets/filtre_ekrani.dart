@@ -4,8 +4,25 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../shared/constants/app_colors.dart';
 import '../../../../shared/constants/app_constants.dart';
+import '../ilanlar_screen.dart';
 import '../../../arama/data/arama_service.dart';
+import '../../../../shared/widgets/turkiye_disi_arama_ekrani.dart';
 
+// Türkiye'nin 81 ili
+const kTurkiyeSehirleri = [
+  'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Amasya', 'Ankara', 'Antalya',
+  'Artvin', 'Aydın', 'Balıkesir', 'Bilecik', 'Bingöl', 'Bitlis', 'Bolu',
+  'Burdur', 'Bursa', 'Çanakkale', 'Çankırı', 'Çorum', 'Denizli', 'Diyarbakır',
+  'Edirne', 'Elazığ', 'Erzincan', 'Erzurum', 'Eskişehir', 'Gaziantep', 'Giresun',
+  'Gümüşhane', 'Hakkari', 'Hatay', 'Isparta', 'İçel (Mersin)', 'İstanbul',
+  'İzmir', 'Kars', 'Kastamonu', 'Kayseri', 'Kırklareli', 'Kırşehir', 'Kocaeli',
+  'Konya', 'Kütahya', 'Malatya', 'Manisa', 'Kahramanmaraş', 'Mardin', 'Muğla',
+  'Muş', 'Nevşehir', 'Niğde', 'Ordu', 'Rize', 'Sakarya', 'Samsun', 'Siirt',
+  'Sinop', 'Sivas', 'Tekirdağ', 'Tokat', 'Trabzon', 'Tunceli', 'Şanlıurfa',
+  'Uşak', 'Van', 'Yozgat', 'Zonguldak', 'Aksaray', 'Bayburt', 'Karaman',
+  'Kırıkkale', 'Batman', 'Şırnak', 'Bartın', 'Ardahan', 'Iğdır', 'Yalova',
+  'Karabük', 'Kilis', 'Osmaniye', 'Düzce',
+];
 
 // ── Filtre sonuç veri sınıfı ──────────────────────────────────────────────────
 
@@ -261,7 +278,7 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
       PageRouteBuilder(
         opaque: false,
         barrierColor: Colors.black54,
-        pageBuilder: (_, __, ___) => _TurkiyeDisiAramaEkrani(
+        pageBuilder: (_, __, ___) => TurkiyeDisiAramaEkrani(
           mevcutSecim: _modalUlkeSehir,
         ),
         transitionsBuilder: (_, anim, __, child) =>
@@ -337,23 +354,9 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
     final baslik     = _seviyeBasligi();
     final anaGorunu  = !_altSayfada;
 
-    return PopScope(
-      canPop: !_altSayfada,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && _altSayfada) {
-          setState(() {
-            if (_gezinmeYolu.length > 1) {
-              _gezinmeYolu = _gezinmeYolu.sublist(0, _gezinmeYolu.length - 1);
-            } else {
-              _gezinmeYolu     = [];
-              _geciciAltKeyler = List.from(_modalAltKeyler);
-            }
-          });
-        }
-      },
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: SafeArea(
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
         child: Column(
           children: [
             // ── Header ────────────────────────────────────────────────────────
@@ -666,109 +669,94 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
           ],
         ),
       ),
-      ),
     );
   }
 
   Widget _buildAnaKart(KategoriNode node, {required bool aktif, required VoidCallback onTap}) {
-    final secimMetni  = _kartSecimMetni(node);
-    final secili      = secimMetni != null;
-    final soluk       = !aktif && !secili;
-    final ilanSayisi  = widget.kategoriFacets[node.key];
+    final secimMetni = _kartSecimMetni(node);
+    final secili     = secimMetni != null;
+    final soluk      = !aktif && !secili;
 
     return GestureDetector(
       onTap: onTap,
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 200),
         opacity: soluk ? 0.35 : 1.0,
-        child: Stack(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: secili
-                    ? _turuncu.withValues(alpha: 0.04)
-                    : Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: secili
-                      ? _turuncu.withValues(alpha: 0.5)
-                      : const Color(0xFFEEEEEE),
-                  width: secili ? 1.5 : 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+        child: Container(
+          decoration: BoxDecoration(
+            color: secili
+                ? _turuncu.withValues(alpha: 0.04)
+                : Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: secili
+                  ? _turuncu.withValues(alpha: 0.5)
+                  : const Color(0xFFEEEEEE),
+              width: secili ? 1.5 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        if (node.emoji.isNotEmpty) ...[
-                          Text(node.emoji, style: const TextStyle(fontSize: 22)),
-                          const SizedBox(width: 8),
-                        ],
-                        Expanded(
-                          child: Text(
-                            node.ad,
-                            style: TextStyle(
-                              fontFamily: 'SF Pro Display',
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: secili ? _turuncu : AppColors.textPrimary,
-                              height: 1.2,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (secimMetni != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        '✓ $secimMetni',
-                        style: GoogleFonts.dmSans(
-                          fontSize: 11,
+                    if (node.emoji.isNotEmpty) ...[
+                      Text(node.emoji, style: const TextStyle(fontSize: 22)),
+                      const SizedBox(width: 8),
+                    ],
+                    Expanded(
+                      child: Text(
+                        node.ad,
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Display',
+                          fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: _turuncu,
+                          color: secili ? _turuncu : AppColors.textPrimary,
+                          height: 1.2,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                    ),
+                    if ((widget.kategoriFacets[node.key] ?? 0) > 0) ...[
+                      const SizedBox(width: 4),
+                      Text(
+                        '(${widget.kategoriFacets[node.key]})',
+                        style: GoogleFonts.dmSans(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                     ],
                   ],
                 ),
-              ),
-            ),
-            if (ilanSayisi != null && ilanSayisi > 0)
-              Positioned(
-                top: 6,
-                right: 6,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: secili ? _turuncu : const Color(0xFF666666),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    ilanSayisi > 999 ? '999+' : '$ilanSayisi',
+                if (secimMetni != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    '✓ $secimMetni',
                     style: GoogleFonts.dmSans(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: _turuncu,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ),
-          ],
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -950,191 +938,6 @@ class _SiralamaSegmented extends StatelessWidget {
             ),
           );
         }).toList(),
-      ),
-    );
-  }
-}
-
-
-// ── Türkiye Dışı Arama Ekranı ─────────────────────────────────────────────────
-
-class _TurkiyeDisiAramaEkrani extends StatefulWidget {
-  final String mevcutSecim;
-  const _TurkiyeDisiAramaEkrani({required this.mevcutSecim});
-
-  @override
-  State<_TurkiyeDisiAramaEkrani> createState() =>
-      _TurkiyeDisiAramaEkraniState();
-}
-
-class _TurkiyeDisiAramaEkraniState extends State<_TurkiyeDisiAramaEkrani> {
-  late final TextEditingController _ctrl;
-  List<String> _oneriler = [];
-  bool _yukleniyor = false;
-  static const _mavi = Color(0xFF1565C0);
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = TextEditingController(text: widget.mevcutSecim);
-    if (widget.mevcutSecim.isNotEmpty) _ara(widget.mevcutSecim);
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _ara(String v) async {
-    if (v.trim().isEmpty) {
-      setState(() { _oneriler = []; _yukleniyor = false; });
-      return;
-    }
-    setState(() => _yukleniyor = true);
-    try {
-      final sonuclar = await algoliaYerAra(v);
-      if (mounted) setState(() { _oneriler = sonuclar; _yukleniyor = false; });
-    } catch (_) {
-      if (mounted) setState(() => _yukleniyor = false);
-    }
-  }
-
-  void _sec(String yer) {
-    Navigator.pop(context, yer);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final statusH = MediaQuery.of(context).padding.top;
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          // ── Arama çubuğu ──────────────────────────────────────────────────
-          Container(
-            color: Colors.white,
-            padding: EdgeInsets.fromLTRB(8, statusH + 8, 8, 8),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                      size: 20, color: AppColors.textPrimary),
-                  onPressed: () => Navigator.pop(context),
-                ),
-                Expanded(
-                  child: Container(
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF5F5F5),
-                      borderRadius: BorderRadius.circular(22),
-                    ),
-                    child: TextField(
-                      controller: _ctrl,
-                      autofocus: true,
-                      style: GoogleFonts.dmSans(fontSize: 14),
-                      decoration: InputDecoration(
-                        hintText: 'Ülke veya şehir girin...',
-                        hintStyle: GoogleFonts.dmSans(
-                            fontSize: 14, color: AppColors.textHint),
-                        prefixIcon: const Icon(Icons.public_outlined,
-                            size: 18, color: _mavi),
-                        suffixIcon: _ctrl.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.close,
-                                    size: 18, color: AppColors.textSecondary),
-                                onPressed: () {
-                                  _ctrl.clear();
-                                  setState(() => _oneriler = []);
-                                },
-                              )
-                            : null,
-                        border: InputBorder.none,
-                        contentPadding:
-                            const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      onChanged: _ara,
-                      onSubmitted: (v) {
-                        if (v.trim().isNotEmpty) _sec(v.trim());
-                      },
-                    ),
-                  ),
-                ),
-                if (widget.mevcutSecim.isNotEmpty)
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, '__temizle__'),
-                    child: Text('Temizle',
-                        style: GoogleFonts.dmSans(
-                            fontSize: 13, color: AppColors.textSecondary)),
-                  ),
-              ],
-            ),
-          ),
-          const Divider(height: 1, color: AppColors.divider),
-
-          // ── Sonuçlar ──────────────────────────────────────────────────────
-          Expanded(
-            child: _yukleniyor
-                ? const Center(
-                    child: SizedBox(
-                      width: 20, height: 20,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: _mavi),
-                    ),
-                  )
-                : _oneriler.isEmpty && _ctrl.text.isNotEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.location_off_outlined,
-                                size: 48, color: AppColors.divider),
-                            const SizedBox(height: 12),
-                            Text('Öneri bulunamadı',
-                                style: GoogleFonts.dmSans(
-                                    fontSize: 14,
-                                    color: AppColors.textSecondary)),
-                            const SizedBox(height: 4),
-                            GestureDetector(
-                              onTap: () => _sec(_ctrl.text.trim()),
-                              child: Text(
-                                '"${_ctrl.text.trim()}" ile devam et',
-                                style: GoogleFonts.dmSans(
-                                    fontSize: 13,
-                                    color: _mavi,
-                                    fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        itemCount: _oneriler.length,
-                        itemBuilder: (_, i) => InkWell(
-                          onTap: () => _sec(_oneriler[i]),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 14),
-                            decoration: BoxDecoration(
-                              border: Border(
-                                bottom: BorderSide(
-                                    color: AppColors.divider
-                                        .withValues(alpha: 0.5),
-                                    width: 0.5),
-                              ),
-                            ),
-                            child: Row(children: [
-                              const Icon(Icons.location_on_outlined,
-                                  size: 18, color: _mavi),
-                              const SizedBox(width: 12),
-                              Text(_oneriler[i],
-                                  style: GoogleFonts.dmSans(fontSize: 15)),
-                            ]),
-                          ),
-                        ),
-                      ),
-          ),
-        ],
       ),
     );
   }
