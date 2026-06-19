@@ -180,7 +180,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
         kategoriYolu:    _seciliKategoriYolu,
         seciliAltKeyler: _seciliAltKeyler,
         sehirler:        _seciliSehirler,
-        nerdenUlkeSehir: _seciliUlkeSehir,
+        ulkeSehir:       _seciliUlkeSehir,
         siralama:        _siralama.algoliaKey,
         ilanTipi:        'tasiyici',
         sayfa:           sayfa,
@@ -492,7 +492,6 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                                       barrierColor: Colors.black54,
                                       pageBuilder: (_, __, ___) => TurkiyeDisiAramaEkrani(
                                         mevcutSecim: modalUlkeSehir,
-                                        alan: 'nereden',
                                       ),
                                       transitionsBuilder: (_, anim, __, child) =>
                                           FadeTransition(opacity: anim, child: child),
