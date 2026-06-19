@@ -148,12 +148,21 @@ Future<List<String>> algoliaYerAra(String sorgu) async {
 }
 
 // ── Filtreleme (ilanlar ekranı için) ─────────────────────────────────────────
+//
+// İstekler ekranı: ulkeSehir parametresi nereye alanına filtre uygular
+// (isteğin teslim edileceği yer — örn. Londra'dan Milano'ya gidecek biri
+// Milano'ya teslim edilecek istek arar).
+//
+// Gelenler ekranı: nerdenUlkeSehir parametresi nereden alanına filtre uygular
+// (taşıyıcının geldiği yer — örn. Milano'da yaşayan biri Londra'dan gelen
+// taşıyıcı arar).
 
 Future<AlgoliaFiltreSonucu> algoliaFiltrele({
   List<String> kategoriYolu    = const [],
   List<String> seciliAltKeyler = const [],
   List<String> sehirler        = const [],
-  String ulkeSehir = '',
+  String ulkeSehir       = '',   // Türkiye dışı - nereye filtresi (istekler için)
+  String nerdenUlkeSehir = '',   // Türkiye dışı - nereden filtresi (gelenler için)
   String siralama  = 'enYeni',
   String ilanTipi  = 'istek',
   int sayfa        = 0,
@@ -192,8 +201,14 @@ Future<AlgoliaFiltreSonucu> algoliaFiltrele({
     final sehirFilter = sehirler.map((s) => 'nereye:"$s"').join(' OR ');
     filterParcalar.add('($sehirFilter)');
   }
+  // Türkiye dışı serbest metin filtresi
+  // İstekler: nereye filtresi (isteğin teslim edileceği yer)
   if (ulkeSehir.isNotEmpty) {
     filterParcalar.add('nereye:"$ulkeSehir"');
+  }
+  // Gelenler: nereden filtresi (taşıyıcının geldiği yer)
+  if (nerdenUlkeSehir.isNotEmpty) {
+    filterParcalar.add('nereden:"$nerdenUlkeSehir"');
   }
 
   final filtreler = filterParcalar.join(' AND ');

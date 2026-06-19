@@ -179,7 +179,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
         kategoriYolu:    _seciliKategoriYolu,
         seciliAltKeyler: _seciliAltKeyler,
         sehirler:        _seciliSehirler,
-        ulkeSehir:       _seciliUlkeSehir,
+        nerdenUlkeSehir: _seciliUlkeSehir,
         siralama:        _siralama.algoliaKey,
         ilanTipi:        'tasiyici',
         sayfa:           sayfa,
@@ -645,6 +645,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                                   _seciliAltKeyler    = modalAltKeyler;
                                   _siralama           = modalSiralama;
                                   _seciliSehirler     = modalSehirler;
+                                  _seciliUlkeSehir    = modalUlkeSehir;
                                 });
                               },
                               style: ElevatedButton.styleFrom(
