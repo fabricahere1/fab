@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import '../domain/kullanici_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,10 +9,13 @@ import '../../favoriler/presentation/favoriler_screen.dart';
 import 'ilanlarim_screen.dart';
 import 'ayarlar_screen.dart';
 import 'profil_duzenle_screen.dart';
+import 'gizlilik_politikasi_screen.dart';
+import 'kullanim_kosullari_screen.dart';
 import '../../degerlendirme/presentation/degerlendirmeler_liste_screen.dart';
 import '../../degerlendirme/providers/degerlendirme_provider.dart';
 import '../../degerlendirme/presentation/degerlendirme_screen.dart';
 import '../../ilanlar/domain/ilan_model.dart';
+import '../../ilanlar/presentation/ilan_form_screen.dart';
 import 'takip_listesi_screen.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
 import '../../../shared/constants/app_colors.dart';
@@ -67,19 +71,19 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Çıkış Yap',
-            style: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w600)),
+            style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w600)),
         content: Text('Hesabından çıkmak istediğine emin misin?',
-            style: GoogleFonts.dmSans(fontSize: 14, color: AppColors.textSecondary)),
+            style: GoogleFonts.manrope(fontSize: 14, color: AppColors.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text('İptal',
-                style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
+                style: GoogleFonts.manrope(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text('Çıkış Yap',
-                style: GoogleFonts.dmSans(color: AppColors.red, fontWeight: FontWeight.w700)),
+                style: GoogleFonts.manrope(color: AppColors.red, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -138,11 +142,11 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                     children: [
                       Text(
                         user?.displayName ?? 'Kullanıcı',
-                        style: GoogleFonts.dmSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                        style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                       ),
                       const SizedBox(height: 2),
                       Text(user?.email ?? '',
-                          style: GoogleFonts.dmSans(fontSize: 13, color: AppColors.textSecondary)),
+                          style: GoogleFonts.manrope(fontSize: 13, color: AppColors.textSecondary)),
                       const SizedBox(height: 8),
                       benimProfilAsync.when(
                         data: (profil) {
@@ -156,11 +160,11 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                                 Row(children: [
                                   const Icon(Icons.location_on_outlined, size: 13, color: AppColors.textSecondary),
                                   const SizedBox(width: 3),
-                                  Text(sehir, style: GoogleFonts.dmSans(fontSize: 12, color: AppColors.textSecondary)),
+                                  Text(sehir, style: GoogleFonts.manrope(fontSize: 12, color: AppColors.textSecondary)),
                                 ])
                               else
                                 Text('Profil tamamlanmamış',
-                                    style: GoogleFonts.dmSans(fontSize: 12, color: AppColors.textHint)),
+                                    style: GoogleFonts.manrope(fontSize: 12, color: AppColors.textHint)),
                               if (sayi > 0) ...[
                                 const SizedBox(height: 4),
                                 GestureDetector(
@@ -182,7 +186,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                                     const SizedBox(width: 4),
                                     Text(
                                       '${puan.toStringAsFixed(1)} ($sayi)',
-                                      style: GoogleFonts.dmSans(fontSize: 11, color: AppColors.textSecondary, decoration: TextDecoration.underline),
+                                      style: GoogleFonts.manrope(fontSize: 11, color: AppColors.textSecondary, decoration: TextDecoration.underline),
                                     ),
                                   ]),
                                 ),
@@ -262,8 +266,8 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Güven Skoru', style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                              Text('${profil.guvenSkoru}/100', style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.red)),
+                              Text('Güven Skoru', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                              Text('${profil.guvenSkoru}/100', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.red)),
                             ],
                           ),
                           const SizedBox(height: 8),
@@ -283,7 +287,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                           ),
                           const SizedBox(height: 6),
                           Text(profil.guvenSkoruEtiketi,
-                              style: GoogleFonts.dmSans(fontSize: 12, color: AppColors.textSecondary)),
+                              style: GoogleFonts.manrope(fontSize: 12, color: AppColors.textSecondary)),
                         ],
                       ),
                     ),
@@ -301,7 +305,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Rozetler', style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                          Text('Rozetler', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
                           const SizedBox(height: 10),
                           Wrap(
                             spacing: 8, runSpacing: 8,
@@ -314,7 +318,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                               ),
                               child: Text(
                                 '${profil.rozetEmoji(rozet)} ${profil.rozetAdi(rozet)}',
-                                style: GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w500, color: const Color(0xFF633806)),
+                                style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w500, color: const Color(0xFF633806)),
                               ),
                             )).toList(),
                           ),
@@ -398,7 +402,17 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
               _Ayrac(),
               _SatirOge(icon: Icons.mail_outline, label: 'İletişim', onTap: () {}),
               _Ayrac(),
-              _SatirOge(icon: Icons.privacy_tip_outlined, label: 'Gizlilik Politikası', onTap: () {}),
+              _SatirOge(
+                icon: Icons.privacy_tip_outlined,
+                label: 'Gizlilik Politikası',
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GizlilikPolitikasiScreen())),
+              ),
+              _Ayrac(),
+              _SatirOge(
+                icon: Icons.description_outlined,
+                label: 'Kullanım Koşulları',
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const KullanimKosullariScreen())),
+              ),
             ],
           ),
 
@@ -419,7 +433,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
           const SizedBox(height: 32),
           Center(
             child: Text('İSTE v3.0',
-                style: GoogleFonts.dmSans(fontSize: 12, color: AppColors.textHint, fontStyle: FontStyle.italic)),
+                style: GoogleFonts.manrope(fontSize: 12, color: AppColors.textHint, fontStyle: FontStyle.italic)),
           ),
           const SizedBox(height: 16),
         ],
@@ -442,7 +456,7 @@ class _ReddedilenIlanlarScreen extends ConsumerWidget {
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: Text('Reddedilen İlanlar',
-            style: GoogleFonts.dmSans(fontWeight: FontWeight.w700, fontSize: 17)),
+            style: GoogleFonts.manrope(fontWeight: FontWeight.w600, fontSize: 17)),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -453,7 +467,7 @@ class _ReddedilenIlanlarScreen extends ConsumerWidget {
       body: ilanlarAsync.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.red, strokeWidth: 2)),
         error: (_, _) => Center(
-          child: Text('Bir hata oluştu.', style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
+          child: Text('Bir hata oluştu.', style: GoogleFonts.manrope(color: AppColors.textSecondary)),
         ),
         data: (ilanlar) {
           final reddedilenler = ilanlar.where((i) => i.durum == IlanDurum.reddedildi).toList();
@@ -472,10 +486,10 @@ class _ReddedilenIlanlarScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   Text('Reddedilen ilan yok',
-                      style: GoogleFonts.dmSans(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                      style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
                   const SizedBox(height: 6),
                   Text('Tüm ilanların uygun bulundu.',
-                      style: GoogleFonts.dmSans(fontSize: 13, color: AppColors.textSecondary)),
+                      style: GoogleFonts.manrope(fontSize: 13, color: AppColors.textSecondary)),
                 ],
               ),
             );
@@ -527,13 +541,13 @@ class _ReddedilenIlanKarti extends StatelessWidget {
                     children: [
                       Text(
                         ilan.urun.isNotEmpty ? ilan.urun : '${ilan.nereden} → ${ilan.nereye}',
-                        style: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                        style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                         maxLines: 1, overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
                       Text(
                         ilan.kategori.isNotEmpty ? ilan.kategori : 'Genel',
-                        style: GoogleFonts.dmSans(fontSize: 12, color: AppColors.textSecondary),
+                        style: GoogleFonts.manrope(fontSize: 12, color: AppColors.textSecondary),
                       ),
                     ],
                   ),
@@ -545,7 +559,7 @@ class _ReddedilenIlanKarti extends StatelessWidget {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text('Reddedildi',
-                      style: GoogleFonts.dmSans(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.red)),
+                      style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.red)),
                 ),
               ],
             ),
@@ -565,7 +579,7 @@ class _ReddedilenIlanKarti extends StatelessWidget {
                     Expanded(
                       child: Text(
                         ilan.redSebebi,
-                        style: GoogleFonts.dmSans(fontSize: 12, color: AppColors.red),
+                        style: GoogleFonts.manrope(fontSize: 12, color: AppColors.red),
                       ),
                     ),
                   ],
@@ -573,9 +587,35 @@ class _ReddedilenIlanKarti extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 12),
-            Text(
-              'İlanını düzenleyerek tekrar gönderebilirsin.',
-              style: GoogleFonts.dmSans(fontSize: 11, color: AppColors.textSecondary),
+            RichText(
+              text: TextSpan(
+                style: GoogleFonts.manrope(fontSize: 11, color: AppColors.textSecondary),
+                children: [
+                  const TextSpan(text: 'İlanını '),
+                  TextSpan(
+                    text: 'düzenleyerek',
+                    style: GoogleFonts.manrope(
+                      fontSize: 11,
+                      color: Colors.blue,
+                      decoration: TextDecoration.underline,
+                      decorationColor: Colors.blue,
+                    ),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => IlanFormScreen(
+                              tip: ilan.tip,
+                              duzenlenecekIlan: ilan,
+                            ),
+                          ),
+                        );
+                      },
+                  ),
+                  const TextSpan(text: ' tekrar gönderebilirsin.'),
+                ],
+              ),
             ),
           ],
         ),
@@ -596,7 +636,7 @@ class _BolumBasligi extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
       child: Text(
         baslik.toUpperCase(),
-        style: GoogleFonts.dmSans(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary, letterSpacing: 1.0),
+        style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary, letterSpacing: 1.0),
       ),
     );
   }
@@ -656,19 +696,19 @@ class _SatirOge extends StatelessWidget {
             Container(
               width: 36, height: 36,
               decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
-              child: Icon(icon, color: labelColor == AppColors.textPrimary ? Colors.black87 : labelColor, size: 20),
+              child: Icon(icon, color: labelColor == AppColors.textPrimary ? AppColors.primary : labelColor, size: 20),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Text(label,
-                  style: GoogleFonts.dmSans(fontSize: 15, color: labelColor, fontWeight: FontWeight.w500)),
+                  style: GoogleFonts.manrope(fontSize: 15, color: labelColor, fontWeight: FontWeight.w400)),
             ),
             if (badge > 0)
               Container(
                 margin: const EdgeInsets.only(right: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(color: AppColors.red, borderRadius: BorderRadius.circular(10)),
-                child: Text('$badge', style: GoogleFonts.dmSans(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w700)),
+                child: Text('$badge', style: GoogleFonts.manrope(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w600)),
               ),
             if (showArrow)
               const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 20),
@@ -693,7 +733,7 @@ class _BekleyenDegerlendirmelerScreen extends ConsumerWidget {
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: Text('Bekleyen Değerlendirmeler',
-            style: GoogleFonts.dmSans(fontWeight: FontWeight.w700, fontSize: 17)),
+            style: GoogleFonts.manrope(fontWeight: FontWeight.w600, fontSize: 17)),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -704,7 +744,7 @@ class _BekleyenDegerlendirmelerScreen extends ConsumerWidget {
       body: bekleyenlerAsync.when(
         loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF81C784), strokeWidth: 2)),
         error: (_, _) => Center(
-          child: Text('Bir hata oluştu.', style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
+          child: Text('Bir hata oluştu.', style: GoogleFonts.manrope(color: AppColors.textSecondary)),
         ),
         data: (liste) {
           if (liste.isEmpty) {
@@ -719,11 +759,11 @@ class _BekleyenDegerlendirmelerScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   Text('Bekleyen değerlendirme yok',
-                      style: GoogleFonts.dmSans(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                      style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
                   const SizedBox(height: 6),
                   Text('Teslim aldıktan sonra değerlendirme\nyapabilirsin.',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.dmSans(fontSize: 13, color: AppColors.textSecondary)),
+                      style: GoogleFonts.manrope(fontSize: 13, color: AppColors.textSecondary)),
                 ],
               ),
             );
@@ -788,10 +828,10 @@ class _BekleyenKarti extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(ilanBaslik,
-                          style: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                          style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                           maxLines: 1, overflow: TextOverflow.ellipsis),
                       const SizedBox(height: 3),
-                      Text(karsiAd, style: GoogleFonts.dmSans(fontSize: 12, color: AppColors.textSecondary)),
+                      Text(karsiAd, style: GoogleFonts.manrope(fontSize: 12, color: AppColors.textSecondary)),
                     ],
                   ),
                 ),
@@ -816,7 +856,7 @@ class _BekleyenKarti extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(color: const Color(0xFF81C784), borderRadius: BorderRadius.circular(20)),
                     child: Text('Değerlendir',
-                        style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
+                        style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
                   ),
                 ),
               ],
@@ -845,9 +885,9 @@ class _StatKutu extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 14),
         child: Column(
           children: [
-            Text(sayi, style: GoogleFonts.dmSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+            Text(sayi, style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w400, color: AppColors.textPrimary)),
             const SizedBox(height: 2),
-            Text(label, style: GoogleFonts.dmSans(fontSize: 11, color: AppColors.textSecondary)),
+            Text(label, style: GoogleFonts.manrope(fontSize: 11, color: AppColors.textSecondary)),
           ],
         ),
       ),

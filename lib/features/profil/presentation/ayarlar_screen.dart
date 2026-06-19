@@ -5,15 +5,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../../degerlendirme/presentation/degerlendirmeler_liste_screen.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/utils/app_snackbar.dart';
 import '../../../shared/widgets/avatar_widget.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'sss_screen.dart';
-import 'kullanim_kosullari_screen.dart';
-import 'gizlilik_politikasi_screen.dart';
 
 class AyarlarScreen extends ConsumerStatefulWidget {
   const AyarlarScreen({super.key});
@@ -36,7 +33,6 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
 
   Future<void> _bildirimlerYukle() async {
     final uid = ref.read(currentUserProvider)?.uid;
-    // Önce local cache'den yükle (hızlı)
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _ilanBildirimleri   = prefs.getBool('bildirim_ilan')   ?? true;
@@ -44,7 +40,6 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       _sistemBildirimleri = prefs.getBool('bildirim_sistem') ?? true;
       _bildirimlerYuklendi = true;
     });
-    // Firestore'dan güncel değeri al (doğru kaynak)
     if (uid == null) return;
     try {
       final snap = await FirebaseFirestore.instance
@@ -66,10 +61,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
   }
 
   Future<void> _bildirimKaydet(String key, bool value) async {
-    // Local cache
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(key, value);
-    // Firestore'a yaz
     final uid = ref.read(currentUserProvider)?.uid;
     if (uid == null) return;
     final firestoreKey = key.replaceFirst('bildirim_', '');
@@ -94,8 +87,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: Text('Ayarlar',
-            style: GoogleFonts.dmSans(
-                fontWeight: FontWeight.w700, fontSize: 18)),
+            style: GoogleFonts.manrope(
+                fontWeight: FontWeight.w600, fontSize: 18)),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -108,7 +101,6 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
         padding: const EdgeInsets.symmetric(vertical: 12),
         children: [
 
-          // ── Hesap ───────────────────────────────────
           _BolumBasligi('Hesap'),
           _Kart(
             children: [
@@ -117,7 +109,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 label: 'E-posta',
                 trailing: Text(
                   user?.email ?? '',
-                  style: GoogleFonts.dmSans(
+                  style: GoogleFonts.manrope(
                       fontSize: 13, color: AppColors.textSecondary),
                 ),
                 onTap: () {},
@@ -136,7 +128,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                   benimProfilAsync.value?.telefon?.isNotEmpty == true
                       ? benimProfilAsync.value!.telefon!
                       : 'Eklenmemiş',
-                  style: GoogleFonts.dmSans(
+                  style: GoogleFonts.manrope(
                       fontSize: 13, color: AppColors.textSecondary),
                 ),
                 onTap: () => _telefonGuncelleDialog(
@@ -145,7 +137,6 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
             ],
           ),
 
-          // ── Bildirimler ─────────────────────────────
           _BolumBasligi('Bildirimler'),
           _Kart(
             children: !_bildirimlerYuklendi
@@ -190,7 +181,6 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                   ],
           ),
 
-          // ── Gizlilik ────────────────────────────────
           _BolumBasligi('Gizlilik'),
           _Kart(
             children: [
@@ -206,7 +196,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                   ),
                   child: Text(
                     engellenenlerAsync.value?.length.toString() ?? '0',
-                    style: GoogleFonts.dmSans(
+                    style: GoogleFonts.manrope(
                         fontSize: 12,
                         color: AppColors.textSecondary,
                         fontWeight: FontWeight.w600),
@@ -215,59 +205,9 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 onTap: () => _engellenenlerSayfasi(
                     engellenenlerAsync.value ?? []),
               ),
-              _Ayrac(),
-              _SatirOge(
-                icon: Icons.privacy_tip_outlined,
-                label: 'Gizlilik Politikası',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const GizlilikPolitikasiScreen()),
-                ),
-              ),
-              _Ayrac(),
-              _SatirOge(
-                icon: Icons.description_outlined,
-                label: 'Kullanım Koşulları',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const KullanimKosullariScreen()),
-                ),
-              ),
             ],
           ),
 
-          // ── Değerlendirmelerim ───────────────────────
-          _BolumBasligi('Değerlendirmelerim'),
-          _Kart(
-            children: [
-              _SatirOge(
-                icon: Icons.rate_review_outlined,
-                iconColor: AppColors.textSecondary,
-                label: 'Tüm Değerlendirmelerim',
-                onTap: () {
-                  final uid = ref.read(currentUserProvider)?.uid ?? '';
-                  final ad  = ref
-                          .read(benimKullaniciProfilProvider)
-                          .value
-                          ?.adSoyad ??
-                      'Ben';
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => DegerlendirmelerListeScreen(
-                        kullaniciId: uid,
-                        kullaniciAd: ad,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-
-          // ── Destek ──────────────────────────────────
           _BolumBasligi('Destek'),
           _Kart(
             children: [
@@ -288,7 +228,6 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
             ],
           ),
 
-          // ── Admin ───────────────────────────────────
           if (user?.email == 'fabricahere@gmail.com')
             _BolumBasligi('Admin'),
           if (user?.email == 'fabricahere@gmail.com')
@@ -317,7 +256,6 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
               ],
             ),
 
-          // ── Tehlikeli Bölge ─────────────────────────
           _BolumBasligi('Tehlikeli Bölge'),
           _Kart(
             children: [
@@ -335,7 +273,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           const SizedBox(height: 32),
           Center(
             child: Text('İSTE v3.0',
-                style: GoogleFonts.dmSans(
+                style: GoogleFonts.manrope(
                     fontSize: 12,
                     color: AppColors.textHint,
                     fontStyle: FontStyle.italic)),
@@ -352,19 +290,19 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Şifre Sıfırla',
-            style: GoogleFonts.dmSans(
+            style: GoogleFonts.manrope(
                 fontSize: 16, fontWeight: FontWeight.w600)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               'E-posta adresinize şifre sıfırlama bağlantısı göndereceğiz.',
-              style: GoogleFonts.dmSans(
+              style: GoogleFonts.manrope(
                   fontSize: 13, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 12),
             Text(email ?? '',
-                style: GoogleFonts.dmSans(
+                style: GoogleFonts.manrope(
                     fontSize: 14, fontWeight: FontWeight.w600)),
           ],
         ),
@@ -372,7 +310,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text('İptal',
-                style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
+                style: GoogleFonts.manrope(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () async {
@@ -386,7 +324,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
               }
             },
             child: Text('Gönder',
-                style: GoogleFonts.dmSans(
+                style: GoogleFonts.manrope(
                     color: AppColors.red, fontWeight: FontWeight.w600)),
           ),
         ],
@@ -405,7 +343,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
         builder: (ctx, setS) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text('Telefon Numarası',
-              style: GoogleFonts.dmSans(
+              style: GoogleFonts.manrope(
                   fontSize: 16, fontWeight: FontWeight.w600)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -413,10 +351,10 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
               TextField(
                 controller: ctrl,
                 keyboardType: TextInputType.phone,
-                style: GoogleFonts.dmSans(fontSize: 14),
+                style: GoogleFonts.manrope(fontSize: 14),
                 decoration: InputDecoration(
                   hintText: '05XX XXX XX XX',
-                  hintStyle: GoogleFonts.dmSans(
+                  hintStyle: GoogleFonts.manrope(
                       color: AppColors.textHint, fontSize: 13),
                   prefixIcon: const Icon(Icons.phone_outlined,
                       color: AppColors.textSecondary, size: 18),
@@ -468,7 +406,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                     ),
                     const SizedBox(width: 10),
                     Text('Telefon numaramı gizle',
-                        style: GoogleFonts.dmSans(
+                        style: GoogleFonts.manrope(
                             fontSize: 13, color: AppColors.textSecondary)),
                   ],
                 ),
@@ -479,7 +417,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: Text('İptal',
-                  style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
+                  style: GoogleFonts.manrope(color: AppColors.textSecondary)),
             ),
             TextButton(
               onPressed: () async {
@@ -498,7 +436,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 }
               },
               child: Text('Kaydet',
-                  style: GoogleFonts.dmSans(
+                  style: GoogleFonts.manrope(
                       color: AppColors.red, fontWeight: FontWeight.w600)),
             ),
           ],
@@ -542,24 +480,24 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Hesabı Sil',
-            style: GoogleFonts.dmSans(
+            style: GoogleFonts.manrope(
                 fontSize: 16, fontWeight: FontWeight.w600)),
         content: Text(
           'Hesabını silersen tüm ilanların, mesajların ve verilerın kalıcı olarak silinecek.\n\nBu işlem geri alınamaz!',
-          style: GoogleFonts.dmSans(
+          style: GoogleFonts.manrope(
               fontSize: 14, color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text('İptal',
-                style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
+                style: GoogleFonts.manrope(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text('Devam Et',
-                style: GoogleFonts.dmSans(
-                    color: AppColors.red, fontWeight: FontWeight.w700)),
+                style: GoogleFonts.manrope(
+                    color: AppColors.red, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -567,7 +505,6 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
 
     if (onay != true || !mounted) return;
 
-    // 10 saniyelik geri sayım — iptal edilirse işlem durur
     final devamEt = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -590,22 +527,22 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Kimliğini Doğrula',
-            style: GoogleFonts.dmSans(
+            style: GoogleFonts.manrope(
                 fontSize: 16, fontWeight: FontWeight.w600)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text('Güvenlik için şifreni gir.',
-                style: GoogleFonts.dmSans(
+                style: GoogleFonts.manrope(
                     fontSize: 13, color: AppColors.textSecondary)),
             const SizedBox(height: 12),
             TextField(
               controller: sifreCtrl,
               obscureText: true,
-              style: GoogleFonts.dmSans(fontSize: 14),
+              style: GoogleFonts.manrope(fontSize: 14),
               decoration: InputDecoration(
                 hintText: 'Şifren',
-                hintStyle: GoogleFonts.dmSans(
+                hintStyle: GoogleFonts.manrope(
                     color: AppColors.textHint, fontSize: 13),
                 prefixIcon: const Icon(Icons.lock_outline,
                     color: AppColors.textSecondary, size: 18),
@@ -631,13 +568,13 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text('İptal',
-                style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
+                style: GoogleFonts.manrope(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text('Hesabı Sil',
-                style: GoogleFonts.dmSans(
-                    color: AppColors.red, fontWeight: FontWeight.w700)),
+                style: GoogleFonts.manrope(
+                    color: AppColors.red, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -674,24 +611,24 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Kimliğini Doğrula',
-            style: GoogleFonts.dmSans(
+            style: GoogleFonts.manrope(
                 fontSize: 16, fontWeight: FontWeight.w600)),
         content: Text(
           'Hesabını silmek için Google ile tekrar giriş yapman gerekiyor.',
-          style: GoogleFonts.dmSans(
+          style: GoogleFonts.manrope(
               fontSize: 13, color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text('İptal',
-                style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
+                style: GoogleFonts.manrope(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text('Google ile Doğrula',
-                style: GoogleFonts.dmSans(
-                    color: AppColors.red, fontWeight: FontWeight.w700)),
+                style: GoogleFonts.manrope(
+                    color: AppColors.red, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -762,7 +699,7 @@ class _GeriSayimDialogState extends State<_GeriSayimDialog> {
           const Icon(Icons.warning_amber_rounded, color: Color(0xFFE53935), size: 22),
           const SizedBox(width: 8),
           Text('Son şans!',
-              style: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w700)),
+              style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w600)),
         ],
       ),
       content: Column(
@@ -770,7 +707,7 @@ class _GeriSayimDialogState extends State<_GeriSayimDialog> {
         children: [
           Text(
             'Hesabın $_kalan saniye içinde kalıcı olarak silinecek.',
-            style: GoogleFonts.dmSans(fontSize: 13, color: AppColors.textSecondary),
+            style: GoogleFonts.manrope(fontSize: 13, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 16),
           ClipRRect(
@@ -785,9 +722,9 @@ class _GeriSayimDialogState extends State<_GeriSayimDialog> {
           const SizedBox(height: 8),
           Text(
             '$_kalan sn',
-            style: GoogleFonts.dmSans(
+            style: GoogleFonts.manrope(
               fontSize: 13,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: const Color(0xFFE53935),
             ),
           ),
@@ -804,7 +741,7 @@ class _GeriSayimDialogState extends State<_GeriSayimDialog> {
             ),
             onPressed: () => Navigator.of(context).pop(false),
             child: Text('İptal Et',
-                style: GoogleFonts.dmSans(
+                style: GoogleFonts.manrope(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary)),
@@ -829,7 +766,7 @@ class _EngellenenlerScreen extends ConsumerWidget {
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: Text('Engellenen Kullanıcılar',
-            style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
+            style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -847,7 +784,7 @@ class _EngellenenlerScreen extends ConsumerWidget {
                       size: 64, color: AppColors.divider),
                   const SizedBox(height: 16),
                   Text('Engellenen kullanıcı yok',
-                      style: GoogleFonts.dmSans(
+                      style: GoogleFonts.manrope(
                           fontSize: 15,
                           color: AppColors.textSecondary)),
                 ],
@@ -873,15 +810,15 @@ class _EngellenenlerScreen extends ConsumerWidget {
                   error: (_, _) => ListTile(
                     leading: AvatarWidget(isim: hedefUid, radius: 24),
                     title: Text('Kullanıcı',
-                        style: GoogleFonts.dmSans(fontSize: 14)),
+                        style: GoogleFonts.manrope(fontSize: 14)),
                   ),
                   data: (profil) {
                     final ad = profil?.adSoyad ?? 'Kullanıcı';
                     return ListTile(
                       leading: AvatarWidget(isim: ad, radius: 24),
                       title: Text(ad,
-                          style: GoogleFonts.dmSans(
-                              fontSize: 15, fontWeight: FontWeight.w500)),
+                          style: GoogleFonts.manrope(
+                              fontSize: 15, fontWeight: FontWeight.w400)),
                       trailing: TextButton(
                         onPressed: () async {
                           final onay = await showDialog<bool>(
@@ -890,27 +827,27 @@ class _EngellenenlerScreen extends ConsumerWidget {
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12)),
                               title: Text('Engeli Kaldır',
-                                  style: GoogleFonts.dmSans(
+                                  style: GoogleFonts.manrope(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600)),
                               content: Text(
                                   '$ad adlı kullanıcının engelini kaldırmak istiyor musun?',
-                                  style: GoogleFonts.dmSans(
+                                  style: GoogleFonts.manrope(
                                       fontSize: 14,
                                       color: AppColors.textSecondary)),
                               actions: [
                                 TextButton(
                                   onPressed: () => Navigator.pop(c, false),
                                   child: Text('İptal',
-                                      style: GoogleFonts.dmSans(
+                                      style: GoogleFonts.manrope(
                                           color: AppColors.textSecondary)),
                                 ),
                                 TextButton(
                                   onPressed: () => Navigator.pop(c, true),
                                   child: Text('Kaldır',
-                                      style: GoogleFonts.dmSans(
+                                      style: GoogleFonts.manrope(
                                           color: AppColors.red,
-                                          fontWeight: FontWeight.w700)),
+                                          fontWeight: FontWeight.w600)),
                                 ),
                               ],
                             ),
@@ -929,7 +866,7 @@ class _EngellenenlerScreen extends ConsumerWidget {
                           }
                         },
                         child: Text('Engeli Kaldır',
-                            style: GoogleFonts.dmSans(
+                            style: GoogleFonts.manrope(
                                 color: AppColors.red,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600)),
@@ -955,9 +892,9 @@ class _BolumBasligi extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
       child: Text(
         baslik.toUpperCase(),
-        style: GoogleFonts.dmSans(
+        style: GoogleFonts.manrope(
             fontSize: 11,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
             color: AppColors.textSecondary,
             letterSpacing: 1.0),
       ),
@@ -1009,7 +946,7 @@ class _SatirOge extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
-    this.iconColor  = AppColors.textSecondary,
+    this.iconColor  = AppColors.primary,
     this.labelColor = AppColors.textPrimary,
     this.trailing,
     this.showArrow  = true,
@@ -1035,10 +972,10 @@ class _SatirOge extends StatelessWidget {
             const SizedBox(width: 14),
             Expanded(
               child: Text(label,
-                  style: GoogleFonts.dmSans(
+                  style: GoogleFonts.manrope(
                       fontSize: 15,
                       color: labelColor,
-                      fontWeight: FontWeight.w500)),
+                      fontWeight: FontWeight.w400)),
             ),
             ?trailing,
             if (trailing == null && showArrow)
@@ -1073,18 +1010,18 @@ class _SwitchSatir extends StatelessWidget {
           Container(
             width: 36, height: 36,
             decoration: BoxDecoration(
-              color: AppColors.textSecondary.withValues(alpha: 0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: AppColors.textSecondary, size: 20),
+            child: Icon(icon, color: AppColors.primary, size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Text(label,
-                style: GoogleFonts.dmSans(
+                style: GoogleFonts.manrope(
                     fontSize: 15,
                     color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w500)),
+                    fontWeight: FontWeight.w400)),
           ),
           Switch(
             value: acik,
@@ -1151,7 +1088,7 @@ class _BizeUlasinSheetState extends ConsumerState<_BizeUlasinSheet> {
         setState(() => _gonderiyor = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Gönderilemedi, tekrar dene.',
-              style: GoogleFonts.dmSans()),
+              style: GoogleFonts.manrope()),
           behavior: SnackBarBehavior.floating,
         ));
       }
@@ -1187,15 +1124,14 @@ class _BizeUlasinSheetState extends ConsumerState<_BizeUlasinSheet> {
             const SizedBox(height: 24),
             Text(
               'Bize Ulaşın',
-              style: GoogleFonts.dmSans(
+              style: GoogleFonts.manrope(
                 fontSize: 20,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 20),
 
-            // Kategori kartları
             if (_secilenKategori == null) ...[
               ...List.generate(_kategoriler.length, (i) {
                 final k = _kategoriler[i];
@@ -1219,9 +1155,9 @@ class _BizeUlasinSheetState extends ConsumerState<_BizeUlasinSheet> {
                           Expanded(
                             child: Text(
                               k.etiket,
-                              style: GoogleFonts.dmSans(
+                              style: GoogleFonts.manrope(
                                 fontSize: 14,
-                                fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.w400,
                                 color: AppColors.textPrimary,
                               ),
                             ),
@@ -1247,7 +1183,7 @@ class _BizeUlasinSheetState extends ConsumerState<_BizeUlasinSheet> {
                     const SizedBox(width: 6),
                     Text(
                       _secilenKategori!,
-                      style: GoogleFonts.dmSans(
+                      style: GoogleFonts.manrope(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
@@ -1261,13 +1197,13 @@ class _BizeUlasinSheetState extends ConsumerState<_BizeUlasinSheet> {
                 controller: _mesajCtrl,
                 maxLines: 6,
                 autofocus: true,
-                style: GoogleFonts.dmSans(fontSize: 14),
+                style: GoogleFonts.manrope(fontSize: 14),
                 decoration: InputDecoration(
                   hintText: _kategoriler
                       .firstWhere((k) => k.etiket == _secilenKategori,
                           orElse: () => _kategoriler.last)
                       .hint,
-                  hintStyle: GoogleFonts.dmSans(
+                  hintStyle: GoogleFonts.manrope(
                       color: AppColors.textHint, fontSize: 13),
                   filled: true,
                   fillColor: AppColors.surface,
@@ -1309,7 +1245,7 @@ class _BizeUlasinSheetState extends ConsumerState<_BizeUlasinSheet> {
                         )
                       : Text(
                           'Gönder',
-                          style: GoogleFonts.dmSans(
+                          style: GoogleFonts.manrope(
                               fontSize: 15, fontWeight: FontWeight.w600),
                         ),
                 ),

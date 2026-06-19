@@ -4,7 +4,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../ilanlar/domain/ilan_model.dart';
 import '../providers/profil_provider.dart';
@@ -13,13 +12,8 @@ import '../../../shared/constants/app_constants.dart';
 import '../../../core/cache/app_cache_manager.dart';
 import '../../../router/app_router.dart';
 
-// Ana akıştaki yükseklikler: [160, 200, 140, 180, 220, 150] → ortalama ~175
-// Bunun yarısı → sabit 88px
-const double _kResimYuksekligi = 88.0;
-
-// Sticker çerçeve kalınlığı ve köşe yarıçapı
-const double _kStickerBorder = 3.0;
-const double _kStickerRadius = 12.0;
+// 88x88 sabit kare resim alanı
+const double _kResimBoyutu = 88.0;
 
 class IlanlarimScreen extends ConsumerStatefulWidget {
   const IlanlarimScreen({super.key});
@@ -53,7 +47,7 @@ class _IlanlarimScreenState extends ConsumerState<IlanlarimScreen>
       appBar: AppBar(
         title: Text(
           'İlanlarım',
-          style: GoogleFonts.dmSans(fontWeight: FontWeight.w700),
+          style: GoogleFonts.manrope(fontWeight: FontWeight.w700),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -71,11 +65,11 @@ class _IlanlarimScreenState extends ConsumerState<IlanlarimScreen>
           unselectedLabelColor: AppColors.textSecondary,
           indicatorColor: AppColors.red,
           indicatorWeight: 2,
-          labelStyle: GoogleFonts.dmSans(
+          labelStyle: GoogleFonts.manrope(
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
-          unselectedLabelStyle: GoogleFonts.dmSans(fontSize: 14),
+          unselectedLabelStyle: GoogleFonts.manrope(fontSize: 14),
           tabs: const [
             Tab(text: 'İstek İlanlarım'),
             Tab(text: 'Taşıyıcı İlanlarım'),
@@ -94,7 +88,7 @@ class _IlanlarimScreenState extends ConsumerState<IlanlarimScreen>
         error: (_, _) => Center(
           child: Text(
             'Bir hata oluştu.',
-            style: GoogleFonts.dmSans(color: AppColors.textSecondary),
+            style: GoogleFonts.manrope(color: AppColors.textSecondary),
           ),
         ),
         data: (ilanlar) {
@@ -138,7 +132,7 @@ class _IlanListesi extends StatelessWidget {
               tip == IlanTip.istek
                   ? 'Henüz istek ilanın yok'
                   : 'Henüz taşıyıcı ilanın yok',
-              style: GoogleFonts.dmSans(
+              style: GoogleFonts.manrope(
                   fontSize: 15, color: AppColors.textSecondary),
             ),
           ],
@@ -147,26 +141,24 @@ class _IlanListesi extends StatelessWidget {
     }
 
     if (tip == IlanTip.istek) {
-      return MasonryGridView.count(
-        crossAxisCount: 2,
-        mainAxisSpacing: 10,
-        crossAxisSpacing: 10,
+      return ListView.separated(
         padding: const EdgeInsets.all(10),
         itemCount: ilanlar.length,
+        separatorBuilder: (_, _) => const SizedBox(height: 5),
         itemBuilder: (context, index) => _IstekKarti(ilan: ilanlar[index]),
       );
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(10),
       itemCount: ilanlar.length,
-      separatorBuilder: (_, _) => const Divider(height: 1),
+      separatorBuilder: (_, _) => const SizedBox(height: 5),
       itemBuilder: (context, index) => _GelenKarti(ilan: ilanlar[index]),
     );
   }
 }
 
-// ── İstek Kartı — yarı boyut resim + sticker çerçeve ─────────────────────────
+// ── İstek Kartı — yatay liste, sol 88x88 resim + sağ metin ───────────────────
 
 class _IstekKarti extends StatelessWidget {
   final IlanModel ilan;
@@ -185,122 +177,94 @@ class _IstekKarti extends StatelessWidget {
     return GestureDetector(
       onTap: () => _detayaGit(context),
       child: Container(
-        // ── Sticker dış gölge ──────────────────────────────────
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(_kStickerRadius),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
-            // Yumuşak ana gölge
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.13),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-            // Sert alt gölge — sticker baskı hissi
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 0,
-              spreadRadius: 1,
+              blurRadius: 6,
               offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Column(
+        padding: const EdgeInsets.all(8),
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Resim alanı ──────────────────────────────────────
+            // ── Sol: 88x88 sabit kare resim, ortalanmış ───────────
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(_kStickerRadius),
-              ),
-              child: Stack(
-                children: [
-                  // Resim
-                  SizedBox(
-                    height: _kResimYuksekligi,
-                    width: double.infinity,
-                    child: varResim
-                        ? CachedNetworkImage(
-                            cacheManager: AppCacheManager.instance,
-                            imageUrl: gridResim,
-                            fit: BoxFit.cover,
-                            fadeInDuration: Duration.zero,
-                            memCacheWidth: 300,
-                            placeholder: (_, _) =>
-                                Container(color: AppColors.surface),
-                            errorWidget: (_, _, _) => _ResimYok(),
-                          )
-                        : _ResimYok(),
-                  ),
-
-                  // ── Sticker beyaz iç çerçeve (üst + yan kenarlar) ──
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border(
-                          top: BorderSide(
-                              color: Colors.white, width: _kStickerBorder),
-                          left: BorderSide(
-                              color: Colors.white, width: _kStickerBorder),
-                          right: BorderSide(
-                              color: Colors.white, width: _kStickerBorder),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Aktif / Pasif badge
-                  Positioned(
-                    top: _kStickerBorder + 4,
-                    left: _kStickerBorder + 4,
-                    child: _AktifBadge(aktif: ilan.aktif),
-                  ),
-                ],
+              borderRadius: BorderRadius.circular(10),
+              child: SizedBox(
+                width: _kResimBoyutu,
+                height: _kResimBoyutu,
+                child: Center(
+                  child: varResim
+                      ? CachedNetworkImage(
+                          cacheManager: AppCacheManager.instance,
+                          imageUrl: gridResim,
+                          fit: BoxFit.cover,
+                          width: _kResimBoyutu,
+                          height: _kResimBoyutu,
+                          fadeInDuration: Duration.zero,
+                          memCacheWidth: 200,
+                          placeholder: (_, _) =>
+                              Container(color: AppColors.surface),
+                          errorWidget: (_, _, _) => _ResimYok(),
+                        )
+                      : _ResimYok(),
+                ),
               ),
             ),
 
-            // ── Alt metin alanı (sticker alt şerit) ──────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+            const SizedBox(width: 12),
+
+            // ── Sağ: ürün adı, güzergah, ücret, badge ─────────────
+            Expanded(
+              child: SizedBox(
+                height: _kResimBoyutu,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
+                            style: GoogleFonts.manrope(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        _AktifBadge(aktif: ilan.aktif),
+                      ],
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    '${ilan.nereden} → ${ilan.nereye}',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 10,
-                      color: AppColors.textSecondary,
+                    Text(
+                      '${ilan.nereden} → ${ilan.nereye}',
+                      style: GoogleFonts.manrope(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    ilan.ucret.isNotEmpty
-                        ? '${ilan.ucret} ₺'
-                        : 'Belirtilmemiş',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 12,
-                      fontWeight: ilan.ucret.isNotEmpty
-                          ? FontWeight.w700
-                          : FontWeight.w400,
-                      color: ilan.ucret.isNotEmpty
-                          ? AppColors.red
-                          : AppColors.textHint,
-                    ),
-                  ),
-                ],
+                    if (ilan.ucret.isNotEmpty)
+                      Text(
+                        '${ilan.ucret} ₺',
+                        style: GoogleFonts.manrope(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.red,
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -323,66 +287,102 @@ class _GelenKarti extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final gridResim = ilan.gridResim;
+    final varResim = gridResim.isNotEmpty;
     final tarih = ilan.tarih;
     final tarihYazi = tarih != null
         ? '${tarih.day}.${tarih.month}.${tarih.year}'
         : '';
 
-    return InkWell(
+    return GestureDetector(
       onTap: () => _detayaGit(context),
-      child: ColoredBox(
-        color: Colors.white,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              Expanded(
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: SizedBox(
+                width: _kResimBoyutu,
+                height: _kResimBoyutu,
+                child: Center(
+                  child: varResim
+                      ? CachedNetworkImage(
+                          cacheManager: AppCacheManager.instance,
+                          imageUrl: gridResim,
+                          fit: BoxFit.cover,
+                          width: _kResimBoyutu,
+                          height: _kResimBoyutu,
+                          fadeInDuration: Duration.zero,
+                          memCacheWidth: 200,
+                          placeholder: (_, _) =>
+                              Container(color: AppColors.surface),
+                          errorWidget: (_, _, _) => _ResimYok(),
+                        )
+                      : _ResimYok(),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: SizedBox(
+                height: _kResimBoyutu,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      '${ilan.nereden} → ${ilan.nereye}',
-                      style: GoogleFonts.dmSans(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${ilan.nereden} → ${ilan.nereye}',
+                            style: GoogleFonts.manrope(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.textPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        _AktifBadge(aktif: ilan.aktif, stil: _AktifBadgeStil.light),
+                      ],
                     ),
-                    if (tarihYazi.isNotEmpty) ...[
-                      const SizedBox(height: 4),
+                    if (tarihYazi.isNotEmpty)
                       Text(
                         tarihYazi,
-                        style: GoogleFonts.dmSans(
-                          fontSize: 13,
+                        style: GoogleFonts.manrope(
+                          fontSize: 12,
                           color: AppColors.textSecondary,
                         ),
                       ),
-                    ],
+                    if (ilan.ucret.isNotEmpty)
+                      Text(
+                        '${ilan.ucret} ₺',
+                        style: GoogleFonts.manrope(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.red,
+                        ),
+                      ),
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  _AktifBadge(aktif: ilan.aktif, stil: _AktifBadgeStil.light),
-                  if (ilan.ucret.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      '${ilan.ucret} ₺',
-                      style: GoogleFonts.dmSans(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.red,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -427,7 +427,7 @@ class _AktifBadge extends StatelessWidget {
       ),
       child: Text(
         aktif ? 'Aktif' : 'Pasif',
-        style: GoogleFonts.dmSans(
+        style: GoogleFonts.manrope(
           fontSize: isLight ? 11 : 10,
           color: aktif
               ? (isLight ? const Color(0xFF2E7D32) : Colors.white)
