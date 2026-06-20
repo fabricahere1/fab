@@ -647,10 +647,12 @@ class _IlanDetayIcerik extends ConsumerWidget {
                       _GuzergahSatiri(nereden: ilan.nereden, nereye: ilan.nereye),
                       if (ilan.tarih != null) ...[
                         const SizedBox(height: 12),
-                        _BilgiSatiri(
-                          icon: Icons.calendar_today_outlined,
-                          label: _tamTarih(ilan.tarih!),
-                        ),
+                        _yakindaGeliyorMu(ilan)
+                            ? _YakindaGelecekTarihSatiri(tarih: ilan.tarih!)
+                            : _BilgiSatiri(
+                                icon: Icons.calendar_today_outlined,
+                                label: _tamTarih(ilan.tarih!),
+                              ),
                       ],
                       if (ilan.tasimaTercihi.isNotEmpty && ilan.tasimaTercihi != 'hepsi') ...[
                         const SizedBox(height: 12),
@@ -862,6 +864,62 @@ class _GuzergahSatiri extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// İlanın taşıyıcı tarihi 1 haftadan az kaldıysa true.
+bool _yakindaGeliyorMu(IlanModel ilan) {
+  if (ilan.tip != app_constants.IlanTip.tasiyici || ilan.tarih == null) return false;
+  final fark = ilan.tarih!.difference(DateTime.now());
+  return !fark.isNegative && fark.inDays < 7;
+}
+
+class _YakindaGelecekTarihSatiri extends StatelessWidget {
+  final DateTime tarih;
+  const _YakindaGelecekTarihSatiri({required this.tarih});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.red.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.red.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.flight_takeoff_rounded, size: 18, color: AppColors.red),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _IlanDetayIcerik._tamTarih(tarih),
+                  style: GoogleFonts.dmSans(
+                    fontSize: AppLayout.fs(context, 14),
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.red,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Yakında gelecek — 1 haftadan az kaldı',
+                  style: GoogleFonts.dmSans(
+                    fontSize: AppLayout.fs(context, 11),
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.red,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

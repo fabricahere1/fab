@@ -248,6 +248,161 @@ final class DutyFreeYapabilecekIlanlarProvider
 String _$dutyFreeYapabilecekIlanlarHash() =>
     r'78575afbc4ec79b292e5ac9c255ded18ec5d02ba';
 
+/// Geçmişte görüntülenen ilanların kategorilerine benzer, henüz
+/// görüntülenmemiş ilanlar (istek + taşıyıcı ilanları birlikte).
+
+@ProviderFor(gecmisGoruntulenenlereBenzerIlanlar)
+final gecmisGoruntulenenlereBenzerIlanlarProvider =
+    GecmisGoruntulenenlereBenzerIlanlarProvider._();
+
+/// Geçmişte görüntülenen ilanların kategorilerine benzer, henüz
+/// görüntülenmemiş ilanlar (istek + taşıyıcı ilanları birlikte).
+
+final class GecmisGoruntulenenlereBenzerIlanlarProvider
+    extends
+        $FunctionalProvider<List<IlanModel>, List<IlanModel>, List<IlanModel>>
+    with $Provider<List<IlanModel>> {
+  /// Geçmişte görüntülenen ilanların kategorilerine benzer, henüz
+  /// görüntülenmemiş ilanlar (istek + taşıyıcı ilanları birlikte).
+  GecmisGoruntulenenlereBenzerIlanlarProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'gecmisGoruntulenenlereBenzerIlanlarProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() =>
+      _$gecmisGoruntulenenlereBenzerIlanlarHash();
+
+  @$internal
+  @override
+  $ProviderElement<List<IlanModel>> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  List<IlanModel> create(Ref ref) {
+    return gecmisGoruntulenenlereBenzerIlanlar(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(List<IlanModel> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<List<IlanModel>>(value),
+    );
+  }
+}
+
+String _$gecmisGoruntulenenlereBenzerIlanlarHash() =>
+    r'95c2b9b66a60daad451914275710001b91b62c63';
+
+/// Favorilenen ilanların kategorilerinden, son 7 günde açılmış yeni
+/// taşıyıcı ilanları (istekçi tarafına özel — favorilenen ilanın kendisi hariç).
+
+@ProviderFor(favoriKategorilerYeniIlanlar)
+final favoriKategorilerYeniIlanlarProvider =
+    FavoriKategorilerYeniIlanlarProvider._();
+
+/// Favorilenen ilanların kategorilerinden, son 7 günde açılmış yeni
+/// taşıyıcı ilanları (istekçi tarafına özel — favorilenen ilanın kendisi hariç).
+
+final class FavoriKategorilerYeniIlanlarProvider
+    extends
+        $FunctionalProvider<List<IlanModel>, List<IlanModel>, List<IlanModel>>
+    with $Provider<List<IlanModel>> {
+  /// Favorilenen ilanların kategorilerinden, son 7 günde açılmış yeni
+  /// taşıyıcı ilanları (istekçi tarafına özel — favorilenen ilanın kendisi hariç).
+  FavoriKategorilerYeniIlanlarProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'favoriKategorilerYeniIlanlarProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$favoriKategorilerYeniIlanlarHash();
+
+  @$internal
+  @override
+  $ProviderElement<List<IlanModel>> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  List<IlanModel> create(Ref ref) {
+    return favoriKategorilerYeniIlanlar(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(List<IlanModel> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<List<IlanModel>>(value),
+    );
+  }
+}
+
+String _$favoriKategorilerYeniIlanlarHash() =>
+    r'b8baeaf3d5281384d304e42618c685841783ded8';
+
+/// Takip edilen taşıyıcıların, takip başladıktan SONRA açtığı ilanlar.
+
+@ProviderFor(takipEdilenTasiyicilarinYeniIlanlari)
+final takipEdilenTasiyicilarinYeniIlanlariProvider =
+    TakipEdilenTasiyicilarinYeniIlanlariProvider._();
+
+/// Takip edilen taşıyıcıların, takip başladıktan SONRA açtığı ilanlar.
+
+final class TakipEdilenTasiyicilarinYeniIlanlariProvider
+    extends
+        $FunctionalProvider<List<IlanModel>, List<IlanModel>, List<IlanModel>>
+    with $Provider<List<IlanModel>> {
+  /// Takip edilen taşıyıcıların, takip başladıktan SONRA açtığı ilanlar.
+  TakipEdilenTasiyicilarinYeniIlanlariProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'takipEdilenTasiyicilarinYeniIlanlariProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() =>
+      _$takipEdilenTasiyicilarinYeniIlanlariHash();
+
+  @$internal
+  @override
+  $ProviderElement<List<IlanModel>> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  List<IlanModel> create(Ref ref) {
+    return takipEdilenTasiyicilarinYeniIlanlari(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(List<IlanModel> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<List<IlanModel>>(value),
+    );
+  }
+}
+
+String _$takipEdilenTasiyicilarinYeniIlanlariHash() =>
+    r'2642c54d234e87c775402fd18af08b8410d4b20d';
+
 /// Taşıyıcının seyahat edeceği şehirden açılan istek ilanları
 
 @ProviderFor(seyahatSehriIlanlar)

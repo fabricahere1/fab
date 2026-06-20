@@ -522,6 +522,140 @@ final class TakipEdilenIdleriFamily extends $Family
   String toString() => r'takipEdilenIdleriProvider';
 }
 
+/// Takip edilen kullanıcıların id → takip başlangıç tarihi haritası.
+
+@ProviderFor(takipEdilenTarihleri)
+final takipEdilenTarihleriProvider = TakipEdilenTarihleriFamily._();
+
+/// Takip edilen kullanıcıların id → takip başlangıç tarihi haritası.
+
+final class TakipEdilenTarihleriProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<Map<String, DateTime>>,
+          Map<String, DateTime>,
+          Stream<Map<String, DateTime>>
+        >
+    with
+        $FutureModifier<Map<String, DateTime>>,
+        $StreamProvider<Map<String, DateTime>> {
+  /// Takip edilen kullanıcıların id → takip başlangıç tarihi haritası.
+  TakipEdilenTarihleriProvider._({
+    required TakipEdilenTarihleriFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'takipEdilenTarihleriProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$takipEdilenTarihleriHash();
+
+  @override
+  String toString() {
+    return r'takipEdilenTarihleriProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<Map<String, DateTime>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<Map<String, DateTime>> create(Ref ref) {
+    final argument = this.argument as String;
+    return takipEdilenTarihleri(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is TakipEdilenTarihleriProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$takipEdilenTarihleriHash() =>
+    r'8dc98645fb42eb5ebb3d2176ccda0fdc177db366';
+
+/// Takip edilen kullanıcıların id → takip başlangıç tarihi haritası.
+
+final class TakipEdilenTarihleriFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<Map<String, DateTime>>, String> {
+  TakipEdilenTarihleriFamily._()
+    : super(
+        retry: null,
+        name: r'takipEdilenTarihleriProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Takip edilen kullanıcıların id → takip başlangıç tarihi haritası.
+
+  TakipEdilenTarihleriProvider call(String kullaniciId) =>
+      TakipEdilenTarihleriProvider._(argument: kullaniciId, from: this);
+
+  @override
+  String toString() => r'takipEdilenTarihleriProvider';
+}
+
+/// 4.0 ve üzeri ortalama puana sahip taşıyıcılar (kendisi hariç).
+
+@ProviderFor(yuksekPuanliTasiyicilar)
+final yuksekPuanliTasiyicilarProvider = YuksekPuanliTasiyicilarProvider._();
+
+/// 4.0 ve üzeri ortalama puana sahip taşıyıcılar (kendisi hariç).
+
+final class YuksekPuanliTasiyicilarProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<KullaniciModel>>,
+          List<KullaniciModel>,
+          FutureOr<List<KullaniciModel>>
+        >
+    with
+        $FutureModifier<List<KullaniciModel>>,
+        $FutureProvider<List<KullaniciModel>> {
+  /// 4.0 ve üzeri ortalama puana sahip taşıyıcılar (kendisi hariç).
+  YuksekPuanliTasiyicilarProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'yuksekPuanliTasiyicilarProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$yuksekPuanliTasiyicilarHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<List<KullaniciModel>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<KullaniciModel>> create(Ref ref) {
+    return yuksekPuanliTasiyicilar(ref);
+  }
+}
+
+String _$yuksekPuanliTasiyicilarHash() =>
+    r'9a9140d403db2f93ed0e051dc874b8a32ae25c6f';
+
 @ProviderFor(kullaniciBilgisi)
 final kullaniciBilgisiProvider = KullaniciBilgisiFamily._();
 

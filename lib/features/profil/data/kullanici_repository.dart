@@ -200,4 +200,36 @@ class KullaniciRepository {
         .snapshots()
         .map((snap) => snap.docs.map((d) => d.data()['takipEdilenId'] as String).toList());
   }
+
+  /// Takip edilen kullanıcıların id → takip başlangıç tarihi haritası.
+  /// "Takip ettiğin taşıyıcıların YENİ ilanları" gibi, takipten sonra açılan
+  /// ilanları filtrelemek için zaman bilgisine ihtiyaç duyan akışlar kullanır.
+  Stream<Map<String, DateTime>> takipEdilenTarihleriStream(String kullaniciId) {
+    return firestore
+        .collection('takipler')
+        .where('takipciId', isEqualTo: kullaniciId)
+        .snapshots()
+        .map((snap) => {
+              for (final d in snap.docs)
+                d.data()['takipEdilenId'] as String:
+                    (d.data()['tarih'] as Timestamp?)?.toDate() ?? DateTime.now(),
+            });
+  }
+
+  /// Ortalama puanı [minPuan] ve üzeri olan taşıyıcılar, puana göre sıralı.
+  Future<List<KullaniciModel>> yuksekPuanliTasiyicilariGetir({
+    double minPuan = 4.0,
+    int limit = 20,
+  }) async {
+    final snap = await _col
+        .where('ortalamaPuan', isGreaterThanOrEqualTo: minPuan)
+        .orderBy('ortalamaPuan', descending: true)
+        .limit(limit * 3) // istekçi tipi olanları eledikten sonra yetsin diye fazla çek
+        .get();
+    return snap.docs
+        .map(KullaniciModel.fromFirestore)
+        .where((k) => k.tasiyiciMi)
+        .take(limit)
+        .toList();
+  }
 }

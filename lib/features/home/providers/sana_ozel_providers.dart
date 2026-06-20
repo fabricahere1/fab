@@ -5,6 +5,8 @@ import 'package:iste_v3/features/ilanlar/domain/ilan_model.dart';
 import 'package:iste_v3/features/ilanlar/providers/ilan_provider.dart';
 import 'package:iste_v3/features/profil/domain/kullanici_model.dart';
 import 'package:iste_v3/features/profil/providers/profil_provider.dart';
+import 'package:iste_v3/features/home/providers/son_goruntulenenler_provider.dart';
+import 'package:iste_v3/features/auth/providers/auth_provider.dart';
 
 part 'sana_ozel_providers.g.dart';
 
@@ -100,6 +102,80 @@ List<IlanModel> dutyFreeYapabilecekIlanlar(Ref ref) {
       .filtrelenmis
       .where((i) => i.sahipDutyFree)
       .toList();
+}
+
+/// Geçmişte görüntülenen ilanların kategorilerine benzer, henüz
+/// görüntülenmemiş ilanlar (istek + taşıyıcı ilanları birlikte).
+@riverpod
+List<IlanModel> gecmisGoruntulenenlereBenzerIlanlar(Ref ref) {
+  final gorunenler = ref.watch(sonGoruntulenenlerProvider);
+  if (gorunenler.isEmpty) return [];
+
+  final kategoriler = <String>{};
+  for (final g in gorunenler) {
+    if (g.kategori.isNotEmpty) kategoriler.add(g.kategori);
+    if (g.anaKategori.isNotEmpty) kategoriler.add(g.anaKategori);
+  }
+  if (kategoriler.isEmpty) return [];
+
+  final gorulenIdler = gorunenler.map((g) => g.id).toSet();
+  return [
+    ...ref.watch(istekIlanlarProvider).filtrelenmis,
+    ...ref.watch(tasiyiciIlanlarProvider).filtrelenmis,
+  ]
+      .where((i) =>
+          !gorulenIdler.contains(i.id) &&
+          (kategoriler.contains(i.kategori) || kategoriler.contains(i.anaKategori)))
+      .toList();
+}
+
+/// Favorilenen ilanların kategorilerinden, son 7 günde açılmış yeni
+/// taşıyıcı ilanları (istekçi tarafına özel — favorilenen ilanın kendisi hariç).
+@riverpod
+List<IlanModel> favoriKategorilerYeniIlanlar(Ref ref) {
+  final favoriler = ref.watch(favorilerProvider).value ?? const [];
+  if (favoriler.isEmpty) return [];
+
+  final kategoriler = favoriler
+      .map((f) => f['kategori'] as String? ?? '')
+      .where((k) => k.isNotEmpty)
+      .toSet();
+  if (kategoriler.isEmpty) return [];
+
+  final favoriIlanIdleri =
+      favoriler.map((f) => f['ilanId'] as String? ?? '').toSet();
+  final simdi = DateTime.now();
+
+  final sonuc = ref.watch(tasiyiciIlanlarProvider).filtrelenmis.where((i) {
+    if (favoriIlanIdleri.contains(i.id)) return false;
+    if (!kategoriler.contains(i.kategori) && !kategoriler.contains(i.anaKategori)) {
+      return false;
+    }
+    final olusturma = i.olusturmaTarihi;
+    return olusturma != null && simdi.difference(olusturma).inDays <= 7;
+  }).toList();
+
+  sonuc.sort((a, b) =>
+      (b.olusturmaTarihi ?? simdi).compareTo(a.olusturmaTarihi ?? simdi));
+  return sonuc;
+}
+
+/// Takip edilen taşıyıcıların, takip başladıktan SONRA açtığı ilanlar.
+@riverpod
+List<IlanModel> takipEdilenTasiyicilarinYeniIlanlari(Ref ref) {
+  final uid = ref.watch(currentUserProvider)?.uid;
+  if (uid == null) return [];
+
+  final takipTarihleri =
+      ref.watch(takipEdilenTarihleriProvider(uid)).value ?? const {};
+  if (takipTarihleri.isEmpty) return [];
+
+  return ref.watch(tasiyiciIlanlarProvider).filtrelenmis.where((i) {
+    final takipTarihi = takipTarihleri[i.kullaniciId];
+    final olusturma = i.olusturmaTarihi;
+    if (takipTarihi == null || olusturma == null) return false;
+    return olusturma.isAfter(takipTarihi);
+  }).toList();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

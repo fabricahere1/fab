@@ -174,6 +174,20 @@ Stream<List<String>> takipEdilenIdleri(Ref ref, String kullaniciId) {
   return ref.watch(kullaniciRepositoryProvider).takipEdilenIdleriStream(kullaniciId);
 }
 
+/// Takip edilen kullanıcıların id → takip başlangıç tarihi haritası.
+@riverpod
+Stream<Map<String, DateTime>> takipEdilenTarihleri(Ref ref, String kullaniciId) {
+  return ref.watch(kullaniciRepositoryProvider).takipEdilenTarihleriStream(kullaniciId);
+}
+
+/// 4.0 ve üzeri ortalama puana sahip taşıyıcılar (kendisi hariç).
+@riverpod
+Future<List<KullaniciModel>> yuksekPuanliTasiyicilar(Ref ref) async {
+  final benimUid = ref.watch(currentUserProvider)?.uid;
+  final liste = await ref.watch(kullaniciRepositoryProvider).yuksekPuanliTasiyicilariGetir();
+  return liste.where((k) => k.id != benimUid).toList();
+}
+
 @riverpod
 Future<KullaniciModel?> kullaniciBilgisi(Ref ref, String uid) {
   return ref.watch(kullaniciRepositoryProvider).kullaniciGetir(uid);
