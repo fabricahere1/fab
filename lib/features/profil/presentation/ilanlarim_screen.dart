@@ -248,8 +248,9 @@ class _IstekKarti extends StatelessWidget {
                     Text(
                       '${ilan.nereden} → ${ilan.nereye}',
                       style: GoogleFonts.manrope(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.textPrimary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

@@ -946,7 +946,7 @@ class _SatirOge extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
-    this.iconColor  = AppColors.primary,
+    this.iconColor  = const Color(0xFF7C3AED),
     this.labelColor = AppColors.textPrimary,
     this.trailing,
     this.showArrow  = true,
@@ -1010,10 +1010,10 @@ class _SwitchSatir extends StatelessWidget {
           Container(
             width: 36, height: 36,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
+              color: const Color(0xFF7C3AED).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: AppColors.primary, size: 20),
+            child: Icon(icon, color: const Color(0xFF7C3AED), size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(

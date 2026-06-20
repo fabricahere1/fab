@@ -696,7 +696,7 @@ class _SatirOge extends StatelessWidget {
             Container(
               width: 36, height: 36,
               decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
-              child: Icon(icon, color: labelColor == AppColors.textPrimary ? AppColors.primary : labelColor, size: 20),
+              child: Icon(icon, color: labelColor == AppColors.textPrimary ? const Color(0xFF7C3AED) : labelColor, size: 20),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -742,7 +742,7 @@ class _BekleyenDegerlendirmelerScreen extends ConsumerWidget {
         ),
       ),
       body: bekleyenlerAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF81C784), strokeWidth: 2)),
+        loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF7C3AED), strokeWidth: 2)),
         error: (_, _) => Center(
           child: Text('Bir hata oluştu.', style: GoogleFonts.manrope(color: AppColors.textSecondary)),
         ),
@@ -754,8 +754,8 @@ class _BekleyenDegerlendirmelerScreen extends ConsumerWidget {
                 children: [
                   Container(
                     width: 72, height: 72,
-                    decoration: BoxDecoration(color: const Color(0xFF81C784).withValues(alpha: 0.12), shape: BoxShape.circle),
-                    child: const Icon(Icons.hourglass_empty_rounded, size: 36, color: Color(0xFF81C784)),
+                    decoration: BoxDecoration(color: const Color(0xFF7C3AED).withValues(alpha: 0.12), shape: BoxShape.circle),
+                    child: const Icon(Icons.hourglass_empty_rounded, size: 36, color: Color(0xFF7C3AED)),
                   ),
                   const SizedBox(height: 16),
                   Text('Bekleyen değerlendirme yok',
@@ -819,8 +819,8 @@ class _BekleyenKarti extends ConsumerWidget {
               children: [
                 Container(
                   width: 48, height: 48,
-                  decoration: BoxDecoration(color: const Color(0xFF81C784).withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
-                  child: const Icon(Icons.star_rounded, color: Color(0xFF81C784), size: 26),
+                  decoration: BoxDecoration(color: const Color(0xFF7C3AED).withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
+                  child: const Icon(Icons.star_rounded, color: Color(0xFF7C3AED), size: 26),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -854,7 +854,7 @@ class _BekleyenKarti extends ConsumerWidget {
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(color: const Color(0xFF81C784), borderRadius: BorderRadius.circular(20)),
+                    decoration: BoxDecoration(color: const Color(0xFF7C3AED), borderRadius: BorderRadius.circular(20)),
                     child: Text('Değerlendir',
                         style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
                   ),
