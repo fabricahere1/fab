@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../features/ilanlar/presentation/ilan_form_screen.dart';
-import '../../features/ilanlar/presentation/gelenler_form_screen.dart';
 import '../../shared/constants/app_colors.dart';
+import '../../shared/constants/app_constants.dart';
 
 class NedenIsteBar extends StatelessWidget {
   const NedenIsteBar({super.key});
@@ -135,7 +135,7 @@ class _IlanSecPanel extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (_) => const GelenlerFormScreen()),
+                          builder: (_) => const IlanFormScreen(tip: IlanTip.tasiyici)),
                     );
                   },
                 ),

@@ -15,7 +15,6 @@ import '../../ilanlar/presentation/ilanlar_screen.dart';
 import '../../ilanlar/providers/grid_tercihi_notifier.dart';
 import '../../ilanlar/presentation/gelenler_screen.dart';
 import '../../ilanlar/presentation/ilan_form_screen.dart';
-import '../../ilanlar/presentation/gelenler_form_screen.dart';
 import '../../mesajlar/presentation/mesajlar_screen.dart';
 import '../../mesajlar/providers/mesaj_provider.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
@@ -148,7 +147,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           onPressed: () {
                             setState(() { _fabAcik = false; _selectedIndex = 1; });
                             Navigator.push(context, CupertinoPageRoute(
-                              builder: (_) => const GelenlerFormScreen(),
+                              builder: (_) => const IlanFormScreen(tip: IlanTip.tasiyici),
                             ));
                           },
                           backgroundColor: const Color(0xFF9575CD),

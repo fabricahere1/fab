@@ -1,3 +1,9 @@
+// lib/features/ilanlar/presentation/ilan_form_screen.dart
+//
+// İstek ve taşıyıcı (gelenler) ilanı verme/düzenleme akışlarının ikisini de
+// tek bir ekranda, tam ekran "adım adım" sade/beyaz tasarımla yöneten dosya.
+// gelenler_form_screen.dart artık kullanılmıyor, bu dosya onun yerini alıyor.
+
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -10,9 +16,20 @@ import 'widgets/ilan_overlay_widget.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
+import 'ilanlar_screen.dart' show kategoriIkon;
 import '../../../shared/constants/app_constants.dart';
 import '../../../core/cache/app_cache_manager.dart';
 import '../../../shared/utils/app_snackbar.dart';
+import '../../../shared/widgets/autocomplete_alan.dart';
+
+// ── Adım tanımı ────────────────────────────────────────────────────────────────
+
+class _AdimTanimi {
+  final IconData ikon;
+  final String baslik;
+  final String aciklama;
+  const _AdimTanimi(this.ikon, this.baslik, this.aciklama);
+}
 
 class IlanFormScreen extends ConsumerStatefulWidget {
   final String tip;
@@ -28,13 +45,10 @@ class IlanFormScreen extends ConsumerStatefulWidget {
   ConsumerState<IlanFormScreen> createState() => _IlanFormScreenState();
 }
 
-class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
-    with SingleTickerProviderStateMixin {
+class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
   int _adim = 0;
-  late AnimationController _animCtrl;
-  late Animation<double> _sheetAnim;
 
-  final _urunCtrl    = TextEditingController();
+  final _urunCtrl    = TextEditingController(); // "Ürün adı" (istek) / "İlan adı" (taşıyıcı)
   final _neredenCtrl = TextEditingController();
   final _nereyeCtrl  = TextEditingController();
   final _notlarCtrl  = TextEditingController();
@@ -44,18 +58,22 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
   String _beden = '';
   String _pantolonBel = '';
   String _pantolonBoy = '';
-  bool _neredenFarketmez = false;
-  DateTime? _seciliTarih;
+  bool _neredenFarketmez = false;       // sadece istek
+  DateTime? _seciliTarih;               // sadece taşıyıcı
+  String _tasimaTercihi = 'istekler';   // sadece taşıyıcı
+
   final List<File> _yeniResimler   = [];
   List<String>     _mevcutResimler = [];
   final _picker = ImagePicker();
+
   bool? _basarili;
   bool  _overlayAktif = false;
 
-  static const _sheetYukseklikleri = [0.45, 0.60, 0.60];
+  static final List<String> _ulkeSehirListesi = [...kDunyaUlkeleri, ...kDunyaSehirleri];
 
   bool get _istekMi         => widget.tip == IlanTip.istek;
   bool get _duzenlemeModuMu => widget.duzenlenecekIlan != null;
+  int  get _toplamAdim      => _istekMi ? 3 : 4;
 
   String get _kayitKategoriKey =>
       _kategoriYolu.isNotEmpty ? _kategoriYolu.last : 'diger';
@@ -69,15 +87,6 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
   @override
   void initState() {
     super.initState();
-    _animCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 350),
-    );
-    _sheetAnim = Tween<double>(
-      begin: _sheetYukseklikleri[0],
-      end: _sheetYukseklikleri[0],
-    ).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeInOutCubic));
-
     if (_duzenlemeModuMu) {
       final ilan = widget.duzenlenecekIlan!;
       _urunCtrl.text    = ilan.urun;
@@ -106,7 +115,6 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
 
   @override
   void dispose() {
-    _animCtrl.dispose();
     _urunCtrl.dispose();
     _neredenCtrl.dispose();
     _nereyeCtrl.dispose();
@@ -114,20 +122,42 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
     super.dispose();
   }
 
-  void _adimDegistir(int yeniAdim) {
-    final baslangic = _sheetYukseklikleri[_adim];
-    final hedef     = _sheetYukseklikleri[yeniAdim];
-    _sheetAnim = Tween<double>(begin: baslangic, end: hedef).animate(
-      CurvedAnimation(parent: _animCtrl, curve: Curves.easeInOutCubic),
-    );
-    _animCtrl.forward(from: 0);
-    setState(() => _adim = yeniAdim);
+  // ── Adım içerikleri / doğrulama ─────────────────────────────────────────────
+
+  _AdimTanimi _adimTanimi(int adim) {
+    if (_istekMi) {
+      switch (adim) {
+        case 0: return const _AdimTanimi(Icons.label_outline,
+            'Ne istiyorsun?', 'İstediğin ürünü ve kategorisini belirt.');
+        case 1: return const _AdimTanimi(Icons.route_outlined,
+            'Güzergahını paylaş', 'Ürünün nereden geleceğini ve nereye ulaşacağını belirt.');
+        default: return const _AdimTanimi(Icons.photo_library_outlined,
+            'Son detaylar', 'Ek notlar ve fotoğraf ekleyerek ilanını tamamla.');
+      }
+    }
+    switch (adim) {
+      case 0: return const _AdimTanimi(Icons.label_outline,
+          'İlanını tanıt', 'İlan adı ve varsa kategorisini belirt.');
+      case 1: return const _AdimTanimi(Icons.route_outlined,
+          'Güzergahını paylaş', 'Hangi rotada seyahat ettiğini belirt.');
+      case 2: return const _AdimTanimi(Icons.calendar_today_outlined,
+          'Ne zaman, ne taşıyabilirsin?', 'Seyahat tarihini ve taşıma tercihini belirt.');
+      default: return const _AdimTanimi(Icons.photo_library_outlined,
+          'Son detaylar', 'Ek notlar ve fotoğraf ekleyerek ilanını tamamla.');
+    }
   }
 
+  bool _listedeVarMi(String deger) => _ulkeSehirListesi
+      .any((s) => s.toLowerCase() == deger.trim().toLowerCase());
+
   bool _adimGecerli(int adim) {
-    if (_istekMi && adim == 0) {
-      if (_urunCtrl.text.trim().isEmpty) { _snack('Ürün adını girin.'); return false; }
-      if (_kategoriYolu.isEmpty) { _snack('Kategori seçin.'); return false; }
+    if (adim == 0) {
+      if (_istekMi && _urunCtrl.text.trim().isEmpty) {
+        _snack('Ürün adını girin.'); return false;
+      }
+      if (_istekMi && _kategoriYolu.isEmpty) {
+        _snack('Kategori seçin.'); return false;
+      }
       final tipi = bedenTipiGetir(_kategoriYolu);
       if (tipi != BedenTipi.yok) {
         if (_cinsiyet.isEmpty) { _snack('Cinsiyet seçin.'); return false; }
@@ -140,22 +170,44 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
           return false;
         }
       }
+      return true;
     }
-    if ((!_istekMi && adim == 0) || (_istekMi && adim == 1)) {
-      if (!_neredenFarketmez && _neredenCtrl.text.trim().isEmpty) {
-        _snack('Nereden alanını doldurun.'); return false;
+    if (adim == 1) {
+      if (_istekMi && !_neredenFarketmez) {
+        if (_neredenCtrl.text.trim().isEmpty) {
+          _snack('Nereden alanını doldurun.'); return false;
+        }
+        if (!_listedeVarMi(_neredenCtrl.text)) {
+          _snack('Listeden geçerli bir ülke/şehir seçin.'); return false;
+        }
+      }
+      if (!_istekMi) {
+        if (_neredenCtrl.text.trim().isEmpty) {
+          _snack('Nereden alanını doldurun.'); return false;
+        }
+        if (!_listedeVarMi(_neredenCtrl.text)) {
+          _snack('Listeden geçerli bir ülke/şehir seçin.'); return false;
+        }
       }
       if (_nereyeCtrl.text.trim().isEmpty) {
         _snack('Nereye alanını doldurun.'); return false;
       }
+      if (!_listedeVarMi(_nereyeCtrl.text)) {
+        _snack('Listeden geçerli bir ülke/şehir seçin.'); return false;
+      }
+      return true;
+    }
+    if (!_istekMi && adim == 2) {
+      if (_seciliTarih == null) { _snack('Seyahat tarihini seçin.'); return false; }
+      return true;
     }
     return true;
   }
 
   void _ileri() {
     if (!_adimGecerli(_adim)) return;
-    if (_adim < 2) {
-      _adimDegistir(_adim + 1);
+    if (_adim < _toplamAdim - 1) {
+      setState(() => _adim += 1);
     } else {
       _kaydet();
     }
@@ -163,11 +215,15 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
 
   void _geri() {
     if (_adim > 0) {
-      _adimDegistir(_adim - 1);
+      setState(() => _adim -= 1);
     } else {
       Navigator.pop(context);
     }
   }
+
+  void _snack(String m) => AppSnackBar.hata(context, m);
+
+  // ── Resim seçimi ─────────────────────────────────────────────────────────────
 
   Future<void> _resimEkle() async {
     final toplam = _mevcutResimler.length + _yeniResimler.length;
@@ -238,137 +294,20 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
     }
   }
 
-  Future<void> _kaydet() async {
-    final user = ref.read(currentUserProvider);
-    if (user == null) { _snack('Giriş yapmanız gerekiyor.'); return; }
-
-    final tipi = bedenTipiGetir(_kategoriYolu);
-    final bedenDeger = tipi == BedenTipi.pantolon
-        ? (_pantolonBel.isNotEmpty && _pantolonBoy.isNotEmpty
-            ? '$_pantolonBel/$_pantolonBoy'
-            : '')
-        : _beden;
-
-    if (_duzenlemeModuMu) {
-      final basarili = await ref.read(ilanOlusturProvider.notifier).guncelle(
-        widget.duzenlenecekIlan!.id,
-        {
-          'nereden':      _neredenFarketmez ? 'Farketmez' : _neredenCtrl.text.trim(),
-          'nereye':       _nereyeCtrl.text.trim(),
-          'notlar':       _notlarCtrl.text.trim(),
-          'kategori':     _kayitKategoriKey,
-          'anaKategori':  _kayitAnaKategoriKey,
-          'kategoriYolu': _kategoriYolu,
-          if (_istekMi) 'urun': _urunCtrl.text.trim(),
-          if (_seciliTarih != null) 'tarih': _seciliTarih,
-          'cinsiyet': _cinsiyet,
-          'beden':    bedenDeger,
-        },
-        yeniResimler: _yeniResimler,
-        mevcutResimler: _mevcutResimler,
-      );
-      if (!mounted) return;
-      if (basarili) {
-        Navigator.pop(context);
-        AppSnackBar.basari(context,
-            'İlanınız güncellendi. İnceleme sonucu uygun görülürse yayınlanacaktır.');
-        ref.read(istekIlanlarProvider.notifier).yenile();
-        ref.read(tasiyiciIlanlarProvider.notifier).yenile();
-      } else {
-        _snack('İlan güncellenemedi. Tekrar deneyin.');
-      }
-    } else {
-      setState(() => _overlayAktif = true);
-      final profilSnapshot = await ref.read(kullaniciBilgiProvider(user.uid).future);
-      final ilan = IlanModel(
-        id: '', tip: widget.tip,
-        nereden:      _neredenFarketmez ? 'Farketmez' : _neredenCtrl.text.trim(),
-        nereye:       _nereyeCtrl.text.trim(),
-        urun:         _urunCtrl.text.trim(),
-        ucret:        '', notlar: _notlarCtrl.text.trim(),
-        kategori:     _kayitKategoriKey,
-        anaKategori:  _kayitAnaKategoriKey,
-        kategoriYolu: _kategoriYolu,
-        kullaniciId:  user.uid,
-        kullaniciAd:  user.displayName ?? user.email ?? '',
-        tarih:        _seciliTarih,
-        cinsiyet:     _cinsiyet,
-        beden:        bedenDeger,
-        kullaniciPuan: profilSnapshot?.ortalamaPuan ?? 0.0,
-        sahipIstekTeslimatTercihi: profilSnapshot?.istekTeslimatTercihi,
-      );
-      final id = await ref.read(ilanOlusturProvider.notifier).olustur(
-        ilan: ilan, resimler: _yeniResimler,
-      );
-      if (!mounted) return;
-      if (id == null) {
-        setState(() => _basarili = false);
-        return;
-      }
-      final yayinda = await ref.read(ilanOlusturProvider.notifier).durumBekle(id);
-      if (!mounted) return;
-      setState(() => _basarili = yayinda ?? true);
-    }
-  }
-
-  void _overlayTamamlandi() {
-    final basarili = _basarili ?? true;
-    final notifier = ref.read(istekIlanlarProvider.notifier);
-    setState(() { _overlayAktif = false; _basarili = null; });
-    Navigator.pop(context);
-    if (basarili) {
-      notifier.yenile();
-    } else {
-      AppSnackBar.hata(context, 'İlanınız yayın için uygun değildir, lütfen kontrol edip yeniden deneyin');
-    }
-  }
-
-  void _snack(String m) => AppSnackBar.hata(context, m);
-
-  List<Widget> _adimAciklamalari(int adim) {
-    const style = TextStyle(
-      fontSize: 13,
-      fontStyle: FontStyle.italic,
-      color: Color(0x55000000),
-      height: 1.5,
-    );
-    final satirlar = <String>[];
-    if (_istekMi) {
-      switch (adim) {
-        case 0:
-          satirlar.add('Ürün adı, istediğiniz ürünün uygulamada görünen adıdır.');
-        case 1:
-          satirlar.add('İstediğiniz ürünün özellikle bir ülkeden isterseniz seçim yapabilirsiniz.');
-        case 2:
-          satirlar.add('İstediğiniz ürün ile alakalı vermek istediğiniz detayları burada ifade edebilirsiniz.');
-          satirlar.add('İstediğiniz ürüne dair ürün fotoğraflarının net ve temiz fonda olmasına özen gösteriniz.');
-      }
-    } else {
-      switch (adim) {
-        case 0:
-          satirlar.add('Güzergahınızı girerek hangi rotada seyahat ettiğinizi belirtin.');
-        case 1:
-          satirlar.add('Seyahat tarihinizi belirterek alıcıların size ulaşabileceği zaman dilimini gösterin.');
-        case 2:
-          satirlar.add('Getirmeyi düşündüğünüz ürünler veya kargo tercihiniz hakkında ek bilgi verebilirsiniz.');
-          satirlar.add('Ürün fotoğraflarının net ve temiz fonda olmasına özen gösteriniz.');
-      }
-    }
-    return satirlar.map((s) => Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Text(s, textAlign: TextAlign.center, style: style),
-    )).toList();
-  }
+  // ── Tarih / kategori seçim sayfaları ──────────────────────────────────────────
 
   Future<void> _tarihSec() async {
+    final bugun = DateTime.now();
     final s = await showDatePicker(
       context: context,
-      initialDate: _seciliTarih ?? DateTime.now().add(const Duration(days: 1)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: _seciliTarih ?? bugun.add(const Duration(days: 1)),
+      firstDate: bugun,
+      lastDate: bugun.add(const Duration(days: 365)),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.light(primary: AppColors.primary)),
+          colorScheme: const ColorScheme.light(
+            primary: AppColors.red, onPrimary: Colors.white),
+        ),
         child: child!,
       ),
     );
@@ -376,6 +315,7 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
   }
 
   void _kategoriSec() {
+    FocusScope.of(context).unfocus();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -394,214 +334,232 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
             _cinsiyet = cinsiyetTahminiGetir(yol);
           });
           Navigator.pop(ctx);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) FocusScope.of(context).unfocus();
+          });
         },
       ),
     );
   }
 
+  // ── Kaydetme ───────────────────────────────────────────────────────────────────
+
+  Future<void> _kaydet() async {
+    final user = ref.read(currentUserProvider);
+    if (user == null) { _snack('Giriş yapmanız gerekiyor.'); return; }
+
+    final tipi = bedenTipiGetir(_kategoriYolu);
+    final bedenDeger = tipi == BedenTipi.pantolon
+        ? (_pantolonBel.isNotEmpty && _pantolonBoy.isNotEmpty
+            ? '$_pantolonBel/$_pantolonBoy'
+            : '')
+        : _beden;
+    final nereden = (_istekMi && _neredenFarketmez)
+        ? 'Farketmez' : _neredenCtrl.text.trim();
+
+    if (_duzenlemeModuMu) {
+      final basarili = await ref.read(ilanOlusturProvider.notifier).guncelle(
+        widget.duzenlenecekIlan!.id,
+        {
+          'nereden':      nereden,
+          'nereye':       _nereyeCtrl.text.trim(),
+          'notlar':       _notlarCtrl.text.trim(),
+          'kategori':     _kayitKategoriKey,
+          'anaKategori':  _kayitAnaKategoriKey,
+          'kategoriYolu': _kategoriYolu,
+          'urun':         _urunCtrl.text.trim(),
+          if (_seciliTarih != null) 'tarih': _seciliTarih,
+          'cinsiyet': _cinsiyet,
+          'beden':    bedenDeger,
+        },
+        yeniResimler: _yeniResimler,
+        mevcutResimler: _mevcutResimler,
+      );
+      if (!mounted) return;
+      if (basarili) {
+        Navigator.pop(context);
+        AppSnackBar.basari(context,
+            'İlanınız güncellendi. İnceleme sonucu uygun görülürse yayınlanacaktır.');
+        ref.read(istekIlanlarProvider.notifier).yenile();
+        ref.read(tasiyiciIlanlarProvider.notifier).yenile();
+      } else {
+        _snack('İlan güncellenemedi. Tekrar deneyin.');
+      }
+      return;
+    }
+
+    setState(() => _overlayAktif = true);
+    final profilSnapshot = await ref.read(kullaniciBilgiProvider(user.uid).future);
+    final ilan = IlanModel(
+      id: '', tip: widget.tip,
+      nereden:      nereden,
+      nereye:       _nereyeCtrl.text.trim(),
+      urun:         _urunCtrl.text.trim(),
+      ucret:        '', notlar: _notlarCtrl.text.trim(),
+      kategori:     _kayitKategoriKey,
+      anaKategori:  _kayitAnaKategoriKey,
+      kategoriYolu: _kategoriYolu,
+      kullaniciId:  user.uid,
+      kullaniciAd:  user.displayName ?? user.email ?? '',
+      tarih:        _seciliTarih,
+      cinsiyet:     _cinsiyet,
+      beden:        bedenDeger,
+      kullaniciPuan: profilSnapshot?.ortalamaPuan ?? 0.0,
+      sahipIstekTeslimatTercihi:
+          _istekMi ? profilSnapshot?.istekTeslimatTercihi : null,
+      sahipDutyFree: _istekMi ? false : (profilSnapshot?.dutyFreeIlgileniyor ?? false),
+    );
+    try {
+      final id = await ref.read(ilanOlusturProvider.notifier).olustur(
+        ilan: ilan, resimler: _yeniResimler,
+      );
+      if (!mounted) return;
+      if (id == null) {
+        setState(() => _basarili = false);
+        return;
+      }
+      final yayinda = await ref.read(ilanOlusturProvider.notifier).durumBekle(id);
+      if (!mounted) return;
+      setState(() => _basarili = yayinda ?? true);
+    } catch (_) {
+      if (mounted) setState(() => _basarili = false);
+    }
+  }
+
+  void _overlayTamamlandi() {
+    final basarili = _basarili ?? true;
+    setState(() { _overlayAktif = false; _basarili = null; });
+    Navigator.pop(context);
+    if (basarili) {
+      if (_istekMi) {
+        ref.read(istekIlanlarProvider.notifier).yenile();
+      } else {
+        ref.read(tasiyiciIlanlarProvider.notifier).yenile();
+      }
+    } else {
+      AppSnackBar.hata(context,
+          'İlanınız yayın için uygun değildir, lütfen kontrol edip yeniden deneyin');
+    }
+  }
+
+  // ── Arayüz ─────────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
-    final yukleniyor = ref.watch(ilanOlusturProvider).yukleniyor;
-    final progress   = ref.watch(ilanOlusturProvider).yuklemeProgress;
-    final screenH    = MediaQuery.of(context).size.height;
-    final statusH    = MediaQuery.of(context).padding.top;
-
-    final adimlar = _istekMi
-        ? ['Ürün', 'Güzergah', 'Detaylar']
-        : ['Güzergah', 'Tarih', 'Detaylar'];
+    final tanim = _adimTanimi(_adim);
+    final sonAdimMi = _adim == _toplamAdim - 1;
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
-          Positioned.fill(
+          SafeArea(
             child: Column(
               children: [
-                SizedBox(height: statusH),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                   child: Row(
                     children: [
-                      GestureDetector(
-                        onTap: _geri,
-                        child: Icon(
-                          _adim == 0 ? Icons.close : Icons.arrow_back,
-                          color: AppColors.textPrimary, size: 22,
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back_ios_new,
+                            size: 18, color: Color(0xFF999999)),
+                        onPressed: _geri,
+                      ),
+                      Expanded(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(_toplamAdim, (i) {
+                            return Container(
+                              width: 18, height: 3,
+                              margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                              decoration: BoxDecoration(
+                                color: i <= _adim
+                                    ? const Color(0xFF1A1A1A)
+                                    : const Color(0xFFEEEEEE),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            );
+                          }),
                         ),
                       ),
-                      const Spacer(),
-                      Text(
-                        _duzenlemeModuMu ? 'İlanı Düzenle' :
-                            (_istekMi ? 'İstek İlanı Ver' : 'Taşıyıcı İlanı Ver'),
-                        style: GoogleFonts.dmSans(
-                            fontSize: 15, fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary),
+                      IconButton(
+                        icon: const Icon(Icons.close,
+                            size: 20, color: Color(0xFF999999)),
+                        onPressed: () => Navigator.pop(context),
                       ),
-                      const Spacer(),
-                      const SizedBox(width: 22),
                     ],
                   ),
                 ),
-                const SizedBox(height: 40),
+                Expanded(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onTap: () => FocusScope.of(context).unfocus(),
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 250),
+                      transitionBuilder: (child, anim) =>
+                          FadeTransition(opacity: anim, child: child),
+                      child: SingleChildScrollView(
+                        key: ValueKey(_adim),
+                        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                        padding: const EdgeInsets.fromLTRB(28, 12, 28, 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Center(
+                              child: Column(
+                                children: [
+                                  Icon(tanim.ikon, size: 34, color: const Color(0xFF1A1A1A)),
+                                  const SizedBox(height: 18),
+                                  Text('ADIM ${_adim + 1} / $_toplamAdim',
+                                      style: GoogleFonts.dmSans(
+                                          fontSize: 12, color: const Color(0xFFAAAAAA),
+                                          letterSpacing: 0.3)),
+                                  const SizedBox(height: 6),
+                                  Text(tanim.baslik,
+                                      textAlign: TextAlign.center,
+                                    style: GoogleFonts.dmSans(
+                                        fontSize: 20, fontWeight: FontWeight.w500,
+                                        color: const Color(0xFF1A1A1A))),
+                                const SizedBox(height: 8),
+                                Text(tanim.aciklama,
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.dmSans(
+                                        fontSize: 13, color: const Color(0xFF999999),
+                                        height: 1.5)),
+                                const SizedBox(height: 30),
+                              ],
+                            ),
+                          ),
+                          _adimIcerigi(_adim),
+                        ],
+                      ),
+                    ),
+                  ),
+                  ),
+                ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        '${_adim + 1} / 3',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.dmSans(
-                          fontSize: 48,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary.withValues(alpha: 0.35),
-                        ),
+                  padding: const EdgeInsets.fromLTRB(28, 0, 28, 20),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: ref.watch(ilanOlusturProvider).yukleniyor ? null : _ileri,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1A1A1A),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
                       ),
-                      Text(
-                        adimlar[_adim],
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.dmSans(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary.withValues(alpha: 0.45),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      ..._adimAciklamalari(_adim),
-                    ],
+                      child: Text(sonAdimMi ? 'Yayınla' : 'Devam et',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 15, fontWeight: FontWeight.w500)),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-
-          AnimatedBuilder(
-            animation: _sheetAnim,
-            builder: (_, _) {
-              final sheetH = screenH * _sheetAnim.value;
-              return Positioned(
-                bottom: 0, left: 0, right: 0,
-                height: sheetH,
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                  ),
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                        child: Column(
-                          children: [
-                            Container(
-                              width: 32, height: 3,
-                              decoration: BoxDecoration(
-                                color: AppColors.divider,
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                            Row(
-                              children: List.generate(3, (i) {
-                                final aktif = i == _adim;
-                                final tamam = i < _adim;
-                                return AnimatedContainer(
-                                  duration: const Duration(milliseconds: 300),
-                                  margin: const EdgeInsets.only(right: 6),
-                                  width: aktif ? 20 : 6,
-                                  height: 6,
-                                  decoration: BoxDecoration(
-                                    color: aktif
-                                        ? AppColors.textPrimary
-                                        : tamam
-                                            ? AppColors.textSecondary
-                                            : AppColors.divider,
-                                    borderRadius: BorderRadius.circular(3),
-                                  ),
-                                );
-                              }),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                          child: _adimIcerigi(yukleniyor, progress),
-                        ),
-                      ),
-                      Container(
-                        padding: EdgeInsets.fromLTRB(
-                            20, 12, 20,
-                            MediaQuery.of(context).padding.bottom + 16),
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          border: Border(
-                              top: BorderSide(
-                                  color: AppColors.divider, width: 0.5)),
-                        ),
-                        child: Row(
-                          children: [
-                            if (_adim > 0) ...[
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: _geri,
-                                  child: Container(
-                                    height: 48,
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: AppColors.divider),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Center(
-                                      child: Text('Geri',
-                                          style: GoogleFonts.dmSans(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w500,
-                                              color: AppColors.textPrimary)),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                            ],
-                            Expanded(
-                              flex: 2,
-                              child: GestureDetector(
-                                onTap: yukleniyor ? null : _ileri,
-                                child: Container(
-                                  height: 48,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.textPrimary,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Center(
-                                    child: yukleniyor
-                                        ? const SizedBox(
-                                            width: 20, height: 20,
-                                            child: CircularProgressIndicator(
-                                                color: Colors.white,
-                                                strokeWidth: 2))
-                                        : Text(
-                                            _adim == 2 ? 'Yayınla' : 'İleri',
-                                            style: GoogleFonts.dmSans(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w600,
-                                                color: Colors.white)),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-
-          // ── Yükleme overlay ─────────────────────────────────────────────
           IlanYuklemeOverlay(
             aktif: _overlayAktif,
             basarili: _basarili,
@@ -612,358 +570,301 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen>
     );
   }
 
-  Widget _adimIcerigi(bool yukleniyor, double progress) {
-    if (_istekMi) {
-      switch (_adim) {
-        case 0:
-          final tipi = bedenTipiGetir(_kategoriYolu);
-          return Column(
-            children: [
-              _AdimUrunIcerik(
-                urunCtrl: _urunCtrl,
-                kategoriAdi: _kategoriGorunumAdi,
-                onKategoriSec: _kategoriSec,
+  Widget _adimIcerigi(int adim) {
+    final beden = bedenTipiGetir(_kategoriYolu);
+
+    if (adim == 0) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _alanEtiket(_istekMi ? 'Ürün adı *' : 'İlan adı'),
+          const SizedBox(height: 6),
+          _altCizgiAlan(
+            controller: _urunCtrl,
+            hint: _istekMi
+                ? 'Örn: iPhone 15 Pro, Nike Air Max...'
+                : 'Örn: Elektronik, Kozmetik, Giyim...',
+          ),
+          const SizedBox(height: 22),
+          _alanEtiket(_istekMi ? 'Kategori *' : 'Kategori'),
+          const SizedBox(height: 6),
+          GestureDetector(
+            onTap: _kategoriSec,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 9),
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE))),
               ),
-              if (tipi != BedenTipi.yok) BedenCinsiyetBolum(
-                tip: tipi,
-                cinsiyet: _cinsiyet,
-                beden: _beden,
-                pantolonBel: _pantolonBel,
-                pantolonBoy: _pantolonBoy,
-                onCinsiyetDegis: (v) => setState(() => _cinsiyet = v),
-                onBedenDegis: (v) => setState(() => _beden = v),
-                onPantolonBelDegis: (v) => setState(() => _pantolonBel = v),
-                onPantolonBoyDegis: (v) => setState(() => _pantolonBoy = v),
-              ),
-            ],
-          );
-        case 1: return _AdimGuzergahIcerik(
-          neredenCtrl: _neredenCtrl,
-          nereyeCtrl: _nereyeCtrl,
-          neredenFarketmez: _neredenFarketmez,
-          istekMi: true,
-          onFarketmezDegis: (v) => setState(() {
-            _neredenFarketmez = v;
-            if (v) _neredenCtrl.clear();
-          }),
-        );
-        case 2: return _AdimDetayIcerik(
-          notlarCtrl: _notlarCtrl,
-          mevcutResimler: _mevcutResimler,
-          yeniResimler: _yeniResimler,
-          yukleniyor: yukleniyor,
-          progress: progress,
-          onResimEkle: _resimEkle,
-          onMevcutSil: (i) => setState(() => _mevcutResimler.removeAt(i)),
-          onYeniSil: (i) => setState(() => _yeniResimler.removeAt(i)),
-        );
-      }
-    } else {
-      switch (_adim) {
-        case 0: return _AdimGuzergahIcerik(
-          neredenCtrl: _neredenCtrl,
-          nereyeCtrl: _nereyeCtrl,
-          neredenFarketmez: false,
-          istekMi: false,
-          onFarketmezDegis: (_) {},
-        );
-        case 1: return _AdimTarihIcerik(
-          seciliTarih: _seciliTarih,
-          onTarihSec: _tarihSec,
-        );
-        case 2: return _AdimDetayIcerik(
-          notlarCtrl: _notlarCtrl,
-          mevcutResimler: _mevcutResimler,
-          yeniResimler: _yeniResimler,
-          yukleniyor: yukleniyor,
-          progress: progress,
-          onResimEkle: _resimEkle,
-          onMevcutSil: (i) => setState(() => _mevcutResimler.removeAt(i)),
-          onYeniSil: (i) => setState(() => _yeniResimler.removeAt(i)),
-        );
-      }
-    }
-    return const SizedBox.shrink();
-  }
-}
-
-// ── Adım içerikleri ───────────────────────────────────────────────────────────
-
-class _AdimUrunIcerik extends StatelessWidget {
-  final TextEditingController urunCtrl;
-  final String kategoriAdi;
-  final VoidCallback onKategoriSec;
-  const _AdimUrunIcerik({
-    required this.urunCtrl,
-    required this.kategoriAdi,
-    required this.onKategoriSec,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _formEtiket('Ürün adı *'),
-        const SizedBox(height: 8),
-        TextField(
-          controller: urunCtrl,
-          autofocus: true,
-          style: GoogleFonts.dmSans(fontSize: 15),
-          decoration: _inputDeko('Örn: iPhone 15 Pro, Nike Air Max...'),
-        ),
-        const SizedBox(height: 20),
-        _formEtiket('Kategori *'),
-        const SizedBox(height: 8),
-        GestureDetector(
-          onTap: onKategoriSec,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.divider),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    kategoriAdi.isNotEmpty ? kategoriAdi : 'Kategori seç...',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 15,
-                      color: kategoriAdi.isNotEmpty
-                          ? AppColors.textPrimary : AppColors.textHint,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _kategoriGorunumAdi.isNotEmpty
+                          ? _kategoriGorunumAdi
+                          : 'Kategori seç...${_istekMi ? '' : ' (opsiyonel)'}',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 14,
+                        color: _kategoriGorunumAdi.isNotEmpty
+                            ? const Color(0xFF1A1A1A) : const Color(0xFFBBBBBB),
+                      ),
                     ),
                   ),
-                ),
-                const Icon(Icons.chevron_right,
-                    color: AppColors.textSecondary, size: 20),
-              ],
+                  const Icon(Icons.chevron_right, size: 18, color: Color(0xFFBBBBBB)),
+                ],
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 20),
-      ],
-    );
-  }
-}
+          if (beden != BedenTipi.yok) ...[
+            const SizedBox(height: 24),
+            BedenCinsiyetBolum(
+              tip: beden,
+              cinsiyet: _cinsiyet,
+              beden: _beden,
+              pantolonBel: _pantolonBel,
+              pantolonBoy: _pantolonBoy,
+              onCinsiyetDegis: (v) => setState(() => _cinsiyet = v),
+              onBedenDegis: (v) => setState(() => _beden = v),
+              onPantolonBelDegis: (v) => setState(() => _pantolonBel = v),
+              onPantolonBoyDegis: (v) => setState(() => _pantolonBoy = v),
+            ),
+          ],
+        ],
+      );
+    }
 
-class _AdimGuzergahIcerik extends StatelessWidget {
-  final TextEditingController neredenCtrl;
-  final TextEditingController nereyeCtrl;
-  final bool neredenFarketmez;
-  final bool istekMi;
-  final ValueChanged<bool> onFarketmezDegis;
-  const _AdimGuzergahIcerik({
-    required this.neredenCtrl, required this.nereyeCtrl,
-    required this.neredenFarketmez, required this.istekMi,
-    required this.onFarketmezDegis,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _formEtiket('Nereden *'),
-        const SizedBox(height: 8),
-        if (!neredenFarketmez)
-          _AutocompleteAlan(
-            controller: neredenCtrl,
-            hint: 'Ülke veya şehir...',
-            icon: Icons.flight_takeoff_outlined,
-            secenekler: [...kDunyaUlkeleri, ...kDunyaSehirleri],
-          ),
-        if (istekMi) ...[
-          const SizedBox(height: 10),
-          GestureDetector(
-            onTap: () => onFarketmezDegis(!neredenFarketmez),
-            child: Row(
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  width: 20, height: 20,
-                  decoration: BoxDecoration(
-                    color: neredenFarketmez ? AppColors.textPrimary : Colors.white,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color: neredenFarketmez
-                          ? AppColors.textPrimary : AppColors.divider),
+    if (adim == 1) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _alanEtiket('Nereden *'),
+          const SizedBox(height: 6),
+          if (!_neredenFarketmez)
+            AutocompleteAlan(
+              controller: _neredenCtrl,
+              hint: 'Ülke veya şehir ara...',
+              icon: Icons.flight_takeoff_outlined,
+              secenekler: _ulkeSehirListesi,
+            ),
+          if (_istekMi) ...[
+            const SizedBox(height: 10),
+            GestureDetector(
+              onTap: () => setState(() {
+                _neredenFarketmez = !_neredenFarketmez;
+                if (_neredenFarketmez) _neredenCtrl.clear();
+              }),
+              child: Row(
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    width: 18, height: 18,
+                    decoration: BoxDecoration(
+                      color: _neredenFarketmez ? const Color(0xFF1A1A1A) : Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: _neredenFarketmez
+                            ? const Color(0xFF1A1A1A) : const Color(0xFFDDDDDD)),
+                    ),
+                    child: _neredenFarketmez
+                        ? const Icon(Icons.check, size: 13, color: Colors.white)
+                        : null,
                   ),
-                  child: neredenFarketmez
-                      ? const Icon(Icons.check, size: 14, color: Colors.white)
-                      : null,
-                ),
-                const SizedBox(width: 8),
-                Text('Nereden farketmez',
-                    style: GoogleFonts.dmSans(
-                        fontSize: 13, color: AppColors.textSecondary)),
-              ],
+                  const SizedBox(width: 8),
+                  Text('Nereden farketmez',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 13, color: const Color(0xFF999999))),
+                ],
+              ),
             ),
+          ],
+          const SizedBox(height: 22),
+          _alanEtiket('Nereye *'),
+          const SizedBox(height: 6),
+          AutocompleteAlan(
+            controller: _nereyeCtrl,
+            hint: 'Ülke veya şehir ara...',
+            icon: Icons.flight_land_outlined,
+            secenekler: _ulkeSehirListesi,
           ),
         ],
-        const SizedBox(height: 20),
-        _formEtiket('Nereye *'),
-        const SizedBox(height: 8),
-        _AutocompleteAlan(
-          controller: nereyeCtrl,
-          hint: 'Ülke veya şehir...',
-          icon: Icons.flight_land_outlined,
-          secenekler: [...kDunyaUlkeleri, ...kDunyaSehirleri],
-        ),
-        const SizedBox(height: 20),
-      ],
-    );
-  }
-}
+      );
+    }
 
-class _AdimTarihIcerik extends StatelessWidget {
-  final DateTime? seciliTarih;
-  final VoidCallback onTarihSec;
-  const _AdimTarihIcerik({required this.seciliTarih, required this.onTarihSec});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _formEtiket('Seyahat tarihi'),
-        const SizedBox(height: 8),
-        GestureDetector(
-          onTap: onTarihSec,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.divider),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.calendar_today_outlined,
-                    size: 20, color: AppColors.textSecondary),
-                const SizedBox(width: 12),
-                Text(
-                  seciliTarih != null
-                      ? '${seciliTarih!.day}.${seciliTarih!.month}.${seciliTarih!.year}'
-                      : 'Tarih seç...',
-                  style: GoogleFonts.dmSans(
-                    fontSize: 15,
-                    color: seciliTarih != null
-                        ? AppColors.textPrimary : AppColors.textHint,
+    if (!_istekMi && adim == 2) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _alanEtiket('Seyahat tarihi *'),
+          const SizedBox(height: 6),
+          GestureDetector(
+            onTap: _tarihSec,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE))),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.calendar_today_outlined,
+                      size: 18, color: Color(0xFFBBBBBB)),
+                  const SizedBox(width: 10),
+                  Text(
+                    _seciliTarih != null
+                        ? '${_seciliTarih!.day}.${_seciliTarih!.month}.${_seciliTarih!.year}'
+                        : 'Tarih seç...',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 14,
+                      color: _seciliTarih != null
+                          ? const Color(0xFF1A1A1A) : const Color(0xFFBBBBBB),
+                    ),
                   ),
-                ),
-                const Spacer(),
-                const Icon(Icons.chevron_right,
-                    color: AppColors.textSecondary, size: 20),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 20),
-      ],
-    );
-  }
-}
+          const SizedBox(height: 26),
+          _alanEtiket('Taşıma tercihi'),
+          const SizedBox(height: 10),
+          ...[
+            ('istekler',      'İsteklere açığım',     Icons.search_outlined),
+            ('getirebilirim', 'Bunları getirebilirim', Icons.inventory_2_outlined),
+            ('hepsi',         'Her ikisi de',          Icons.swap_horiz_outlined),
+          ].map((item) {
+            final secili = _tasimaTercihi == item.$1;
+            return GestureDetector(
+              onTap: () => setState(() => _tasimaTercihi = item.$1),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: secili ? const Color(0xFFFAFAFA) : Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: secili ? const Color(0xFF1A1A1A) : const Color(0xFFEEEEEE)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(item.$3, size: 18,
+                        color: secili ? const Color(0xFF1A1A1A) : const Color(0xFF999999)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(item.$2,
+                          style: GoogleFonts.dmSans(
+                              fontSize: 14,
+                              fontWeight: secili ? FontWeight.w500 : FontWeight.w400,
+                              color: secili ? const Color(0xFF1A1A1A) : const Color(0xFF666666))),
+                    ),
+                    if (secili)
+                      const Icon(Icons.check_circle, size: 18, color: Color(0xFF1A1A1A)),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ],
+      );
+    }
 
-class _AdimDetayIcerik extends StatelessWidget {
-  final TextEditingController notlarCtrl;
-  final List<String> mevcutResimler;
-  final List<File> yeniResimler;
-  final bool yukleniyor;
-  final double progress;
-  final VoidCallback onResimEkle;
-  final ValueChanged<int> onMevcutSil;
-  final ValueChanged<int> onYeniSil;
-
-  const _AdimDetayIcerik({
-    required this.notlarCtrl, required this.mevcutResimler,
-    required this.yeniResimler, required this.yukleniyor,
-    required this.progress, required this.onResimEkle,
-    required this.onMevcutSil, required this.onYeniSil,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final toplam = mevcutResimler.length + yeniResimler.length;
+    // ── Detaylar (her iki tip için ortak son adım) ──────────────────────────────
+    final toplamFoto = _mevcutResimler.length + _yeniResimler.length;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _formEtiket('Notlar'),
-        const SizedBox(height: 8),
-        TextField(
-          controller: notlarCtrl,
+        _alanEtiket('Notlar'),
+        const SizedBox(height: 6),
+        _altCizgiAlan(
+          controller: _notlarCtrl,
+          hint: 'Ek bilgi, özel istekler...',
           maxLines: 3,
           maxLength: 300,
-          style: GoogleFonts.dmSans(fontSize: 15),
-          decoration: _inputDeko('Ek bilgi, özel istekler...'),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 22),
         Row(
           children: [
-            _formEtiket('Fotoğraflar'),
+            _alanEtiket('Fotoğraflar'),
             const Spacer(),
-            Text('$toplam / ${Pagination.maxResimSayisi}',
+            Text('$toplamFoto / ${Pagination.maxResimSayisi}',
                 style: GoogleFonts.dmSans(
-                    fontSize: 12, color: AppColors.textSecondary)),
+                    fontSize: 12, color: const Color(0xFF999999))),
           ],
         ),
-        const SizedBox(height: 4),
-        Text('Galeriden en fazla ${Pagination.maxResimSayisi} resim seçebilirsin.',
-            style: GoogleFonts.dmSans(fontSize: 12, color: AppColors.textHint)),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         SizedBox(
-          height: 100,
+          height: 96,
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
-              if (toplam < Pagination.maxResimSayisi)
+              if (toplamFoto < Pagination.maxResimSayisi)
                 GestureDetector(
-                  onTap: onResimEkle,
+                  onTap: _resimEkle,
                   child: Container(
-                    width: 100, height: 100,
+                    width: 96, height: 96,
                     margin: const EdgeInsets.only(right: 10),
                     decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.divider),
+                      border: Border.all(color: const Color(0xFFEEEEEE)),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.add_photo_alternate_outlined,
-                            size: 24, color: AppColors.textSecondary),
-                        const SizedBox(height: 4),
-                        Text('Ekle',
-                            style: GoogleFonts.dmSans(
-                                fontSize: 11, color: AppColors.textSecondary)),
-                      ],
-                    ),
+                    child: const Icon(Icons.add_photo_alternate_outlined,
+                        size: 22, color: Color(0xFFBBBBBB)),
                   ),
                 ),
-              ...mevcutResimler.asMap().entries.map((e) => _ResimKutu(
+              ..._mevcutResimler.asMap().entries.map((e) => _ResimKutu(
                 ilkMi: e.key == 0,
-                onSil: () => onMevcutSil(e.key),
+                onSil: () => setState(() => _mevcutResimler.removeAt(e.key)),
                 child: CachedNetworkImage(
                   cacheManager: AppCacheManager.instance,
                   imageUrl: e.value,
-                  width: 100, height: 100, fit: BoxFit.cover,
+                  width: 96, height: 96, fit: BoxFit.cover,
                   fadeInDuration: Duration.zero,
                 ),
               )),
-              ...yeniResimler.asMap().entries.map((e) => _ResimKutu(
-                ilkMi: mevcutResimler.isEmpty && e.key == 0,
-                onSil: () => onYeniSil(e.key),
+              ..._yeniResimler.asMap().entries.map((e) => _ResimKutu(
+                ilkMi: _mevcutResimler.isEmpty && e.key == 0,
+                onSil: () => setState(() => _yeniResimler.removeAt(e.key)),
                 child: Image.file(e.value,
-                    width: 100, height: 100, fit: BoxFit.cover),
+                    width: 96, height: 96, fit: BoxFit.cover),
               )),
             ],
           ),
         ),
-        const SizedBox(height: 20),
       ],
     );
   }
 }
 
-// ── Resim kutu ───────────────────────────────────────────────────────────────
+// ── Küçük yardımcı arayüz parçaları ─────────────────────────────────────────────
+
+Widget _alanEtiket(String text) => Text(text,
+    style: GoogleFonts.dmSans(
+        fontSize: 12, fontWeight: FontWeight.w500, color: const Color(0xFF999999)));
+
+Widget _altCizgiAlan({
+  required TextEditingController controller,
+  required String hint,
+  int maxLines = 1,
+  int? maxLength,
+}) {
+  return TextField(
+    controller: controller,
+    maxLines: maxLines,
+    maxLength: maxLength,
+    style: GoogleFonts.dmSans(fontSize: 14, color: const Color(0xFF1A1A1A)),
+    decoration: InputDecoration(
+      hintText: hint,
+      hintStyle: GoogleFonts.dmSans(fontSize: 14, color: const Color(0xFFBBBBBB)),
+      counterText: '',
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+      border: const UnderlineInputBorder(
+          borderSide: BorderSide(color: Color(0xFFEEEEEE))),
+      enabledBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(color: Color(0xFFEEEEEE))),
+      focusedBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(color: Color(0xFF1A1A1A), width: 1.5)),
+    ),
+  );
+}
+
+// ── Resim kutusu ─────────────────────────────────────────────────────────────────
 
 class _ResimKutu extends StatelessWidget {
   final Widget child;
@@ -976,7 +877,7 @@ class _ResimKutu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 100,
+      width: 96,
       margin: const EdgeInsets.only(right: 10),
       child: Stack(
         children: [
@@ -992,8 +893,7 @@ class _ResimKutu extends StatelessWidget {
                 ),
                 child: Text('Kapak',
                     style: GoogleFonts.dmSans(
-                        fontSize: 9, color: Colors.white,
-                        fontWeight: FontWeight.w600)),
+                        fontSize: 9, color: Colors.white, fontWeight: FontWeight.w600)),
               ),
             ),
           Positioned(
@@ -1011,89 +911,6 @@ class _ResimKutu extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ── Yardımcı ─────────────────────────────────────────────────────────────────
-
-Widget _formEtiket(String label) => Text(label,
-    style: GoogleFonts.dmSans(
-        fontSize: 13, fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary));
-
-InputDecoration _inputDeko(String hint) => InputDecoration(
-  hintText: hint,
-  hintStyle: GoogleFonts.dmSans(color: AppColors.textHint, fontSize: 14),
-  filled: true, fillColor: Colors.white,
-  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-  border: OutlineInputBorder(
-    borderRadius: BorderRadius.circular(10),
-    borderSide: const BorderSide(color: AppColors.divider)),
-  enabledBorder: OutlineInputBorder(
-    borderRadius: BorderRadius.circular(10),
-    borderSide: const BorderSide(color: AppColors.divider)),
-  focusedBorder: OutlineInputBorder(
-    borderRadius: BorderRadius.circular(10),
-    borderSide: const BorderSide(color: AppColors.textPrimary, width: 1.5)),
-);
-
-// ── Autocomplete ──────────────────────────────────────────────────────────────
-
-class _AutocompleteAlan extends StatelessWidget {
-  final TextEditingController controller;
-  final String hint;
-  final IconData icon;
-  final List<String> secenekler;
-  const _AutocompleteAlan({
-    required this.controller, required this.hint,
-    required this.icon, required this.secenekler,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Autocomplete<String>(
-      optionsBuilder: (val) {
-        if (val.text.isEmpty) return const [];
-        return secenekler.where(
-            (s) => s.toLowerCase().contains(val.text.toLowerCase()));
-      },
-      onSelected: (s) => controller.text = s,
-      fieldViewBuilder: (ctx, ctrl, focus, onSubmit) {
-        ctrl.text = controller.text;
-        ctrl.addListener(() => controller.text = ctrl.text);
-        return TextField(
-          controller: ctrl,
-          focusNode: focus,
-          style: GoogleFonts.dmSans(fontSize: 15),
-          decoration: _inputDeko(hint).copyWith(
-            prefixIcon: Icon(icon, size: 18, color: AppColors.textHint)),
-          onEditingComplete: onSubmit,
-        );
-      },
-      optionsViewBuilder: (ctx, onSec, opts) => Align(
-        alignment: Alignment.topLeft,
-        child: Material(
-          elevation: 2,
-          borderRadius: BorderRadius.circular(10),
-          child: SizedBox(
-            width: MediaQuery.of(ctx).size.width - 48,
-            child: ListView.builder(
-              shrinkWrap: true,
-              padding: EdgeInsets.zero,
-              itemCount: opts.take(5).length,
-              itemBuilder: (_, i) {
-                final s = opts.elementAt(i);
-                return ListTile(
-                  dense: true,
-                  title: Text(s, style: GoogleFonts.dmSans(fontSize: 14)),
-                  onTap: () => onSec(s),
-                );
-              },
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -1142,7 +959,7 @@ class BedenCinsiyetBolum extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _formEtiket('Cinsiyet *'),
+        _alanEtiket('Cinsiyet *'),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -1154,10 +971,10 @@ class BedenCinsiyetBolum extends StatelessWidget {
                 duration: const Duration(milliseconds: 150),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: secili ? AppColors.textPrimary : Colors.white,
+                  color: secili ? const Color(0xFF1A1A1A) : Colors.white,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: secili ? AppColors.textPrimary : AppColors.divider,
+                    color: secili ? const Color(0xFF1A1A1A) : const Color(0xFFEEEEEE),
                   ),
                 ),
                 child: Text(
@@ -1165,7 +982,7 @@ class BedenCinsiyetBolum extends StatelessWidget {
                   style: GoogleFonts.dmSans(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: secili ? Colors.white : AppColors.textPrimary,
+                    color: secili ? Colors.white : const Color(0xFF1A1A1A),
                   ),
                 ),
               ),
@@ -1174,7 +991,7 @@ class BedenCinsiyetBolum extends StatelessWidget {
         ),
         const SizedBox(height: 20),
         if (tip == BedenTipi.pantolon) ...[
-          _formEtiket('Beden (Bel / Boy) *'),
+          _alanEtiket('Beden (Bel / Boy) *'),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -1198,7 +1015,7 @@ class BedenCinsiyetBolum extends StatelessWidget {
             ],
           ),
         ] else ...[
-          _formEtiket(tip == BedenTipi.ayakkabi ? 'Numara *' : 'Beden *'),
+          _alanEtiket(tip == BedenTipi.ayakkabi ? 'Numara *' : 'Beden *'),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -1211,10 +1028,10 @@ class BedenCinsiyetBolum extends StatelessWidget {
                   duration: const Duration(milliseconds: 150),
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    color: secili ? AppColors.textPrimary : Colors.white,
+                    color: secili ? const Color(0xFF1A1A1A) : Colors.white,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: secili ? AppColors.textPrimary : AppColors.divider,
+                      color: secili ? const Color(0xFF1A1A1A) : const Color(0xFFEEEEEE),
                     ),
                   ),
                   child: Text(
@@ -1222,7 +1039,7 @@ class BedenCinsiyetBolum extends StatelessWidget {
                     style: GoogleFonts.dmSans(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: secili ? Colors.white : AppColors.textPrimary,
+                      color: secili ? Colors.white : const Color(0xFF1A1A1A),
                     ),
                   ),
                 ),
@@ -1230,7 +1047,6 @@ class BedenCinsiyetBolum extends StatelessWidget {
             }).toList(),
           ),
         ],
-        const SizedBox(height: 28),
       ],
     );
   }
@@ -1252,20 +1068,19 @@ class DropdownBeden extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.divider),
-        borderRadius: BorderRadius.circular(10),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE))),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: secili.isEmpty ? null : secili,
           hint: Text(hint,
               style: GoogleFonts.dmSans(
-                  fontSize: 14, color: AppColors.textHint)),
+                  fontSize: 14, color: const Color(0xFFBBBBBB))),
           isExpanded: true,
           style: GoogleFonts.dmSans(
-              fontSize: 14, color: AppColors.textPrimary),
+              fontSize: 14, color: const Color(0xFF1A1A1A)),
           items: secenekler
               .map((s) => DropdownMenuItem(value: s, child: Text(s)))
               .toList(),
@@ -1442,11 +1257,9 @@ class _KategoriSecimSheetState extends State<KategoriSecimSheet> {
                     ),
                     child: Row(
                       children: [
-                        if (node.emoji.isNotEmpty) ...[
-                          Text(node.emoji,
-                              style: const TextStyle(fontSize: 18)),
-                          const SizedBox(width: 12),
-                        ],
+                        Icon(kategoriIkon(node.key),
+                            size: 18, color: const Color(0xFF666666)),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             node.ad,
