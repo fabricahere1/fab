@@ -693,6 +693,19 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                 controller: _scrollController,
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: Image.asset(
+                          'assets/images/gelenler_banner.png',
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  ),
                   SliverPadding(
                     padding: const EdgeInsets.only(top: 10),
                     sliver: listeWidget,
