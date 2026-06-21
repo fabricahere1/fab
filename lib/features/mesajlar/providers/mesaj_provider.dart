@@ -112,7 +112,7 @@ class SohbetNotifier extends _$SohbetNotifier {
     final ids = [_benimId, karsiKullaniciId]..sort();
     _sohbetId = '${ids[0]}_${ids[1]}_$ilanId';
 
-    _mesajlariDinle();
+    _baslat(karsiKullaniciId);
 
     ref.onDispose(() {
       _mesajSub?.cancel();
@@ -120,6 +120,24 @@ class SohbetNotifier extends _$SohbetNotifier {
     });
 
     return const SohbetEkraniState();
+  }
+
+  Future<void> _baslat(String karsiKullaniciId) async {
+    // Dinleyici başlamadan önce sohbet dokümanının (en azından
+    // 'kullanicilar' alanıyla) var olduğunu garanti et — aksi hâlde
+    // ilk temasta güvenlik kuralı kontrolü hata verip dinleyici
+    // sessizce askıda kalıyordu.
+    try {
+      await _repo.sohbetVarliginiGarantiEt(
+        sohbetId: _sohbetId,
+        benimId: _benimId,
+        karsiId: karsiKullaniciId,
+      );
+    } catch (_) {
+      // Garanti adımı başarısız olsa bile dinlemeyi dene — en kötü
+      // ihtimalle eski davranışa (varsa çalışır) düşer.
+    }
+    if (ref.mounted) _mesajlariDinle();
   }
 
   MesajRepository get _repo => ref.read(mesajRepositoryProvider);
@@ -234,19 +252,19 @@ class SohbetNotifier extends _$SohbetNotifier {
         metin: metin.trim(),
         tip: tip,
       );
-      try {
-        await _repo.mesajBildirimiGonder(
-          aliciId: karsiKullaniciId,
-          gondereId: _benimId,
-          gondereAd: benimAd,
-          ilanBaslik: ilanBaslik,
-          sohbetId: _sohbetId,
-          metin: metin.trim(),
-        );
-      } catch (_) {}
     } finally {
       if (ref.mounted) state = state.copyWith(gonderiyor: false);
     }
+    // Push bildirimi artık burada beklenmiyor — mesaj zaten gönderildi,
+    // buton serbest kaldı. Bildirim arka planda, hatasız şekilde devam eder.
+    _repo.mesajBildirimiGonder(
+      aliciId: karsiKullaniciId,
+      gondereId: _benimId,
+      gondereAd: benimAd,
+      ilanBaslik: ilanBaslik,
+      sohbetId: _sohbetId,
+      metin: metin.trim(),
+    ).catchError((_) {});
   }
 
   Future<void> resimGonder({
@@ -276,22 +294,21 @@ class SohbetNotifier extends _$SohbetNotifier {
         tip: 'resim',
         resimUrl: url,
       );
-      try {
-        // Cloud Function üzerinden push bildirim gönder
-        await _repo.mesajBildirimiGonder(
-          aliciId: karsiKullaniciId,
-          gondereId: _benimId,
-          gondereAd: benimAd,
-          ilanBaslik: ilanBaslik,
-          sohbetId: _sohbetId,
-          metin: '📷 Fotoğraf',
-        );
-      } catch (_) {}
     } catch (e) {
       if (kDebugMode) print('resimGonder hata: $e');
     } finally {
       if (ref.mounted) state = state.copyWith(gonderiyor: false);
     }
+    // Push bildirimi artık burada beklenmiyor — fotoğraf zaten gönderildi,
+    // buton serbest kaldı. Bildirim arka planda, hatasız şekilde devam eder.
+    _repo.mesajBildirimiGonder(
+      aliciId: karsiKullaniciId,
+      gondereId: _benimId,
+      gondereAd: benimAd,
+      ilanBaslik: ilanBaslik,
+      sohbetId: _sohbetId,
+      metin: '📷 Fotoğraf',
+    ).catchError((_) {});
   }
 
   Future<void> mesajSil({

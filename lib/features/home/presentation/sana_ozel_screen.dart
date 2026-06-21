@@ -24,7 +24,7 @@ import 'package:iste_v3/features/auth/providers/auth_provider.dart';
 import 'package:iste_v3/shared/widgets/avatar_widget.dart';
 import 'package:iste_v3/features/profil/presentation/kullanici_profil_screen.dart';
 import 'package:iste_v3/features/ilanlar/presentation/ilan_form_screen.dart';
-import 'package:iste_v3/features/ilanlar/presentation/gelenler_form_screen.dart';
+import 'package:iste_v3/features/ilanlar/presentation/ilan_form_screen.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 /// İlanın "tarih"i (taşıyıcının seyahat/varış tarihi) bir haftadan az kaldıysa true.
@@ -653,7 +653,7 @@ class _IlanAcCagriBolumu extends StatelessWidget {
                       Expanded(
                         child: GestureDetector(
                           onTap: () => Navigator.push(context,
-                              MaterialPageRoute(builder: (_) => const GelenlerFormScreen())),
+                              MaterialPageRoute(builder: (_) => const IlanFormScreen(tip: IlanTip.tasiyici))),
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(

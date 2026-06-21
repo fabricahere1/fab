@@ -34,6 +34,22 @@ class MesajRepository {
   CollectionReference _mesajlar(String sohbetId) =>
       _sohbetler.doc(sohbetId).collection(Collections.mesajlar);
 
+  /// İlk temasta (henüz hiç mesaj gönderilmemişken) sohbet dokümanının
+  /// 'kullanicilar' alanı olmadan var olmaması, mesajlar dinleyicisinin
+  /// güvenlik kuralı kontrolünde (sohbetKatilimcisiMi) hataya düşmesine
+  /// sebep oluyordu. Bu metod, dinleyici başlamadan önce çağrılarak
+  /// dokümanın en azından bu alanla var olmasını garanti eder — mevcut
+  /// veriyi bozmadan (merge: true).
+  Future<void> sohbetVarliginiGarantiEt({
+    required String sohbetId,
+    required String benimId,
+    required String karsiId,
+  }) async {
+    await _sohbetler.doc(sohbetId).set({
+      'kullanicilar': [benimId, karsiId],
+    }, SetOptions(merge: true));
+  }
+
   static FirebaseFunctions get _functions =>
       FirebaseFunctions.instanceFor(region: 'europe-west1');
 
