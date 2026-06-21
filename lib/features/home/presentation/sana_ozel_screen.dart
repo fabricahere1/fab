@@ -321,8 +321,8 @@ class _HerIkisiRolSecici extends StatelessWidget {
           ],
         ),
         child: Row(children: [
-          Expanded(child: _RolButon(label: 'İstekçi', ikon: Icons.shopping_bag_outlined, secili: secimIstekci, onTap: () => onDegisti(true))),
-          Expanded(child: _RolButon(label: 'Taşıyıcı', ikon: Icons.flight_takeoff_rounded, secili: !secimIstekci, onTap: () => onDegisti(false))),
+          Expanded(child: _RolButon(label: 'İstekçi olarak', ikon: Icons.shopping_bag_outlined, secili: secimIstekci, onTap: () => onDegisti(true))),
+          Expanded(child: _RolButon(label: 'Taşıyıcı olarak', ikon: Icons.flight_takeoff_rounded, secili: !secimIstekci, onTap: () => onDegisti(false))),
         ]),
       ),
     );
