@@ -656,6 +656,53 @@ final class YuksekPuanliTasiyicilarProvider
 String _$yuksekPuanliTasiyicilarHash() =>
     r'9a9140d403db2f93ed0e051dc874b8a32ae25c6f';
 
+/// 4.0 ve üzeri ortalama puana sahip istekçiler (kendisi hariç).
+
+@ProviderFor(yuksekPuanliIstekciler)
+final yuksekPuanliIstekcilerProvider = YuksekPuanliIstekcilerProvider._();
+
+/// 4.0 ve üzeri ortalama puana sahip istekçiler (kendisi hariç).
+
+final class YuksekPuanliIstekcilerProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<KullaniciModel>>,
+          List<KullaniciModel>,
+          FutureOr<List<KullaniciModel>>
+        >
+    with
+        $FutureModifier<List<KullaniciModel>>,
+        $FutureProvider<List<KullaniciModel>> {
+  /// 4.0 ve üzeri ortalama puana sahip istekçiler (kendisi hariç).
+  YuksekPuanliIstekcilerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'yuksekPuanliIstekcilerProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$yuksekPuanliIstekcilerHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<List<KullaniciModel>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<KullaniciModel>> create(Ref ref) {
+    return yuksekPuanliIstekciler(ref);
+  }
+}
+
+String _$yuksekPuanliIstekcilerHash() =>
+    r'28282d9c305e57ba90b0475fbc9a6c7be1663598';
+
 @ProviderFor(kullaniciBilgisi)
 final kullaniciBilgisiProvider = KullaniciBilgisiFamily._();
 

@@ -24,7 +24,6 @@ import 'package:iste_v3/features/auth/providers/auth_provider.dart';
 import 'package:iste_v3/shared/widgets/avatar_widget.dart';
 import 'package:iste_v3/features/profil/presentation/kullanici_profil_screen.dart';
 import 'package:iste_v3/features/ilanlar/presentation/ilan_form_screen.dart';
-import 'package:iste_v3/features/ilanlar/presentation/ilan_form_screen.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 /// İlanın "tarih"i (taşıyıcının seyahat/varış tarihi) bir haftadan az kaldıysa true.
@@ -139,30 +138,62 @@ class _TasiyiciSanaOzel extends ConsumerWidget {
     ref.read(tasiyiciIlanlarProvider.notifier).yenile(),
   ]);
 
+  bool _profilEksik(KullaniciModel? profil) {
+    if (profil == null) return true;
+    return profil.geldigiSehirler.isEmpty;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final profil          = ref.watch(benimKullaniciProfilProvider).value;
+    final sonGorunenler   = ref.watch(sonGoruntulenenlerProvider);
+    final seyahatSehri    = ref.watch(seyahatSehriIlanlarProvider);
+    final tumIlanlar      = ref.watch(istekIlanlarProvider).filtrelenmis;
+    final yuksekPuanlilar = ref.watch(yuksekPuanliIstekcilerProvider).value ?? const [];
+
     final tumu = [
-      _BolumData('Seyahat edeceğin şehirden açılan ilanlar', ref.watch(seyahatSehriIlanlarProvider), Icons.location_on_outlined, CicekTipi.aycicegi),
+      _BolumData('Seyahat edeceğin şehirden açılan ilanlar', seyahatSehri, Icons.location_on_outlined, CicekTipi.aycicegi),
       _BolumData('Kargo teslim kabul eden istekçiler', ref.watch(kargoKabulIsteklerProvider), Icons.local_shipping_outlined, CicekTipi.lavanta),
       _BolumData('Elden teslim kabul eden istekçiler', ref.watch(eldenKabulIsteklerProvider), Icons.handshake_outlined, CicekTipi.gul),
       _BolumData('Onaylı istekçilerin istekleri', ref.watch(onayliIsteklerProvider), Icons.verified_outlined, CicekTipi.papatya),
+      _BolumData('Geçmişte görüntülediğin ürünlere benzer istekler', ref.watch(gecmisGoruntulenenlereBenzerIlanlarProvider), Icons.history_rounded, CicekTipi.lavanta),
+      _BolumData('Favorilediğin kategorilerden yeni istekler', ref.watch(favoriKategorilerYeniIstekIlanlariProvider), Icons.new_releases_outlined, CicekTipi.gul),
+      _BolumData('Takip ettiğin istekçilerin yeni ilanları', ref.watch(takipEdilenIstekcilerinYeniIlanlariProvider), Icons.notifications_active_outlined, CicekTipi.aycicegi),
     ].where((b) => b.ilanlar.isNotEmpty).toList();
 
+    final seen = <String>{};
+    final bannerListe = [...sonGorunenler, ...seyahatSehri, ...tumIlanlar]
+        .where((ilan) => seen.add(ilan.id)).take(15).toList();
+
+    final profilBannerVar = _profilEksik(profil);
+    final sectionWidgets = <Widget>[
+      for (final b in tumu) _Bolum(data: b),
+      if (yuksekPuanlilar.isNotEmpty) _YuksekPuanliTasiyicilarBolumu(tasiyicilar: yuksekPuanlilar, baslik: 'Yüksek puanlı istekçiler'),
+    ];
+
+    final items = <Widget>[
+      if (profilBannerVar) const _ProfilTamamlaBanner(),
+      _SanaOzelHeroBanner(ilanlar: bannerListe),
+      if (sectionWidgets.isEmpty)
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.5,
+          child: const _BosEkran(mesaj: 'Henüz sana özel içerik yok.\nSeyahat bilgilerini güncelledikten sonra burada eşleşen istekler görünecek.'),
+        )
+      else
+        ...sectionWidgets,
+      const _IlanAcCagriBolumu(),
+    ];
+
     return RefreshIndicator(
-          color: AppColors.red,
-          onRefresh: () => _yenile(ref),
-          child: tumu.isEmpty
-              ? ListView(physics: const AlwaysScrollableScrollPhysics(), children: [
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.7,
-                      child: const _BosEkran(mesaj: 'Henüz sana özel içerik yok.\nSeyahat bilgilerini güncelledikten sonra burada eşleşen istekler görünecek.')),
-                ])
-              : ListView.builder(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.only(top: 12, bottom: 24),
-                  itemCount: tumu.length,
-                  itemBuilder: (_, i) => _Bolum(data: tumu[i]),
-                ),
-        );
+      color: AppColors.red,
+      onRefresh: () => _yenile(ref),
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(top: 8, bottom: 24),
+        itemCount: items.length,
+        itemBuilder: (_, i) => items[i],
+      ),
+    );
   }
 }
 
@@ -178,13 +209,16 @@ class _HerIkisiSanaOzel extends ConsumerWidget {
 
   bool _profilEksik(KullaniciModel? profil) {
     if (profil == null) return true;
-    return profil.bulunduguSehir.isEmpty || profil.ilgiKategorileri.isEmpty;
+    return profil.bulunduguSehir.isEmpty ||
+        profil.ilgiKategorileri.isEmpty ||
+        profil.geldigiSehirler.isEmpty;
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profil = ref.watch(benimKullaniciProfilProvider).value;
-    final yuksekPuanlilar = ref.watch(yuksekPuanliTasiyicilarProvider).value ?? const [];
+    final yuksekPuanliTasiyicilar = ref.watch(yuksekPuanliTasiyicilarProvider).value ?? const [];
+    final yuksekPuanliIstekciler = ref.watch(yuksekPuanliIstekcilerProvider).value ?? const [];
 
     // İstekçi bölümleri
     final istekBolumleri = [
@@ -204,13 +238,16 @@ class _HerIkisiSanaOzel extends ConsumerWidget {
       _BolumData('Kargo teslim kabul eden istekçiler', ref.watch(kargoKabulIsteklerProvider), Icons.local_shipping_outlined, CicekTipi.lavanta),
       _BolumData('Elden teslim kabul eden istekçiler', ref.watch(eldenKabulIsteklerProvider), Icons.handshake_outlined, CicekTipi.gul),
       _BolumData('Onaylı istekçilerin istekleri', ref.watch(onayliIsteklerProvider), Icons.verified_outlined, CicekTipi.papatya),
+      _BolumData('Favorilediğin kategorilerden yeni istekler', ref.watch(favoriKategorilerYeniIstekIlanlariProvider), Icons.new_releases_outlined, CicekTipi.gul),
+      _BolumData('Takip ettiğin istekçilerin yeni ilanları', ref.watch(takipEdilenIstekcilerinYeniIlanlariProvider), Icons.notifications_active_outlined, CicekTipi.aycicegi),
     ].where((b) => b.ilanlar.isNotEmpty).toList();
 
     final bannerVar = _profilEksik(profil);
     final sectionWidgets = <Widget>[
       for (final b in istekBolumleri) _Bolum(data: b),
-      if (yuksekPuanlilar.isNotEmpty) _YuksekPuanliTasiyicilarBolumu(tasiyicilar: yuksekPuanlilar),
+      if (yuksekPuanliTasiyicilar.isNotEmpty) _YuksekPuanliTasiyicilarBolumu(tasiyicilar: yuksekPuanliTasiyicilar),
       for (final b in tasiyiciBolumleri) _Bolum(data: b),
+      if (yuksekPuanliIstekciler.isNotEmpty) _YuksekPuanliTasiyicilarBolumu(tasiyicilar: yuksekPuanliIstekciler, baslik: 'Yüksek puanlı istekçiler'),
     ];
 
     final items = <Widget>[
@@ -497,7 +534,8 @@ class _SanaOzelFavoriButonState extends ConsumerState<_SanaOzelFavoriButon>
 
 class _YuksekPuanliTasiyicilarBolumu extends StatelessWidget {
   final List<KullaniciModel> tasiyicilar;
-  const _YuksekPuanliTasiyicilarBolumu({required this.tasiyicilar});
+  final String baslik;
+  const _YuksekPuanliTasiyicilarBolumu({required this.tasiyicilar, this.baslik = 'Yüksek puanlı taşıyıcılar'});
 
   @override
   Widget build(BuildContext context) {
@@ -512,7 +550,7 @@ class _YuksekPuanliTasiyicilarBolumu extends StatelessWidget {
               const Padding(padding: EdgeInsets.only(top: 2), child: Icon(Icons.workspace_premium_outlined, size: 16, color: AppColors.red)),
               const SizedBox(width: 6),
               Expanded(
-                child: Text('Yüksek puanlı taşıyıcılar',
+                child: Text(baslik,
                     style: GoogleFonts.raleway(fontSize: 13, fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary, letterSpacing: 0.1)),
               ),

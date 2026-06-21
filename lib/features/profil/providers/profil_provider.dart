@@ -188,6 +188,14 @@ Future<List<KullaniciModel>> yuksekPuanliTasiyicilar(Ref ref) async {
   return liste.where((k) => k.id != benimUid).toList();
 }
 
+/// 4.0 ve üzeri ortalama puana sahip istekçiler (kendisi hariç).
+@riverpod
+Future<List<KullaniciModel>> yuksekPuanliIstekciler(Ref ref) async {
+  final benimUid = ref.watch(currentUserProvider)?.uid;
+  final liste = await ref.watch(kullaniciRepositoryProvider).yuksekPuanliIstekcileriGetir();
+  return liste.where((k) => k.id != benimUid).toList();
+}
+
 @riverpod
 Future<KullaniciModel?> kullaniciBilgisi(Ref ref, String uid) {
   return ref.watch(kullaniciRepositoryProvider).kullaniciGetir(uid);

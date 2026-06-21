@@ -125,14 +125,14 @@ class _KesfetScreenState extends ConsumerState<KesfetScreen>
                 ),
                 TabBar(
                   controller: _tabCtrl,
-                  labelStyle: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w700),
-                  unselectedLabelStyle: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w400),
+                  labelStyle: GoogleFonts.raleway(fontSize: 14, fontWeight: FontWeight.w700),
+                  unselectedLabelStyle: GoogleFonts.raleway(fontSize: 14, fontWeight: FontWeight.w500),
                   labelColor: AppColors.textPrimary,
                   unselectedLabelColor: AppColors.textSecondary,
                   indicatorColor: AppColors.red,
                   indicatorWeight: 2.5,
                   indicatorSize: TabBarIndicatorSize.label,
-                  tabs: const [Tab(text: 'Sana Özel'), Tab(text: 'Keşfet')],
+                  tabs: const [Tab(text: 'Keşfet'), Tab(text: 'Sana Özel')],
                 ),
               ],
             ),
@@ -175,8 +175,8 @@ class _KesfetScreenState extends ConsumerState<KesfetScreen>
               child: TabBarView(
                 controller: _tabCtrl,
                 children: const [
-                  SanaOzelScreen(),
                   _KesfetTumEkran(),
+                  SanaOzelScreen(),
                 ],
               ),
             ),

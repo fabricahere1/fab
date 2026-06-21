@@ -231,3 +231,52 @@ List<IlanModel> onayliIstekler(Ref ref) {
       .where((i) => i.kullaniciPuan >= 4.0)
       .toList();
 }
+
+/// Favorilenen istek ilanlarının kategorilerinden, son 7 günde açılmış yeni
+/// istek ilanları (taşıyıcı tarafına özel — favorilenen ilanın kendisi hariç).
+@riverpod
+List<IlanModel> favoriKategorilerYeniIstekIlanlari(Ref ref) {
+  final favoriler = ref.watch(favorilerProvider).value ?? const [];
+  if (favoriler.isEmpty) return [];
+
+  final kategoriler = favoriler
+      .map((f) => f['kategori'] as String? ?? '')
+      .where((k) => k.isNotEmpty)
+      .toSet();
+  if (kategoriler.isEmpty) return [];
+
+  final favoriIlanIdleri =
+      favoriler.map((f) => f['ilanId'] as String? ?? '').toSet();
+  final simdi = DateTime.now();
+
+  final sonuc = ref.watch(istekIlanlarProvider).filtrelenmis.where((i) {
+    if (favoriIlanIdleri.contains(i.id)) return false;
+    if (!kategoriler.contains(i.kategori) && !kategoriler.contains(i.anaKategori)) {
+      return false;
+    }
+    final olusturma = i.olusturmaTarihi;
+    return olusturma != null && simdi.difference(olusturma).inDays <= 7;
+  }).toList();
+
+  sonuc.sort((a, b) =>
+      (b.olusturmaTarihi ?? simdi).compareTo(a.olusturmaTarihi ?? simdi));
+  return sonuc;
+}
+
+/// Takip edilen istekçilerin, takip başladıktan SONRA açtığı istek ilanları.
+@riverpod
+List<IlanModel> takipEdilenIstekcilerinYeniIlanlari(Ref ref) {
+  final uid = ref.watch(currentUserProvider)?.uid;
+  if (uid == null) return [];
+
+  final takipTarihleri =
+      ref.watch(takipEdilenTarihleriProvider(uid)).value ?? const {};
+  if (takipTarihleri.isEmpty) return [];
+
+  return ref.watch(istekIlanlarProvider).filtrelenmis.where((i) {
+    final takipTarihi = takipTarihleri[i.kullaniciId];
+    final olusturma = i.olusturmaTarihi;
+    if (takipTarihi == null || olusturma == null) return false;
+    return olusturma.isAfter(takipTarihi);
+  }).toList();
+}

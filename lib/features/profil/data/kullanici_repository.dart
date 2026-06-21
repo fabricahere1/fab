@@ -232,4 +232,21 @@ class KullaniciRepository {
         .take(limit)
         .toList();
   }
+
+  /// Ortalama puanı [minPuan] ve üzeri olan istekçiler, puana göre sıralı.
+  Future<List<KullaniciModel>> yuksekPuanliIstekcileriGetir({
+    double minPuan = 4.0,
+    int limit = 20,
+  }) async {
+    final snap = await _col
+        .where('ortalamaPuan', isGreaterThanOrEqualTo: minPuan)
+        .orderBy('ortalamaPuan', descending: true)
+        .limit(limit * 3) // taşıyıcı tipi olanları eledikten sonra yetsin diye fazla çek
+        .get();
+    return snap.docs
+        .map(KullaniciModel.fromFirestore)
+        .where((k) => k.istekMi)
+        .take(limit)
+        .toList();
+  }
 }
