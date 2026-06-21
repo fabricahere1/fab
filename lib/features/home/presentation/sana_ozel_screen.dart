@@ -199,8 +199,17 @@ class _TasiyiciSanaOzel extends ConsumerWidget {
 
 // ── HER İKİSİ ────────────────────────────────────────────────────────────────
 
-class _HerIkisiSanaOzel extends ConsumerWidget {
+enum _HerIkisiRol { istekci, tasiyici }
+
+class _HerIkisiSanaOzel extends ConsumerStatefulWidget {
   const _HerIkisiSanaOzel({super.key});
+
+  @override
+  ConsumerState<_HerIkisiSanaOzel> createState() => _HerIkisiSanaOzelState();
+}
+
+class _HerIkisiSanaOzelState extends ConsumerState<_HerIkisiSanaOzel> {
+  _HerIkisiRol _rol = _HerIkisiRol.istekci;
 
   Future<void> _yenile(WidgetRef ref) => Future.wait([
     ref.read(istekIlanlarProvider.notifier).yenile(),
@@ -215,7 +224,7 @@ class _HerIkisiSanaOzel extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final profil = ref.watch(benimKullaniciProfilProvider).value;
     final yuksekPuanliTasiyicilar = ref.watch(yuksekPuanliTasiyicilarProvider).value ?? const [];
     final yuksekPuanliIstekciler = ref.watch(yuksekPuanliIstekcilerProvider).value ?? const [];
@@ -243,19 +252,33 @@ class _HerIkisiSanaOzel extends ConsumerWidget {
     ].where((b) => b.ilanlar.isNotEmpty).toList();
 
     final bannerVar = _profilEksik(profil);
+    final secimIstekci = _rol == _HerIkisiRol.istekci;
+
     final sectionWidgets = <Widget>[
-      for (final b in istekBolumleri) _Bolum(data: b),
-      if (yuksekPuanliTasiyicilar.isNotEmpty) _YuksekPuanliTasiyicilarBolumu(tasiyicilar: yuksekPuanliTasiyicilar),
-      for (final b in tasiyiciBolumleri) _Bolum(data: b),
-      if (yuksekPuanliIstekciler.isNotEmpty) _YuksekPuanliTasiyicilarBolumu(tasiyicilar: yuksekPuanliIstekciler, baslik: 'Yüksek puanlı istekçiler'),
+      if (secimIstekci) ...[
+        for (final b in istekBolumleri) _Bolum(data: b),
+        if (yuksekPuanliTasiyicilar.isNotEmpty) _YuksekPuanliTasiyicilarBolumu(tasiyicilar: yuksekPuanliTasiyicilar),
+      ] else ...[
+        for (final b in tasiyiciBolumleri) _Bolum(data: b),
+        if (yuksekPuanliIstekciler.isNotEmpty) _YuksekPuanliTasiyicilarBolumu(tasiyicilar: yuksekPuanliIstekciler, baslik: 'Yüksek puanlı istekçiler'),
+      ],
     ];
 
     final items = <Widget>[
       if (bannerVar) const _ProfilTamamlaBanner(),
+      _HerIkisiRolSecici(
+        secimIstekci: secimIstekci,
+        onDegisti: (yeniIstekci) => setState(
+            () => _rol = yeniIstekci ? _HerIkisiRol.istekci : _HerIkisiRol.tasiyici),
+      ),
       if (sectionWidgets.isEmpty)
         SizedBox(
-          height: MediaQuery.of(context).size.height * 0.5,
-          child: const _BosEkran(mesaj: 'Henüz sana özel içerik yok.\nProfilini tamamladıktan sonra eşleşmeler burada görünecek.'),
+          height: MediaQuery.of(context).size.height * 0.4,
+          child: _BosEkran(
+            mesaj: secimIstekci
+                ? 'Henüz sana özel içerik yok.\nProfilini tamamladıktan sonra eşleşmeler burada görünecek.'
+                : 'Henüz sana özel içerik yok.\nSeyahat bilgilerini güncelledikten sonra burada eşleşen istekler görünecek.',
+          ),
         )
       else
         ...sectionWidgets,
@@ -270,6 +293,76 @@ class _HerIkisiSanaOzel extends ConsumerWidget {
         padding: const EdgeInsets.only(top: 8, bottom: 24),
         itemCount: items.length,
         itemBuilder: (_, i) => items[i],
+      ),
+    );
+  }
+}
+
+// ── Her ikisi — istekçi/taşıyıcı rol seçici ───────────────────────────────────
+
+class _HerIkisiRolSecici extends StatelessWidget {
+  final bool secimIstekci;
+  final ValueChanged<bool> onDegisti;
+  const _HerIkisiRolSecici({required this.secimIstekci, required this.onDegisti});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 6, 12, 14),
+      child: Container(
+        height: 48,
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFFE0E0E0), width: 1.2),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
+          ],
+        ),
+        child: Row(children: [
+          Expanded(child: _RolButon(label: 'İstekçi', ikon: Icons.shopping_bag_outlined, secili: secimIstekci, onTap: () => onDegisti(true))),
+          Expanded(child: _RolButon(label: 'Taşıyıcı', ikon: Icons.flight_takeoff_rounded, secili: !secimIstekci, onTap: () => onDegisti(false))),
+        ]),
+      ),
+    );
+  }
+}
+
+class _RolButon extends StatelessWidget {
+  final String label;
+  final IconData ikon;
+  final bool secili;
+  final VoidCallback onTap;
+  const _RolButon({required this.label, required this.ikon, required this.secili, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        decoration: BoxDecoration(
+          color: secili ? AppColors.red : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: secili
+              ? [BoxShadow(color: AppColors.red.withValues(alpha: 0.35), blurRadius: 8, offset: const Offset(0, 3))]
+              : null,
+        ),
+        alignment: Alignment.center,
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(ikon, size: 16, color: secili ? Colors.white : AppColors.textSecondary),
+          const SizedBox(width: 6),
+          Text(label,
+              style: GoogleFonts.raleway(
+                fontSize: 13,
+                fontWeight: secili ? FontWeight.w700 : FontWeight.w600,
+                color: secili ? Colors.white : AppColors.textSecondary,
+                letterSpacing: 0.2,
+              )),
+        ]),
       ),
     );
   }
