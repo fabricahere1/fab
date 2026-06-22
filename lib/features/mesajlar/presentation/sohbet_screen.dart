@@ -10,6 +10,7 @@ import '../domain/mesaj_model.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
+import '../../../shared/utils/app_snackbar.dart';
 import '../../ilanlar/presentation/ilan_detay_screen.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
 import '../../profil/presentation/kullanici_profil_screen.dart';
@@ -414,6 +415,19 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
       karsiKullaniciId: widget.karsiKullaniciId,
       ilanId: widget.ilanId,
     ));
+
+    // Mesaj stream hatalarını dinle → snackbar göster
+    ref.listen(
+      sohbetProvider(
+        karsiKullaniciId: widget.karsiKullaniciId,
+        ilanId: widget.ilanId,
+      ),
+      (onceki, sonraki) {
+        if (sonraki.hata != null && sonraki.hata != onceki?.hata) {
+          AppSnackBar.hata(context, sonraki.hata!);
+        }
+      },
+    );
     final ilanAsync = widget.ilanId.isNotEmpty
         ? ref.watch(ilanByIdProvider(widget.ilanId))
         : null;
@@ -691,6 +705,39 @@ class _MesajListesi extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Hata var ve hiç mesaj yoksa — imleç yerine anlamlı hata göster
+    if (sohbetState.hata != null && sohbetState.siraliMesajlar.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.wifi_off_rounded, size: 40, color: AppColors.textSecondary),
+              const SizedBox(height: 12),
+              Text(
+                sohbetState.hata!,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.dmSans(
+                    fontSize: 14, color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () => ref.invalidate(sohbetProvider(
+                  karsiKullaniciId: karsiId,
+                  ilanId: ilanId,
+                )),
+                child: Text('Tekrar Dene',
+                    style: GoogleFonts.dmSans(
+                        fontSize: 14,
+                        color: AppColors.red,
+                        fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     if (sohbetState.yukleniyor && sohbetState.siraliMesajlar.isEmpty) {
       return const Center(
           child: CircularProgressIndicator(

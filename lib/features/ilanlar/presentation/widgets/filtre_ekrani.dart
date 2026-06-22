@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../shared/constants/app_colors.dart';
 import '../../../../shared/constants/app_constants.dart';
-import '../ilanlar_screen.dart';
-import '../../../arama/data/arama_service.dart';
+import '../ilanlar_screen.dart' show kategoriIkon;
 import '../../../../shared/widgets/turkiye_disi_arama_ekrani.dart';
 import '../../../../shared/widgets/sehir_secim_widget.dart';
 
@@ -279,7 +278,7 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
       PageRouteBuilder(
         opaque: false,
         barrierColor: Colors.black54,
-        pageBuilder: (_, __, ___) => TurkiyeDisiAramaEkrani(
+        pageBuilder: (_, _, _) => TurkiyeDisiAramaEkrani(
           mevcutSecim: _modalUlkeSehir,
         ),
         transitionsBuilder: (_, anim, __, child) =>
@@ -588,23 +587,12 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
               children: [
                 Row(
                   children: [
-                    if (node.emoji.isNotEmpty) ...[
-                      Container(
-                        width: 32,
-                        height: 32,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: kategoriRengi(node.key).withValues(alpha: 0.14),
-                          borderRadius: BorderRadius.circular(10),
-                          border: secili
-                              ? Border.all(color: kategoriRengi(node.key), width: 1.5)
-                              : null,
-                        ),
-                        child: Text(node.emoji,
-                            style: const TextStyle(fontSize: 18, height: 1)),
-                      ),
-                      const SizedBox(width: 8),
-                    ],
+                    Icon(
+                      kategoriIkon(node.key),
+                      size: 32,
+                      color: kategoriRengi(node.key),
+                    ),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         node.ad,

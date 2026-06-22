@@ -275,8 +275,8 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
       barrierLabel: '',
       barrierColor: Colors.black54,
       transitionDuration: const Duration(milliseconds: 250),
-      pageBuilder: (_, __, ___) => const SizedBox.shrink(),
-      transitionBuilder: (ctx, anim, ___, child) {
+      pageBuilder: (_, _, _) => const SizedBox.shrink(),
+      transitionBuilder: (ctx, anim, _, child) {
         final slide = Tween<Offset>(
           begin: const Offset(1, 0), end: Offset.zero,
         ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic));
@@ -660,8 +660,8 @@ class _IsteklerHeader extends StatelessWidget {
                         child: const Icon(
                           Symbols.favorite,
                           color: AppColors.textPrimary,
-                          size: 24,
-                          weight: 200,
+                          size: 22,
+                          weight: 400,
                           fill: 0,
                         ),
                       ),

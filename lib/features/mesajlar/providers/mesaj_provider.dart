@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../../shared/utils/app_hata_yonetici.dart';
 import '../data/mesaj_repository.dart';
 import '../domain/mesaj_model.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -64,6 +65,7 @@ class SohbetEkraniState {
   final bool gonderiyor;
   final bool dahaFazlaVar;
   final DateTime? enEskiZaman;
+  final String? hata;
 
   const SohbetEkraniState({
     this.mesajMap = const {},
@@ -72,6 +74,7 @@ class SohbetEkraniState {
     this.gonderiyor = false,
     this.dahaFazlaVar = true,
     this.enEskiZaman,
+    this.hata,
   });
 
   SohbetEkraniState copyWith({
@@ -81,6 +84,8 @@ class SohbetEkraniState {
     bool? gonderiyor,
     bool? dahaFazlaVar,
     DateTime? enEskiZaman,
+    String? hata,
+    bool temizleHata = false,
   }) =>
       SohbetEkraniState(
         mesajMap: mesajMap ?? this.mesajMap,
@@ -89,6 +94,7 @@ class SohbetEkraniState {
         gonderiyor: gonderiyor ?? this.gonderiyor,
         dahaFazlaVar: dahaFazlaVar ?? this.dahaFazlaVar,
         enEskiZaman: enEskiZaman ?? this.enEskiZaman,
+        hata: temizleHata ? null : (hata ?? this.hata),
       );
 }
 
@@ -174,6 +180,14 @@ class SohbetNotifier extends _$SohbetNotifier {
           _sonOkunduMesajId = sonMesajId;
           _okunduDebounce();
         }
+      }
+    }, onError: (hata, stack) {
+      AppHataYonetici.logla(hata, stack, etiket: 'mesajlarStream');
+      if (ref.mounted) {
+        state = state.copyWith(
+          yukleniyor: false,
+          hata: 'Mesajlar yüklenemedi. Tekrar dene.',
+        );
       }
     });
   }

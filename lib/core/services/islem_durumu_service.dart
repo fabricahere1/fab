@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'banner_service.dart';
 import '../../features/mesajlar/domain/islem_durumu.dart';
 import '../../shared/constants/app_constants.dart';
+import '../../shared/utils/app_hata_yonetici.dart';
 
 /// Sohbet işlem durumlarını dinler, in-app banner gösterir
 /// ve bildirimler collection'a yazar.
@@ -139,11 +140,13 @@ class IslemDurumuService {
 
           _oncekiDurumlar[sohbetId] =
               Map<String, dynamic>.from(islemDurumlari);
-        });
+        }, onError: (e, s) => AppHataYonetici.logla(e, s,
+            etiket: 'islemDurumuService.sohbetDoc'));
 
         _islemListeners[sohbetId] = sub;
       }
-    });
+    }, onError: (e, s) => AppHataYonetici.logla(e, s,
+        etiket: 'islemDurumuService.sohbetlerStream'));
   }
 
   Future<void> _anlasildibildirimiGonder({

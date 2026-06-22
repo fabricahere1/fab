@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/ilan_repository.dart';
 import '../domain/ilan_model.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../shared/utils/app_hata_yonetici.dart';
 
 export '../data/ilan_repository.dart' show ilanRepositoryProvider;
 
@@ -107,7 +108,9 @@ class IstekIlanlar extends _$IstekIlanlar {
           );
         }
       }
-    } catch (_) {}
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'ilanlarProvider.daha_fazla_getir');
+    }
   }
 
   Future<void> yenile() async {
