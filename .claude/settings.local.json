@@ -35,7 +35,8 @@
       "Bash(firebase deploy *)",
       "Bash(npm run *)",
       "Bash(npm install *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(grep -v -E \"\\\\.\\(g|freezed\\)\\\\.dart$\")"
     ]
   }
 }
