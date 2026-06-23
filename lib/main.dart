@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/services/badge_service.dart';
 import 'core/services/fcm_service.dart';
 import 'core/services/islem_durumu_service.dart';
+import 'shared/widgets/baglanti_banner.dart';
 import 'core/theme/app_theme.dart';
 import 'firebase_options.dart';
 import 'router/app_router.dart';
@@ -139,7 +140,7 @@ class _IsteAppState extends ConsumerState<IsteApp> {
         return MediaQuery(
           data: MediaQuery.of(context)
               .copyWith(textScaler: TextScaler.noScaling),
-          child: child!,
+          child: BaglantiSarmalayici(child: child!),
         );
       },
     );

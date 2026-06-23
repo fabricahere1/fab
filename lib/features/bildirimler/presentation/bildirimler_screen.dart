@@ -9,6 +9,7 @@ import '../../degerlendirme/presentation/degerlendirme_screen.dart';
 import '../../degerlendirme/providers/degerlendirme_provider.dart';
 import '../../mesajlar/providers/mesaj_provider.dart';
 import '../../../shared/constants/app_colors.dart';
+import '../../../shared/utils/app_snackbar.dart';
 
 class BildirimlerScreen extends ConsumerStatefulWidget {
   const BildirimlerScreen({super.key});
@@ -30,6 +31,12 @@ class _BildirimlerScreenState extends ConsumerState<BildirimlerScreen>
   Widget build(BuildContext context) {
     super.build(context);
     final bildirimlerAsync = ref.watch(bildirimlerProvider);
+
+    ref.listen(bildirimlerProvider, (_, sonraki) {
+      if (sonraki.hasError) {
+        AppSnackBar.hata(context, 'Bildirimler yüklenemedi.');
+      }
+    });
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F4F4),

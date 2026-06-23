@@ -11,6 +11,7 @@ import 'package:iste_v3/features/profil/domain/kullanici_model.dart';
 import 'package:iste_v3/features/home/providers/sana_ozel_providers.dart';
 import 'package:iste_v3/features/ilanlar/providers/ilan_provider.dart';
 import 'package:iste_v3/shared/constants/app_colors.dart';
+import 'package:iste_v3/shared/utils/app_snackbar.dart';
 import 'package:iste_v3/router/app_router.dart';
 import 'package:iste_v3/features/home/providers/son_goruntulenenler_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -20,18 +21,6 @@ import 'package:iste_v3/features/home/presentation/kesfet_vitrin_tab.dart'
     show CicekTipi, KartZeminPainter;
 import 'package:iste_v3/features/home/presentation/kesfet_bolum_detay_screen.dart';
 import 'package:iste_v3/features/profil/presentation/profil_duzenle_screen.dart';
-import 'package:iste_v3/features/auth/providers/auth_provider.dart';
-import 'package:iste_v3/shared/widgets/avatar_widget.dart';
-import 'package:iste_v3/features/profil/presentation/kullanici_profil_screen.dart';
-import 'package:iste_v3/features/ilanlar/presentation/ilan_form_screen.dart';
-import 'package:material_symbols_icons/symbols.dart';
-
-/// İlanın "tarih"i (taşıyıcının seyahat/varış tarihi) bir haftadan az kaldıysa true.
-bool yakindaGeliyorMu(IlanModel ilan) {
-  if (ilan.tip != IlanTip.tasiyici || ilan.tarih == null) return false;
-  final fark = ilan.tarih!.difference(DateTime.now());
-  return !fark.isNegative && fark.inDays < 7;
-}
 
 class SanaOzelScreen extends ConsumerWidget {
   const SanaOzelScreen({super.key});
@@ -39,6 +28,13 @@ class SanaOzelScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profilAsync = ref.watch(benimKullaniciProfilProvider);
+
+    ref.listen(benimKullaniciProfilProvider, (_, sonraki) {
+      if (sonraki.hasError) {
+        AppSnackBar.hata(context, 'Profil yüklenemedi.');
+      }
+    });
+
     return profilAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => const SizedBox.shrink(),
@@ -79,7 +75,6 @@ class _IstekSanaOzel extends ConsumerWidget {
     final sonGorunenler   = ref.watch(sonGoruntulenenlerProvider);
     final kategoriler     = ref.watch(kategorilereGoreIlanlarProvider);
     final tumIlanlar      = ref.watch(istekIlanlarProvider).filtrelenmis;
-    final yuksekPuanlilar = ref.watch(yuksekPuanliTasiyicilarProvider).value ?? const [];
 
     final tumu = [
       _BolumData('Senin şehrine gelecek taşıyıcılar', ref.watch(sehirGelecekIlanlarProvider), Icons.flight_land_outlined, CicekTipi.papatya),
@@ -87,9 +82,6 @@ class _IstekSanaOzel extends ConsumerWidget {
       _BolumData('Senin bedenine göre ilanlar', ref.watch(bedenGoreIlanlarProvider), Icons.checkroom_outlined, CicekTipi.lavanta),
       _BolumData('İlgilendiğin kategorilerden en çok istenenler', ref.watch(populerKategoriIstekleriProvider), Icons.trending_up_rounded, CicekTipi.aycicegi),
       _BolumData('Duty Free alışverişi yapabilecek olanlar', ref.watch(dutyFreeYapabilecekIlanlarProvider), Icons.shopping_bag_outlined, CicekTipi.papatya),
-      _BolumData('Geçmişte görüntülediğin ürünlere benzer ürünler', ref.watch(gecmisGoruntulenenlereBenzerIlanlarProvider), Icons.history_rounded, CicekTipi.lavanta),
-      _BolumData('Favorilediğin kategorilerden yeni ilanlar', ref.watch(favoriKategorilerYeniIlanlarProvider), Icons.new_releases_outlined, CicekTipi.gul),
-      _BolumData('Takip ettiğin taşıyıcıların yeni ilanları', ref.watch(takipEdilenTasiyicilarinYeniIlanlariProvider), Icons.notifications_active_outlined, CicekTipi.aycicegi),
     ].where((b) => b.ilanlar.isNotEmpty).toList();
 
     final seen = <String>{};
@@ -97,23 +89,8 @@ class _IstekSanaOzel extends ConsumerWidget {
         .where((ilan) => seen.add(ilan.id)).take(15).toList();
 
     final profilBannerVar = _profilEksik(profil);
-    final sectionWidgets = <Widget>[
-      for (final b in tumu) _Bolum(data: b),
-      if (yuksekPuanlilar.isNotEmpty) _YuksekPuanliTasiyicilarBolumu(tasiyicilar: yuksekPuanlilar),
-    ];
-
-    final items = <Widget>[
-      if (profilBannerVar) const _ProfilTamamlaBanner(),
-      _SanaOzelHeroBanner(ilanlar: bannerListe),
-      if (sectionWidgets.isEmpty)
-        SizedBox(
-          height: MediaQuery.of(context).size.height * 0.5,
-          child: const _BosEkran(mesaj: 'Henüz sana özel içerik yok.\nProfilini tamamladıktan sonra burada kişiselleştirilmiş ilanlar görünecek.'),
-        )
-      else
-        ...sectionWidgets,
-      const _IlanAcCagriBolumu(),
-    ];
+    final heroBannerIndex = profilBannerVar ? 1 : 0;
+    final toplamItem = (profilBannerVar ? 1 : 0) + 1 + (tumu.isEmpty ? 1 : tumu.length);
 
     return RefreshIndicator(
       color: AppColors.red,
@@ -121,8 +98,20 @@ class _IstekSanaOzel extends ConsumerWidget {
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(top: 8, bottom: 24),
-        itemCount: items.length,
-        itemBuilder: (_, i) => items[i],
+        itemCount: toplamItem,
+        itemBuilder: (_, i) {
+          if (profilBannerVar && i == 0) return const _ProfilTamamlaBanner();
+          if (i == heroBannerIndex) return _SanaOzelHeroBanner(ilanlar: bannerListe);
+          final bolumIndex = i - heroBannerIndex - 1;
+          if (tumu.isEmpty) {
+            return SizedBox(
+              height: MediaQuery.of(context).size.height * 0.5,
+              child: const _BosEkran(mesaj: 'Henüz sana özel içerik yok.\nProfilini tamamladıktan sonra burada kişiselleştirilmiş ilanlar görünecek.'),
+            );
+          }
+          if (bolumIndex < 0 || bolumIndex >= tumu.length) return const SizedBox.shrink();
+          return _Bolum(data: tumu[bolumIndex]);
+        },
       ),
     );
   }
@@ -138,78 +127,37 @@ class _TasiyiciSanaOzel extends ConsumerWidget {
     ref.read(tasiyiciIlanlarProvider.notifier).yenile(),
   ]);
 
-  bool _profilEksik(KullaniciModel? profil) {
-    if (profil == null) return true;
-    return profil.geldigiSehirler.isEmpty;
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profil          = ref.watch(benimKullaniciProfilProvider).value;
-    final sonGorunenler   = ref.watch(sonGoruntulenenlerProvider);
-    final seyahatSehri    = ref.watch(seyahatSehriIlanlarProvider);
-    final tumIlanlar      = ref.watch(istekIlanlarProvider).filtrelenmis;
-    final yuksekPuanlilar = ref.watch(yuksekPuanliIstekcilerProvider).value ?? const [];
-
     final tumu = [
-      _BolumData('Seyahat edeceğin şehirden açılan ilanlar', seyahatSehri, Icons.location_on_outlined, CicekTipi.aycicegi),
+      _BolumData('Seyahat edeceğin şehirden açılan ilanlar', ref.watch(seyahatSehriIlanlarProvider), Icons.location_on_outlined, CicekTipi.aycicegi),
       _BolumData('Kargo teslim kabul eden istekçiler', ref.watch(kargoKabulIsteklerProvider), Icons.local_shipping_outlined, CicekTipi.lavanta),
       _BolumData('Elden teslim kabul eden istekçiler', ref.watch(eldenKabulIsteklerProvider), Icons.handshake_outlined, CicekTipi.gul),
       _BolumData('Onaylı istekçilerin istekleri', ref.watch(onayliIsteklerProvider), Icons.verified_outlined, CicekTipi.papatya),
-      _BolumData('Geçmişte görüntülediğin ürünlere benzer istekler', ref.watch(gecmisGoruntulenenlereBenzerIlanlarProvider), Icons.history_rounded, CicekTipi.lavanta),
-      _BolumData('Favorilediğin kategorilerden yeni istekler', ref.watch(favoriKategorilerYeniIstekIlanlariProvider), Icons.new_releases_outlined, CicekTipi.gul),
-      _BolumData('Takip ettiğin istekçilerin yeni ilanları', ref.watch(takipEdilenIstekcilerinYeniIlanlariProvider), Icons.notifications_active_outlined, CicekTipi.aycicegi),
     ].where((b) => b.ilanlar.isNotEmpty).toList();
 
-    final seen = <String>{};
-    final bannerListe = [...sonGorunenler, ...seyahatSehri, ...tumIlanlar]
-        .where((ilan) => seen.add(ilan.id)).take(15).toList();
-
-    final profilBannerVar = _profilEksik(profil);
-    final sectionWidgets = <Widget>[
-      for (final b in tumu) _Bolum(data: b),
-      if (yuksekPuanlilar.isNotEmpty) _YuksekPuanliTasiyicilarBolumu(tasiyicilar: yuksekPuanlilar, baslik: 'Yüksek puanlı istekçiler'),
-    ];
-
-    final items = <Widget>[
-      if (profilBannerVar) const _ProfilTamamlaBanner(),
-      _SanaOzelHeroBanner(ilanlar: bannerListe),
-      if (sectionWidgets.isEmpty)
-        SizedBox(
-          height: MediaQuery.of(context).size.height * 0.5,
-          child: const _BosEkran(mesaj: 'Henüz sana özel içerik yok.\nSeyahat bilgilerini güncelledikten sonra burada eşleşen istekler görünecek.'),
-        )
-      else
-        ...sectionWidgets,
-      const _IlanAcCagriBolumu(),
-    ];
-
     return RefreshIndicator(
-      color: AppColors.red,
-      onRefresh: () => _yenile(ref),
-      child: ListView.builder(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.only(top: 8, bottom: 24),
-        itemCount: items.length,
-        itemBuilder: (_, i) => items[i],
-      ),
-    );
+          color: AppColors.red,
+          onRefresh: () => _yenile(ref),
+          child: tumu.isEmpty
+              ? ListView(physics: const AlwaysScrollableScrollPhysics(), children: [
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.7,
+                      child: const _BosEkran(mesaj: 'Henüz sana özel içerik yok.\nSeyahat bilgilerini güncelledikten sonra burada eşleşen istekler görünecek.')),
+                ])
+              : ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.only(top: 12, bottom: 24),
+                  itemCount: tumu.length,
+                  itemBuilder: (_, i) => _Bolum(data: tumu[i]),
+                ),
+        );
   }
 }
 
 // ── HER İKİSİ ────────────────────────────────────────────────────────────────
 
-enum _HerIkisiRol { istekci, tasiyici }
-
-class _HerIkisiSanaOzel extends ConsumerStatefulWidget {
+class _HerIkisiSanaOzel extends ConsumerWidget {
   const _HerIkisiSanaOzel({super.key});
-
-  @override
-  ConsumerState<_HerIkisiSanaOzel> createState() => _HerIkisiSanaOzelState();
-}
-
-class _HerIkisiSanaOzelState extends ConsumerState<_HerIkisiSanaOzel> {
-  _HerIkisiRol _rol = _HerIkisiRol.istekci;
 
   Future<void> _yenile(WidgetRef ref) => Future.wait([
     ref.read(istekIlanlarProvider.notifier).yenile(),
@@ -218,16 +166,12 @@ class _HerIkisiSanaOzelState extends ConsumerState<_HerIkisiSanaOzel> {
 
   bool _profilEksik(KullaniciModel? profil) {
     if (profil == null) return true;
-    return profil.bulunduguSehir.isEmpty ||
-        profil.ilgiKategorileri.isEmpty ||
-        profil.geldigiSehirler.isEmpty;
+    return profil.bulunduguSehir.isEmpty || profil.ilgiKategorileri.isEmpty;
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final profil = ref.watch(benimKullaniciProfilProvider).value;
-    final yuksekPuanliTasiyicilar = ref.watch(yuksekPuanliTasiyicilarProvider).value ?? const [];
-    final yuksekPuanliIstekciler = ref.watch(yuksekPuanliIstekcilerProvider).value ?? const [];
 
     // İstekçi bölümleri
     final istekBolumleri = [
@@ -236,9 +180,6 @@ class _HerIkisiSanaOzelState extends ConsumerState<_HerIkisiSanaOzel> {
       _BolumData('Senin bedenine göre ilanlar', ref.watch(bedenGoreIlanlarProvider), Icons.checkroom_outlined, CicekTipi.lavanta),
       _BolumData('İlgilendiğin kategorilerden en çok istenenler', ref.watch(populerKategoriIstekleriProvider), Icons.trending_up_rounded, CicekTipi.aycicegi),
       _BolumData('Duty Free alışverişi yapabilecek olanlar', ref.watch(dutyFreeYapabilecekIlanlarProvider), Icons.shopping_bag_outlined, CicekTipi.papatya),
-      _BolumData('Geçmişte görüntülediğin ürünlere benzer ürünler', ref.watch(gecmisGoruntulenenlereBenzerIlanlarProvider), Icons.history_rounded, CicekTipi.lavanta),
-      _BolumData('Favorilediğin kategorilerden yeni ilanlar', ref.watch(favoriKategorilerYeniIlanlarProvider), Icons.new_releases_outlined, CicekTipi.gul),
-      _BolumData('Takip ettiğin taşıyıcıların yeni ilanları', ref.watch(takipEdilenTasiyicilarinYeniIlanlariProvider), Icons.notifications_active_outlined, CicekTipi.aycicegi),
     ].where((b) => b.ilanlar.isNotEmpty).toList();
 
     // Taşıyıcı bölümleri
@@ -247,43 +188,10 @@ class _HerIkisiSanaOzelState extends ConsumerState<_HerIkisiSanaOzel> {
       _BolumData('Kargo teslim kabul eden istekçiler', ref.watch(kargoKabulIsteklerProvider), Icons.local_shipping_outlined, CicekTipi.lavanta),
       _BolumData('Elden teslim kabul eden istekçiler', ref.watch(eldenKabulIsteklerProvider), Icons.handshake_outlined, CicekTipi.gul),
       _BolumData('Onaylı istekçilerin istekleri', ref.watch(onayliIsteklerProvider), Icons.verified_outlined, CicekTipi.papatya),
-      _BolumData('Favorilediğin kategorilerden yeni istekler', ref.watch(favoriKategorilerYeniIstekIlanlariProvider), Icons.new_releases_outlined, CicekTipi.gul),
-      _BolumData('Takip ettiğin istekçilerin yeni ilanları', ref.watch(takipEdilenIstekcilerinYeniIlanlariProvider), Icons.notifications_active_outlined, CicekTipi.aycicegi),
     ].where((b) => b.ilanlar.isNotEmpty).toList();
 
+    final tumBolumler = [...istekBolumleri, ...tasiyiciBolumleri];
     final bannerVar = _profilEksik(profil);
-    final secimIstekci = _rol == _HerIkisiRol.istekci;
-
-    final sectionWidgets = <Widget>[
-      if (secimIstekci) ...[
-        for (final b in istekBolumleri) _Bolum(data: b),
-        if (yuksekPuanliTasiyicilar.isNotEmpty) _YuksekPuanliTasiyicilarBolumu(tasiyicilar: yuksekPuanliTasiyicilar),
-      ] else ...[
-        for (final b in tasiyiciBolumleri) _Bolum(data: b),
-        if (yuksekPuanliIstekciler.isNotEmpty) _YuksekPuanliTasiyicilarBolumu(tasiyicilar: yuksekPuanliIstekciler, baslik: 'Yüksek puanlı istekçiler'),
-      ],
-    ];
-
-    final items = <Widget>[
-      if (bannerVar) const _ProfilTamamlaBanner(),
-      _HerIkisiRolSecici(
-        secimIstekci: secimIstekci,
-        onDegisti: (yeniIstekci) => setState(
-            () => _rol = yeniIstekci ? _HerIkisiRol.istekci : _HerIkisiRol.tasiyici),
-      ),
-      if (sectionWidgets.isEmpty)
-        SizedBox(
-          height: MediaQuery.of(context).size.height * 0.4,
-          child: _BosEkran(
-            mesaj: secimIstekci
-                ? 'Henüz sana özel içerik yok.\nProfilini tamamladıktan sonra eşleşmeler burada görünecek.'
-                : 'Henüz sana özel içerik yok.\nSeyahat bilgilerini güncelledikten sonra burada eşleşen istekler görünecek.',
-          ),
-        )
-      else
-        ...sectionWidgets,
-      const _IlanAcCagriBolumu(),
-    ];
 
     return RefreshIndicator(
       color: AppColors.red,
@@ -291,78 +199,18 @@ class _HerIkisiSanaOzelState extends ConsumerState<_HerIkisiSanaOzel> {
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(top: 8, bottom: 24),
-        itemCount: items.length,
-        itemBuilder: (_, i) => items[i],
-      ),
-    );
-  }
-}
-
-// ── Her ikisi — istekçi/taşıyıcı rol seçici ───────────────────────────────────
-
-class _HerIkisiRolSecici extends StatelessWidget {
-  final bool secimIstekci;
-  final ValueChanged<bool> onDegisti;
-  const _HerIkisiRolSecici({required this.secimIstekci, required this.onDegisti});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 6, 12, 14),
-      child: Container(
-        height: 48,
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFFE0E0E0), width: 1.2),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
-          ],
-        ),
-        child: Row(children: [
-          Expanded(child: _RolButon(label: 'İstekçi olarak', ikon: Icons.shopping_bag_outlined, secili: secimIstekci, onTap: () => onDegisti(true))),
-          Expanded(child: _RolButon(label: 'Taşıyıcı olarak', ikon: Icons.flight_takeoff_rounded, secili: !secimIstekci, onTap: () => onDegisti(false))),
-        ]),
-      ),
-    );
-  }
-}
-
-class _RolButon extends StatelessWidget {
-  final String label;
-  final IconData ikon;
-  final bool secili;
-  final VoidCallback onTap;
-  const _RolButon({required this.label, required this.ikon, required this.secili, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
-        decoration: BoxDecoration(
-          color: secili ? AppColors.red : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: secili
-              ? [BoxShadow(color: AppColors.red.withValues(alpha: 0.35), blurRadius: 8, offset: const Offset(0, 3))]
-              : null,
-        ),
-        alignment: Alignment.center,
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(ikon, size: 16, color: secili ? Colors.white : AppColors.textSecondary),
-          const SizedBox(width: 6),
-          Text(label,
-              style: GoogleFonts.raleway(
-                fontSize: 13,
-                fontWeight: secili ? FontWeight.w700 : FontWeight.w600,
-                color: secili ? Colors.white : AppColors.textSecondary,
-                letterSpacing: 0.2,
-              )),
-        ]),
+        itemCount: (bannerVar ? 1 : 0) + (tumBolumler.isEmpty ? 1 : tumBolumler.length),
+        itemBuilder: (_, i) {
+          if (bannerVar && i == 0) return const _ProfilTamamlaBanner();
+          final idx = bannerVar ? i - 1 : i;
+          if (tumBolumler.isEmpty) {
+            return SizedBox(
+              height: MediaQuery.of(context).size.height * 0.5,
+              child: const _BosEkran(mesaj: 'Henüz sana özel içerik yok.\nProfilini tamamladıktan sonra eşleşmeler burada görünecek.'),
+            );
+          }
+          return _Bolum(data: tumBolumler[idx]);
+        },
       ),
     );
   }
@@ -472,11 +320,8 @@ class _SanaOzelKart extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final resim   = ilan.gridResim;
-    final katAdi  = kategoriAdi(ilan.kategori);
-    final uid     = ref.watch(currentUserProvider)?.uid;
-    final gosterFavori = uid != null && uid != ilan.kullaniciId;
-    final yakinda = yakindaGeliyorMu(ilan);
+    final resim  = ilan.gridResim;
+    final katAdi = kategoriAdi(ilan.kategori);
     return GestureDetector(
       onTap: () { ref.read(sonGoruntulenenlerProvider.notifier).kaydet(ilan); context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan); },
       child: Container(
@@ -486,31 +331,13 @@ class _SanaOzelKart extends ConsumerWidget {
             border: Border.all(color: const Color(0xFF888888), width: 0.3),
             boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))]),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Stack(children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
-              child: Container(height: 150, width: double.infinity, color: const Color(0xFFF2F2F2),
-                child: resim.isNotEmpty
-                    ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, fadeInDuration: Duration.zero, errorWidget: (_, _, _) => _RenkliArkaplan(cicekTipi: cicekTipi))
-                    : _RenkliArkaplan(cicekTipi: cicekTipi)),
-            ),
-            if (yakinda)
-              Positioned(
-                top: 8, left: 8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
-                  decoration: BoxDecoration(color: AppColors.red, borderRadius: BorderRadius.circular(20),
-                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 4, offset: const Offset(0, 1))]),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.flight_takeoff_rounded, size: 10, color: Colors.white),
-                    const SizedBox(width: 3),
-                    Text('Yakında gelecek', style: GoogleFonts.dmSans(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white)),
-                  ]),
-                ),
-              ),
-            if (gosterFavori)
-              Positioned(top: 2, right: 2, child: _SanaOzelFavoriButon(ilan: ilan, uid: uid)),
-          ]),
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
+            child: Container(height: 150, width: double.infinity, color: const Color(0xFFF2F2F2),
+              child: resim.isNotEmpty
+                  ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, fadeInDuration: Duration.zero, errorWidget: (_, _, _) => _RenkliArkaplan(cicekTipi: cicekTipi))
+                  : _RenkliArkaplan(cicekTipi: cicekTipi)),
+          ),
           Expanded(child: Padding(padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               if (ilan.urun.isNotEmpty) Text(ilan.urun, style: GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary), maxLines: 2, overflow: TextOverflow.ellipsis),
@@ -548,265 +375,6 @@ class _RenkliArkaplan extends StatelessWidget {
     return CustomPaint(
       painter: KartZeminPainter(cicekTipi),
       child: Center(child: Icon(Icons.inventory_2_outlined, size: 32, color: AppColors.textHint.withValues(alpha: 0.4))),
-    );
-  }
-}
-
-// ── Favori butonu (Sana Özel kartı) ───────────────────────────────────────────
-
-class _SanaOzelFavoriButon extends ConsumerStatefulWidget {
-  final IlanModel ilan;
-  final String uid;
-  const _SanaOzelFavoriButon({required this.ilan, required this.uid});
-
-  @override
-  ConsumerState<_SanaOzelFavoriButon> createState() => _SanaOzelFavoriButonState();
-}
-
-class _SanaOzelFavoriButonState extends ConsumerState<_SanaOzelFavoriButon>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 200));
-    _scale = Tween<double>(begin: 1.0, end: 1.35).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack));
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  void _toggle(bool mevcutDurum) {
-    _ctrl.forward().then((_) => _ctrl.reverse());
-    if (mevcutDurum) {
-      ref.read(favoriProvider.notifier).cikar(widget.ilan.id);
-    } else {
-      ref.read(favoriProvider.notifier).ekle(widget.ilan);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final gosterilen = ref.watch(
-      favoriliIlanIdlerProvider.select((ids) => ids.contains(widget.ilan.id)),
-    );
-    return GestureDetector(
-      onTap: () => _toggle(gosterilen),
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.all(6),
-        child: ScaleTransition(
-          scale: _scale,
-          child: Container(
-            padding: const EdgeInsets.all(5),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.22),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 0.5),
-            ),
-            child: Icon(
-              Symbols.favorite,
-              fill: gosterilen ? 1 : 0,
-              weight: 200,
-              color: gosterilen ? AppColors.red : Colors.white,
-              size: 17,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Yüksek puanlı taşıyıcılar bölümü ──────────────────────────────────────────
-
-class _YuksekPuanliTasiyicilarBolumu extends StatelessWidget {
-  final List<KullaniciModel> tasiyicilar;
-  final String baslik;
-  const _YuksekPuanliTasiyicilarBolumu({required this.tasiyicilar, this.baslik = 'Yüksek puanlı taşıyıcılar'});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 12, 10),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(padding: EdgeInsets.only(top: 2), child: Icon(Icons.workspace_premium_outlined, size: 16, color: AppColors.red)),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(baslik,
-                    style: GoogleFonts.raleway(fontSize: 13, fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary, letterSpacing: 0.1)),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(
-          height: 168,
-          child: Stack(children: [
-            Positioned.fill(child: CustomPaint(painter: KartZeminPainter(CicekTipi.aycicegi))),
-            ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              scrollDirection: Axis.horizontal,
-              itemCount: tasiyicilar.length,
-              itemBuilder: (_, i) => _TasiyiciProfilKarti(tasiyici: tasiyicilar[i]),
-            ),
-          ]),
-        ),
-        const SizedBox(height: 8),
-      ],
-    );
-  }
-}
-
-class _TasiyiciProfilKarti extends StatelessWidget {
-  final KullaniciModel tasiyici;
-  const _TasiyiciProfilKarti({required this.tasiyici});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => KullaniciProfilScreen(
-            kullaniciId: tasiyici.id,
-            kullaniciAd: tasiyici.adSoyad,
-          ),
-        ),
-      ),
-      child: Container(
-        width: 130,
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFF888888), width: 0.3),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AvatarWidget(isim: tasiyici.adSoyad, fotoUrl: tasiyici.fotoUrl, radius: 28),
-            const SizedBox(height: 8),
-            Text(tasiyici.adSoyad, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-            if (tasiyici.bulunduguSehir.isNotEmpty) ...[
-              const SizedBox(height: 2),
-              Text(tasiyici.bulunduguSehir, maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.dmSans(fontSize: 10, color: AppColors.textSecondary)),
-            ],
-            const SizedBox(height: 6),
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              const Icon(Icons.star_rounded, size: 14, color: Colors.amber),
-              const SizedBox(width: 3),
-              Text('${tasiyici.ortalamaPuan.toStringAsFixed(1)} (${tasiyici.degerlendirmeSayisi})',
-                  style: GoogleFonts.dmSans(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-            ]),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── İlan aç çağrı bölümü ───────────────────────────────────────────────────────
-
-class _IlanAcCagriBolumu extends StatelessWidget {
-  const _IlanAcCagriBolumu();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: Stack(
-            children: [
-              Positioned(right: -24, top: -24,
-                  child: Container(width: 100, height: 100,
-                      decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.06)))),
-              Positioned(left: -30, bottom: -30,
-                  child: Container(width: 90, height: 90,
-                      decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.05)))),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 20, 18, 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      const Icon(Icons.travel_explore_rounded, size: 22, color: Color(0xFFFFC857)),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text('İstediğin ilanı bulamadın mı?',
-                            style: GoogleFonts.urbanist(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white)),
-                      ),
-                    ]),
-                    const SizedBox(height: 6),
-                    Text('Aradığını bulamadıysan, ilk isteyen sen ol — saniyeler içinde ilanını yayınla.',
-                        style: GoogleFonts.dmSans(fontSize: 12, color: Colors.white.withValues(alpha: 0.78), height: 1.4)),
-                    const SizedBox(height: 16),
-                    Row(children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => Navigator.push(context,
-                              MaterialPageRoute(builder: (_) => const IlanFormScreen(tip: 'istek'))),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(color: const Color(0xFFFFC857), borderRadius: BorderRadius.circular(12)),
-                            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                              const Icon(Icons.shopping_bag_outlined, size: 16, color: Color(0xFF0F2027)),
-                              const SizedBox(width: 6),
-                              Text('İstek İlanı Aç',
-                                  style: GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF0F2027))),
-                            ]),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => Navigator.push(context,
-                              MaterialPageRoute(builder: (_) => const IlanFormScreen(tip: IlanTip.tasiyici))),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.white.withValues(alpha: 0.5))),
-                            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                              const Icon(Icons.flight_takeoff_rounded, size: 16, color: Colors.white),
-                              const SizedBox(width: 6),
-                              Text('Taşıyıcı İlanı Aç',
-                                  style: GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
-                            ]),
-                          ),
-                        ),
-                      ),
-                    ]),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

@@ -33,6 +33,22 @@ class IslemDurumuPanel extends ConsumerWidget {
       orElse: () => '',
     );
 
+    // Aktif adımı bul (tamamlanmamış ilk adım)
+    IslemDurumu? aktifAdim;
+    for (final adim in adimlar) {
+      final tamamlandi = durumlari[adim.firestoreKey] == true;
+      if (!tamamlandi) { aktifAdim = adim; break; }
+    }
+    final hepsiTamamlandi = aktifAdim == null;
+
+    // Başlık metni ve emojisi
+    final baslikMetni = hepsiTamamlandi
+        ? 'Tamamlandı'
+        : aktifAdim!.etiket;
+    final baslikEmoji = hepsiTamamlandi
+        ? '✅'
+        : _adimEmoji(aktifAdim!);
+
     return Material(
       color: Colors.transparent,
       child: Container(
@@ -59,26 +75,33 @@ class IslemDurumuPanel extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Sipariş takibi',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.textSecondary,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '$baslikMetni $baslikEmoji',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
                       ),
-                      child: const Icon(Icons.swap_horiz_rounded,
-                          color: AppColors.primary, size: 20),
                     ),
-                    const SizedBox(width: 10),
-                    Text(
-                      'İşlem Durumu',
-                      style: GoogleFonts.dmSans(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const Spacer(),
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
                       child: Container(
@@ -754,5 +777,17 @@ class _IslemDurumuTetikleyiciState
         ),
       ),
     );
+  }
+}
+
+String _adimEmoji(IslemDurumu adim) {
+  switch (adim) {
+    case IslemDurumu.iletisimBasladi: return '💬';
+    case IslemDurumu.anlasildi:       return '🤝';
+    case IslemDurumu.siparisVerildi:  return '🛒';
+    case IslemDurumu.urunAlindi:      return '🛍️';
+    case IslemDurumu.yolaCikti:       return '🚚';
+    case IslemDurumu.teslimEdildi:    return '📦';
+    case IslemDurumu.teslimAlindi:    return '✅';
   }
 }

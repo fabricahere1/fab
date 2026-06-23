@@ -13,6 +13,8 @@ import 'package:iste_v3/features/home/providers/kesfet_computed_providers.dart';
 import 'package:iste_v3/features/home/providers/son_goruntulenenler_provider.dart';
 import 'package:iste_v3/features/home/presentation/kesfet/widgets/kesfet_widgets.dart';
 
+import 'package:iste_v3/shared/utils/app_snackbar.dart';
+
 class KesfetTab extends ConsumerStatefulWidget {
   const KesfetTab({super.key});
 
@@ -25,6 +27,17 @@ class _KesfetTabState extends ConsumerState<KesfetTab> {
 
   @override
   Widget build(BuildContext context) {
+    // İlan yükleme hatası dinleyicisi
+    ref.listen(istekIlanlarProvider, (onceki, sonraki) {
+      if (sonraki.hata != null && sonraki.hata != onceki?.hata) {
+        AppSnackBar.hata(context, sonraki.hata!);
+      }
+    });
+    ref.listen(tasiyiciIlanlarProvider, (onceki, sonraki) {
+      if (sonraki.hata != null && sonraki.hata != onceki?.hata) {
+        AppSnackBar.hata(context, sonraki.hata!);
+      }
+    });
     final seciliKategori = _seciliKategori;
     final yukleniyor     = ref.watch(istekIlanlarProvider).yukleniyor;
 

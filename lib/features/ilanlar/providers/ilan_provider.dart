@@ -18,6 +18,7 @@ class IlanListeState {
   final DateTime? sonTarih;
   final String siralama;
   final List<String> engellenenler;
+  final String? hata;
 
   const IlanListeState({
     this.ilanlar = const [],
@@ -26,6 +27,7 @@ class IlanListeState {
     this.sonTarih,
     this.siralama = 'tarih',
     this.engellenenler = const [],
+    this.hata,
   });
 
   IlanListeState copyWith({
@@ -35,6 +37,8 @@ class IlanListeState {
     DateTime? sonTarih,
     String? siralama,
     List<String>? engellenenler,
+    String? hata,
+    bool temizleHata = false,
   }) =>
       IlanListeState(
         ilanlar: ilanlar ?? this.ilanlar,
@@ -43,6 +47,7 @@ class IlanListeState {
         sonTarih: sonTarih ?? this.sonTarih,
         siralama: siralama ?? this.siralama,
         engellenenler: engellenenler ?? this.engellenenler,
+        hata: temizleHata ? null : (hata ?? this.hata),
       );
 
   List<IlanModel> get filtrelenmis {
@@ -85,7 +90,8 @@ class IstekIlanlar extends _$IstekIlanlar {
         await Future.delayed(const Duration(seconds: 2));
         _ilkYukle(deneme: deneme + 1);
       } else {
-        state = state.copyWith(yukleniyor: false);
+        AppHataYonetici.logla(e, StackTrace.current, etiket: 'istekIlanlar.ilkYukle');
+        state = state.copyWith(yukleniyor: false, hata: 'İlanlar yüklenemedi. Tekrar dene.');
       }
     }
   }
@@ -212,7 +218,8 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
         await Future.delayed(const Duration(seconds: 2));
         _ilkYukle(deneme: deneme + 1);
       } else {
-        state = state.copyWith(yukleniyor: false);
+        AppHataYonetici.logla(e, StackTrace.current, etiket: 'tasiyiciIlanlar.ilkYukle');
+        state = state.copyWith(yukleniyor: false, hata: 'İlanlar yüklenemedi. Tekrar dene.');
       }
     }
   }

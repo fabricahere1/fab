@@ -266,11 +266,19 @@ class SohbetNotifier extends _$SohbetNotifier {
         metin: metin.trim(),
         tip: tip,
       );
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'mesajGonder');
+      if (ref.mounted) {
+        state = state.copyWith(
+          gonderiyor: false,
+          hata: 'Mesaj gönderilemedi. Tekrar dene.',
+        );
+      }
+      return;
     } finally {
       if (ref.mounted) state = state.copyWith(gonderiyor: false);
     }
-    // Push bildirimi artık burada beklenmiyor — mesaj zaten gönderildi,
-    // buton serbest kaldı. Bildirim arka planda, hatasız şekilde devam eder.
+    // Push bildirimi arka planda
     _repo.mesajBildirimiGonder(
       aliciId: karsiKullaniciId,
       gondereId: _benimId,
