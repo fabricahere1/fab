@@ -25,7 +25,13 @@ class IslemDurumuPanel extends ConsumerWidget {
     final ilanSahibiId = ref.watch(sohbetIlanSahibiIdProvider(sohbetId)).value ?? '';
     final kullanicilar = ref.watch(sohbetKullanicilarProvider(sohbetId)).value ?? [];
     final ilanTip      = ref.watch(sohbetIlanTipProvider(sohbetId)).value ?? 'istek';
-    final adimlar      = IlanTipiAdimlar.forTip(ilanTip);
+    final ilanBaslik   = ref.watch(sohbetIlanBaslikProvider(sohbetId)).value ?? '';
+
+    // iletisimBasladi otomatik tamamlanıyor — listeden ve sayaçtan çıkar
+    final tumAdimlar   = IlanTipiAdimlar.forTip(ilanTip);
+    final adimlar      = tumAdimlar
+        .where((a) => a != IslemDurumu.iletisimBasladi)
+        .toList();
     final benimIlanSahibi = benimUid == ilanSahibiId;
 
     final karsiUid = kullanicilar.firstWhere(
@@ -33,21 +39,15 @@ class IslemDurumuPanel extends ConsumerWidget {
       orElse: () => '',
     );
 
-    // Aktif adımı bul (tamamlanmamış ilk adım)
-    IslemDurumu? aktifAdim;
+    // Tamamlanan adım sayısı
+    int tamamlananSayi = 0;
     for (final adim in adimlar) {
-      final tamamlandi = durumlari[adim.firestoreKey] == true;
-      if (!tamamlandi) { aktifAdim = adim; break; }
+      if (_adimTamamlandiMi(adim, durumlari, benimUid, karsiUid)) {
+        tamamlananSayi++;
+      }
     }
-    final hepsiTamamlandi = aktifAdim == null;
 
-    // Başlık metni ve emojisi
-    final baslikMetni = hepsiTamamlandi
-        ? 'Tamamlandı'
-        : aktifAdim!.etiket;
-    final baslikEmoji = hepsiTamamlandi
-        ? '✅'
-        : _adimEmoji(aktifAdim!);
+    final ilerleme = adimlar.isEmpty ? 0.0 : tamamlananSayi / adimlar.length;
 
     return Material(
       color: Colors.transparent,
@@ -72,52 +72,102 @@ class IslemDurumuPanel extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ── Üst gradient kart ─────────────────────
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFE24B4A), Color(0xFFFF6B6B)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              karsiKullaniciAd,
+                              style: GoogleFonts.dmSans(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                            if (ilanBaslik.isNotEmpty)
+                              Text(
+                                ilanBaslik,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.dmSans(
+                                  fontSize: 11,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            'Sipariş takibi',
+                            '$tamamlananSayi/${adimlar.length}',
                             style: GoogleFonts.dmSans(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w400,
-                              color: AppColors.textSecondary,
-                              letterSpacing: 0.2,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              height: 1,
                             ),
                           ),
-                          const SizedBox(height: 2),
                           Text(
-                            '$baslikMetni $baslikEmoji',
+                            'adım',
                             style: GoogleFonts.dmSans(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
+                              fontSize: 10,
+                              color: Colors.white70,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          shape: BoxShape.circle,
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.close,
+                              color: Colors.white, size: 16),
                         ),
-                        child: const Icon(Icons.close,
-                            color: AppColors.textSecondary, size: 18),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-              const Divider(color: AppColors.divider, height: 24),
+
+              // ── İnce ilerleme çubuğu ──────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
+                  child: LinearProgressIndicator(
+                    value: ilerleme,
+                    minHeight: 3,
+                    backgroundColor: const Color(0xFFEEEEEE),
+                    valueColor: const AlwaysStoppedAnimation(Color(0xFFE24B4A)),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              // ── Adım listesi ──────────────────────────
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -150,8 +200,7 @@ class IslemDurumuPanel extends ConsumerWidget {
                     final tamamlandi =
                         _adimTamamlandiMi(durum, durumlari, benimUid, karsiUid);
                     final aktif = !tamamlandi && oncekiTamamlandi;
-                    final iletisimAdimi =
-                        durum == IslemDurumu.iletisimBasladi;
+                    final iletisimAdimi = durum == IslemDurumu.iletisimBasladi;
                     bool isaretleyebilir = false;
                     if (aktif && !iletisimAdimi) {
                       final kim = durum.ilanSahibiMiForTip(ilanTip);
@@ -173,6 +222,8 @@ class IslemDurumuPanel extends ConsumerWidget {
                   }).toList(),
                 ),
               ),
+
+              // ── Alt bilgi ─────────────────────────────
               Container(
                 margin: const EdgeInsets.all(16),
                 padding: const EdgeInsets.all(12),
@@ -234,7 +285,137 @@ class IslemDurumuPanel extends ConsumerWidget {
   }
 }
 
-// ── Anlaşıldı Satırı — animasyonlu iki taraflı onay ──────
+// ── Normal Adım Satırı ────────────────────────────────────
+
+class _AdimSatiri extends StatelessWidget {
+  final IslemDurumu durum;
+  final bool tamamlandi;
+  final bool aktif;
+  final bool isaretleyebilir;
+  final bool sonMu;
+  final String ilanTip;
+  final VoidCallback? onTap;
+
+  const _AdimSatiri({
+    required this.durum,
+    required this.tamamlandi,
+    required this.aktif,
+    required this.isaretleyebilir,
+    required this.sonMu,
+    required this.ilanTip,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      child: Container(
+        decoration: aktif
+            ? BoxDecoration(
+                color: const Color(0xFFFFF5F5),
+                borderRadius: BorderRadius.circular(12),
+              )
+            : null,
+        padding: aktif
+            ? const EdgeInsets.symmetric(horizontal: 10, vertical: 8)
+            : const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Row(
+          children: [
+            // İkon
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: tamamlandi
+                    ? const Color(0xFFE8F5E9)
+                    : aktif
+                        ? const Color(0xFFFFEBEB)
+                        : const Color(0xFFF5F5F5),
+              ),
+              child: tamamlandi
+                  ? const Icon(Icons.check_rounded,
+                      size: 16, color: Color(0xFF4CAF50))
+                  : aktif
+                      ? Text(
+                          _adimEmoji(durum),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 14, height: 2.2),
+                        )
+                      : Icon(durum.ikon,
+                          size: 16, color: const Color(0xFFCCCCCC)),
+            ),
+            const SizedBox(width: 12),
+            // Metin
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    durum.etiket,
+                    style: GoogleFonts.dmSans(
+                      fontSize: 13,
+                      fontWeight: aktif ? FontWeight.w700 : FontWeight.w500,
+                      color: tamamlandi
+                          ? const Color(0xFFBBBBBB)
+                          : aktif
+                              ? const Color(0xFFE24B4A)
+                              : const Color(0xFFCCCCCC),
+                    ),
+                  ),
+                  if (aktif || tamamlandi)
+                    Text(
+                      durum.kimYaparForTip(ilanTip),
+                      style: GoogleFonts.dmSans(
+                        fontSize: 10,
+                        color: aktif
+                            ? const Color(0xFFE24B4A).withValues(alpha: 0.6)
+                            : const Color(0xFFCCCCCC),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            // Sağ taraf
+            if (tamamlandi)
+              const Icon(Icons.check_circle_rounded,
+                  color: Color(0xFF4CAF50), size: 20)
+            else if (isaretleyebilir)
+              GestureDetector(
+                onTap: onTap,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE24B4A),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text('İşaretle',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 11,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600)),
+                ),
+              )
+            else if (!aktif)
+              Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                      color: const Color(0xFFEEEEEE), width: 1.5),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Anlaşıldı Satırı ─────────────────────────────────────
 
 class _AnlasildiSatiri extends StatefulWidget {
   final bool tamamlandi;
@@ -300,12 +481,6 @@ class _AnlasildiSatiriState extends State<_AnlasildiSatiri>
     super.dispose();
   }
 
-  Color get _ikonRenk {
-    if (widget.tamamlandi) return const Color(0xFF43A047);
-    if (widget.oncekiTamamlandi) return AppColors.primary;
-    return AppColors.textHint;
-  }
-
   String get _altYazi {
     if (widget.tamamlandi) return 'İki taraf da onayladı';
     if (widget.benimOnayim && !widget.karsiOnayi) {
@@ -319,294 +494,153 @@ class _AnlasildiSatiriState extends State<_AnlasildiSatiri>
 
   @override
   Widget build(BuildContext context) {
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── İkon kolonu ──────────────────────────────
-          SizedBox(
-            width: 56,
-            child: Column(
+    final aktif = widget.oncekiTamamlandi && !widget.tamamlandi;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      child: Container(
+        decoration: aktif
+            ? BoxDecoration(
+                color: const Color(0xFFFFF5F5),
+                borderRadius: BorderRadius.circular(12),
+              )
+            : null,
+        padding: aktif
+            ? const EdgeInsets.symmetric(horizontal: 10, vertical: 8)
+            : const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: 32,
+                  height: 32,
                   decoration: BoxDecoration(
-                    color: _ikonRenk.withValues(
-                        alpha: widget.tamamlandi ? 0.12 : 0.08),
                     shape: BoxShape.circle,
-                    border: (!widget.tamamlandi && widget.oncekiTamamlandi)
-                        ? Border.all(color: _ikonRenk, width: 2)
-                        : null,
+                    color: widget.tamamlandi
+                        ? const Color(0xFFE8F5E9)
+                        : aktif
+                            ? const Color(0xFFFFEBEB)
+                            : const Color(0xFFF5F5F5),
                   ),
-                  child: Icon(Icons.handshake_outlined,
-                      color: _ikonRenk, size: 20),
+                  child: widget.tamamlandi
+                      ? const Icon(Icons.check_rounded,
+                          size: 16, color: Color(0xFF4CAF50))
+                      : aktif
+                          ? const Text('🤝',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 14, height: 2.2))
+                          : const Icon(Icons.handshake_outlined,
+                              size: 16, color: Color(0xFFCCCCCC)),
                 ),
-                if (!widget.sonMu)
-                  Expanded(
-                    child: Container(
-                      width: 2,
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      color: widget.tamamlandi
-                          ? const Color(0xFF43A047).withValues(alpha: 0.3)
-                          : AppColors.divider,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-
-          // ── İçerik ───────────────────────────────────
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(
-                  left: 4, bottom: widget.sonMu ? 0 : 20, top: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          'Anlaşıldı',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 14,
-                            fontWeight:
-                                (widget.tamamlandi || widget.oncekiTamamlandi)
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
-                            color:
-                                (widget.tamamlandi || widget.oncekiTamamlandi)
-                                    ? AppColors.textPrimary
-                                    : AppColors.textHint,
-                          ),
+                      Text(
+                        'Anlaşıldı',
+                        style: GoogleFonts.dmSans(
+                          fontSize: 13,
+                          fontWeight:
+                              aktif ? FontWeight.w700 : FontWeight.w500,
+                          color: widget.tamamlandi
+                              ? const Color(0xFFBBBBBB)
+                              : aktif
+                                  ? const Color(0xFFE24B4A)
+                                  : const Color(0xFFCCCCCC),
                         ),
                       ),
-                      if (widget.tamamlandi)
-                        const Icon(Icons.check_circle_rounded,
-                            color: Color(0xFF43A047), size: 22),
+                      Text(
+                        _altYazi,
+                        style: GoogleFonts.dmSans(
+                          fontSize: 10,
+                          color: aktif
+                              ? const Color(0xFFE24B4A).withValues(alpha: 0.6)
+                              : const Color(0xFFCCCCCC),
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 4),
-
-                  // ── Animasyonlu progress bar ──────────
-                  if (widget.oncekiTamamlandi && !widget.tamamlandi)
-                    GestureDetector(
-                      onTap: widget.onTap,
-                      child: AnimatedBuilder(
-                        animation: _progress,
-                        builder: (_, _) {
-                          final val = _progress.value;
-                          return Container(
-                            height: 32,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                  color: AppColors.primary
-                                      .withValues(alpha: 0.3),
-                                  width: 0.5),
-                              color: AppColors.surface,
-                            ),
-                            child: Stack(
-                              children: [
-                                // Yeşil dolgu
-                                FractionallySizedBox(
-                                  widthFactor: val,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF81C784)
-                                          .withValues(alpha: 0.35),
-                                      borderRadius:
-                                          BorderRadius.circular(20),
-                                    ),
-                                  ),
-                                ),
-                                // Etiket
-                                Center(
-                                  child: Text(
-                                    widget.benimOnayim
-                                        ? '✓ Onayladın'
-                                        : 'Onayla',
-                                    style: GoogleFonts.dmSans(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: widget.benimOnayim
-                                          ? const Color(0xFF43A047)
-                                          : AppColors.primary,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-
-                  // Tamamlanmış bar
-                  if (widget.tamamlandi)
-                    Container(
-                      height: 32,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        color: const Color(0xFF81C784).withValues(alpha: 0.2),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '✓ Anlaşıldı',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF43A047),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                  const SizedBox(height: 4),
-                  Text(
-                    _altYazi,
-                    style: GoogleFonts.dmSans(
-                        fontSize: 11, color: AppColors.textHint),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Normal Adım Satırı ────────────────────────────────────
-
-class _AdimSatiri extends StatelessWidget {
-  final IslemDurumu durum;
-  final bool tamamlandi;
-  final bool aktif;
-  final bool isaretleyebilir;
-  final bool sonMu;
-  final String ilanTip;
-  final VoidCallback? onTap;
-
-  const _AdimSatiri({
-    required this.durum,
-    required this.tamamlandi,
-    required this.aktif,
-    required this.isaretleyebilir,
-    required this.sonMu,
-    required this.ilanTip,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final Color renk = tamamlandi
-        ? const Color(0xFF43A047)
-        : aktif
-            ? AppColors.primary
-            : AppColors.textHint;
-
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 56,
-            child: Column(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: renk.withValues(
-                        alpha: tamamlandi ? 0.12 : 0.08),
-                    shape: BoxShape.circle,
-                    border: aktif && !tamamlandi
-                        ? Border.all(color: renk, width: 2)
-                        : null,
-                  ),
-                  child: Icon(durum.ikon, color: renk, size: 20),
                 ),
-                if (!sonMu)
-                  Expanded(
-                    child: Container(
-                      width: 2,
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      color: tamamlandi
-                          ? const Color(0xFF43A047).withValues(alpha: 0.3)
-                          : AppColors.divider,
-                    ),
-                  ),
+                if (widget.tamamlandi)
+                  const Icon(Icons.check_circle_rounded,
+                      color: Color(0xFF4CAF50), size: 20),
               ],
             ),
-          ),
-          Expanded(
-            child: Padding(
-              padding:
-                  EdgeInsets.only(left: 4, bottom: sonMu ? 0 : 20, top: 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          durum.etiket,
-                          style: GoogleFonts.dmSans(
-                            fontSize: 14,
-                            fontWeight: tamamlandi || aktif
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                            color: tamamlandi || aktif
-                                ? AppColors.textPrimary
-                                : AppColors.textHint,
+
+            // Animasyonlu onay butonu
+            if (aktif) ...[
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: widget.onTap,
+                child: AnimatedBuilder(
+                  animation: _progress,
+                  builder: (_, _) {
+                    return Container(
+                      height: 34,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                            color: const Color(0xFFE24B4A).withValues(alpha: 0.3),
+                            width: 1),
+                        color: const Color(0xFFFFF5F5),
+                      ),
+                      child: Stack(
+                        children: [
+                          FractionallySizedBox(
+                            widthFactor: _progress.value,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE24B4A)
+                                    .withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                            ),
                           ),
-                        ),
-                        Text(
-                          durum.kimYaparForTip(ilanTip),
-                          style: GoogleFonts.dmSans(
-                              fontSize: 11, color: AppColors.textHint),
-                        ),
-                      ],
+                          Center(
+                            child: Text(
+                              widget.benimOnayim
+                                  ? '✓ Onayladın'
+                                  : 'Onayla',
+                              style: GoogleFonts.dmSans(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFFE24B4A),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+
+            if (widget.tamamlandi) ...[
+              const SizedBox(height: 6),
+              Container(
+                height: 28,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  color: const Color(0xFFE8F5E9),
+                ),
+                child: Center(
+                  child: Text(
+                    '✓ Anlaşıldı',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF4CAF50),
                     ),
                   ),
-                  if (tamamlandi)
-                    const Icon(Icons.check_circle_rounded,
-                        color: Color(0xFF43A047), size: 22)
-                  else if (isaretleyebilir)
-                    GestureDetector(
-                      onTap: onTap,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text('İşaretle',
-                            style: GoogleFonts.dmSans(
-                                fontSize: 12,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600)),
-                      ),
-                    )
-                  else
-                    Container(
-                      width: 22,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                            color: AppColors.divider, width: 2),
-                      ),
-                    ),
-                ],
+                ),
               ),
-            ),
-          ),
-        ],
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -685,9 +719,9 @@ class _IslemDurumuTetikleyiciState
         pageBuilder: (ctx, anim, _) => Align(
           alignment: Alignment.centerRight,
           child: IslemDurumuPanel(
-              sohbetId: widget.sohbetId,
-              karsiKullaniciAd: widget.karsiKullaniciAd,
-            ), // IslemDurumuPanel
+            sohbetId: widget.sohbetId,
+            karsiKullaniciAd: widget.karsiKullaniciAd,
+          ),
         ),
         transitionsBuilder: (ctx, anim, _, child) => SlideTransition(
           position: Tween(begin: const Offset(1, 0), end: Offset.zero)
@@ -703,7 +737,10 @@ class _IslemDurumuTetikleyiciState
   Widget build(BuildContext context) {
     final durumlari =
         ref.watch(islemDurumuProvider(widget.sohbetId)).value ?? {};
-    final adimlar   = IlanTipiAdimlar.forTip(widget.ilanTip);
+    final tumAdimlar = IlanTipiAdimlar.forTip(widget.ilanTip);
+    final adimlar    = tumAdimlar
+        .where((a) => a != IslemDurumu.iletisimBasladi)
+        .toList();
     final tamamlanan = adimlar.where((d) {
       if (d.ikiTarafliMi) {
         final onaylar = durumlari.entries
@@ -729,14 +766,14 @@ class _IslemDurumuTetikleyiciState
           width: 28,
           height: 96,
           decoration: BoxDecoration(
-            color: const Color(0xFFE0E0E0),
+            color: const Color(0xFFE24B4A),
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(48),
               bottomLeft: Radius.circular(48),
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFE0E0E0).withValues(alpha: 0.45),
+                color: const Color(0xFFE24B4A).withValues(alpha: 0.4),
                 blurRadius: 14,
                 offset: const Offset(-4, 0),
               ),
@@ -746,12 +783,12 @@ class _IslemDurumuTetikleyiciState
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(Icons.chevron_left_rounded,
-                  color: Colors.black54, size: 20),
+                  color: Colors.white, size: 20),
               const SizedBox(height: 4),
               Text(
                 '$tamamlanan',
                 style: const TextStyle(
-                  color: Colors.black54,
+                  color: Colors.white,
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
                   height: 1,
@@ -760,13 +797,13 @@ class _IslemDurumuTetikleyiciState
               Container(
                 width: 12,
                 height: 1,
-                color: Colors.black26.withValues(alpha: 0.6),
+                color: Colors.white38,
                 margin: const EdgeInsets.symmetric(vertical: 2),
               ),
               Text(
                 '$toplam',
-                style: TextStyle(
-                  color: Colors.black45.withValues(alpha: 0.8),
+                style: const TextStyle(
+                  color: Colors.white70,
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
                   height: 1,

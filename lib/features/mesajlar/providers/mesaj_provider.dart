@@ -129,20 +129,12 @@ class SohbetNotifier extends _$SohbetNotifier {
   }
 
   Future<void> _baslat(String karsiKullaniciId) async {
-    // Dinleyici başlamadan önce sohbet dokümanının (en azından
-    // 'kullanicilar' alanıyla) var olduğunu garanti et — aksi hâlde
-    // ilk temasta güvenlik kuralı kontrolü hata verip dinleyici
-    // sessizce askıda kalıyordu.
-    try {
-      await _repo.sohbetVarliginiGarantiEt(
-        sohbetId: _sohbetId,
-        benimId: _benimId,
-        karsiId: karsiKullaniciId,
-      );
-    } catch (_) {
-      // Garanti adımı başarısız olsa bile dinlemeyi dene — en kötü
-      // ihtimalle eski davranışa (varsa çalışır) düşer.
-    }
+    // mesajGonder() zaten batch içinde sohbet dokümanını merge:true ile
+    // oluşturduğu için ayrıca bir "garanti" yazmasına gerek yok.
+    // Direkt dinlemeye başlıyoruz — ilk temasta güvenlik kuralı (sohbetKatilimcisiMi)
+    // doküman henüz yoksa false dönebilir, ama bu durumda mesajlar stream'i
+    // boş kalır (hata vermez), ilk mesaj gönderilince doküman oluşur ve
+    // stream otomatik güncellenir.
     if (ref.mounted) _mesajlariDinle();
   }
 
@@ -442,4 +434,9 @@ final sohbetIlanTipProvider =
 final sohbetKullanicilarProvider =
     StreamProvider.family<List<String>, String>((ref, sohbetId) {
   return ref.read(mesajRepositoryProvider).sohbetKullanicilarStream(sohbetId);
+});
+
+final sohbetIlanBaslikProvider =
+    StreamProvider.family<String, String>((ref, sohbetId) {
+  return ref.read(mesajRepositoryProvider).ilanBaslikStream(sohbetId);
 });

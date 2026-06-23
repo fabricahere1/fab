@@ -40,16 +40,6 @@ class MesajRepository {
   /// sebep oluyordu. Bu metod, dinleyici başlamadan önce çağrılarak
   /// dokümanın en azından bu alanla var olmasını garanti eder — mevcut
   /// veriyi bozmadan (merge: true).
-  Future<void> sohbetVarliginiGarantiEt({
-    required String sohbetId,
-    required String benimId,
-    required String karsiId,
-  }) async {
-    await _sohbetler.doc(sohbetId).set({
-      'kullanicilar': [benimId, karsiId],
-    }, SetOptions(merge: true));
-  }
-
   static FirebaseFunctions get _functions =>
       FirebaseFunctions.instanceFor(region: 'europe-west1');
 
@@ -356,6 +346,14 @@ class MesajRepository {
       if (!doc.exists) return <String>[];
       final d = doc.data() as Map<String, dynamic>;
       return List<String>.from(d['kullanicilar'] ?? []);
+    });
+  }
+
+  Stream<String> ilanBaslikStream(String sohbetId) {
+    return _sohbetler.doc(sohbetId).snapshots().map((doc) {
+      if (!doc.exists) return '';
+      final d = doc.data() as Map<String, dynamic>;
+      return (d['ilanBaslik'] as String?) ?? '';
     });
   }
 }
