@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/bildirim_repository.dart';
 import '../domain/bildirim_model.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../shared/utils/app_hata_yonetici.dart';
 
 part 'bildirim_provider.g.dart';
 
@@ -71,6 +72,6 @@ class BildirimNotifier extends _$BildirimNotifier {
         ilanBaslik: ilanBaslik,
         sohbetId: sohbetId,
       );
-    } catch (_) {}
+    } catch (e, s) { AppHataYonetici.logla(e, s, etiket: 'bildirimProvider'); }
   }
 }

@@ -177,7 +177,7 @@ class IslemDurumuService {
         'gondereId':   benimUid,
         'gondereAd':   benimAd,
       });
-    } catch (_) {}
+    } catch (e, s) { AppHataYonetici.logla(e, s, etiket: 'islemDurumuService.bildirim'); }
   }
 
   Future<void> _durumBildirimiGonder({
@@ -211,7 +211,7 @@ class IslemDurumuService {
           'gondereAd':   karsiAd,
         });
       }
-    } catch (_) {}
+    } catch (e, s) { AppHataYonetici.logla(e, s, etiket: 'islemDurumuService.bildirim'); }
   }
 
   void dispose() {

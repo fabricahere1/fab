@@ -18,6 +18,7 @@ import 'package:iste_v3/features/ilanlar/domain/ilan_model.dart';
 import 'package:iste_v3/features/home/providers/kesfet_vitrin2_providers.dart';
 import 'package:iste_v3/features/home/providers/son_goruntulenenler_provider.dart';
 import 'package:iste_v3/features/home/presentation/kesfet_bolum_detay_screen.dart';
+import 'package:iste_v3/features/ilanlar/presentation/gelenler_screen.dart';
 import 'package:iste_v3/router/app_router.dart';
 
 // ── Güzergah kartı bulutlu gökyüzü painter ───────────────────────────────────
@@ -476,88 +477,183 @@ class _UcakPainter extends CustomPainter {
   bool shouldRepaint(covariant _UcakPainter old) => old.renk != renk;
 }
 
-// ── 3) Bu Hafta Hangi Şehirlerden Geliyor ────────────────────────────────────
+// ── 3) Bu Hafta Nerelerden Geliyorlar ────────────────────────────────────────
 
-class _SehirlerBolum extends StatelessWidget {
+class _SehirlerBolum extends StatefulWidget {
   final List<SehirSatiri> sehirler;
   const _SehirlerBolum({required this.sehirler});
+
+  @override
+  State<_SehirlerBolum> createState() => _SehirlerBolumState();
+}
+
+class _SehirlerBolumState extends State<_SehirlerBolum>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _anim = CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic);
+    // Biraz gecikmeyle başlat — ekrana gelince tetiklenmiş gibi hissettirir
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) _ctrl.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   static const _bayraklar = <String, String>{
     'new york': '🇺🇸', 'los angeles': '🇺🇸', 'chicago': '🇺🇸', 'miami': '🇺🇸',
     'houston': '🇺🇸', 'boston': '🇺🇸', 'san francisco': '🇺🇸', 'washington': '🇺🇸',
-    'usa': '🇺🇸', 'abd': '🇺🇸', 'new jersey': '🇺🇸', 'seattle': '🇺🇸',
-    'londra': '🇬🇧', 'london': '🇬🇧', 'manchester': '🇬🇧', 'uk': '🇬🇧', 'ingiltere': '🇬🇧',
-    'paris': '🇫🇷', 'lyon': '🇫🇷', 'fransa': '🇫🇷',
-    'berlin': '🇩🇪', 'münih': '🇩🇪', 'frankfurt': '🇩🇪', 'almanya': '🇩🇪',
-    'amsterdam': '🇳🇱', 'hollanda': '🇳🇱',
-    'dubai': '🇦🇪', 'abu dhabi': '🇦🇪', 'bae': '🇦🇪',
+    'usa': '🇺🇸', 'abd': '🇺🇸', 'new jersey': '🇺🇸', 'seattle': '🇺🇸', 'amerika': '🇺🇸',
+    'londra': '🇬🇧', 'london': '🇬🇧', 'manchester': '🇬🇧', 'ingiltere': '🇬🇧', 'birmingham': '🇬🇧',
+    'paris': '🇫🇷', 'lyon': '🇫🇷', 'fransa': '🇫🇷', 'marsilya': '🇫🇷',
+    'berlin': '🇩🇪', 'münih': '🇩🇪', 'frankfurt': '🇩🇪', 'almanya': '🇩🇪', 'hamburg': '🇩🇪',
+    'amsterdam': '🇳🇱', 'hollanda': '🇳🇱', 'rotterdam': '🇳🇱',
+    'dubai': '🇦🇪', 'abu dhabi': '🇦🇪', 'bae': '🇦🇪', 'sharjah': '🇦🇪',
     'tokyo': '🇯🇵', 'osaka': '🇯🇵', 'japonya': '🇯🇵',
-    'milano': '🇮🇹', 'roma': '🇮🇹', 'italya': '🇮🇹',
+    'milano': '🇮🇹', 'roma': '🇮🇹', 'italya': '🇮🇹', 'venedik': '🇮🇹',
     'madrid': '🇪🇸', 'barcelona': '🇪🇸', 'ispanya': '🇪🇸',
-    'stockholm': '🇸🇪', 'isveç': '🇸🇪',
+    'stockholm': '🇸🇪', 'isveç': '🇸🇪', 'göteborg': '🇸🇪',
     'zürih': '🇨🇭', 'cenevre': '🇨🇭', 'isviçre': '🇨🇭',
-    'toronto': '🇨🇦', 'vancouver': '🇨🇦', 'kanada': '🇨🇦',
+    'toronto': '🇨🇦', 'vancouver': '🇨🇦', 'kanada': '🇨🇦', 'montreal': '🇨🇦',
     'sidney': '🇦🇺', 'melbourne': '🇦🇺', 'avustralya': '🇦🇺',
     'seul': '🇰🇷', 'güney kore': '🇰🇷',
     'şangay': '🇨🇳', 'pekin': '🇨🇳', 'çin': '🇨🇳',
+    'ukrayna': '🇺🇦', 'kiev': '🇺🇦', 'kyiv': '🇺🇦',
+    'atina': '🇬🇷', 'yunanistan': '🇬🇷', 'selanik': '🇬🇷',
+    'moskova': '🇷🇺', 'rusya': '🇷🇺', 'sankt petersburg': '🇷🇺',
+    'varşova': '🇵🇱', 'polonya': '🇵🇱',
+    'prag': '🇨🇿', 'çek': '🇨🇿',
+    'budapeşte': '🇭🇺', 'macaristan': '🇭🇺',
+    'bükreş': '🇷🇴', 'romanya': '🇷🇴',
+    'sofya': '🇧🇬', 'bulgaristan': '🇧🇬',
+    'belgrad': '🇷🇸', 'sırbistan': '🇷🇸',
+    'mumbai': '🇮🇳', 'delhi': '🇮🇳', 'hindistan': '🇮🇳', 'bangalore': '🇮🇳',
+    'bangkok': '🇹🇭', 'tayland': '🇹🇭',
+    'singapur': '🇸🇬',
+    'hong kong': '🇭🇰',
+    'riyad': '🇸🇦', 'cidde': '🇸🇦', 'suudi arabistan': '🇸🇦',
+    'kuveyt': '🇰🇼',
+    'doha': '🇶🇦', 'katar': '🇶🇦',
   };
 
-  String _bayrak(String sehir) {
+  // Tam kelime eşleşmesi — "uk" içeren her şeyin İngiltere bayrağı almaması için
+  String? _bayrak(String sehir) {
     final k = sehir.toLowerCase().trim();
-    for (final e in _bayraklar.entries) { if (k.contains(e.key)) return e.value; }
-    return '✈️';
+    // Önce tam eşleşme dene
+    if (_bayraklar.containsKey(k)) return _bayraklar[k];
+    // Sonra "içeriyor mu" kontrolü — ama kısa anahtarlar (3 harf ve altı) için tam eşleşme şartı
+    for (final e in _bayraklar.entries) {
+      if (e.key.length <= 3) {
+        if (k == e.key) return e.value;
+      } else {
+        if (k.contains(e.key)) return e.value;
+      }
+    }
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
-    final maxIlan = sehirler.first.ilanSayisi;
+    final maxIlan = widget.sehirler.first.ilanSayisi;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _bolumBaslik(baslik: 'Bu hafta hangi şehirlerden geliyor', ikon: Icons.location_on_outlined),
+        _bolumBaslik(baslik: 'Bu hafta nerelerden geliyorlar', ikon: Icons.location_on_outlined),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            children: List.generate(sehirler.length, (i) {
-              final s = sehirler[i];
-              final oran = maxIlan > 0 ? s.ilanSayisi / maxIlan : 0.0;
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFEEEEEE), width: 0.8),
-                ),
-                child: Row(children: [
-                  SizedBox(width: 22, child: Text('${i + 1}',
-                      style: GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w700,
-                          color: i < 3 ? AppColors.red : AppColors.textHint))),
-                  Text(_bayrak(s.sehir), style: const TextStyle(fontSize: 18)),
-                  const SizedBox(width: 10),
-                  Expanded(child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(s.sehir, style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis),
-                      const SizedBox(height: 4),
-                      ClipRRect(borderRadius: BorderRadius.circular(2),
-                        child: LinearProgressIndicator(
-                          value: oran,
-                          backgroundColor: AppColors.divider.withValues(alpha: 0.4),
-                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.red.withValues(alpha: 0.4 + oran * 0.6)),
-                          minHeight: 3,
-                        )),
-                    ],
-                  )),
-                  const SizedBox(width: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.divider, width: 0.5)),
-                    child: Text('${s.ilanSayisi} ilan', style: GoogleFonts.dmSans(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+          child: AnimatedBuilder(
+            animation: _anim,
+            builder: (context, _) => Column(
+              children: List.generate(widget.sehirler.length, (i) {
+                final s = widget.sehirler[i];
+                final oran = maxIlan > 0 ? s.ilanSayisi / maxIlan : 0.0;
+                final bayrak = _bayrak(s.sehir);
+                return GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => GelenlerScreen(
+                        initialNereden: s.sehir,
+                      ),
+                    ),
                   ),
-                ]),
-              );
-            }),
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFEEEEEE), width: 0.8),
+                    ),
+                    child: Row(children: [
+                      SizedBox(width: 22, child: Text('${i + 1}',
+                          style: GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w700,
+                              color: i < 3 ? AppColors.red : AppColors.textHint))),
+                      bayrak != null
+                          ? Text(bayrak, style: const TextStyle(fontSize: 18))
+                          : const Icon(Icons.public_outlined, size: 20, color: AppColors.textSecondary),
+                      const SizedBox(width: 10),
+                      Expanded(child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(s.sehir,
+                            style: GoogleFonts.dmSans(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,  // w600 → w400
+                              color: AppColors.textPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(2),
+                            child: LinearProgressIndicator(
+                              value: oran * _anim.value,  // 0'dan animasyonlu dolar
+                              backgroundColor: AppColors.divider.withValues(alpha: 0.3),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.red.withValues(alpha: 0.3 + oran * 0.5),
+                              ),
+                              minHeight: 2,  // 3 → 2
+                            ),
+                          ),
+                        ],
+                      )),
+                      const SizedBox(width: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.divider, width: 0.5),
+                        ),
+                        child: Text('İlanlar',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.chevron_right, size: 16, color: AppColors.textHint),
+                    ]),
+                  ),
+                );
+              }),
+            ),
           ),
         ),
       ],

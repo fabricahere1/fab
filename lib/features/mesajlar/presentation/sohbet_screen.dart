@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../../../shared/utils/app_hata_yonetici.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -70,7 +71,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
     try {
       await ref.read(islemDurumuIslemleriProvider(_sohbetId).notifier)
           .guncelle('iletisimBasladi');
-    } catch (_) {}
+    } catch (e, s) { AppHataYonetici.logla(e, s, etiket: 'sohbetScreen'); }
   }
 
   void _panelAc() {

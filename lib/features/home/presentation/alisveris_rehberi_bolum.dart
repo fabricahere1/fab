@@ -24,15 +24,15 @@ class _Kategori {
 class _Sehir {
   final String id;
   final String ad;
-  final String bayrak;
+  final String resimYolu;
   final String baslik;
   final List<_Kategori> kategoriler;
-  const _Sehir(this.id, this.ad, this.bayrak, this.baslik, this.kategoriler);
+  const _Sehir(this.id, this.ad, this.resimYolu, this.baslik, this.kategoriler);
 }
 
 final _sehirler = <_Sehir>[
 
-  _Sehir('ny', 'New York', '🗽', "New York'tan gelecek taşıyıcıdan ne istenir?", [
+  _Sehir('ny', 'New York', 'assets/images/rehber/new_york.png', "New York'tan gelecek taşıyıcıdan ne istenir?", [
     _Kategori('Ayakkabı & Spor', Symbols.steps, [
       _Urun('Nike / Jordan özel seri', "Türkiye'ye gelmeyen colorway'ler, outlet'te %40-60 ucuz", _TagTipi.ozel),
       _Urun('New Balance 9060', "Nordstrom Rack'te indirimli, Türkiye fiyatının yarısı", _TagTipi.ucuz),
@@ -82,7 +82,7 @@ final _sehirler = <_Sehir>[
     ]),
   ]),
 
-  _Sehir('london', 'Londra', '🎡', "Londra'dan gelecek taşıyıcıdan ne istenir?", [
+  _Sehir('london', 'Londra', 'assets/images/rehber/londra.png', "Londra'dan gelecek taşıyıcıdan ne istenir?", [
     _Kategori('Giyim & Moda', Symbols.styler, [
       _Urun('ASOS özel seri', "Sale'de Türkiye fiyatının çok altında", _TagTipi.ucuz),
       _Urun('Burberry outlet', "Bicester Village'da %50-70 indirim", _TagTipi.populer),
@@ -110,7 +110,7 @@ final _sehirler = <_Sehir>[
     ]),
   ]),
 
-  _Sehir('paris', 'Paris', '🗼', "Paris'ten gelecek taşıyıcıdan ne istenir?", [
+  _Sehir('paris', 'Paris', 'assets/images/rehber/paris.png', "Paris'ten gelecek taşıyıcıdan ne istenir?", [
     _Kategori('Lüks Moda', Symbols.shopping_bag, [
       _Urun('Longchamp Le Pliage', "Paris'te Türkiye'ye göre %25-30 ucuz", _TagTipi.populer),
       _Urun('APC giyim', "Fransız minimal moda markası, Türkiye'de yok", _TagTipi.ozel),
@@ -138,7 +138,7 @@ final _sehirler = <_Sehir>[
     ]),
   ]),
 
-  _Sehir('tokyo', 'Tokyo', '🗾', "Tokyo'dan gelecek taşıyıcıdan ne istenir?", [
+  _Sehir('tokyo', 'Tokyo', 'assets/images/rehber/tokyo.png', "Tokyo'dan gelecek taşıyıcıdan ne istenir?", [
     _Kategori('Oyun & Anime', Symbols.sports_esports, [
       _Urun('Nintendo Switch Japonya exclusive', "Japonya'ya özel oyunlar, Türkiye'de yok", _TagTipi.ozel),
       _Urun('Pokemon Center ürünleri', "Türkiye'de yok, orijinal koleksiyon", _TagTipi.populer),
@@ -165,7 +165,7 @@ final _sehirler = <_Sehir>[
     ]),
   ]),
 
-  _Sehir('dubai', 'Dubai', '🌆', "Dubai'den gelecek taşıyıcıdan ne istenir?", [
+  _Sehir('dubai', 'Dubai', 'assets/images/rehber/dubai.png', "Dubai'den gelecek taşıyıcıdan ne istenir?", [
     _Kategori('Duty Free & Parfüm', Symbols.flight_takeoff, [
       _Urun('Creed Aventus', "Dubai Duty Free'de Türkiye fiyatının %50 altında", _TagTipi.populer),
       _Urun('Amouage Gold / Interlude', "Orta Doğu'da üretilen lüks parfüm, Türkiye'de çok pahalı", _TagTipi.ozel),
@@ -190,7 +190,7 @@ final _sehirler = <_Sehir>[
     ]),
   ]),
 
-  _Sehir('berlin', 'Berlin', '🐻', "Berlin'den gelecek taşıyıcıdan ne istenir?", [
+  _Sehir('berlin', 'Berlin', 'assets/images/rehber/berlin.png', "Berlin'den gelecek taşıyıcıdan ne istenir?", [
     _Kategori('Giyim', Symbols.styler, [
       _Urun('Zalando outlet', "Almanya'da ucuz, Türkiye'ye kargo yok", _TagTipi.ucuz),
       _Urun('Adidas Almanya özel seri', "Alman markası, özel renkler ve koleksiyonlar", _TagTipi.ozel),
@@ -210,7 +210,7 @@ final _sehirler = <_Sehir>[
     ]),
   ]),
 
-  _Sehir('milano', 'Milano', '🏛️', "Milano'dan gelecek taşıyıcıdan ne istenir?", [
+  _Sehir('milano', 'Milano', 'assets/images/rehber/milano.png', "Milano'dan gelecek taşıyıcıdan ne istenir?", [
     _Kategori('Deri & Çanta', Symbols.shopping_bag, [
       _Urun('Furla çanta', "İtalyan deri çanta, Türkiye'de 2x pahalı", _TagTipi.ucuz),
       _Urun('Coccinelle çanta', "Milano'da Türkiye'nin yarısı", _TagTipi.ucuz),
@@ -218,7 +218,7 @@ final _sehirler = <_Sehir>[
       _Urun('Bottega Veneta aksesuar', "İtalya'da %20-25 ucuz", _TagTipi.ucuz),
     ]),
     _Kategori('Ayakkabı', Symbols.steps, [
-      _Urun('Tod''s loafer', "İtalyan el yapımı ayakkabı, üretildiği ülkede ucuz", _TagTipi.ucuz),
+      _Urun("Tod's loafer", "İtalyan el yapımı ayakkabı, üretildiği ülkede ucuz", _TagTipi.ucuz),
       _Urun('Geox & Camper', "İtalyan konfor ayakkabı, Türkiye'de 2x pahalı", _TagTipi.ucuz),
       _Urun('Golden Goose sneaker', "İtalyan sneaker, Türkiye'de çok pahalı", _TagTipi.ucuz),
       _Urun('Premiata sneaker', "İtalyan tasarım, Türkiye'de yok", _TagTipi.ozel),
@@ -229,7 +229,7 @@ final _sehirler = <_Sehir>[
     ]),
   ]),
 
-  _Sehir('seul', 'Seul', '🇰🇷', "Seul'den gelecek taşıyıcıdan ne istenir?", [
+  _Sehir('seul', 'Seul', 'assets/images/rehber/seul.png', "Seul'den gelecek taşıyıcıdan ne istenir?", [
     _Kategori('K-Beauty', Symbols.experiment, [
       _Urun('Laneige Water Sleeping Mask', "Kore'de üretiliyor, Türkiye'ye göre %50 ucuz", _TagTipi.ucuz),
       _Urun('COSRX Advanced Snail', "Salyangoz özlü serum, Türkiye'de sahte çok", _TagTipi.populer),
@@ -285,11 +285,15 @@ class _AlisverisRehberiBolumState extends State<AlisverisRehberiBolum> {
             const Icon(Symbols.travel_explore, size: 16, color: AppColors.red),
             const SizedBox(width: 6),
             Text('İstekçi rehberi',
-                style: GoogleFonts.notoSans(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
+                style: GoogleFonts.notoSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.textPrimary)),
           ]),
         ),
+        // ── Şehir seçim listesi ──────────────────────────────────
         SizedBox(
-          height: 78,
+          height: 96,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -302,26 +306,58 @@ class _AlisverisRehberiBolumState extends State<AlisverisRehberiBolum> {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
                   margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  width: 100,
                   decoration: BoxDecoration(
-                    color: aktif ? Colors.white : AppColors.surface,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: aktif ? AppColors.red : AppColors.divider,
-                      width: aktif ? 1.5 : 0.5,
+                      color: aktif ? AppColors.red : Colors.transparent,
+                      width: aktif ? 2 : 0,
                     ),
                   ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(s.bayrak, style: const TextStyle(fontSize: 22)),
-                      const SizedBox(height: 4),
-                      Text(s.ad,
-                          style: GoogleFonts.dmSans(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(aktif ? 10 : 12),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.asset(
+                          s.resimYolu,
+                          fit: BoxFit.fill,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: AppColors.surface,
+                            child: const Icon(Icons.location_city_outlined,
+                                color: AppColors.textHint),
+                          ),
+                        ),
+                        // Gradient overlay
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withValues(alpha: aktif ? 0.75 : 0.55),
+                              ],
+                            ),
+                          ),
+                        ),
+                        // Şehir adı
+                        Positioned(
+                          bottom: 6,
+                          left: 6,
+                          right: 6,
+                          child: Text(
+                            s.ad,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.dmSans(
                               fontSize: 10,
                               fontWeight: aktif ? FontWeight.w600 : FontWeight.w400,
-                              color: aktif ? AppColors.red : AppColors.textSecondary)),
-                    ],
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -332,7 +368,10 @@ class _AlisverisRehberiBolumState extends State<AlisverisRehberiBolum> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(sehir.baslik,
-              style: GoogleFonts.dmSans(fontSize: 12, color: AppColors.textSecondary)),
+              style: GoogleFonts.dmSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.textSecondary)),
         ),
         const SizedBox(height: 8),
         Padding(
@@ -388,7 +427,10 @@ class _KategoriKarti extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(kategori.ad,
-                      style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                      style: GoogleFonts.dmSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary)),
                 ),
                 AnimatedRotation(
                   turns: acik ? 0.5 : 0,
@@ -421,9 +463,18 @@ class _KategoriKarti extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(u.ad, style: GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                              Text(u.ad,
+                                  style: GoogleFonts.dmSans(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: AppColors.textPrimary)),
                               const SizedBox(height: 2),
-                              Text(u.aciklama, style: GoogleFonts.dmSans(fontSize: 11, color: AppColors.textSecondary, height: 1.4)),
+                              Text(u.aciklama,
+                                  style: GoogleFonts.dmSans(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w400,
+                                      color: AppColors.textSecondary,
+                                      height: 1.4)),
                             ],
                           ),
                         ),
@@ -461,7 +512,9 @@ class _Tag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)),
-      child: Text(metin, style: GoogleFonts.dmSans(fontSize: 9, fontWeight: FontWeight.w600, color: renk)),
+      child: Text(metin,
+          style: GoogleFonts.dmSans(
+              fontSize: 9, fontWeight: FontWeight.w600, color: renk)),
     );
   }
 }

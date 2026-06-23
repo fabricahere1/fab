@@ -1,3 +1,4 @@
+import '../../../shared/utils/app_hata_yonetici.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -111,7 +112,7 @@ class DegerlendirmeKarti extends ConsumerWidget {
         const aylar = ['', 'Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz',
             'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
         tarihYazi = '${dt.day} ${aylar[dt.month]} ${dt.year}';
-      } catch (_) {}
+      } catch (e, s) { AppHataYonetici.logla(e, s, etiket: 'degerlendirmelerListeScreen'); }
     }
 
     final profilAsync = ref.watch(kullaniciBilgiProvider(degerlendireninId));

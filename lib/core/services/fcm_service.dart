@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'banner_service.dart';
+import '../../shared/utils/app_hata_yonetici.dart';
 import '../../shared/constants/app_constants.dart';
 
 /// Tüm FCM sorumluluğu bu sınıftadır.
@@ -37,7 +39,19 @@ class FcmService {
     required void Function(RemoteMessage) onBildirimAc,
   }) async {
     // 1. İzin iste (iOS + Android 13+)
-    await _messaging.requestPermission();
+    final izin = await _messaging.requestPermission();
+    if (kDebugMode) {
+      debugPrint('FCM izin durumu: ${izin.authorizationStatus}');
+    }
+    // Kullanıcı reddettiyse bildirimler çalışmayacak — sessizce devam et,
+    // ama Crashlytics'e logla ki production'da kaç kullanıcı reddettiğini görelim.
+    if (izin.authorizationStatus == AuthorizationStatus.denied) {
+      AppHataYonetici.logla(
+        Exception('FCM izni reddedildi'),
+        null,
+        etiket: 'fcm.izin_reddedildi',
+      );
+    }
 
     // 2. Kullanıcı giriş/çıkış yaptıkça token kaydet / sil
     _authSub = _auth.authStateChanges().listen(_authDegisti);

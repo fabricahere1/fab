@@ -86,7 +86,14 @@ IlanModel _gHittenIlan(Map<String, dynamic> hit) {
 class GelenlerScreen extends ConsumerStatefulWidget {
   final bool embedded;
   final List<String> initialKategoriYolu;
-  const GelenlerScreen({super.key, this.embedded = false, this.initialKategoriYolu = const []});
+  final String initialNereden;
+
+  const GelenlerScreen({
+    super.key,
+    this.embedded = false,
+    this.initialKategoriYolu = const [],
+    this.initialNereden = '',
+  });
 
   @override
   ConsumerState<GelenlerScreen> createState() => _GelenlerScreenState();
@@ -102,6 +109,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
   bool                _aramaGizli        = false;
   app_constants.SiralamaTipi    _siralama          = app_constants.SiralamaTipi.enYeni;
   List<String>        _seciliSehirler    = [];
+  String              _nerdenUlkeSehir   = '';  // nereden filtresi (şehirden geliyor)
   _GAlgoliaState      _algoliaState      = const _GAlgoliaState();
 
   @override
@@ -113,6 +121,9 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
     _scrollController.addListener(_onScroll);
     if (widget.initialKategoriYolu.isNotEmpty) {
       _seciliKategoriYolu = List<String>.from(widget.initialKategoriYolu);
+    }
+    if (widget.initialNereden.isNotEmpty) {
+      _nerdenUlkeSehir = widget.initialNereden;
     }
     _algoliaYukle(sifirla: true);
   }
@@ -150,6 +161,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
         seciliAltKeyler: _seciliAltKeyler,
         sehirler:        _seciliSehirler,
         ulkeSehir:       _seciliUlkeSehir,
+        nerdenUlkeSehir: _nerdenUlkeSehir,
         siralama:        _siralama.algoliaKey,
         ilanTipi:        'tasiyici',
         sayfa:           sayfa,
@@ -336,7 +348,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                       child: const Icon(
                         Symbols.favorite,
                         color: AppColors.textPrimary,
-                        size: 24,
+                        size: 20,
                         weight: 200,
                         fill: 0,
                       ),
@@ -693,19 +705,6 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                 controller: _scrollController,
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
-                        child: Image.asset(
-                          'assets/images/gelenler_banner.png',
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                  ),
                   SliverPadding(
                     padding: const EdgeInsets.only(top: 10),
                     sliver: listeWidget,

@@ -281,7 +281,7 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
         pageBuilder: (_, _, _) => TurkiyeDisiAramaEkrani(
           mevcutSecim: _modalUlkeSehir,
         ),
-        transitionsBuilder: (_, anim, __, child) =>
+        transitionsBuilder: (_, anim, _, child) =>
             FadeTransition(opacity: anim, child: child),
         transitionDuration: const Duration(milliseconds: 200),
       ),
