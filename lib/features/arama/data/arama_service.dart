@@ -274,10 +274,10 @@ Future<AlgoliaFiltreSonucu> algoliaFiltrele({
     'hitsPerPage': hitsPerPage,
     'page': sayfa,
     'attributesToRetrieve': [
-      'objectID', 'urun', 'nereden', 'nereye', 'kategori',
-      'anaKategori', 'kategoriYolu', 'tip', 'aktif', 'durum',
-      'resimUrl', 'olusturmaTarihi',
-    ],
+  'objectID', 'urun', 'nereden', 'nereye', 'kategori',
+  'anaKategori', 'kategoriYolu', 'tip', 'aktif', 'durum',
+  'resimUrl', 'olusturmaTarihi', 'kullaniciId', 'kullaniciAd',
+],
     'facets': ['anaKategori'],
   };
 

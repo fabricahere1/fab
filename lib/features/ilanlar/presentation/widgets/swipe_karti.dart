@@ -272,10 +272,12 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
       return _BosSonucEkrani(onYenile: widget.onDahaFazla);
     }
 
-    final favIdler = ref.watch(favoriliIlanIdlerProvider);
-    final mevcut   = _mevcutIlan!;
-    final sonraki  = _sonrakiIlan;
-    final isFav    = favIdler.contains(mevcut.id);
+    final favIdler    = ref.watch(favoriliIlanIdlerProvider);
+    final uid          = ref.watch(currentUserProvider)?.uid;
+    final mevcut       = _mevcutIlan!;
+    final sonraki      = _sonrakiIlan;
+    final isFav        = favIdler.contains(mevcut.id);
+    final gosterFavori = uid != null && uid != mevcut.kullaniciId;
 
     // Geri alma sırasında arka kartta önceki ilanı göster
     final arkaIlan = _geriAlAnimasyonu
@@ -326,11 +328,12 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
                     child: _OnKart(
                       ilan:        mevcut,
                       isFav:       isFav,
+                      gosterFavori: gosterFavori,
                       idx:         _idx,
                       toplam:      widget.ilanlar.length,
                       suruklenmeX: x,
                       favScale:    _favScale,
-                      onFav:       () => _favToggle(mevcut),
+                      onFav:       gosterFavori ? () => _favToggle(mevcut) : null,
                     ),
                   ),
                 ),
@@ -371,7 +374,7 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
 
                 _FavorileButon(
                   aktif: isFav,
-                  onTap: () => _favToggle(mevcut),
+                  onTap: gosterFavori ? () => _favToggle(mevcut) : null,
                 ),
 
                 _AltButon(
@@ -455,20 +458,22 @@ class _BosSonucEkrani extends StatelessWidget {
 class _OnKart extends StatelessWidget {
   final IlanModel ilan;
   final bool isFav;
+  final bool gosterFavori;
   final int idx;
   final int toplam;
   final double suruklenmeX;
   final Animation<double> favScale;
-  final VoidCallback onFav;
+  final VoidCallback? onFav;
 
   const _OnKart({
     required this.ilan,
     required this.isFav,
+    this.gosterFavori = true,
     required this.idx,
     required this.toplam,
     required this.suruklenmeX,
     required this.favScale,
-    required this.onFav,
+    this.onFav,
   });
 
   @override
@@ -703,18 +708,19 @@ class _OnKart extends StatelessWidget {
           ),
         ),
 
-        // Kalp animasyonu
-        Positioned.fill(
-          child: IgnorePointer(
-            child: Center(
-              child: ScaleTransition(
-                scale: favScale,
-                child: const Text('❤️',
-                    style: TextStyle(fontSize: 80)),
+        // Kalp animasyonu — sadece favorileme mümkünse gösterilir
+        if (gosterFavori)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Center(
+                child: ScaleTransition(
+                  scale: favScale,
+                  child: const Text('❤️',
+                      style: TextStyle(fontSize: 80)),
+                ),
               ),
             ),
           ),
-        ),
         ],
       ),
     );
@@ -820,13 +826,15 @@ class _AltButon extends StatelessWidget {
 
 class _FavorileButon extends StatelessWidget {
   final bool aktif;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
-  const _FavorileButon({required this.aktif, required this.onTap});
+  const _FavorileButon({required this.aktif, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Opacity(
+      opacity: onTap == null ? 0.3 : 1,
+      child: GestureDetector(
       onTap: onTap,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -891,6 +899,7 @@ class _FavorileButon extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

@@ -477,7 +477,12 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                   if (i == 0) {
                     final secili = _seciliAnaKey == null;
                     return GestureDetector(
-                      onTap: () => setState(() => _seciliKategoriYolu = []),
+                      onTap: () => _filtreUygula(() {
+                        _seciliKategoriYolu = [];
+                        _seciliAltKeyler    = [];
+                        _seciliSehirler     = [];
+                        _seciliUlkeSehir    = '';
+                      }),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 180),
                         margin: const EdgeInsets.only(right: 6),

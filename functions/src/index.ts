@@ -288,6 +288,8 @@ export const ilanModerasyonu = functions
             tip:             data.tip          ?? "",
             aktif:           true,
             durum:           "yayinda",
+            kullaniciId:        data.kullaniciId ?? "",
+            kullaniciAd:        data.kullaniciAd ?? "",
             resimUrl:           resimUrller.length > 0 ? resimUrller[0] : (data.resimUrl ?? ""),
             olusturmaTarihi:    data.olusturmaTarihi?.toMillis() ?? Date.now(),
             favoriSayisi:       data.favoriSayisi       ?? 0,
@@ -404,6 +406,8 @@ export const ilanGuncellendi = functions
           tip:                data.tip               ?? "",
           aktif:              data.aktif             ?? false,
           durum:              data.durum             ?? "onayBekliyor",
+          kullaniciId:        data.kullaniciId        ?? "",
+          kullaniciAd:        data.kullaniciAd        ?? "",
           resimUrl:           (data.resimUrller && data.resimUrller.length > 0)
                                 ? data.resimUrller[0] : (data.resimUrl ?? ""),
           olusturmaTarihi:    data.olusturmaTarihi?.toMillis() ?? Date.now(),
@@ -470,6 +474,8 @@ export const algoliaTopluAktar = functions
         tip:             data.tip          ?? "",
         aktif:           data.aktif        ?? false,
         durum:           data.durum        ?? "onayBekliyor",
+        kullaniciId:        data.kullaniciId ?? "",
+        kullaniciAd:        data.kullaniciAd ?? "",
         resimUrl:           (data.resimUrller && data.resimUrller.length > 0)
                               ? data.resimUrller[0] : (data.resimUrl ?? ""),
         olusturmaTarihi:    data.olusturmaTarihi?.toMillis() ?? Date.now(),

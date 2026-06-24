@@ -538,6 +538,7 @@ class FavoriNotifier extends _$FavoriNotifier {
   Future<void> ekle(IlanModel ilan) async {
     final uid = _uid;
     if (uid.isEmpty) return;
+    if (ilan.kullaniciId == uid) return; // kendi ilanını favorileyemezsin
     ref.read(optimistikFavoriProvider.notifier).ekle(ilan.id);
     try {
       await _repo.favoriyeEkle(kullaniciId: uid, ilan: ilan);
