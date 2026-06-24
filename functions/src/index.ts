@@ -356,7 +356,12 @@ export const ilanGuncellemeModerasyon = functions
       once.nereden !== sonra.nereden ||
       once.nereye  !== sonra.nereye  ||
       JSON.stringify(once.resimUrller ?? []) !== JSON.stringify(sonra.resimUrller ?? []);
-    if (!icerikDegisti) return;
+    // İlan reddedilmiş durumdaysa, kullanıcı "Düzenle"ye basıp kaydettiğinde
+    // izlenen alanlardan hiçbiri teknik olarak değişmemiş olsa bile (örn. sadece
+    // geo alanları aynı bırakılmışsa) moderasyonu yeniden çalıştırıyoruz — aksi
+    // halde reddedilen bir ilan, kullanıcı tekrar denese de sonsuza dek reddedilmiş kalır.
+    const yenidenDenenmeliMi = sonra.durum === "reddedildi";
+    if (!icerikDegisti && !yenidenDenenmeliMi) return;
 
     const ilanRef           = db.collection("ilanlar").doc(ilanId);
     const oncedenReddedilmis = sonra.durum === "reddedildi";
