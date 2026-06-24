@@ -68,8 +68,14 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
 
   bool? _basarili;
   bool  _overlayAktif = false;
+  String? _hataMesaji;
 
-  static final List<String> _ulkeSehirListesi = [...kDunyaUlkeleri, ...kDunyaSehirleri];
+  // "Nereye" için öneri listesi: tüm Türkiye illeri (81) + yabancı şehirler.
+  // Listede olmayan bir değer de artık serbestçe kabul ediliyor (bkz. _adimGecerli).
+  static final List<String> _nereyeOneriListesi = [
+    ...kTurkiyeSehirleri,
+    ...kDunyaSehirleri.where((s) => !kTurkiyeSehirleri.contains(s)),
+  ];
 
   bool get _istekMi         => widget.tip == IlanTip.istek;
   bool get _duzenlemeModuMu => widget.duzenlenecekIlan != null;
@@ -147,9 +153,6 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
     }
   }
 
-  bool _listedeVarMi(String deger) => _ulkeSehirListesi
-      .any((s) => s.toLowerCase() == deger.trim().toLowerCase());
-
   bool _adimGecerli(int adim) {
     if (adim == 0) {
       if (_istekMi && _urunCtrl.text.trim().isEmpty) {
@@ -177,23 +180,26 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
         if (_neredenCtrl.text.trim().isEmpty) {
           _snack('Nereden alanını doldurun.'); return false;
         }
-        if (!_listedeVarMi(_neredenCtrl.text)) {
-          _snack('Listeden geçerli bir ülke/şehir seçin.'); return false;
+        if (!kDunyaUlkeleri.any((u) =>
+            u.toLowerCase() == _neredenCtrl.text.trim().toLowerCase())) {
+          _snack('Listeden geçerli bir ülke seçin.'); return false;
         }
       }
       if (!_istekMi) {
         if (_neredenCtrl.text.trim().isEmpty) {
           _snack('Nereden alanını doldurun.'); return false;
         }
-        if (!_listedeVarMi(_neredenCtrl.text)) {
-          _snack('Listeden geçerli bir ülke/şehir seçin.'); return false;
+        if (!kDunyaUlkeleri.any((u) =>
+            u.toLowerCase() == _neredenCtrl.text.trim().toLowerCase())) {
+          _snack('Listeden geçerli bir ülke seçin.'); return false;
         }
       }
       if (_nereyeCtrl.text.trim().isEmpty) {
         _snack('Nereye alanını doldurun.'); return false;
       }
-      if (!_listedeVarMi(_nereyeCtrl.text)) {
-        _snack('Listeden geçerli bir ülke/şehir seçin.'); return false;
+      if (!_nereyeOneriListesi.any((s) =>
+          s.toLowerCase() == _nereyeCtrl.text.trim().toLowerCase())) {
+        _snack('Listeden geçerli bir şehir seçin.'); return false;
       }
       return true;
     }
@@ -296,6 +302,7 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
 
   // ── Tarih / kategori seçim sayfaları ──────────────────────────────────────────
 
+  /// "Nereden" alanı için ülke arama akışı. Algolia'dan öneri gelir
   Future<void> _tarihSec() async {
     final bugun = DateTime.now();
     final s = await showDatePicker(
@@ -415,20 +422,28 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
       );
       if (!mounted) return;
       if (id == null) {
-        setState(() => _basarili = false);
+        final teknikHata = ref.read(ilanOlusturProvider).hata;
+        setState(() {
+          _basarili = false;
+          _hataMesaji = teknikHata;
+        });
         return;
       }
       final yayinda = await ref.read(ilanOlusturProvider.notifier).durumBekle(id);
       if (!mounted) return;
       setState(() => _basarili = yayinda ?? true);
-    } catch (_) {
-      if (mounted) setState(() => _basarili = false);
+    } catch (e) {
+      if (mounted) setState(() {
+        _basarili = false;
+        _hataMesaji = e.toString();
+      });
     }
   }
 
   void _overlayTamamlandi() {
     final basarili = _basarili ?? true;
-    setState(() { _overlayAktif = false; _basarili = null; });
+    final hataMesaji = _hataMesaji;
+    setState(() { _overlayAktif = false; _basarili = null; _hataMesaji = null; });
     Navigator.pop(context);
     if (basarili) {
       if (_istekMi) {
@@ -436,7 +451,11 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
       } else {
         ref.read(tasiyiciIlanlarProvider.notifier).yenile();
       }
+    } else if (hataMesaji != null && hataMesaji.isNotEmpty) {
+      // Teknik bir hata (yükleme/ağ/yetki sorunu) — içerik moderasyonuyla ilgisi yok.
+      AppSnackBar.hata(context, 'Bir sorun oluştu: $hataMesaji');
     } else {
+      // Teknik hata yok, durumBekle 'reddedildi' döndü — gerçek moderasyon reddi.
       AppSnackBar.hata(context,
           'İlanınız yayın için uygun değildir, lütfen kontrol edip yeniden deneyin');
     }
@@ -641,9 +660,9 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
           if (!_neredenFarketmez)
             AutocompleteAlan(
               controller: _neredenCtrl,
-              hint: 'Ülke veya şehir ara...',
+              hint: 'Ülke ara...',
               icon: Icons.flight_takeoff_outlined,
-              secenekler: _ulkeSehirListesi,
+              secenekler: kDunyaUlkeleri,
             ),
           if (_istekMi) ...[
             const SizedBox(height: 10),
@@ -681,9 +700,9 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
           const SizedBox(height: 6),
           AutocompleteAlan(
             controller: _nereyeCtrl,
-            hint: 'Ülke veya şehir ara...',
+            hint: 'Şehir ara...',
             icon: Icons.flight_land_outlined,
-            secenekler: _ulkeSehirListesi,
+            secenekler: _nereyeOneriListesi,
           ),
         ],
       );

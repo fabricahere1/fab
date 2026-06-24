@@ -13,10 +13,12 @@ class TurkiyeDisiAramaEkrani extends StatefulWidget {
   final String mevcutSecim;
   // 'nereye' -> istekler ekranı, 'nereden' -> gelenler ekranı
   final String alan;
+  final String hint;
   const TurkiyeDisiAramaEkrani({
     super.key,
     required this.mevcutSecim,
     this.alan = 'nereye',
+    this.hint = 'Ülke veya şehir girin...',
   });
 
   @override
@@ -89,7 +91,7 @@ class _TurkiyeDisiAramaEkraniState extends State<TurkiyeDisiAramaEkrani> {
                       autofocus: true,
                       style: GoogleFonts.dmSans(fontSize: 14),
                       decoration: InputDecoration(
-                        hintText: 'Ülke veya şehir girin...',
+                        hintText: widget.hint,
                         hintStyle: GoogleFonts.dmSans(
                             fontSize: 14, color: AppColors.textHint),
                         prefixIcon: const Icon(Icons.public_outlined,

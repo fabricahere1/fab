@@ -107,7 +107,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
   List<String>        _seciliKategoriYolu = [];
   List<String>        _seciliAltKeyler    = [];
   bool                _aramaGizli        = false;
-  app_constants.SiralamaTipi    _siralama          = app_constants.SiralamaTipi.enYeni;
+  app_constants.SiralamaTipi    _siralama          = app_constants.SiralamaTipi.onerilen;
   List<String>        _seciliSehirler    = [];
   String              _nerdenUlkeSehir   = '';  // nereden filtresi (şehirden geliyor)
   _GAlgoliaState      _algoliaState      = const _GAlgoliaState();
@@ -226,7 +226,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
     }
   }
 
-  bool get _filtrAktif => _seciliSehirler.isNotEmpty || _seciliKategoriYolu.isNotEmpty || _seciliAltKeyler.isNotEmpty || _siralama != app_constants.SiralamaTipi.enYeni || _seciliUlkeSehir.isNotEmpty;
+  bool get _filtrAktif => _seciliSehirler.isNotEmpty || _seciliKategoriYolu.isNotEmpty || _seciliAltKeyler.isNotEmpty || _siralama != app_constants.SiralamaTipi.onerilen || _seciliUlkeSehir.isNotEmpty;
 
   String _seciliUlkeSehir = '';
 
@@ -270,7 +270,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
         _filtreUygula(() {
           _seciliKategoriYolu = [];
           _seciliAltKeyler    = [];
-          _siralama           = app_constants.SiralamaTipi.enYeni;
+          _siralama           = app_constants.SiralamaTipi.onerilen;
           _seciliSehirler     = [];
           _seciliUlkeSehir    = '';
         });

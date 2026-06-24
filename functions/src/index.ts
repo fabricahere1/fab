@@ -115,12 +115,31 @@ function normalizeMetin(metin: string): string {
       .replace(/0/g, "o").replace(/1/g, "i").replace(/3/g, "e")
       .replace(/4/g, "a").replace(/5/g, "s").replace(/8/g, "b")
       .replace(/[@$]/g, "a").replace(/€/g, "e").replace(/\$/g, "s")
-      .replace(/[.\-_*\s!?+]/g, "")
+      .replace(/[.\-_*!?+]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
   );
 }
 
 const TELEFON_REGEX = /(\+90|0090|^0)?[\s\-.]?(5\d{2})[\s\-.]?(\d{3})[\s\-.]?(\d{2})[\s\-.]?(\d{2})/;
 const URL_REGEX     = /(https?:\/\/|www\.|\.com|\.net|\.org|\.io|bit\.ly|t\.me)/i;
+
+function regexEscape(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function kelimeRegexCache(): Map<string, RegExp> {
+  if (!_kelimeRegexCache) {
+    _kelimeRegexCache = new Map();
+    for (const kelime of YASAKLI_KELIMELER) {
+      // \b kelime sınırı: kelime başka bir kelimenin (örn. "Mozambik" içindeki "am")
+      // parçası olarak değil, tek başına geçtiğinde eşleşsin.
+      _kelimeRegexCache.set(kelime, new RegExp(`\\b${regexEscape(kelime)}\\b`, "i"));
+    }
+  }
+  return _kelimeRegexCache;
+}
+let _kelimeRegexCache: Map<string, RegExp> | null = null;
 
 function metinKontrol(metin: string): { uygun: boolean; sebep: string } {
   if (TELEFON_REGEX.test(metin)) {
@@ -129,10 +148,12 @@ function metinKontrol(metin: string): { uygun: boolean; sebep: string } {
   if (URL_REGEX.test(metin)) {
     return { uygun: false, sebep: "İlanda dış link paylaşılamaz." };
   }
-  const kucuk = metin.toLowerCase();
-  const norm  = normalizeMetin(metin);
+  const kucuk   = metin.toLowerCase();
+  const norm    = normalizeMetin(metin);
+  const regexes = kelimeRegexCache();
   for (const kelime of YASAKLI_KELIMELER) {
-    if (kucuk.includes(kelime) || norm.includes(normalizeMetin(kelime))) {
+    const regex = regexes.get(kelime)!;
+    if (regex.test(kucuk) || regex.test(norm)) {
       return { uygun: false, sebep: "İlan açıklaması uygunsuz içerik barındırıyor." };
     }
   }
@@ -224,9 +245,10 @@ export const ilanModerasyonu = functions
     const ilanRef = db.collection("ilanlar").doc(ilanId);
 
     try {
+      // nereden/nereye artık Flutter formunda kapalı listeden (ülke/şehir) seçiliyor,
+      // serbest metin girilemiyor — bu yüzden kelime/telefon/link kontrolüne dahil etmiyoruz.
       const tumMetin = [
         data.urun ?? "", data.notlar ?? "",
-        data.nereden ?? "", data.nereye ?? "",
       ].join(" ");
 
       const metinSonuc = metinKontrol(tumMetin);
@@ -341,9 +363,10 @@ export const ilanGuncellemeModerasyon = functions
     const redBaslik          = oncedenReddedilmis ? "İlanın yayınlanamadı" : "İlanın yayından kaldırıldı";
 
     try {
+      // nereden/nereye artık Flutter formunda kapalı listeden (ülke/şehir) seçiliyor,
+      // serbest metin girilemiyor — bu yüzden kelime/telefon/link kontrolüne dahil etmiyoruz.
       const tumMetin = [
         sonra.urun ?? "", sonra.notlar ?? "",
-        sonra.nereden ?? "", sonra.nereye ?? "",
       ].join(" ");
       const metinSonuc = metinKontrol(tumMetin);
       if (!metinSonuc.uygun) {

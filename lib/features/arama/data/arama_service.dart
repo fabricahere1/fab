@@ -223,9 +223,11 @@ Future<AlgoliaFiltreSonucu> algoliaFiltrele({
   int sayfa        = 0,
   int hitsPerPage  = 24,
 }) async {
-  final indexAdi = siralama == 'enCokFavorilenen'
-      ? 'ilanlar_favori'
-      : _kAlgoliaIndex;
+  final indexAdi = switch (siralama) {
+    'enCokFavorilenen' => 'ilanlar_favori',
+    'onerilen'         => 'ilanlar_onerilen',
+    _                  => _kAlgoliaIndex,
+  };
 
   final url = Uri.parse(
     'https://$_kAlgoliaAppId-dsn.algolia.net/1/indexes/$indexAdi/query',
@@ -274,10 +276,10 @@ Future<AlgoliaFiltreSonucu> algoliaFiltrele({
     'hitsPerPage': hitsPerPage,
     'page': sayfa,
     'attributesToRetrieve': [
-  'objectID', 'urun', 'nereden', 'nereye', 'kategori',
-  'anaKategori', 'kategoriYolu', 'tip', 'aktif', 'durum',
-  'resimUrl', 'olusturmaTarihi', 'kullaniciId', 'kullaniciAd',
-],
+      'objectID', 'urun', 'nereden', 'nereye', 'kategori',
+      'anaKategori', 'kategoriYolu', 'tip', 'aktif', 'durum',
+      'resimUrl', 'olusturmaTarihi', 'kullaniciId', 'kullaniciAd',
+    ],
     'facets': ['anaKategori'],
   };
 

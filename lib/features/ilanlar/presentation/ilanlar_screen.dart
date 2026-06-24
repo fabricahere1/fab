@@ -102,7 +102,7 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
   final _aramaCtrl          = TextEditingController();
   final _kategoriScrollCtrl = ScrollController();
 
-  SiralamaTipi _siralama             = SiralamaTipi.enYeni;
+  SiralamaTipi _siralama             = SiralamaTipi.onerilen;
   List<String> _seciliKategoriYolu   = [];
   List<String> _seciliAltKeyler      = [];
   List<String> _seciliIstekSehirleri = [];
@@ -305,7 +305,7 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
                 _filtreUygula(() {
                   _seciliKategoriYolu   = [];
                   _seciliAltKeyler      = [];
-                  _siralama             = SiralamaTipi.enYeni;
+                  _siralama             = SiralamaTipi.onerilen;
                   _seciliIstekSehirleri = [];
                   _seciliUlkeSehir      = '';
                 });
