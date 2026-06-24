@@ -661,7 +661,7 @@ class _IsteklerHeader extends StatelessWidget {
                           Symbols.favorite,
                           color: AppColors.textPrimary,
                           size: 22,
-                          weight: 400,
+                          weight: 200,
                           fill: 0,
                         ),
                       ),
