@@ -188,27 +188,27 @@ class IslemDurumuService {
     required IslemDurumu durum,
   }) async {
     try {
-      final karsiDoc = await _firestore
+      final benimDoc = await _firestore
           .collection(Collections.kullanicilar)
-          .doc(karsiUid)
+          .doc(benimUid)
           .get();
-      if (!karsiDoc.exists) return;
-      final karsiAd = (karsiDoc.data()?['adSoyad'] as String?) ?? 'Karşı taraf';
-      final icerik = '"$ilanBaslik" ilanınızı ${durum.gecmisDonusu}';
+      if (!benimDoc.exists) return;
+      final benimAd = (benimDoc.data()?['adSoyad'] as String?) ?? 'Karşı taraf';
+      final icerik = '"$ilanBaslik" ilanını ${durum.gecmisDonusu}';
 
-      BannerService.instance.goster(baslik: karsiAd, icerik: icerik, tip: 'islem');
+      BannerService.instance.goster(baslik: benimAd, icerik: icerik, tip: 'islem');
 
       if (_bildirimYazilacakDurumlar.contains(durum)) {
         await _firestore.collection(Collections.bildirimler).add({
-          'kullaniciId': benimUid,
+          'kullaniciId': karsiUid,
           'tip':         durum == IslemDurumu.anlasildi ? 'anlasildi' : 'sistem',
-          'baslik':      karsiAd,
+          'baslik':      benimAd,
           'icerik':      icerik,
           'okundu':      false,
           'tarih':       FieldValue.serverTimestamp(),
           'hedefId':     sohbetId,
-          'gondereId':   karsiUid,
-          'gondereAd':   karsiAd,
+          'gondereId':   benimUid,
+          'gondereAd':   benimAd,
         });
       }
     } catch (e, s) { AppHataYonetici.logla(e, s, etiket: 'islemDurumuService.bildirim'); }

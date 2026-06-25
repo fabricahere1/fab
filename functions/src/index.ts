@@ -218,7 +218,10 @@ async function bildirimGonder(
 ): Promise<void> {
   try {
     const kullaniciSnap = await db.collection("kullanicilar").doc(kullaniciId).get();
-    const fcmToken = kullaniciSnap.data()?.fcmToken as string | undefined;
+    const kullaniciData = kullaniciSnap.data() ?? {};
+    const ilanTercih    = (kullaniciData.bildirimTercihleri?.ilan ?? true) as boolean;
+    if (!ilanTercih) return;
+    const fcmToken = kullaniciData.fcmToken as string | undefined;
     if (!fcmToken) return;
     await admin.messaging().send({
       token: fcmToken,
