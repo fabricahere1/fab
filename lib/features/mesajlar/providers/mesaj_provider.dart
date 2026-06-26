@@ -419,28 +419,51 @@ class SohbetIslemleri extends _$SohbetIslemleri {
 }
 
 // ── İşlem durumu stream provider'ları (islem_durumu_panel için) ──────────────
+//
+// Performans notu: eskiden bu 5 provider, AYNI sohbet dökümanını ayrı ayrı
+// 5 kere dinliyordu (5 bağımsız Firestore listener'ı, her biri tüm
+// dökümanı indirip sadece 1 alanını kullanıyordu). Artık tek bir dinleyici
+// (sohbetDokumanProvider) var, diğerleri ondan türetiliyor — gerçek ağ/
+// Firestore maliyeti 5'te 1'e indi, UI tarafında kullanım şekli (provider
+// adları, .value ile okuma) hiç değişmedi.
+//
+// Not: Riverpod 3'te StreamProvider'ın .stream özelliği kaldırıldığı için,
+// türetilmiş provider'lar StreamProvider.family DEĞİL, normal
+// Provider.family olarak tanımlanıp AsyncValue.whenData() ile veri
+// dönüştürüyor — bu, .stream'e hiç ihtiyaç duymadan, AsyncValue zincirini
+// (loading/error/data) doğru şekilde taşıyor.
+
+final sohbetDokumanProvider =
+    StreamProvider.family<Map<String, dynamic>, String>((ref, sohbetId) {
+  return ref.read(mesajRepositoryProvider).sohbetDurumuStream(sohbetId);
+});
 
 final islemDurumuProvider =
-    StreamProvider.family<Map<String, dynamic>, String>((ref, sohbetId) {
-  return ref.read(mesajRepositoryProvider).islemDurumuStream(sohbetId);
+    Provider.family<AsyncValue<Map<String, dynamic>>, String>((ref, sohbetId) {
+  return ref.watch(sohbetDokumanProvider(sohbetId)).whenData(
+      (d) => Map<String, dynamic>.from(d['islemDurumlari'] as Map? ?? {}));
 });
 
 final sohbetIlanSahibiIdProvider =
-    StreamProvider.family<String, String>((ref, sohbetId) {
-  return ref.read(mesajRepositoryProvider).ilanSahibiIdStream(sohbetId);
+    Provider.family<AsyncValue<String>, String>((ref, sohbetId) {
+  return ref.watch(sohbetDokumanProvider(sohbetId))
+      .whenData((d) => d['ilanSahibiId'] as String? ?? '');
 });
 
 final sohbetIlanTipProvider =
-    StreamProvider.family<String, String>((ref, sohbetId) {
-  return ref.read(mesajRepositoryProvider).ilanTipStream(sohbetId);
+    Provider.family<AsyncValue<String>, String>((ref, sohbetId) {
+  return ref.watch(sohbetDokumanProvider(sohbetId))
+      .whenData((d) => d['ilanTip'] as String? ?? 'istek');
 });
 
 final sohbetKullanicilarProvider =
-    StreamProvider.family<List<String>, String>((ref, sohbetId) {
-  return ref.read(mesajRepositoryProvider).sohbetKullanicilarStream(sohbetId);
+    Provider.family<AsyncValue<List<String>>, String>((ref, sohbetId) {
+  return ref.watch(sohbetDokumanProvider(sohbetId))
+      .whenData((d) => List<String>.from(d['kullanicilar'] ?? []));
 });
 
 final sohbetIlanBaslikProvider =
-    StreamProvider.family<String, String>((ref, sohbetId) {
-  return ref.read(mesajRepositoryProvider).ilanBaslikStream(sohbetId);
+    Provider.family<AsyncValue<String>, String>((ref, sohbetId) {
+  return ref.watch(sohbetDokumanProvider(sohbetId))
+      .whenData((d) => (d['ilanBaslik'] as String?) ?? '');
 });
