@@ -5,6 +5,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/mesaj_model.dart';
+import '../domain/islem_durumu.dart';
 import '../../../shared/constants/app_constants.dart';
 
 part 'mesaj_repository.g.dart';
@@ -258,32 +259,133 @@ class MesajRepository {
     });
   }
 
+  CollectionReference get _kullanicilar =>
+      firestore.collection(Collections.kullanicilar);
+
+  CollectionReference get _bildirimler =>
+      firestore.collection(Collections.bildirimler);
+
+  /// Sohbetin karşı taraf uid'ini, ilan başlığını ve benim adımı tek
+  /// okumada toplar — bildirim yazarken ihtiyaç duyulan bağlamı sağlar.
+  /// Mesaj bildirimleri gibi, "anında yaz" deseniyle çalışır; sonradan
+  /// dinleyip fark etmeye (IslemDurumuService'in eski yaklaşımı) güvenmez
+  /// — o yaklaşım, uygulama yeni açıldığında oluşan bir yarış durumu
+  /// (race condition) yüzünden bildirimleri kaçırıyordu.
+  Future<({String karsiUid, String ilanBaslik, String benimAd, Map<String, dynamic> mevcutDurumlar})>
+      _bildirimBaglamiOku(String sohbetId, String benimUid) async {
+    final sohbetSnap = await _sohbetler.doc(sohbetId).get();
+    final sohbetData = sohbetSnap.data() as Map<String, dynamic>? ?? {};
+    final kullanicilar = List<String>.from(sohbetData['kullanicilar'] ?? []);
+    final karsiUid = kullanicilar.firstWhere((id) => id != benimUid, orElse: () => '');
+    final ilanBaslik = sohbetData['ilanBaslik'] as String? ?? 'İlan';
+    final mevcutDurumlar = Map<String, dynamic>.from(sohbetData['islemDurumlari'] as Map? ?? {});
+
+    final benimDoc = await _kullanicilar.doc(benimUid).get();
+    final benimAd = (benimDoc.data() as Map<String, dynamic>?)?['adSoyad'] as String? ?? 'Kullanıcı';
+
+    return (karsiUid: karsiUid, ilanBaslik: ilanBaslik, benimAd: benimAd, mevcutDurumlar: mevcutDurumlar);
+  }
+
+  Future<void> _islemBildirimiYaz({
+    required String kullaniciId,
+    required String gondereId,
+    required String gondereAd,
+    required String icerik,
+    required String tip,
+    required String hedefId,
+  }) async {
+    if (kullaniciId.isEmpty) return;
+    try {
+      await _bildirimler.add({
+        'kullaniciId': kullaniciId,
+        'tip':         tip,
+        'baslik':      gondereAd,
+        'icerik':      icerik,
+        'okundu':      false,
+        'tarih':       FieldValue.serverTimestamp(),
+        'hedefId':     hedefId,
+        'gondereId':   gondereId,
+        'gondereAd':   gondereAd,
+      });
+    } catch (e) {
+      debugPrint('[MesajRepository] islemBildirimiYaz hatası: $e');
+    }
+  }
+
+  /// [yapanUid] — bu işlemi gerçekten yapan kişinin uid'i, durum boolean'ı
+  /// ile AYNI atomik update() çağrısında yazılır.
   Future<void> islemDurumuGuncelle({
     required String sohbetId,
     required String durum,
+    required String yapanUid,
   }) async {
+    final baglam = await _bildirimBaglamiOku(sohbetId, yapanUid);
+
     await _sohbetler.doc(sohbetId).update({
       'islemDurumlari.$durum': true,
+      'islemDurumlari.${durum}_yapanUid': yapanUid,
     });
+
+    final durumEnum = IslemDurumu.values.firstWhere(
+      (d) => d.firestoreKey == durum,
+      orElse: () => IslemDurumu.iletisimBasladi,
+    );
+    if (durumEnum == IslemDurumu.iletisimBasladi) return; // bu duruma bildirim yazılmaz
+
+    await _islemBildirimiYaz(
+      kullaniciId: baglam.karsiUid,
+      gondereId: yapanUid,
+      gondereAd: baglam.benimAd,
+      icerik: '"${baglam.ilanBaslik}" ilanını ${durumEnum.gecmisDonusu}',
+      tip: 'sistem',
+      hedefId: sohbetId,
+    );
   }
 
-  Future<void> teslimTamamla({required String sohbetId}) async {
-    await _sohbetler.doc(sohbetId).update({
-      'islemDurumlari.teslimAlindi': true,
-    });
+  Future<void> teslimTamamla({
+    required String sohbetId,
+    required String yapanUid,
+  }) async {
+    await islemDurumuGuncelle(
+      sohbetId: sohbetId,
+      durum: 'teslimAlindi',
+      yapanUid: yapanUid,
+    );
     await _sohbetler.doc(sohbetId).update({
       'degerlendirmeBekliyor': true,
     });
   }
 
   // ── Anlaşıldı — iki taraflı onay ─────────────────────────
+  //
+  // İlk kişi tıkladığında "önerdi", ikinci kişi (karşı taraf ZATEN
+  // onaylamışken) tıkladığında "kabul etti" mesajı gider — yapanUid yazma
+  // anından ÖNCE mevcut durumu okuyup karşı tarafın onayının olup
+  // olmadığına bakarak ayrım yapılır.
   Future<void> anlasildiIsaretle({
     required String sohbetId,
     required String benimUid,
   }) async {
+    final baglam = await _bildirimBaglamiOku(sohbetId, benimUid);
+    final karsiZatenOnaylamis =
+        baglam.mevcutDurumlar['anlasildi_${baglam.karsiUid}'] == true;
+
     await _sohbetler.doc(sohbetId).update({
       'islemDurumlari.anlasildi_$benimUid': true,
     });
+
+    final icerik = karsiZatenOnaylamis
+        ? '"${baglam.ilanBaslik}" ilanı için anlaşmanızı kabul etti!'
+        : '"${baglam.ilanBaslik}" ilanı için anlaşma önerdi!';
+
+    await _islemBildirimiYaz(
+      kullaniciId: baglam.karsiUid,
+      gondereId: benimUid,
+      gondereAd: baglam.benimAd,
+      icerik: icerik,
+      tip: 'anlasildi',
+      hedefId: sohbetId,
+    );
   }
 
   Future<void> mesajBildirimiGonder({

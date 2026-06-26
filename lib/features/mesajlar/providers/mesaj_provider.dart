@@ -381,7 +381,9 @@ class IslemDurumuIslemleri extends _$IslemDurumuIslemleri {
   MesajRepository get _repo => ref.read(mesajRepositoryProvider);
 
   Future<void> guncelle(String durum) async {
-    await _repo.islemDurumuGuncelle(sohbetId: sohbetId, durum: durum);
+    final uid = ref.read(currentUserProvider)?.uid;
+    if (uid == null) return;
+    await _repo.islemDurumuGuncelle(sohbetId: sohbetId, durum: durum, yapanUid: uid);
   }
 
   Future<void> anlasildiIsaretle(String benimUid) async {
@@ -389,7 +391,9 @@ class IslemDurumuIslemleri extends _$IslemDurumuIslemleri {
   }
 
   Future<void> teslimTamamla() async {
-    await _repo.teslimTamamla(sohbetId: sohbetId);
+    final uid = ref.read(currentUserProvider)?.uid;
+    if (uid == null) return;
+    await _repo.teslimTamamla(sohbetId: sohbetId, yapanUid: uid);
   }
 }
 

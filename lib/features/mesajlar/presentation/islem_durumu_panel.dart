@@ -492,6 +492,12 @@ class _AnlasildiSatiriState extends State<_AnlasildiSatiri>
     return 'İki tarafın onayı gerekli';
   }
 
+  String get _baslik {
+    if (widget.tamamlandi) return 'Anlaşıldı';
+    if (widget.benimOnayim || widget.karsiOnayi) return 'Anlaşma önerildi';
+    return 'Anlaşma öner';
+  }
+
   @override
   Widget build(BuildContext context) {
     final aktif = widget.oncekiTamamlandi && !widget.tamamlandi;
@@ -540,7 +546,7 @@ class _AnlasildiSatiriState extends State<_AnlasildiSatiri>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Anlaşıldı',
+                        _baslik,
                         style: GoogleFonts.dmSans(
                           fontSize: 13,
                           fontWeight:

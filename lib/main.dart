@@ -11,8 +11,8 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/services/badge_service.dart';
+import 'core/services/bildirim_banner_service.dart';
 import 'core/services/fcm_service.dart';
-import 'core/services/islem_durumu_service.dart';
 import 'shared/widgets/baglanti_banner.dart';
 import 'core/theme/app_theme.dart';
 import 'firebase_options.dart';
@@ -85,14 +85,14 @@ class _IsteAppState extends ConsumerState<IsteApp> {
   void initState() {
     super.initState();
     FcmService.instance.init(onBildirimAc: _bildirimdenAc);
-    IslemDurumuService.instance.init();
+    BildirimBannerService.instance.init();
     BadgeService.instance.init();
   }
 
   @override
   void dispose() {
     FcmService.instance.dispose();
-    IslemDurumuService.instance.dispose();
+    BildirimBannerService.instance.dispose();
     BadgeService.instance.dispose();
     super.dispose();
   }
