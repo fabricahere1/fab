@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'banner_service.dart';
 import '../../shared/constants/app_constants.dart';
 
@@ -70,6 +71,10 @@ class BildirimBannerService {
 
         BannerService.instance.goster(baslik: baslik, icerik: icerik, tip: 'islem');
       }
+    }, onError: (e, s) {
+      // Eksik Firestore index'i ya da geçici bağlantı sorunu — banner
+      // gösterilemese de uygulama hiçbir koşulda çökmemeli.
+      debugPrint('[BildirimBannerService] dinleme hatası: $e');
     });
   }
 

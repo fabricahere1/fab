@@ -527,7 +527,7 @@ Set<String> favoriliIlanIdler(Ref ref) {
 
 // ── Favori işlemleri ──────────────────────────────────────────────────────────
 
-@riverpod
+@Riverpod(keepAlive: true)
 class FavoriNotifier extends _$FavoriNotifier {
   @override
   AsyncValue<void> build() => const AsyncData(null);
@@ -542,9 +542,14 @@ class FavoriNotifier extends _$FavoriNotifier {
     ref.read(optimistikFavoriProvider.notifier).ekle(ilan.id);
     try {
       await _repo.favoriyeEkle(kullaniciId: uid, ilan: ilan);
+      // keepAlive eklendiyse bu kontrol artık tetiklenmemeli, ama provider
+      // ileride yanlışlıkla autoDispose'a çevrilirse çökme yerine sessizce
+      // çıkmayı garanti eden bir güvenlik ağı olarak kalsın.
+      if (!ref.mounted) return;
       ref.read(istekIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilan.id, 1);
       ref.read(tasiyiciIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilan.id, 1);
     } catch (_) {
+      if (!ref.mounted) return;
       ref.read(optimistikFavoriProvider.notifier).temizle(ilan.id);
     }
   }
@@ -555,9 +560,11 @@ class FavoriNotifier extends _$FavoriNotifier {
     ref.read(optimistikFavoriProvider.notifier).cikar(ilanId);
     try {
       await _repo.favoridanCikar(kullaniciId: uid, ilanId: ilanId);
+      if (!ref.mounted) return;
       ref.read(istekIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilanId, -1);
       ref.read(tasiyiciIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilanId, -1);
     } catch (_) {
+      if (!ref.mounted) return;
       ref.read(optimistikFavoriProvider.notifier).temizle(ilanId);
     }
   }
