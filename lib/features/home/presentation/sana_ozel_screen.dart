@@ -408,8 +408,8 @@ class _Bolum extends StatelessWidget {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(data.baslik,
-                    style: GoogleFonts.raleway(fontSize: 13, fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary, letterSpacing: 0.1)),
+                    style: GoogleFonts.dmSerifDisplay(fontSize: 15,
+                        color: AppColors.textPrimary)),
               ),
               const SizedBox(width: 8),
               Align(
@@ -652,8 +652,8 @@ class _YuksekPuanliTasiyicilarBolumu extends StatelessWidget {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(baslik,
-                    style: GoogleFonts.raleway(fontSize: 13, fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary, letterSpacing: 0.1)),
+                    style: GoogleFonts.dmSerifDisplay(fontSize: 15,
+                        color: AppColors.textPrimary)),
               ),
             ],
           ),

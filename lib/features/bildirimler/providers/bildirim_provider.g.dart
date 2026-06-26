@@ -132,7 +132,7 @@ final class BildirimNotifierProvider
   }
 }
 
-String _$bildirimNotifierHash() => r'58716c69da41fa2e07ed1e6db13972e4d6b84909';
+String _$bildirimNotifierHash() => r'c8d49d604f3d2a3902a29f059d2fbfadf9f1c841';
 
 /// Bildirim işlemleri — okuma, silme, gönderme.
 

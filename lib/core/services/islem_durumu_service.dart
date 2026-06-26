@@ -117,7 +117,14 @@ class IslemDurumuService {
             final bool yeniDeger = islemDurumlari[key] == true;
             final bool eskiDeger = onceki[key] == true;
 
-            if (yeniDeger && !eskiDeger) {
+            // hasPendingWrites: bu değişikliği BEN mi yazdım (henüz sunucuya
+            // onaylanmamış local yazma), yoksa karşı taraf mı yazdı (sunucudan
+            // gelen onaylı veri)? Her iki taraf da aynı sohbet dökümanını
+            // dinlediği için, bu kontrol olmadan HER İKİ cihaz da "ben yaptım"
+            // sanıp birbirine bildirim yazıyordu — biri doğru, biri sahte.
+            final benYazdimMi = sohbetDoc.metadata.hasPendingWrites;
+
+            if (yeniDeger && !eskiDeger && benYazdimMi) {
               final kullanicilar =
                   List<String>.from(d['kullanicilar'] ?? []);
               final karsiUid = kullanicilar.firstWhere(

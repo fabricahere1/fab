@@ -163,6 +163,25 @@ class KesfetVitrin2Tab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        KesfetTrendGuzergahSehirGrubu(),
+        KesfetIndirimDunyaGrubu(),
+        KesfetRehberBedenIpucuBannerGrubu(),
+        SizedBox(height: 24),
+      ],
+    );
+  }
+}
+
+/// Grup A: Trend ürünler → Popüler güzergahlar → Bu hafta nerelerden
+/// geliyorlar.
+class KesfetTrendGuzergahSehirGrubu extends ConsumerWidget {
+  const KesfetTrendGuzergahSehirGrubu({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final trendUrunler = ref.watch(kesfetTrendUrunlerProvider);
     final guzergahlar  = ref.watch(kesfetPopulerGuzergahlarProvider);
     final sehirler     = ref.watch(kesfetBuHaftaSehirlerProvider);
@@ -173,13 +192,41 @@ class KesfetVitrin2Tab extends ConsumerWidget {
         if (trendUrunler.isNotEmpty) _TrendUrunlerBolum(trendler: trendUrunler),
         if (guzergahlar.isNotEmpty)  _GuzergahlarBolum(guzergahlar: guzergahlar),
         if (sehirler.isNotEmpty)     _SehirlerBolum(sehirler: sehirler),
-        const _IndirimMagazalariBolum(),
-        const DunyaTrendleriBolum(),
+      ],
+    );
+  }
+}
+
+/// Grup B: İndirim & outlet mağazaları → Dünya trendleri.
+class KesfetIndirimDunyaGrubu extends StatelessWidget {
+  const KesfetIndirimDunyaGrubu({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _IndirimMagazalariBolum(),
+        DunyaTrendleriBolum(),
+      ],
+    );
+  }
+}
+
+/// Grup C: Alışveriş rehberi (İstekçi Rehberi) → Beden dönüştürücü →
+/// Taşıyıcı ipuçları → İlk ilanını ver banner'ı.
+class KesfetRehberBedenIpucuBannerGrubu extends StatelessWidget {
+  const KesfetRehberBedenIpucuBannerGrubu({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         const AlisverisRehberiBolum(),
         const BedenDonusturuculBolum(),
         const TasiyiciIpuclariBolum(),
-        _IlkIlanBanner(),
-        const SizedBox(height: 24),
+        IlkIlanBannerPublic(),
       ],
     );
   }
@@ -198,7 +245,7 @@ Widget _bolumBaslik({required String baslik, required IconData ikon, VoidCallbac
           child: Text(baslik,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.notoSans(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
+              style: GoogleFonts.dmSerifDisplay(fontSize: 15, color: AppColors.textPrimary)),
         ),
         if (tumunuGor != null)
           GestureDetector(
@@ -861,8 +908,8 @@ class _MagazaKarti extends StatelessWidget {
 
 // ── İlk İlan Banner ───────────────────────────────────────────────────────────
 
-class _IlkIlanBanner extends StatelessWidget {
-  const _IlkIlanBanner();
+class IlkIlanBannerPublic extends StatelessWidget {
+  const IlkIlanBannerPublic({super.key});
 
   @override
   Widget build(BuildContext context) {

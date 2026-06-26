@@ -264,3 +264,175 @@ final class KesfetHeroBannerProvider
 }
 
 String _$kesfetHeroBannerHash() => r'8c0576d64dfd0b8d149fd6d60316938a8e6c2967';
+
+@ProviderFor(kesfetOnerilenIlanlar)
+final kesfetOnerilenIlanlarProvider = KesfetOnerilenIlanlarProvider._();
+
+final class KesfetOnerilenIlanlarProvider
+    extends
+        $FunctionalProvider<List<IlanModel>, List<IlanModel>, List<IlanModel>>
+    with $Provider<List<IlanModel>> {
+  KesfetOnerilenIlanlarProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'kesfetOnerilenIlanlarProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$kesfetOnerilenIlanlarHash();
+
+  @$internal
+  @override
+  $ProviderElement<List<IlanModel>> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  List<IlanModel> create(Ref ref) {
+    return kesfetOnerilenIlanlar(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(List<IlanModel> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<List<IlanModel>>(value),
+    );
+  }
+}
+
+String _$kesfetOnerilenIlanlarHash() =>
+    r'271e7876fd5960287296d809b715d110eb77411c';
+
+@ProviderFor(kesfetEnYeniIlanlar)
+final kesfetEnYeniIlanlarProvider = KesfetEnYeniIlanlarProvider._();
+
+final class KesfetEnYeniIlanlarProvider
+    extends
+        $FunctionalProvider<List<IlanModel>, List<IlanModel>, List<IlanModel>>
+    with $Provider<List<IlanModel>> {
+  KesfetEnYeniIlanlarProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'kesfetEnYeniIlanlarProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$kesfetEnYeniIlanlarHash();
+
+  @$internal
+  @override
+  $ProviderElement<List<IlanModel>> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  List<IlanModel> create(Ref ref) {
+    return kesfetEnYeniIlanlar(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(List<IlanModel> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<List<IlanModel>>(value),
+    );
+  }
+}
+
+String _$kesfetEnYeniIlanlarHash() =>
+    r'74d99a118bccd858fa5a6a60e76e6a2dc7c75398';
+
+@ProviderFor(kesfetEnEskiIlanlar)
+final kesfetEnEskiIlanlarProvider = KesfetEnEskiIlanlarProvider._();
+
+final class KesfetEnEskiIlanlarProvider
+    extends
+        $FunctionalProvider<List<IlanModel>, List<IlanModel>, List<IlanModel>>
+    with $Provider<List<IlanModel>> {
+  KesfetEnEskiIlanlarProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'kesfetEnEskiIlanlarProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$kesfetEnEskiIlanlarHash();
+
+  @$internal
+  @override
+  $ProviderElement<List<IlanModel>> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  List<IlanModel> create(Ref ref) {
+    return kesfetEnEskiIlanlar(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(List<IlanModel> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<List<IlanModel>>(value),
+    );
+  }
+}
+
+String _$kesfetEnEskiIlanlarHash() =>
+    r'c865be34393b8867d19d17d487d361b076ff82fe';
+
+@ProviderFor(kesfetRastgeleKarma)
+final kesfetRastgeleKarmaProvider = KesfetRastgeleKarmaProvider._();
+
+final class KesfetRastgeleKarmaProvider
+    extends
+        $FunctionalProvider<List<IlanModel>, List<IlanModel>, List<IlanModel>>
+    with $Provider<List<IlanModel>> {
+  KesfetRastgeleKarmaProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'kesfetRastgeleKarmaProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$kesfetRastgeleKarmaHash();
+
+  @$internal
+  @override
+  $ProviderElement<List<IlanModel>> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  List<IlanModel> create(Ref ref) {
+    return kesfetRastgeleKarma(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(List<IlanModel> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<List<IlanModel>>(value),
+    );
+  }
+}
+
+String _$kesfetRastgeleKarmaHash() =>
+    r'56a7dbe8177bc0eb8421330caeff99581a43d5ba';

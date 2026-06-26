@@ -16,42 +16,172 @@ import 'package:iste_v3/features/home/providers/kesfet_vitrin_providers.dart';
 import 'package:iste_v3/features/home/providers/son_goruntulenenler_provider.dart';
 import 'kesfet_bolum_detay_screen.dart';
 
-enum _RozetTipi { goruntulenme, favori, yeni, eta, dutyFree }
+enum RozetTipi { goruntulenme, favori, yeni, eta, dutyFree, yok }
+
+/// Grup 1: Haftanın en çok görüntülenenleri + favorilenenleri.
+class KesfetGoruntulenenFavorilenenBolum extends ConsumerWidget {
+  const KesfetGoruntulenenFavorilenenBolum({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final goruntulenen = ref.watch(kesfetEnCokGoruntulenenProvider);
+    final favorilenen  = ref.watch(kesfetEnCokFavorilenenProvider);
+
+    final bolumler = <_BolumData>[
+      _BolumData('Haftanın en çok görüntülenen ilanları', Icons.visibility_outlined, goruntulenen, RozetTipi.goruntulenme, CicekTipi.papatya),
+      _BolumData('Haftanın en çok favorilenen ilanları', Icons.favorite_outline_rounded, favorilenen, RozetTipi.favori, CicekTipi.gul),
+    ].where((b) => b.ilanlar.isNotEmpty).toList();
+
+    return Column(mainAxisSize: MainAxisSize.min, children: bolumler.map((b) => _Bolum(data: b)).toList());
+  }
+}
+
+/// Grup 2: Bugün eklenen + Yakında Türkiye'ye gelecekler + Duty Free.
+class KesfetGuncelBolumler extends ConsumerWidget {
+  const KesfetGuncelBolumler({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bugunEklenen = ref.watch(kesfetBugunEklenenProvider);
+    final yakinGelecek = ref.watch(kesfetYakinGeleceklerProvider);
+    final dutyFree     = ref.watch(kesfetDutyFreeProvider);
+
+    final bolumler = <_BolumData>[
+      _BolumData('Bugün eklenen ilanlar', Icons.fiber_new_outlined, bugunEklenen, RozetTipi.yeni, CicekTipi.lavanta),
+      _BolumData('Yakın zamanda Türkiye\'ye gelecekler', Icons.flight_land_outlined, yakinGelecek, RozetTipi.eta, CicekTipi.aycicegi),
+      _BolumData('Bugün yola çıkacaklar · Duty Free fırsatları', Icons.local_mall_outlined, dutyFree, RozetTipi.dutyFree, CicekTipi.papatya),
+    ].where((b) => b.ilanlar.isNotEmpty).toList();
+
+    return Column(mainAxisSize: MainAxisSize.min, children: bolumler.map((b) => _Bolum(data: b)).toList());
+  }
+}
+
+/// Tüm Vitrin1 bölümleri hâlâ boşsa true döner — kesfet_screen.dart bununla
+/// boş-ekranı (KesfetBosEkran) gösterip göstermeyeceğine karar verir.
+bool kesfetVitrin1TamamenBosMu(WidgetRef ref) {
+  final goruntulenen = ref.watch(kesfetEnCokGoruntulenenProvider);
+  final favorilenen  = ref.watch(kesfetEnCokFavorilenenProvider);
+  final bugunEklenen = ref.watch(kesfetBugunEklenenProvider);
+  final yakinGelecek = ref.watch(kesfetYakinGeleceklerProvider);
+  final dutyFree     = ref.watch(kesfetDutyFreeProvider);
+  return goruntulenen.isEmpty && favorilenen.isEmpty && bugunEklenen.isEmpty &&
+      yakinGelecek.isEmpty && dutyFree.isEmpty;
+}
 
 class KesfetVitrinTab extends ConsumerWidget {
   const KesfetVitrinTab({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final goruntulenen = ref.watch(kesfetEnCokGoruntulenenProvider);
-    final favorilenen  = ref.watch(kesfetEnCokFavorilenenProvider);
-    final bugunEklenen = ref.watch(kesfetBugunEklenenProvider);
-    final yakinGelecek = ref.watch(kesfetYakinGeleceklerProvider);
-    final dutyFree     = ref.watch(kesfetDutyFreeProvider);
-    final yukleniyor   = ref.watch(istekIlanlarProvider).yukleniyor || ref.watch(tasiyiciIlanlarProvider).yukleniyor;
+    final yukleniyor = ref.watch(istekIlanlarProvider).yukleniyor || ref.watch(tasiyiciIlanlarProvider).yukleniyor;
+    final bosMu = kesfetVitrin1TamamenBosMu(ref);
 
-    final bolumler = <_BolumData>[
-      _BolumData('Haftanın en çok görüntülenen ilanları', Icons.visibility_outlined, goruntulenen, _RozetTipi.goruntulenme, CicekTipi.papatya),
-      _BolumData('Haftanın en çok favorilenen ilanları', Icons.favorite_outline_rounded, favorilenen, _RozetTipi.favori, CicekTipi.gul),
-      _BolumData('Bugün eklenen ilanlar', Icons.fiber_new_outlined, bugunEklenen, _RozetTipi.yeni, CicekTipi.lavanta),
-      _BolumData('Yakın zamanda Türkiye\'ye gelecekler', Icons.flight_land_outlined, yakinGelecek, _RozetTipi.eta, CicekTipi.aycicegi),
-      _BolumData('Bugün yola çıkacaklar · Duty Free fırsatları', Icons.local_mall_outlined, dutyFree, _RozetTipi.dutyFree, CicekTipi.papatya),
-    ].where((b) => b.ilanlar.isNotEmpty).toList();
-
-    if (bolumler.isEmpty) {
+    if (bosMu) {
       return yukleniyor
           ? const Center(child: CircularProgressIndicator(color: AppColors.red, strokeWidth: 2))
-          : const _BosEkran();
+          : const KesfetBosEkran();
     }
 
-    return Column(
+    return const Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const _HeroBanner(),
-        ...bolumler.map((b) => _Bolum(data: b)),
-        const SizedBox(height: 8),
+        KesfetHeroBanner(),
+        KesfetGoruntulenenFavorilenenBolum(),
+        KesfetGuncelBolumler(),
+        SizedBox(height: 8),
       ],
     );
+  }
+}
+
+/// "Önerilen ilanlar" — kesfetOnerilenIlanlarProvider'dan gelen 30 ilanı
+/// 2 satıra (15+15) böler.
+class KesfetOnerilenBolum extends ConsumerWidget {
+  const KesfetOnerilenBolum({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final liste = ref.watch(kesfetOnerilenIlanlarProvider);
+    if (liste.isEmpty) return const SizedBox.shrink();
+    final satir1 = liste.take(15).toList();
+    final satir2 = liste.skip(15).take(15).toList();
+    return Column(mainAxisSize: MainAxisSize.min, children: [
+      _Bolum(data: _BolumData('Senin için seçtiklerimiz', Icons.auto_awesome_outlined, satir1, RozetTipi.yok, CicekTipi.gul)),
+      if (satir2.isNotEmpty)
+        _Bolum(data: _BolumData('Bunlar da ilgini çekebilir', Icons.local_florist_outlined, satir2, RozetTipi.yok, CicekTipi.lavanta)),
+    ]);
+  }
+}
+
+/// "En yeni ilanlar" — başlık kasıtlı olarak "en yeni"/"önerilen" demiyor,
+/// 2 satıra (15+15) bölünür.
+class KesfetEnYeniBolum extends ConsumerWidget {
+  const KesfetEnYeniBolum({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final liste = ref.watch(kesfetEnYeniIlanlarProvider);
+    if (liste.isEmpty) return const SizedBox.shrink();
+    final satir1 = liste.take(15).toList();
+    final satir2 = liste.skip(15).take(15).toList();
+    return Column(mainAxisSize: MainAxisSize.min, children: [
+      _Bolum(data: _BolumData('Vitrine az önce çıkanlar', Icons.storefront_outlined, satir1, RozetTipi.yok, CicekTipi.aycicegi)),
+      if (satir2.isNotEmpty)
+        _Bolum(data: _BolumData('Gözden kaçırma', Icons.remove_red_eye_outlined, satir2, RozetTipi.yok, CicekTipi.papatya)),
+    ]);
+  }
+}
+
+/// "En eski ilanlar" — 1 satırlık kullanım (Duty Free ile Trend ürünler
+/// arasında). kesfetEnEskiIlanlarProvider'ın İLK 15 ilanını kullanır.
+class KesfetEnEskiBolum1Satir extends ConsumerWidget {
+  const KesfetEnEskiBolum1Satir({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final liste = ref.watch(kesfetEnEskiIlanlarProvider).take(15).toList();
+    if (liste.isEmpty) return const SizedBox.shrink();
+    return _Bolum(data: _BolumData('Daha fazlası', Icons.hourglass_empty_rounded, liste, RozetTipi.yok, CicekTipi.gul));
+  }
+}
+
+/// "En eski ilanlar" — 2 satırlık kullanım (Bu hafta nereden geliyorlar ile
+/// İndirim outlet arasında). kesfetEnEskiIlanlarProvider'ın 15-45 arası
+/// ilanlarını kullanır — ilk 15'i yukarıdaki tek satırlık bölüm aldığı için
+/// burada tekrar etmez.
+class KesfetEnEskiBolum2Satir extends ConsumerWidget {
+  const KesfetEnEskiBolum2Satir({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tum = ref.watch(kesfetEnEskiIlanlarProvider);
+    final satir1 = tum.skip(15).take(15).toList();
+    final satir2 = tum.skip(30).take(15).toList();
+    if (satir1.isEmpty && satir2.isEmpty) return const SizedBox.shrink();
+    return Column(mainAxisSize: MainAxisSize.min, children: [
+      if (satir1.isNotEmpty)
+        _Bolum(data: _BolumData('Bunlara baktın mı', Icons.search_outlined, satir1, RozetTipi.yok, CicekTipi.aycicegi)),
+      if (satir2.isNotEmpty)
+        _Bolum(data: _BolumData('Bunları da getirebilirsin', Icons.refresh_rounded, satir2, RozetTipi.yok, CicekTipi.papatya)),
+    ]);
+  }
+}
+
+/// "Rastgele keşfet karması" — 2 satır, İlk İlanını Ver banner'ından sonra.
+class KesfetRastgeleKarmaBolum extends ConsumerWidget {
+  const KesfetRastgeleKarmaBolum({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final liste = ref.watch(kesfetRastgeleKarmaProvider);
+    if (liste.isEmpty) return const SizedBox.shrink();
+    final satir1 = liste.take(15).toList();
+    final satir2 = liste.skip(15).take(15).toList();
+    return Column(mainAxisSize: MainAxisSize.min, children: [
+      _Bolum(data: _BolumData('İSTE\'den special ilanlar', Icons.shuffle_rounded, satir1, RozetTipi.yok, CicekTipi.lavanta)),
+      if (satir2.isNotEmpty)
+        _Bolum(data: _BolumData('Keşfetmeye devam et', Icons.explore_outlined, satir2, RozetTipi.yok, CicekTipi.gul)),
+    ]);
   }
 }
 
@@ -98,7 +228,7 @@ class _BolumData {
   final String baslik;
   final IconData ikon;
   final List<IlanModel> ilanlar;
-  final _RozetTipi rozetTipi;
+  final RozetTipi rozetTipi;
   final CicekTipi cicekTipi;
   const _BolumData(this.baslik, this.ikon, this.ilanlar, this.rozetTipi, this.cicekTipi);
 }
@@ -147,7 +277,7 @@ class _Bolum extends StatelessWidget {
                 child: Text(data.baslik,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.notoSans(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
+                    style: GoogleFonts.dmSerifDisplay(fontSize: 15, color: AppColors.textPrimary)),
               ),
             ]),
           ],
@@ -194,7 +324,7 @@ class CicekBaslikPainter extends CustomPainter {
 
 class _KesfetKart extends ConsumerWidget {
   final IlanModel ilan;
-  final _RozetTipi rozetTipi;
+  final RozetTipi rozetTipi;
   final CicekTipi cicekTipi;
   const _KesfetKart({required this.ilan, required this.rozetTipi, required this.cicekTipi});
 
@@ -214,7 +344,8 @@ class _KesfetKart extends ConsumerWidget {
             child: Container(height: 150, width: double.infinity, color: const Color(0xFFF2F2F2),
               child: Stack(fit: StackFit.expand, children: [
                 resim.isNotEmpty ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, fadeInDuration: Duration.zero, errorWidget: (_, _, _) => _RenkliArkaplan(cicekTipi: cicekTipi)) : _RenkliArkaplan(cicekTipi: cicekTipi),
-                Positioned(top: 6, left: 6, child: _Rozet(ilan: ilan, tipi: rozetTipi)),
+                if (rozetTipi != RozetTipi.yok)
+                  Positioned(top: 6, left: 6, child: _Rozet(ilan: ilan, tipi: rozetTipi)),
               ]))),
           Expanded(child: Padding(padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -244,18 +375,19 @@ class _KesfetKart extends ConsumerWidget {
 }
 
 class _Rozet extends StatelessWidget {
-  final IlanModel ilan; final _RozetTipi tipi;
+  final IlanModel ilan; final RozetTipi tipi;
   const _Rozet({required this.ilan, required this.tipi});
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
     switch (tipi) {
-      case _RozetTipi.goruntulenme: return _pill(ikon: Icons.visibility_rounded, metin: _sayiFormat(ilan.goruntulenmeSayisi), renk: const Color(0xCC1A1A1A));
-      case _RozetTipi.favori:       return _pill(ikon: Icons.favorite_rounded, metin: _sayiFormat(ilan.favoriSayisi), renk: AppColors.red.withValues(alpha: 0.92));
-      case _RozetTipi.yeni:         return _pill(metin: 'YENİ', renk: AppColors.red.withValues(alpha: 0.92));
-      case _RozetTipi.eta:          return _pill(ikon: Icons.schedule_rounded, metin: _etaMetin(ilan.tarih, now), renk: _etaRenk(ilan.tarih, now));
-      case _RozetTipi.dutyFree:     return _pill(ikon: Icons.local_mall_rounded, metin: 'DUTY FREE', renk: const Color(0xE6B8860B));
+      case RozetTipi.goruntulenme: return _pill(ikon: Icons.visibility_rounded, metin: _sayiFormat(ilan.goruntulenmeSayisi), renk: const Color(0xCC1A1A1A));
+      case RozetTipi.favori:       return _pill(ikon: Icons.favorite_rounded, metin: _sayiFormat(ilan.favoriSayisi), renk: AppColors.red.withValues(alpha: 0.92));
+      case RozetTipi.yeni:         return _pill(metin: 'YENİ', renk: AppColors.red.withValues(alpha: 0.92));
+      case RozetTipi.eta:          return _pill(ikon: Icons.schedule_rounded, metin: _etaMetin(ilan.tarih, now), renk: _etaRenk(ilan.tarih, now));
+      case RozetTipi.dutyFree:     return _pill(ikon: Icons.local_mall_rounded, metin: 'DUTY FREE', renk: const Color(0xE6B8860B));
+      case RozetTipi.yok:          return const SizedBox.shrink();
     }
   }
 
@@ -414,8 +546,8 @@ class KartZeminPainter extends CustomPainter {
 
 // ── Hero Banner ───────────────────────────────────────────────────────────────
 
-class _HeroBanner extends ConsumerWidget {
-  const _HeroBanner();
+class KesfetHeroBanner extends ConsumerWidget {
+  const KesfetHeroBanner({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -541,8 +673,8 @@ class _HeroBanner extends ConsumerWidget {
 
 // ── Boş ekran ─────────────────────────────────────────────────────────────────
 
-class _BosEkran extends StatelessWidget {
-  const _BosEkran();
+class KesfetBosEkran extends StatelessWidget {
+  const KesfetBosEkran({super.key});
   @override
   Widget build(BuildContext context) => Center(child: Padding(padding: const EdgeInsets.all(32),
     child: Column(mainAxisSize: MainAxisSize.min, children: [

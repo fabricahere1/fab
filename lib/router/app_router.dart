@@ -69,9 +69,19 @@ GoRouter router(Ref ref) {
     initialLocation: AppRoutes.splash,
     refreshListenable: notifier,
     redirect: (context, state) {
-      final user = ref.read(currentUserProvider);
-      final girisYapildi = user != null;
+      final authAsync = ref.read(authStateProvider);
       final loc = state.matchedLocation;
+
+      // Firebase Auth henüz ilk cevabını vermedi (yerel disk cache'i
+      // okunuyor) — bu sırada login'e ATLAMA, splash'ta kal. Cevap
+      // gelince _AppStateNotifier zaten notifyListeners() çağırıp
+      // router'ı yeniden değerlendirtecek.
+      if (authAsync.isLoading && !authAsync.hasValue) {
+        return loc == AppRoutes.splash ? null : AppRoutes.splash;
+      }
+
+      final user = authAsync.value;
+      final girisYapildi = user != null;
 
       if (loc.startsWith('/ilan/')) {
         if (!girisYapildi) {
@@ -180,7 +190,6 @@ class _SplashPageState extends State<_SplashPage>
   late final AnimationController _ctrl;
   late final Animation<double> _logoOpacity;
   late final Animation<double> _logoScale;
-  late final Animation<double> _hintOpacity;
 
   @override
   void initState() {
@@ -196,9 +205,6 @@ class _SplashPageState extends State<_SplashPage>
     _logoScale = Tween<double>(begin: 0.75, end: 1).animate(
       CurvedAnimation(parent: _ctrl, curve: const Interval(0, 0.7, curve: Curves.easeOutBack)),
     );
-    _hintOpacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _ctrl, curve: const Interval(0.5, 1.0, curve: Curves.easeIn)),
-    );
 
     _ctrl.forward();
   }
@@ -212,37 +218,24 @@ class _SplashPageState extends State<_SplashPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      // Gerçek native splash rengi (android/.../styles.xml: #E53935) ile
+      // birebir aynı zemin — Android'in sistem splash ikonu, Flutter'ın ilk
+      // karesi çizildikten sonra ÜZERİNE bindirilip çıkış animasyonu yapıyor;
+      // altındaki bu zemin uyuşmazsa "siyah ekran" hissi oluşuyordu.
+      backgroundColor: const Color(0xFFE53935),
       body: Center(
         child: AnimatedBuilder(
           animation: _ctrl,
-          builder: (_, _) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Opacity(
-                opacity: _logoOpacity.value,
-                child: Transform.scale(
-                  scale: _logoScale.value,
-                  child: Image.asset(
-                    'assets/images/logo_seffaf.png',
-                    height: 140,
-                    fit: BoxFit.contain,
-                  ),
-                ),
+          builder: (_, _) => Opacity(
+            opacity: _logoOpacity.value,
+            child: Transform.scale(
+              scale: _logoScale.value,
+              // Native splash'taki aynı görsel — pürüzsüz, kesintisiz geçiş.
+              child: Image.asset(
+                'assets/splash/iste_splash.png',
+                fit: BoxFit.contain,
               ),
-              const SizedBox(height: 16),
-              Opacity(
-                opacity: _hintOpacity.value,
-                child: Text(
-                  'Yeter ki Sen İste',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[400],
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

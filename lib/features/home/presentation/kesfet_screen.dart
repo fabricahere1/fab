@@ -13,6 +13,10 @@ import 'package:iste_v3/features/ilanlar/presentation/ilan_form_screen.dart';
 import 'sana_ozel_screen.dart';
 import 'kesfet_vitrin_tab.dart';
 import 'kesfet_vitrin2_tab.dart';
+import 'kategori_vitrini_bolum.dart';
+import 'alisveris_rehberi_bolum.dart';
+import 'beden_donusturucu_bolum.dart';
+import 'tasiyici_ipuclari_bolum.dart';
 
 class KesfetScreen extends ConsumerStatefulWidget {
   const KesfetScreen({super.key});
@@ -200,6 +204,25 @@ class _KesfetTumEkran extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final bosMu = kesfetVitrin1TamamenBosMu(ref);
+    final yukleniyor = ref.watch(istekIlanlarProvider).yukleniyor || ref.watch(tasiyiciIlanlarProvider).yukleniyor;
+
+    if (bosMu) {
+      return RefreshIndicator(
+        color: AppColors.red,
+        onRefresh: () => _yenile(ref),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: yukleniyor
+              ? const Padding(
+                  padding: EdgeInsets.only(top: 80),
+                  child: Center(child: CircularProgressIndicator(color: AppColors.red, strokeWidth: 2)),
+                )
+              : const KesfetBosEkran(),
+        ),
+      );
+    }
+
     return RefreshIndicator(
       color: AppColors.red,
       onRefresh: () => _yenile(ref),
@@ -207,11 +230,69 @@ class _KesfetTumEkran extends ConsumerWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
           children: const [
-            KesfetVitrinTab(),
-            KesfetVitrin2Tab(),
+            // 1. Hero banner
+            KesfetHeroBanner(),
+            // 2. Önerilen ilanlar (2 satır)
+            KesfetOnerilenBolum(),
+            // 3. Haftanın en çok görüntülenenleri + favorilenenleri
+            KesfetGoruntulenenFavorilenenBolum(),
+            // 4. En yeni ilanlar (2 satır, etiketsiz)
+            KesfetEnYeniBolum(),
+            // 5. Bugün eklenen + Yakında gelecek + Duty Free
+            KesfetGuncelBolumler(),
+            // 6. En eski ilanlar (1 satır)
+            KesfetEnEskiBolum1Satir(),
+            // 7. Trend ürünler + Popüler güzergahlar + Bu hafta nereden geliyorlar
+            KesfetTrendGuzergahSehirGrubu(),
+            // 8. En eski ilanlar (2 satır)
+            KesfetEnEskiBolum2Satir(),
+            // 9. İndirim & outlet mağazaları + Dünya trendleri
+            KesfetIndirimDunyaGrubu(),
+            // 10. Alışveriş rehberi (İstekçi Rehberi)
+            // (KesfetRehberBedenIpucuBannerGrubu'nun yerine, araya kategori
+            //  vitrini girebilsin diye burada manuel sıralıyoruz)
+            _AlisverisRehberiVeKategoriVitrini(),
+            // 12. Beden dönüştürücü + Taşıyıcı ipuçları + İlk ilanını ver banner'ı
+            _BedenIpucuVeBanner(),
+            // 13. Rastgele keşfet karması (2 satır)
+            KesfetRastgeleKarmaBolum(),
+            SizedBox(height: 24),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Alışveriş rehberi (İstekçi Rehberi) + onun hemen altına kategori vitrini.
+class _AlisverisRehberiVeKategoriVitrini extends StatelessWidget {
+  const _AlisverisRehberiVeKategoriVitrini();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AlisverisRehberiBolum(),
+        KategoriVitriniBolum(),
+      ],
+    );
+  }
+}
+
+/// Beden dönüştürücü + Taşıyıcı ipuçları + İlk ilanını ver banner'ı.
+class _BedenIpucuVeBanner extends StatelessWidget {
+  const _BedenIpucuVeBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        BedenDonusturuculBolum(),
+        TasiyiciIpuclariBolum(),
+        IlkIlanBannerPublic(),
+      ],
     );
   }
 }

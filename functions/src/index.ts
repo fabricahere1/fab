@@ -568,14 +568,31 @@ export const mesajBildirimiGonder = functions
     const { aliciId, gondereAd, ilanBaslik, sohbetId, metin } = data as {
       aliciId: string; gondereAd: string; ilanBaslik: string; sohbetId: string; metin: string;
     };
+    const gondereId = context.auth.uid;
     const kullaniciSnap = await db.collection("kullanicilar").doc(aliciId).get();
     if (!kullaniciSnap.exists) return { success: false };
     const kullaniciData  = kullaniciSnap.data() ?? {};
-    const fcmToken       = kullaniciData.fcmToken as string | undefined;
-    if (!fcmToken) return { success: false };
-    const mesajTercih    = (kullaniciData.bildirimTercihleri?.mesaj ?? true) as boolean;
-    if (!mesajTercih) return { success: false };
     const bildirimMetin  = metin && metin.trim().length > 0 ? metin.trim() : ilanBaslik;
+
+    // Uygulama içi bildirim çanı — push tercihi/token durumundan bağımsız,
+    // her zaman yazılır. Bell, bu koleksiyonu dinler.
+    await db.collection("bildirimler").add({
+      kullaniciId: aliciId,
+      tip:         "mesaj",
+      baslik:      gondereAd,
+      icerik:      `${ilanBaslik} hakkında mesaj gönderdi`,
+      okundu:      false,
+      tarih:       admin.firestore.FieldValue.serverTimestamp(),
+      hedefId:     sohbetId,
+      gondereId:   gondereId,
+      gondereAd:   gondereAd,
+    });
+
+    // Push bildirimi — token yoksa veya kullanıcı kapattıysa sessizce atla.
+    const fcmToken    = kullaniciData.fcmToken as string | undefined;
+    const mesajTercih = (kullaniciData.bildirimTercihleri?.mesaj ?? true) as boolean;
+    if (!fcmToken || !mesajTercih) return { success: true };
+
     await admin.messaging().send({
       token: fcmToken,
       notification: { title: gondereAd, body: bildirimMetin },
