@@ -62,6 +62,7 @@ abstract class IlanModel with _$IlanModel {
     @Default('') String beden,
     String? sahipIstekTeslimatTercihi,
     @Default(false) bool sahipDutyFree,
+    @Default(false) bool sadeceGeliyorum,
   }) = _IlanModel;
 
   factory IlanModel.fromFirestore(DocumentSnapshot doc) {
@@ -96,6 +97,7 @@ abstract class IlanModel with _$IlanModel {
       beden:           data['beden']         as String? ?? '',
       sahipIstekTeslimatTercihi: data['sahipIstekTeslimatTercihi'] as String?,
       sahipDutyFree:   data['sahipDutyFree'] as bool? ?? false,
+      sadeceGeliyorum: data['sadeceGeliyorum'] as bool? ?? false,
     );
   }
 
@@ -139,6 +141,7 @@ extension IlanModelX on IlanModel {
     if (sahipIstekTeslimatTercihi != null)
       'sahipIstekTeslimatTercihi': sahipIstekTeslimatTercihi,
     if (sahipDutyFree) 'sahipDutyFree': sahipDutyFree,
+    if (sadeceGeliyorum) 'sadeceGeliyorum': sadeceGeliyorum,
     if (tarih != null) 'tarih': Timestamp.fromDate(tarih!),
     'olusturmaTarihi': FieldValue.serverTimestamp(),
     if (resimUrl.isNotEmpty)      'resimUrl':      resimUrl,

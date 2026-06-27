@@ -784,7 +784,7 @@ final class FavoriNotifierProvider
         argument: null,
         retry: null,
         name: r'favoriProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -805,7 +805,7 @@ final class FavoriNotifierProvider
   }
 }
 
-String _$favoriNotifierHash() => r'aff0d297ec3af862ef0fa6564f8b3d5ebecefe34';
+String _$favoriNotifierHash() => r'16b4ae9802af2f997535eef910de34ce749b33db';
 
 abstract class _$FavoriNotifier extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();

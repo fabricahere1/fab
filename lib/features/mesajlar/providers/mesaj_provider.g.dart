@@ -208,7 +208,7 @@ final class SohbetNotifierProvider
   }
 }
 
-String _$sohbetNotifierHash() => r'4f2486825240ab5abc3d03b3a033a7a2e67ae809';
+String _$sohbetNotifierHash() => r'688c263f67db88bb869a4f5f71101f0e805e4a73';
 
 final class SohbetNotifierFamily extends $Family
     with
@@ -439,7 +439,7 @@ final class IslemDurumuIslemleriProvider
 }
 
 String _$islemDurumuIslemleriHash() =>
-    r'462d237148cc4c202f8f167d8465d914857a5089';
+    r'349843fa074193f7b109258d10f3345eaa53a54f';
 
 final class IslemDurumuIslemleriFamily extends $Family
     with

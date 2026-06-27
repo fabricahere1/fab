@@ -910,7 +910,7 @@ final class TakipIslemleriProvider
         argument: null,
         retry: null,
         name: r'takipIslemleriProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -931,7 +931,7 @@ final class TakipIslemleriProvider
   }
 }
 
-String _$takipIslemleriHash() => r'da0b70da7e0c83b7c138ab97a0f7bea3ac57ead9';
+String _$takipIslemleriHash() => r'f85008a623b713f0b3cf6dfae0a7d461934bf159';
 
 abstract class _$TakipIslemleri extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();
