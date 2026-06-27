@@ -215,6 +215,10 @@ class SohbetNotifier extends _$SohbetNotifier {
       sonZaman: state.enEskiZaman!,
     );
 
+    // SohbetNotifier autoDispose — kullanıcı await sürerken ekrandan
+    // çıkarsa provider yok edilebilir, state'e dokunmadan önce kontrol et.
+    if (!ref.mounted) return;
+
     final yeniMap = Map<String, MesajModel>.from(state.mesajMap);
     for (final mesaj in mesajlar) {
       if (!yeniMap.containsKey(mesaj.id)) {
@@ -244,6 +248,7 @@ class SohbetNotifier extends _$SohbetNotifier {
   }) async {
     if (metin.trim().isEmpty || state.gonderiyor) return;
     final benimAd = await _getBenimAd();
+    if (!ref.mounted) return;
     state = state.copyWith(gonderiyor: true);
     try {
       await _repo.mesajGonder(
@@ -292,6 +297,7 @@ class SohbetNotifier extends _$SohbetNotifier {
   }) async {
     if (state.gonderiyor) return;
     final benimAd = await _getBenimAd();
+    if (!ref.mounted) return;
     state = state.copyWith(gonderiyor: true);
     try {
       final url = await _repo.resimYukle(dosya: dosya, gondereId: _benimId);
@@ -334,6 +340,7 @@ class SohbetNotifier extends _$SohbetNotifier {
       mesajId: mesajId,
       metin: metin,
     );
+    if (!ref.mounted) return;
     final yeniMap = Map<String, MesajModel>.from(state.mesajMap)
       ..remove(mesajId);
     state = state.copyWith(

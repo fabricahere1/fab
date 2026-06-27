@@ -101,8 +101,13 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
   void _degerlendirmeyiDinle() {
     bool ilkSnapshot = true;
 
+    // Not: Eskiden 'sohbetDurumuProvider' (degerlendirme_provider.dart)
+    // kullanılıyordu — bu, AYNI sohbet dökümanı için, IslemDurumuPanel'in
+    // kullandığı 'sohbetDokumanProvider'dan (mesaj_provider.dart) BAĞIMSIZ
+    // ikinci bir Firestore dinleyicisi açıyordu. Artık tek, paylaşılan
+    // kaynak kullanılıyor.
     ref.listenManual(
-      sohbetDurumuProvider(_sohbetId),
+      sohbetDokumanProvider(_sohbetId),
       (_, next) async {
         // İlk snapshot mevcut durumu yansıtır — değerlendirme popup'ı gösterme.
         // Sohbete her girişte yeniden tetiklenmesini önler.

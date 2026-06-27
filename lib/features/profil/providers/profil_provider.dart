@@ -234,7 +234,7 @@ Stream<bool> takipEdiyorMu(Ref ref, String takipEdilenId) {
   );
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 class TakipIslemleri extends _$TakipIslemleri {
   late final KullaniciRepository _repo;
 
@@ -251,6 +251,7 @@ class TakipIslemleri extends _$TakipIslemleri {
     try {
       await _repo.takipEt(takipciId: uid, takipEdilenId: takipEdilenId);
     } catch (_) {
+      if (!ref.mounted) return;
       ref.read(optimistikTakipProvider.notifier).temizle(takipEdilenId);
     }
   }
@@ -262,6 +263,7 @@ class TakipIslemleri extends _$TakipIslemleri {
     try {
       await _repo.takipiBirak(takipciId: uid, takipEdilenId: takipEdilenId);
     } catch (_) {
+      if (!ref.mounted) return;
       ref.read(optimistikTakipProvider.notifier).temizle(takipEdilenId);
     }
   }

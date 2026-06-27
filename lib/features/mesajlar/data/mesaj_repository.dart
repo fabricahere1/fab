@@ -79,6 +79,14 @@ class MesajRepository {
     final mesajRef  = _mesajlar(sohbetId).doc();
     final batch     = firestore.batch();
 
+    // Tek bir set() — eskiden aynı dökümana (sohbetRef) iki ayrı set()
+    // çağrısı yapılıyordu (ana veri + okunmamis sayacı). İlk temasta
+    // (sohbet dökümanı henüz yokken) ikinci yazma, Firestore kuralının
+    // "create" olarak değerlendirdiği ama 'kullanicilar' alanı içermeyen
+    // bir istek oluşturuyordu — kural bu alana erişmeye çalışırken
+    // permission-denied veriyordu. Tek yazmaya birleştirince bu risk
+    // tamamen ortadan kalkıyor; 'okunmamis.$karsiId' nokta notasyonu,
+    // sadece o alt-alanı güncelliyor, diğer kullanıcının sayacına dokunmuyor.
     batch.set(sohbetRef, {
       'kullanicilar':         [gondereId, karsiId],
       'ilanId':               ilanId,
@@ -92,12 +100,8 @@ class MesajRepository {
       'degerlendirmeYapildi': false,
       'islemDurumlari':       {'iletisimBasladi': true},
       'olusturmaTarihi':      FieldValue.serverTimestamp(),
+      'okunmamis.$karsiId':   FieldValue.increment(1),
     }, SetOptions(merge: true));
-
-    // okunmamis sadece karsiId'nin sayacını artır; diğer kullanıcının sayacına dokunma
-    batch.set(sohbetRef, {
-      'okunmamis': {karsiId: FieldValue.increment(1)},
-    }, SetOptions(mergeFields: [FieldPath(['okunmamis', karsiId])]));
 
 
     batch.set(mesajRef, {
