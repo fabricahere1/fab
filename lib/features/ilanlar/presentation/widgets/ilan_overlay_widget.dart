@@ -10,12 +10,14 @@ class IlanYuklemeOverlay extends StatefulWidget {
   final bool aktif;
   final bool? basarili;
   final VoidCallback? onTamamlandi;
+  final bool duzenlemeModu;
 
   const IlanYuklemeOverlay({
     super.key,
     required this.aktif,
     this.basarili,
     this.onTamamlandi,
+    this.duzenlemeModu = false,
   });
 
   @override
@@ -97,6 +99,17 @@ class _IlanYuklemeOverlayState extends State<IlanYuklemeOverlay>
       BannerService.instance.sustur();
     }
 
+    // KRİTİK: bu widget 'aktif=false' olunca AnimatedOpacity ile sadece
+    // şeffaflaşıyor, ağaçtan kalkmıyor — dispose() tetiklenmiyor. Önceden
+    // aktifEt() SADECE dispose()'da çağrılıyordu, bu yüzden kullanıcı
+    // "Kapat"a basıp aktif=false olduğunda susturma SONSUZA KADAR takılı
+    // kalıyordu — o oturumdaki TÜM sonraki banner'lar (mesaj, anlaşma,
+    // işlem durumu) sessizce kayboluyordu. Artık aktif=false geçişinde de
+    // doğrudan serbest bırakılıyor.
+    if (!widget.aktif && old.aktif) {
+      BannerService.instance.aktifEt();
+    }
+
     if (widget.basarili != old.basarili && widget.basarili != null) {
       _basariliGeldi = true;
       if (_barCtr.status == AnimationStatus.completed) _baslaFaz2();
@@ -105,6 +118,8 @@ class _IlanYuklemeOverlayState extends State<IlanYuklemeOverlay>
 
   @override
   void dispose() {
+    // Widget hâlâ aktifken (örn. kullanıcı sayfadan tamamen çıktıysa)
+    // ağaçtan kalkarsa, güvenlik ağı olarak burada da serbest bırak.
     BannerService.instance.aktifEt();
     _halkaCtr.dispose();
     _barCtr.dispose();
@@ -153,6 +168,7 @@ class _IlanYuklemeOverlayState extends State<IlanYuklemeOverlay>
                   halkaCtr: _halkaCtr,
                   barAnim: _barAnim,
                   tamamlaCtr: _tamamlaCtr,
+                  duzenlemeModu: widget.duzenlemeModu,
                 ),
               ),
 
@@ -198,17 +214,25 @@ class _YuklemeIcerik extends StatelessWidget {
   final AnimationController halkaCtr;
   final Animation<double> barAnim;
   final AnimationController tamamlaCtr;
+  final bool duzenlemeModu;
 
   const _YuklemeIcerik({
     required this.halkaCtr,
     required this.barAnim,
     required this.tamamlaCtr,
+    this.duzenlemeModu = false,
   });
 
   double _barDeger(double barVal, double tamamlaVal) =>
       barVal * 0.8 + tamamlaVal * 0.2;
 
   String _asamaMetni(double p) {
+    if (duzenlemeModu) {
+      if (p < 0.20) return 'Güncellemeniz alınıyor';
+      if (p < 0.40) return 'Güncelleme alındı';
+      if (p < 0.60) return 'İlanınız yeniden inceleniyor';
+      return 'İlanınız yeniden değerlendiriliyor';
+    }
     if (p < 0.20) return 'İlanınız alınıyor';
     if (p < 0.40) return 'İlanınız alındı';
     if (p < 0.60) return 'İlanınız inceleniyor';

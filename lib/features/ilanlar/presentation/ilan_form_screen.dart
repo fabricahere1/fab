@@ -385,7 +385,9 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
     final nereden = (_istekMi && _neredenFarketmez)
         ? 'Farketmez' : _neredenCtrl.text.trim();
     final urunDeger = _sadeceGeliyorum
-        ? 'İsteklere açığım'
+        ? (nereden.isNotEmpty && nereden != 'Farketmez'
+            ? '$nereden\'${_turkceAblatifEki(nereden)} geliyorum'
+            : 'İsteklere açığım')
         : _urunCtrl.text.trim();
 
     if (_duzenlemeModuMu) {
@@ -408,15 +410,25 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
         mevcutResimler: _mevcutResimler,
       );
       if (!mounted) return;
-      if (basarili) {
-        Navigator.pop(context);
-        AppSnackBar.basari(context,
-            'İlanınız güncellendi. İnceleme sonucu uygun görülürse yayınlanacaktır.');
-        ref.read(istekIlanlarProvider.notifier).yenile();
-        ref.read(tasiyiciIlanlarProvider.notifier).yenile();
-      } else {
+
+      if (!basarili) {
         _snack('İlan güncellenemedi. Tekrar deneyin.');
+        return;
       }
+
+      // Yazma başarılı — şimdi sunucudaki yeniden moderasyon sonucunu
+      // bekliyoruz (CREATE akışındaki aynı mekanizma, durumBekle). Eskiden
+      // burada hemen "güncellendi, incelenecek" diye anlık bir snackbar
+      // gösterilip ekran kapatılıyordu — gerçek sonucu (onaylandı/reddedildi)
+      // hiç beklemiyordu. Artık aynı progres ekranı, gerçek sonucu gösterene
+      // kadar açık kalıyor — push bildirim zamanlamasına bağımlı değil.
+      setState(() => _overlayAktif = true);
+      final yayinda = await ref.read(ilanOlusturProvider.notifier).durumBekle(
+        widget.duzenlenecekIlan!.id,
+        ilkSonucuAtla: true,
+      );
+      if (!mounted) return;
+      setState(() => _basarili = yayinda ?? true);
       return;
     }
 
@@ -466,10 +478,12 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
       if (!mounted) return;
       setState(() => _basarili = yayinda ?? true);
     } catch (e) {
-      if (mounted) setState(() {
-        _basarili = false;
-        _hataMesaji = e.toString();
-      });
+      if (mounted) {
+        setState(() {
+          _basarili = false;
+          _hataMesaji = e.toString();
+        });
+      }
     }
   }
 
@@ -616,6 +630,7 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
             aktif: _overlayAktif,
             basarili: _basarili,
             onTamamlandi: _overlayTamamlandi,
+            duzenlemeModu: _duzenlemeModuMu,
           ),
         ],
       ),
@@ -644,7 +659,35 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
                 }
               }),
             ),
-            const SizedBox(height: 22),
+            Padding(
+              padding: const EdgeInsets.only(left: 4, top: 8),
+              child: Text(
+                '*Sadece seyahat ediyorsan ve isteklere açıksan',
+                style: GoogleFonts.dmSans(
+                  fontSize: 11,
+                  fontStyle: FontStyle.italic,
+                  color: const Color(0xFFBBBBBB),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 22),
+              child: Row(
+                children: [
+                  Expanded(child: Container(height: 0.6, color: const Color(0xFFEEEEEE))),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Text('YA DA',
+                        style: GoogleFonts.dmSans(
+                          fontSize: 11,
+                          color: const Color(0xFFBBBBBB),
+                          letterSpacing: 0.5,
+                        )),
+                  ),
+                  Expanded(child: Container(height: 0.6, color: const Color(0xFFEEEEEE))),
+                ],
+              ),
+            ),
           ],
           AbsorbPointer(
             absorbing: _sadeceGeliyorum,
@@ -691,6 +734,17 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
                       ),
                     ),
                   ),
+                  if (!_istekMi) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      '*Seyahat ediyor ve istekçiler için ürün ilanı vermek istiyorsan',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 11,
+                        fontStyle: FontStyle.italic,
+                        color: const Color(0xFFBBBBBB),
+                      ),
+                    ),
+                  ],
                   if (beden != BedenTipi.yok) ...[
                     const SizedBox(height: 24),
                     BedenCinsiyetBolum(
@@ -937,6 +991,28 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
   }
 }
 
+// ── Türkçe ünlü uyumu — "-dan/-den/-tan/-ten" eki ────────────────────────────
+//
+// "Amerika'dan", "İngiltere'den", "Irak'tan" gibi doğru ek seçimi için.
+// Son sesli harf ön/art ünlüyü, son harf ise sert/yumuşak sessizi belirler.
+String _turkceAblatifEki(String kelime) {
+  if (kelime.isEmpty) return 'dan';
+  const onSesliler   = {'e', 'i', 'ö', 'ü'};
+  const sertSesizler = {'p', 'ç', 't', 'k', 's', 'ş', 'h', 'f'};
+
+  String sonSesli = 'a';
+  for (var i = kelime.length - 1; i >= 0; i--) {
+    final c = kelime[i].toLowerCase();
+    if ('aeıioöuü'.contains(c)) { sonSesli = c; break; }
+  }
+
+  final on   = onSesliler.contains(sonSesli);
+  final sert = sertSesizler.contains(kelime[kelime.length - 1].toLowerCase());
+
+  if (on) return sert ? 'ten' : 'den';
+  return sert ? 'tan' : 'dan';
+}
+
 // ── Sadece geliyorum toggle'ı ─────────────────────────────────────────────────
 
 class _SadeceGeliyorumToggle extends StatelessWidget {
@@ -969,14 +1045,14 @@ class _SadeceGeliyorumToggle extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Sadece geliyorum, isteklere açığım',
+                  Text('Geliyorum, isteklere açığım',
                       style: GoogleFonts.dmSans(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w600,
                         color: const Color(0xFF1A1A1A),
                       )),
                   const SizedBox(height: 2),
-                  Text('Belirli bir ürün belirtmeden, sana ulaşılabilir hâle gel.',
+                  Text('İstekçiler için ulaşılabilir ol',
                       style: GoogleFonts.dmSans(
                         fontSize: 11.5,
                         color: const Color(0xFF999999),

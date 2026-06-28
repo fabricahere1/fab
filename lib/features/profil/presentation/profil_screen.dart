@@ -564,6 +564,42 @@ class _ReddedilenIlanKarti extends StatelessWidget {
               ],
             ),
             if (ilan.redSebebi.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              // ── Süreç çizgisi (stepper) ─────────────────────────────
+              // Spesifik ret nedeni (ilan.redSebebi) burada KASITLI OLARAK
+              // gösterilmiyor — kullanıcının "hangi kelimeyi kaldırsam
+              // geçer" diye deneme-hata yapmasını değil, içeriğin
+              // tamamını gözden geçirmesini istiyoruz.
+              Row(
+                children: const [
+                  _AdimNoktasi(tamamlandi: true, sonAdimMi: false),
+                  _AdimCizgisi(tamamlandi: true),
+                  _AdimNoktasi(tamamlandi: true, sonAdimMi: false),
+                  _AdimCizgisi(tamamlandi: false),
+                  _AdimNoktasi(tamamlandi: false, sonAdimMi: true),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text('Gönderildi',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.manrope(fontSize: 9.5, color: AppColors.textSecondary)),
+                  ),
+                  Expanded(
+                    child: Text('İncelendi',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.manrope(fontSize: 9.5, color: AppColors.textSecondary)),
+                  ),
+                  Expanded(
+                    child: Text('Düzeltme gerekli',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.manrope(
+                            fontSize: 9.5, fontWeight: FontWeight.w600, color: AppColors.red)),
+                  ),
+                ],
+              ),
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(10),
@@ -578,7 +614,7 @@ class _ReddedilenIlanKarti extends StatelessWidget {
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        ilan.redSebebi,
+                        'İlanınız ilan verme kurallarına uygun değil.',
                         style: GoogleFonts.manrope(fontSize: 12, color: AppColors.red),
                       ),
                     ),
@@ -622,6 +658,45 @@ class _ReddedilenIlanKarti extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Süreç çizgisi (stepper) yardımcı parçaları ──────────────────────────────
+
+class _AdimNoktasi extends StatelessWidget {
+  final bool tamamlandi;
+  final bool sonAdimMi;
+  const _AdimNoktasi({required this.tamamlandi, required this.sonAdimMi});
+
+  @override
+  Widget build(BuildContext context) {
+    final renk = sonAdimMi
+        ? AppColors.red
+        : (tamamlandi ? AppColors.textPrimary : const Color(0xFFEEEEEE));
+    return Container(
+      width: 20,
+      height: 20,
+      decoration: BoxDecoration(color: renk, shape: BoxShape.circle),
+      child: Icon(
+        sonAdimMi ? Icons.edit_outlined : Icons.check,
+        size: sonAdimMi ? 10 : 11,
+        color: Colors.white,
+      ),
+    );
+  }
+}
+
+class _AdimCizgisi extends StatelessWidget {
+  final bool tamamlandi;
+  const _AdimCizgisi({required this.tamamlandi});
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+        child: Container(
+          height: 1.5,
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          color: tamamlandi ? AppColors.textPrimary : const Color(0xFFEEEEEE),
+        ),
+      );
 }
 
 // ── Yardımcı Widget'lar ───────────────────────────────────

@@ -355,11 +355,26 @@ class IlanOlustur extends _$IlanOlustur {
   /// "yayinda" veya "reddedildi" durumuna ulaşınca tamamlanır.
   /// [zaman asimi] içinde sonuç gelmezse null döner.
   /// Moderasyon sonucunu bekler: true=yayında, false=reddedildi, null=timeout
-  Future<bool?> durumBekle(String ilanId, {Duration timeout = const Duration(seconds: 40)}) {
+  ///
+  /// [ilkSonucuAtla] — düzenleme akışında, ilan zaten "reddedildi"
+  /// durumundan başlar. Bu true verilmezse (ilk oluşturmada varsayılan),
+  /// ilan başlangıçta 'onayBekliyor' olduğu için ilk anlık görüntü hiçbir
+  /// zaman 'yayinda'/'reddedildi' olamaz, sorun yoktur. Ama düzenlemede,
+  /// sunucunun yeniden moderasyonu HENÜZ başlamadan dinleyici ilanın ESKİ
+  /// durumunu ilk anlık görüntüde görüp yanlışlıkla "sonuç geldi" sanabilir.
+  /// Bu yüzden değer karşılaştırması DEĞİL, "sadece ilk anlık görüntüyü
+  /// atla" mantığı kullanılıyor — sunucu yeniden reddetse bile (durum AYNI
+  /// kalsa bile), o yeni yazma olayını doğru şekilde sonuç olarak yakalar.
+  Future<bool?> durumBekle(
+    String ilanId, {
+    bool ilkSonucuAtla = false,
+    Duration timeout = const Duration(seconds: 40),
+  }) {
     final completer = Completer<bool?>();
     final firestore = ref.read(ilanRepositoryProvider).firestore;
     StreamSubscription? sub;
     Timer? timer;
+    var ilkSnapshot = true;
 
     timer = Timer(timeout, () {
       sub?.cancel();
@@ -368,6 +383,10 @@ class IlanOlustur extends _$IlanOlustur {
 
     sub = firestore.collection('ilanlar').doc(ilanId).snapshots().listen(
       (snap) {
+        if (ilkSonucuAtla && ilkSnapshot) {
+          ilkSnapshot = false;
+          return;
+        }
         final durum = snap.data()?['durum'] as String?;
         if (durum == 'yayinda' || durum == 'reddedildi') {
           timer?.cancel();
