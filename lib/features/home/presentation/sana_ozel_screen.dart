@@ -19,6 +19,7 @@ import 'package:iste_v3/core/cache/app_cache_manager.dart';
 import 'package:iste_v3/shared/constants/app_constants.dart';
 import 'package:iste_v3/features/home/presentation/kesfet_vitrin_tab.dart'
     show CicekTipi, KartZeminPainter;
+import 'package:iste_v3/features/home/presentation/kesfet_bolum_baslik.dart';
 import 'package:iste_v3/features/home/presentation/kesfet_bolum_detay_screen.dart';
 import 'package:iste_v3/features/profil/presentation/profil_duzenle_screen.dart';
 import 'package:iste_v3/features/auth/providers/auth_provider.dart';
@@ -395,61 +396,17 @@ class _Bolum extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Başlık + Tümünü Göster butonu
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 12, 10),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Icon(data.ikon, size: 16, color: AppColors.red),
+        KesfetBolumBaslik(
+          baslik: data.baslik,
+          ikon: data.ikon,
+          onTumunuGor: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => KesfetBolumDetayScreen(
+                baslik: data.baslik,
+                ilanlar: data.ilanlar,
+                ikon: data.ikon,
               ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(data.baslik,
-                    style: GoogleFonts.dmSerifDisplay(fontSize: 15,
-                        color: AppColors.textPrimary)),
-              ),
-              const SizedBox(width: 8),
-              Align(
-                alignment: Alignment.topCenter,
-                child: GestureDetector(
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => KesfetBolumDetayScreen(
-                        baslik: data.baslik,
-                        ilanlar: data.ilanlar,
-                        ikon: data.ikon,
-                      ),
-                    ),
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFFEEEEEE), width: 1),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.06),
-                          blurRadius: 4,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      'Tümünü Gör',
-                      style: GoogleFonts.dmSans(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.red,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
         // Kartların scroll alanı — çiçekli zemin
@@ -643,20 +600,9 @@ class _YuksekPuanliTasiyicilarBolumu extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 12, 10),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(padding: EdgeInsets.only(top: 2), child: Icon(Icons.workspace_premium_outlined, size: 16, color: AppColors.red)),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(baslik,
-                    style: GoogleFonts.dmSerifDisplay(fontSize: 15,
-                        color: AppColors.textPrimary)),
-              ),
-            ],
-          ),
+        KesfetBolumBaslik(
+          baslik: baslik,
+          ikon: Icons.workspace_premium_outlined,
         ),
         SizedBox(
           height: 168,
@@ -828,7 +774,7 @@ class _SanaOzelHeroBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(10, 4, 10, 4),
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
         child: SizedBox(
@@ -899,7 +845,7 @@ class _SanaOzelHeroBanner extends ConsumerWidget {
                                   context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan);
                                 },
                                 child: Container(
-                                  width: 80, height: 80,
+                                  width: 88, height: 120,
                                   margin: const EdgeInsets.only(right: 8),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(10),
@@ -916,7 +862,7 @@ class _SanaOzelHeroBanner extends ConsumerWidget {
                                             fadeInDuration: Duration.zero)
                                         : Container(
                                             color: Colors.white.withValues(alpha: 0.2),
-                                            child: const Icon(Icons.inventory_2_outlined, color: Colors.white, size: 24)),
+                                            child: const Icon(Icons.inventory_2_outlined, color: Colors.white, size: 26)),
                                   ),
                                 ),
                               );

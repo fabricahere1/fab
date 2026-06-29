@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'kesfet_bolum_baslik.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -240,47 +241,17 @@ class _Bolum extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 12, 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Align(
-              alignment: Alignment.centerRight,
-              child: GestureDetector(
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => KesfetBolumDetayScreen(
-                      baslik: data.baslik,
-                      ilanlar: data.ilanlar,
-                      ikon: data.ikon,
-                    ),
-                  ),
-                ),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFEEEEEE), width: 1),
-                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 4, offset: const Offset(0, 1))],
-                  ),
-                  child: Text('Tümünü Gör', style: GoogleFonts.dmSans(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.red)),
-                ),
-              ),
+      KesfetBolumBaslik(
+        baslik: data.baslik,
+        ikon: data.ikon,
+        onTumunuGor: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => KesfetBolumDetayScreen(
+              baslik: data.baslik,
+              ilanlar: data.ilanlar,
+              ikon: data.ikon,
             ),
-            const SizedBox(height: 6),
-            Row(children: [
-              Icon(data.ikon, size: 16, color: AppColors.red),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(data.baslik,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.dmSerifDisplay(fontSize: 15, color: AppColors.textPrimary)),
-              ),
-            ]),
-          ],
+          ),
         ),
       ),
       SizedBox(

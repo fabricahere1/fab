@@ -1,4 +1,5 @@
 // lib/features/ilanlar/presentation/widgets/ilan_karti.dart
+import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -112,6 +113,12 @@ class IlanKarti extends ConsumerWidget {
                               color: AppColors.textHint, size: 28),
                         ),
                 ),
+                // ── "Yeni" rozeti — son 48 saatte eklenenler ──────────────
+                if (guncelIlan.yeniMi)
+                  const Positioned(
+                    top: 6, left: 6,
+                    child: _YeniRozeti(),
+                  ),
                 // ── Optimistic favori butonu ──────────────────────────────
                 if (gosterFavori)
                   Positioned(
@@ -119,6 +126,18 @@ class IlanKarti extends ConsumerWidget {
                     child: _FavoriButon(
                       ilan: guncelIlan,
                       uid: uid,
+                    ),
+                  ),
+                // ── Beden/cinsiyet şeridi — resmin en altında ──────────────
+                // Önceden içerik alanının sağında, iki ayrı mavi etiket
+                // olarak gösteriliyordu. Artık tek bir siyah şerit + beyaz
+                // yazı olarak resmin üzerinde, en altta.
+                if (guncelIlan.beden.isNotEmpty || guncelIlan.cinsiyet.isNotEmpty)
+                  Positioned(
+                    bottom: 0, left: 0, right: 0,
+                    child: _BedenCinsiyetSeridi(
+                      cinsiyet: guncelIlan.cinsiyet,
+                      beden: guncelIlan.beden,
                     ),
                   ),
               ],
@@ -230,6 +249,107 @@ class _IlanResimSliderState extends State<_IlanResimSlider> {
 //
 // Tıklanınca UI'ı ANINDA günceller (optimistic), arkada Firestore'a yazar.
 // Firestore stream gelince zaten doğru değer yansır — kullanıcı farkı görmez.
+
+// ── "Yeni" rozeti ──────────────────────────────────────────────────────────
+//
+// Keşfet'teki RozetTipi.yeni'den (yarı saydam koyu pill) KASITLI OLARAK
+// farklı bir stil — bu, İlanlar/Gelenler ana grid'inde her zaman görünen,
+// sade/dolgun kırmızı bir rozet. İki bağımsız "yeni" tanımı var: Keşfet'in
+// "Bugün eklenenler" bölümü 24 saat eşiği kullanıyor (kendi provider'ında),
+// burası ise IlanModelX.yeniMi üzerinden 48 saat eşiği kullanıyor.
+class _YeniRozeti extends StatelessWidget {
+  const _YeniRozeti();
+
+  static const double _boyut = 44;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: _boyut,
+      height: _boyut,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CustomPaint(
+            size: const Size(_boyut, _boyut),
+            painter: _YildizRozetiPainter(),
+          ),
+          Text(
+            'YENİ',
+            style: GoogleFonts.bebasNeue(
+              fontSize: 13,
+              color: Colors.white,
+              height: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 12 kenarlı, "şişkin" (iç/dış yarıçap oranı yüksek) yıldız — Keşfet'teki
+/// RozetTipi.yeni'den (yarı saydam koyu pill) KASITLI OLARAK farklı bir
+/// stil. İki bağımsız "yeni" tanımı var: Keşfet'in "Bugün eklenenler"
+/// bölümü kendi provider'ında 24 saat eşiği kullanıyor, burası ise
+/// IlanModelX.yeniMi üzerinden 48 saat eşiği kullanıyor.
+class _YildizRozetiPainter extends CustomPainter {
+  const _YildizRozetiPainter();
+
+  static const int _kenarSayisi = 12;
+  static const double _disYaricapOrani = 0.48;
+  static const double _icYaricapOrani = 0.41;
+  static const Color _renk = Color(0xFFF2912E);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    final disYaricap = size.width * _disYaricapOrani;
+    final icYaricap = size.width * _icYaricapOrani;
+    final adimAcisi = math.pi / _kenarSayisi;
+    final baslangicAcisi = -math.pi / 2;
+
+    final yol = Path();
+    for (var i = 0; i < _kenarSayisi * 2; i++) {
+      final r = i.isEven ? disYaricap : icYaricap;
+      final aci = baslangicAcisi + i * adimAcisi;
+      final x = cx + r * math.cos(aci);
+      final y = cy + r * math.sin(aci);
+      if (i == 0) {
+        yol.moveTo(x, y);
+      } else {
+        yol.lineTo(x, y);
+      }
+    }
+    yol.close();
+
+    canvas.drawShadow(yol, Colors.black.withValues(alpha: 0.25), 2, false);
+    // Açık/beyaz zeminlerde beyaz çerçeve kaybolduğu için, onun biraz
+    // dışına ince, yarı saydam siyah bir halka ekleniyor — bu, hem koyu
+    // hem açık ürün fotoğraflarının üzerinde rozetin her zaman belirgin
+    // kalmasını sağlıyor.
+    canvas.drawPath(
+      yol,
+      Paint()
+        ..color = Colors.black.withValues(alpha: 0.22)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.3,
+    );
+    canvas.drawPath(yol, Paint()..color = _renk);
+    // Sticker efekti — yıldızın etrafında ince beyaz çerçeve
+    canvas.drawPath(
+      yol,
+      Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.3,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
 
 class _FavoriButon extends ConsumerStatefulWidget {
   final IlanModel ilan;
@@ -503,26 +623,28 @@ class _SayacSatir extends StatelessWidget {
   }
 }
 
-// ── Shimmer Liste ─────────────────────────────────────────────────────────────
+// ── Beden/Cinsiyet Şeridi — resmin en altında, siyah şerit + beyaz yazı ──────
 
-class _BedenChip extends StatelessWidget {
-  final String label;
-  const _BedenChip({required this.label});
+class _BedenCinsiyetSeridi extends StatelessWidget {
+  final String cinsiyet;
+  final String beden;
+  const _BedenCinsiyetSeridi({required this.cinsiyet, required this.beden});
 
   @override
   Widget build(BuildContext context) {
+    final metin = [cinsiyet, beden].where((s) => s.isNotEmpty).join(' ');
+    if (metin.isEmpty) return const SizedBox.shrink();
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE8F0FE),
-        borderRadius: BorderRadius.circular(8),
-      ),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      color: Colors.black.withValues(alpha: 0.72),
       child: Text(
-        label,
+        metin,
+        textAlign: TextAlign.center,
         style: GoogleFonts.dmSans(
-          fontSize: 9,
+          fontSize: AppLayout.fs(context, 10),
           fontWeight: FontWeight.w600,
-          color: const Color(0xFF1A56DB),
+          color: Colors.white,
         ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
@@ -530,6 +652,8 @@ class _BedenChip extends StatelessWidget {
     );
   }
 }
+
+// ── Shimmer Liste ─────────────────────────────────────────────────────────────
 
 class ShimmerListe extends StatelessWidget {
   const ShimmerListe({super.key});
@@ -661,19 +785,6 @@ class _IlanKartiIcerik extends StatelessWidget {
                   ],
                 ),
               ),
-              if (ilan.beden.isNotEmpty || ilan.cinsiyet.isNotEmpty)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (ilan.cinsiyet.isNotEmpty)
-                      _BedenChip(label: ilan.cinsiyet),
-                    if (ilan.cinsiyet.isNotEmpty && ilan.beden.isNotEmpty)
-                      const SizedBox(height: 4),
-                    if (ilan.beden.isNotEmpty)
-                      _BedenChip(label: ilan.beden),
-                  ],
-                ),
             ],
           ),
         ],

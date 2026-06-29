@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'kesfet_bolum_baslik.dart';
 
 import 'package:iste_v3/features/home/presentation/alisveris_rehberi_bolum.dart';
 import 'package:iste_v3/features/home/presentation/beden_donusturucu_bolum.dart';
@@ -235,35 +236,7 @@ class KesfetRehberBedenIpucuBannerGrubu extends StatelessWidget {
 // ── Bölüm başlığı helper ──────────────────────────────────────────────────────
 
 Widget _bolumBaslik({required String baslik, required IconData ikon, VoidCallback? tumunuGor}) {
-  return Padding(
-    padding: const EdgeInsets.fromLTRB(16, 20, 12, 10),
-    child: Row(
-      children: [
-        Icon(ikon, size: 16, color: AppColors.red),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(baslik,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.dmSerifDisplay(fontSize: 15, color: AppColors.textPrimary)),
-        ),
-        if (tumunuGor != null)
-          GestureDetector(
-            onTap: tumunuGor,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFEEEEEE), width: 1),
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 4, offset: const Offset(0, 1))],
-              ),
-              child: Text('Tümünü Gör', style: GoogleFonts.dmSans(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.red)),
-            ),
-          ),
-      ],
-    ),
-  );
+  return KesfetBolumBaslik(baslik: baslik, ikon: ikon, onTumunuGor: tumunuGor);
 }
 
 // ── 1) Trend Ürünler ─────────────────────────────────────────────────────────

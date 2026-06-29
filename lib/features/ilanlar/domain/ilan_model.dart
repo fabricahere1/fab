@@ -106,6 +106,17 @@ abstract class IlanModel with _$IlanModel {
 }
 
 extension IlanModelX on IlanModel {
+  /// İlan, son 48 saat içinde oluşturulduysa true döner — "YENİ" rozeti
+  /// için kullanılır (İlanlar/Gelenler ana listeleme ekranlarındaki
+  /// IlanKarti'da). Keşfet'teki "Bugün eklenenler" bölümünün kendi 24
+  /// saatlik eşiğinden BAĞIMSIZ — burası bilerek daha geniş bir pencere
+  /// kullanıyor.
+  bool get yeniMi {
+    final t = olusturmaTarihi;
+    if (t == null) return false;
+    return DateTime.now().difference(t).inHours < 48;
+  }
+
   String get gridResim {
     if (resimThumbUrl.isNotEmpty) return resimThumbUrl;
     if (resimUrl.isNotEmpty) return resimUrl;

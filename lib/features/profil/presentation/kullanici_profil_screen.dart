@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../../core/cache/app_cache_manager.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
@@ -338,11 +340,25 @@ class KullaniciProfilScreen extends ConsumerWidget {
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                       child: Row(
                         children: [
-                          Text('İlanları',
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary)),
+                          Container(
+                            width: 24, height: 24,
+                            decoration: BoxDecoration(
+                              color: AppColors.red.withValues(alpha: 0.08),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.grid_view_rounded,
+                                size: 13, color: AppColors.red),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            ilanlarAsync.value != null
+                                ? 'İlanları (${ilanlarAsync.value!.length})'
+                                : 'İlanları',
+                            style: GoogleFonts.dmSans(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary),
+                          ),
                         ],
                       ),
                     ),
@@ -418,29 +434,50 @@ class _IlanSatiri extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final kategoriAdi_ = kategoriAdi(ilan.kategori);
+    final resim = ilan.gridResim;
 
     return InkWell(
       onTap: () => context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan),
       child: Container(
         color: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: Color(0xFFF5F5F5), width: 0.5)),
+        ),
         child: Row(
           children: [
-            Container(
-              width: 40, height: 40,
-              decoration: BoxDecoration(
-                color: ilan.tip == IlanTip.istek
-                    ? AppColors.red.withValues(alpha: 0.08)
-                    : AppColors.primary.withValues(alpha: 0.08),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                ilan.tip == IlanTip.istek
-                    ? Icons.shopping_bag_outlined
-                    : Icons.flight_land_outlined,
-                size: 18,
-                color: ilan.tip == IlanTip.istek ? AppColors.red : AppColors.primary,
-              ),
+            // ── Gerçek ürün fotoğrafı (önceden sadece kategori ikonu vardı) ──
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    width: 52, height: 52,
+                    color: const Color(0xFFF2F2F2),
+                    child: resim.isNotEmpty
+                        ? CachedNetworkImage(
+                            cacheManager: AppCacheManager.instance,
+                            imageUrl: resim,
+                            fit: BoxFit.cover,
+                            fadeInDuration: Duration.zero,
+                            errorWidget: (_, _, _) => Icon(
+                              ilan.tip == IlanTip.istek
+                                  ? Icons.shopping_bag_outlined
+                                  : Icons.flight_land_outlined,
+                              size: 20, color: AppColors.textHint,
+                            ),
+                          )
+                        : Icon(
+                            ilan.tip == IlanTip.istek
+                                ? Icons.shopping_bag_outlined
+                                : Icons.flight_land_outlined,
+                            size: 20, color: AppColors.textHint,
+                          ),
+                  ),
+                ),
+                if (ilan.yeniMi)
+                  const Positioned(top: -2, left: -2, child: _KucukYeniNoktasi()),
+              ],
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -473,38 +510,59 @@ class _IlanSatiri extends StatelessWidget {
                       ),
                     ],
                   ),
+                  if (kategoriAdi_.isNotEmpty) ...[
+                    const SizedBox(height: 5),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F5F5),
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: Text(
+                        kategoriAdi_,
+                        style: GoogleFonts.dmSans(
+                            fontSize: 9, fontWeight: FontWeight.w600,
+                            color: const Color(0xFF666666)),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
             const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (ilan.ucret.isNotEmpty)
-                  Text(
-                    '${ilan.ucret} ₺',
-                    style: GoogleFonts.dmSans(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.red),
-                  ),
-                if (kategoriAdi_.isNotEmpty)
-                  Container(
-                    margin: const EdgeInsets.only(top: 4),
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    color: AppColors.chipBg,
-                    child: Text(
-                      kategoriAdi_,
-                      style: GoogleFonts.dmSans(
-                          fontSize: 9, color: AppColors.textSecondary),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(width: 4),
+            if (ilan.ucret.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: Text(
+                  '${ilan.ucret} ₺',
+                  style: GoogleFonts.dmSans(
+                      fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.red),
+                ),
+              ),
             const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 18),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Liste satırındaki küçük görsel için sade "yeni" göstergesi — ana
+/// sayfadaki IlanKarti'nın 12 kenarlı yıldız+yazı rozetinden KASITLI
+/// OLARAK daha sade: 52px'lik küçük bir küçük resimde tam rozet
+/// (yıldız + "YENİ" yazısı) okunaksız kalırdı, bu yüzden sadece renkli
+/// bir nokta kullanılıyor.
+class _KucukYeniNoktasi extends StatelessWidget {
+  const _KucukYeniNoktasi();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 14, height: 14,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF2912E),
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 1.5),
       ),
     );
   }
