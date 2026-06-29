@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
 import '../domain/kullanici_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -444,12 +443,21 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
 
 // ── Reddedilen İlanlar Ekranı ─────────────────────────────
 
-class _ReddedilenIlanlarScreen extends ConsumerWidget {
+class _ReddedilenIlanlarScreen extends ConsumerStatefulWidget {
   final String uid;
   const _ReddedilenIlanlarScreen({required this.uid});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_ReddedilenIlanlarScreen> createState() =>
+      _ReddedilenIlanlarScreenState();
+}
+
+class _ReddedilenIlanlarScreenState
+    extends ConsumerState<_ReddedilenIlanlarScreen> {
+  bool _genisletilmis = true;
+
+  @override
+  Widget build(BuildContext context) {
     final ilanlarAsync = ref.watch(ilanlarimProvider);
 
     return Scaffold(
@@ -494,10 +502,71 @@ class _ReddedilenIlanlarScreen extends ConsumerWidget {
               ),
             );
           }
-          return ListView.builder(
+          return ListView(
             padding: const EdgeInsets.all(16),
-            itemCount: reddedilenler.length,
-            itemBuilder: (ctx, i) => _ReddedilenIlanKarti(ilan: reddedilenler[i]),
+            children: [
+              // ── Özet banner ──────────────────────────────────────────
+              GestureDetector(
+                onTap: () => setState(() => _genisletilmis = !_genisletilmis),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A1A),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline, size: 20, color: Colors.white),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${reddedilenler.length} ilan düzenleme bekliyor',
+                              style: GoogleFonts.manrope(
+                                  fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Yayınlanmaları için gözden geçir',
+                              style: GoogleFonts.manrope(
+                                  fontSize: 11, color: Colors.white.withValues(alpha: 0.6)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        _genisletilmis ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // ── Sade liste ───────────────────────────────────────────
+              if (_genisletilmis) ...[
+                const SizedBox(height: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFF0F0F0), width: 0.5),
+                  ),
+                  child: Column(
+                    children: [
+                      for (int i = 0; i < reddedilenler.length; i++) ...[
+                        _ReddedilenSatir(ilan: reddedilenler[i]),
+                        if (i < reddedilenler.length - 1)
+                          const Divider(height: 0.5, color: Color(0xFFF5F5F5)),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ],
           );
         },
       ),
@@ -505,198 +574,82 @@ class _ReddedilenIlanlarScreen extends ConsumerWidget {
   }
 }
 
-class _ReddedilenIlanKarti extends StatelessWidget {
+class _ReddedilenSatir extends ConsumerWidget {
   final IlanModel ilan;
-  const _ReddedilenIlanKarti({required this.ilan});
+  const _ReddedilenSatir({required this.ilan});
+
+  Future<void> _silOnayi(BuildContext context, WidgetRef ref) async {
+    final onay = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: Text('İlanı Sil',
+            style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w600)),
+        content: Text(
+          'Bu ilanı silmek istediğine emin misin? Bu işlem geri alınamaz.',
+          style: GoogleFonts.manrope(fontSize: 13.5, color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('İptal',
+                style: GoogleFonts.manrope(color: AppColors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Sil',
+                style: GoogleFonts.manrope(color: AppColors.red, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    if (onay == true) {
+      await ref.read(ilanIslemleriProvider.notifier).sil(ilan.id);
+    }
+  }
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.red.withValues(alpha: 0.2)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 40, height: 40,
-                  decoration: BoxDecoration(
-                    color: AppColors.red.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.cancel_outlined, color: AppColors.red, size: 22),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        ilan.urun.isNotEmpty ? ilan.urun : '${ilan.nereden} → ${ilan.nereye}',
-                        style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                        maxLines: 1, overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        ilan.kategori.isNotEmpty ? ilan.kategori : 'Genel',
-                        style: GoogleFonts.manrope(fontSize: 12, color: AppColors.textSecondary),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.red.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text('Reddedildi',
-                      style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.red)),
-                ),
-              ],
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              ilan.urun.isNotEmpty ? ilan.urun : '${ilan.nereden} → ${ilan.nereye}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.manrope(fontSize: 13, color: AppColors.textPrimary),
             ),
-            if (ilan.redSebebi.isNotEmpty) ...[
-              const SizedBox(height: 14),
-              // ── Süreç çizgisi (stepper) ─────────────────────────────
-              // Spesifik ret nedeni (ilan.redSebebi) burada KASITLI OLARAK
-              // gösterilmiyor — kullanıcının "hangi kelimeyi kaldırsam
-              // geçer" diye deneme-hata yapmasını değil, içeriğin
-              // tamamını gözden geçirmesini istiyoruz.
-              Row(
-                children: const [
-                  _AdimNoktasi(tamamlandi: true, sonAdimMi: false),
-                  _AdimCizgisi(tamamlandi: true),
-                  _AdimNoktasi(tamamlandi: true, sonAdimMi: false),
-                  _AdimCizgisi(tamamlandi: false),
-                  _AdimNoktasi(tamamlandi: false, sonAdimMi: true),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text('Gönderildi',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.manrope(fontSize: 9.5, color: AppColors.textSecondary)),
-                  ),
-                  Expanded(
-                    child: Text('İncelendi',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.manrope(fontSize: 9.5, color: AppColors.textSecondary)),
-                  ),
-                  Expanded(
-                    child: Text('Düzeltme gerekli',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.manrope(
-                            fontSize: 9.5, fontWeight: FontWeight.w600, color: AppColors.red)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF3F3),
-                  borderRadius: BorderRadius.circular(8),
+          ),
+          TextButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => IlanFormScreen(
+                  tip: ilan.tip,
+                  duzenlenecekIlan: ilan,
                 ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.info_outline, size: 14, color: AppColors.red),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'İlanınız ilan verme kurallarına uygun değil.',
-                        style: GoogleFonts.manrope(fontSize: 12, color: AppColors.red),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-            const SizedBox(height: 12),
-            RichText(
-              text: TextSpan(
-                style: GoogleFonts.manrope(fontSize: 11, color: AppColors.textSecondary),
-                children: [
-                  const TextSpan(text: 'İlanını '),
-                  TextSpan(
-                    text: 'düzenleyerek',
-                    style: GoogleFonts.manrope(
-                      fontSize: 11,
-                      color: Colors.blue,
-                      decoration: TextDecoration.underline,
-                      decorationColor: Colors.blue,
-                    ),
-                    recognizer: TapGestureRecognizer()
-                      ..onTap = () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => IlanFormScreen(
-                              tip: ilan.tip,
-                              duzenlenecekIlan: ilan,
-                            ),
-                          ),
-                        );
-                      },
-                  ),
-                  const TextSpan(text: ' tekrar gönderebilirsin.'),
-                ],
               ),
             ),
-          ],
-        ),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              minimumSize: Size.zero,
+            ),
+            child: Text('Düzenle',
+                style: GoogleFonts.manrope(
+                    fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+          ),
+          IconButton(
+            onPressed: () => _silOnayi(context, ref),
+            icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFCCCCCC)),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          ),
+        ],
       ),
     );
   }
-}
-
-// ── Süreç çizgisi (stepper) yardımcı parçaları ──────────────────────────────
-
-class _AdimNoktasi extends StatelessWidget {
-  final bool tamamlandi;
-  final bool sonAdimMi;
-  const _AdimNoktasi({required this.tamamlandi, required this.sonAdimMi});
-
-  @override
-  Widget build(BuildContext context) {
-    final renk = sonAdimMi
-        ? AppColors.red
-        : (tamamlandi ? AppColors.textPrimary : const Color(0xFFEEEEEE));
-    return Container(
-      width: 20,
-      height: 20,
-      decoration: BoxDecoration(color: renk, shape: BoxShape.circle),
-      child: Icon(
-        sonAdimMi ? Icons.edit_outlined : Icons.check,
-        size: sonAdimMi ? 10 : 11,
-        color: Colors.white,
-      ),
-    );
-  }
-}
-
-class _AdimCizgisi extends StatelessWidget {
-  final bool tamamlandi;
-  const _AdimCizgisi({required this.tamamlandi});
-
-  @override
-  Widget build(BuildContext context) => Expanded(
-        child: Container(
-          height: 1.5,
-          margin: const EdgeInsets.symmetric(horizontal: 2),
-          color: tamamlandi ? AppColors.textPrimary : const Color(0xFFEEEEEE),
-        ),
-      );
 }
 
 // ── Yardımcı Widget'lar ───────────────────────────────────

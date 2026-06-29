@@ -167,20 +167,36 @@ class _TakipListesiState extends ConsumerState<_TakipListesi> {
     );
   }
 
+  // KRİTİK DÜZELTME: her satıra uid'ye dayalı ValueKey eklendi. Önceden
+  // key verilmiyordu — Flutter, liste her yeniden çizildiğinde (her
+  // Firestore anlık görüntüsünde tetiklenir) satırların kimliğini
+  // pozisyona göre karıştırabiliyordu. Bu da, satır widget'larının
+  // gereksiz yere yok edilip yeniden oluşturulmasına, ve bağlı
+  // kullaniciBilgiProvider'ın sıfırdan yeniden veri çekip "yanıp sönme"
+  // (kısa süreli loading skeleton) etkisi yaratmasına sebep oluyordu.
   Widget _liste(List<String> idler) => ListView.builder(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         itemCount: idler.length,
-        itemBuilder: (context, i) => _KullaniciSatiri(uid: idler[i]),
+        itemBuilder: (context, i) => _KullaniciSatiri(
+          key: ValueKey(idler[i]),
+          uid: idler[i],
+        ),
       );
 }
 
 class _KullaniciSatiri extends ConsumerWidget {
   final String uid;
-  const _KullaniciSatiri({required this.uid});
+  const _KullaniciSatiri({super.key, required this.uid});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profilAsync = ref.watch(kullaniciBilgisiProvider(uid));
+    // KRİTİK DÜZELTME: 'kullaniciBilgisiProvider' (keepAlive YOKTU) yerine
+    // 'kullaniciBilgiProvider' (keepAlive VAR) kullanılıyor artık. Önceki
+    // provider'ın watcher sayısı sıfıra düştüğü an (örn. yukarıdaki key
+    // eksikliği yüzünden widget'lar yeniden oluştuğunda) dispose oluyor,
+    // sıradaki watch çağrısı SIFIRDAN bir Firestore okuması tetikliyordu —
+    // bu da görünür bir loading→data döngüsüne (yanıp sönme) sebep oluyordu.
+    final profilAsync = ref.watch(kullaniciBilgiProvider(uid));
 
     return profilAsync.when(
       loading: () => const _SatirSkeleton(),

@@ -223,15 +223,20 @@ Stream<bool> takipEdiyorMu(Ref ref, String takipEdilenId) {
   final uid = ref.watch(currentUserProvider)?.uid;
   if (uid == null) return Stream.value(false);
 
+  // Eskiden, optimistik bir kayıt varsa gerçek Firestore stream'i hiç
+  // izlenmiyordu (return Stream.value(...) ile tamamen by-pass ediliyordu).
+  // Bu, başarılı bir takip/takipten çık işleminden sonra optimistik kayıt
+  // hiç temizlenmediği için (sadece hata durumunda temizleniyordu),
+  // o oturum boyunca gerçek duruma bir daha hiç bakılmamasına yol açıyordu
+  // — örn. başka bir cihazdan ilişki değişirse fark edilmiyordu. Artık
+  // favoriliIlanIdler'daki gibi: gerçek stream HER ZAMAN izlenir, optimistik
+  // kayıt sadece üzerine binen bir "yama" — kalıcı olsa bile zararsızdır.
   final optimistik = ref.watch(optimistikTakipProvider);
-  if (optimistik.containsKey(takipEdilenId)) {
-    return Stream.value(optimistik[takipEdilenId]!);
-  }
 
   return ref.watch(kullaniciRepositoryProvider).takipEdiyorMu(
     takipciId: uid,
     takipEdilenId: takipEdilenId,
-  );
+  ).map((gercekDeger) => optimistik[takipEdilenId] ?? gercekDeger);
 }
 
 @Riverpod(keepAlive: true)
@@ -250,6 +255,13 @@ class TakipIslemleri extends _$TakipIslemleri {
     ref.read(optimistikTakipProvider.notifier).takipEt(takipEdilenId);
     try {
       await _repo.takipEt(takipciId: uid, takipEdilenId: takipEdilenId);
+      // Başarılı yazma sonrası optimistik kaydı temizle — gerçek Firestore
+      // stream'i artık güncel olduğu için devreye girebilsin. Önceden
+      // burada temizleme yapılmıyordu, bu da takipEdiyorMu()'nun bir daha
+      // hiç gerçek stream'e bakmamasına (kalıcı olarak optimistik değeri
+      // göstermesine) sebep oluyordu.
+      if (!ref.mounted) return;
+      ref.read(optimistikTakipProvider.notifier).temizle(takipEdilenId);
     } catch (_) {
       if (!ref.mounted) return;
       ref.read(optimistikTakipProvider.notifier).temizle(takipEdilenId);
@@ -262,6 +274,8 @@ class TakipIslemleri extends _$TakipIslemleri {
     ref.read(optimistikTakipProvider.notifier).takipiBirak(takipEdilenId);
     try {
       await _repo.takipiBirak(takipciId: uid, takipEdilenId: takipEdilenId);
+      if (!ref.mounted) return;
+      ref.read(optimistikTakipProvider.notifier).temizle(takipEdilenId);
     } catch (_) {
       if (!ref.mounted) return;
       ref.read(optimistikTakipProvider.notifier).temizle(takipEdilenId);

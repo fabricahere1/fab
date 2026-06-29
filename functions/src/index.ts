@@ -379,7 +379,14 @@ export const ilanGuncellemeModerasyon = functions
       const metinSonuc = metinKontrol(tumMetin);
       if (!metinSonuc.uygun) {
         await ilanRef.update({ aktif: false, durum: "reddedildi", redSebebi: metinSonuc.sebep });
-        await bildirimGonder(sonra.kullaniciId, redBaslik, metinSonuc.sebep, "ilan_red", ilanId);
+        await Promise.all([
+          bildirimGonder(sonra.kullaniciId, redBaslik, metinSonuc.sebep, "ilan_red", ilanId),
+          db.collection("bildirimler").add({
+            kullaniciId: sonra.kullaniciId, tip: "ilan_red",
+            baslik: redBaslik, icerik: metinSonuc.sebep,
+            okundu: false, tarih: admin.firestore.FieldValue.serverTimestamp(), hedefId: ilanId,
+          }),
+        ]);
         return;
       }
 
@@ -387,18 +394,29 @@ export const ilanGuncellemeModerasyon = functions
       const resimSonuc  = await resimKontrol(resimUrller);
       if (!resimSonuc.uygun) {
         await ilanRef.update({ aktif: false, durum: "reddedildi", redSebebi: resimSonuc.sebep });
-        await bildirimGonder(sonra.kullaniciId, redBaslik, resimSonuc.sebep, "ilan_red", ilanId);
+        await Promise.all([
+          bildirimGonder(sonra.kullaniciId, redBaslik, resimSonuc.sebep, "ilan_red", ilanId),
+          db.collection("bildirimler").add({
+            kullaniciId: sonra.kullaniciId, tip: "ilan_red",
+            baslik: redBaslik, icerik: resimSonuc.sebep,
+            okundu: false, tarih: admin.firestore.FieldValue.serverTimestamp(), hedefId: ilanId,
+          }),
+        ]);
         return;
       }
 
       if (sonra.durum !== "yayinda" || sonra.aktif !== true || (sonra.redSebebi ?? "") !== "") {
         await ilanRef.update({ aktif: true, durum: "yayinda", redSebebi: "" });
         if (oncedenReddedilmis) {
-          await bildirimGonder(
-            sonra.kullaniciId, "İlanın yayınlandı",
-            `"${sonra.urun || sonra.nereden + " → " + sonra.nereye}" ilanın artık yayında.`,
-            "ilan_onayla", ilanId,
-          );
+          const onayIcerik = `"${sonra.urun || sonra.nereden + " → " + sonra.nereye}" ilanın artık yayında.`;
+          await Promise.all([
+            bildirimGonder(sonra.kullaniciId, "İlanın yayınlandı", onayIcerik, "ilan_onayla", ilanId),
+            db.collection("bildirimler").add({
+              kullaniciId: sonra.kullaniciId, tip: "ilan_onayla",
+              baslik: "İlanın yayınlandı", icerik: onayIcerik,
+              okundu: false, tarih: admin.firestore.FieldValue.serverTimestamp(), hedefId: ilanId,
+            }),
+          ]);
         }
       }
     } catch (e) { console.error("Güncelleme moderasyon hatası:", e); }
