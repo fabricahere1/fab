@@ -658,7 +658,7 @@ class _GSiralamaSegmented extends StatelessWidget {
 
 IconData gelenlerKategoriIkon(String key) {
   switch (key) {
-    case 'kadin':       return Symbols.face_3;
+    case 'kadin':       return Symbols.face_4;
     case 'erkek':       return Symbols.face;
     case 'cocuk':       return Symbols.face_retouching_natural;
     case 'ev':          return Symbols.cottage;

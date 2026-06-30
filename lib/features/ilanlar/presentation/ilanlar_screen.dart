@@ -661,7 +661,7 @@ class _IsteklerHeader extends StatelessWidget {
                           Symbols.favorite,
                           color: AppColors.textPrimary,
                           size: 22,
-                          weight: 400,
+                          weight: 200,
                           fill: 0,
                         ),
                       ),
@@ -1267,7 +1267,7 @@ class _HaftaninEnleriEkrani extends ConsumerWidget {
 // Kategori ikon mapping — Material Symbols w100
 IconData kategoriIkon(String key) {
   switch (key) {
-    case 'kadin':       return Symbols.face_3;
+    case 'kadin':       return Symbols.face_4;
     case 'erkek':       return Symbols.face;
     case 'cocuk':       return Symbols.face_retouching_natural;
     case 'ev':          return Symbols.cottage;

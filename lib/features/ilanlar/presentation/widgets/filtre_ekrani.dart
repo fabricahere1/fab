@@ -8,8 +8,6 @@ import '../ilanlar_screen.dart' show kategoriIkon;
 import '../../../../shared/widgets/turkiye_disi_arama_ekrani.dart';
 import '../../../../shared/widgets/sehir_secim_widget.dart';
 
-// Türkiye'nin 81 ili
-
 // ── Filtre sonuç veri sınıfı ──────────────────────────────────────────────────
 
 class FiltreSecimi {
@@ -585,7 +583,7 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
                         style: TextStyle(
                           fontFamily: 'SF Pro Display',
                           fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w400,
                           color: secili ? _turuncu : AppColors.textPrimary,
                           height: 1.2,
                         ),
