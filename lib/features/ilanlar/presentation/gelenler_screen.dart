@@ -348,7 +348,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                       child: const Icon(
                         Symbols.favorite,
                         color: AppColors.textPrimary,
-                        size: 22,
+                        size: 20,
                         weight: 200,
                         fill: 0,
                       ),
@@ -514,7 +514,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                         child: Text('Tümü',
                             style: GoogleFonts.dmSans(
                               fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w200,
                               color: secili ? Colors.white : AppColors.textSecondary,
                             )),
                       ),
@@ -564,7 +564,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                           Text(kat.ad,
                               style: GoogleFonts.dmSans(
                                 fontSize: 12,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w200,
                                 color: secili ? Colors.white : AppColors.textPrimary,
                               )),
                         ],

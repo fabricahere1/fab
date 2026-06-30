@@ -661,7 +661,7 @@ class _IsteklerHeader extends StatelessWidget {
                           Symbols.favorite,
                           color: AppColors.textPrimary,
                           size: 22,
-                          weight: 200,
+                          weight: 400,
                           fill: 0,
                         ),
                       ),
@@ -813,7 +813,7 @@ class _IsteklerHeader extends StatelessWidget {
                       child: Text('Tümü',
                           style: GoogleFonts.dmSans(
                             fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w200,
                             color: secili
                                 ? Colors.white
                                 : AppColors.textSecondary,
@@ -867,7 +867,7 @@ class _IsteklerHeader extends StatelessWidget {
                         Text(kat.ad,
                             style: GoogleFonts.dmSans(
                               fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w200,
                               color: secili
                                   ? Colors.white
                                   : AppColors.textPrimary,
