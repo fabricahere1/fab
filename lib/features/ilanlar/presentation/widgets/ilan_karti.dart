@@ -630,6 +630,18 @@ class _BedenCinsiyetSeridi extends StatelessWidget {
   final String beden;
   const _BedenCinsiyetSeridi({required this.cinsiyet, required this.beden});
 
+  // "Kız" ve "Unisex" için kasıtlı olarak nötr/siyah kalıyor — kullanıcı
+  // sadece "erkek" ve "kadın" için renk istedi, diğerlerini varsayılanda
+  // bırakmak en güvenli seçim.
+  // Kullanıcı isteği üzerine erkek/kadın ayrımı kaldırıldı — artık ikisi
+  // de aynı renk. "Kız"/"Unisex"/boş için hâlâ siyah varsayılan geçerli.
+  Color get _zeminRengi {
+    if (cinsiyet == 'Erkek' || cinsiyet == 'Kadın') {
+      return const Color(0xFFFFC300);
+    }
+    return Colors.black.withValues(alpha: 0.72);
+  }
+
   @override
   Widget build(BuildContext context) {
     final metin = [cinsiyet, beden].where((s) => s.isNotEmpty).join(' ');
@@ -637,14 +649,16 @@ class _BedenCinsiyetSeridi extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      color: Colors.black.withValues(alpha: 0.72),
+      color: _zeminRengi,
       child: Text(
         metin,
         textAlign: TextAlign.center,
         style: GoogleFonts.dmSans(
           fontSize: AppLayout.fs(context, 10),
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
+          fontWeight: FontWeight.w400,
+          color: _zeminRengi == Colors.black.withValues(alpha: 0.72)
+              ? Colors.white
+              : Colors.black,
         ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
@@ -728,7 +742,7 @@ class _IlanKartiIcerik extends StatelessWidget {
             ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
             style: GoogleFonts.dmSans(
                 fontSize: AppLayout.fs(context, 12),
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w200,
                 color: AppColors.textPrimary),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
