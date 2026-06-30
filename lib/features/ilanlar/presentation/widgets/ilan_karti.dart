@@ -637,7 +637,7 @@ class _BedenCinsiyetSeridi extends StatelessWidget {
   // de aynı renk. "Kız"/"Unisex"/boş için hâlâ siyah varsayılan geçerli.
   Color get _zeminRengi {
     if (cinsiyet == 'Erkek' || cinsiyet == 'Kadın') {
-      return const Color(0xFFFFC300);
+      return const Color(0xFF61666B);
     }
     return Colors.black.withValues(alpha: 0.72);
   }
@@ -656,9 +656,7 @@ class _BedenCinsiyetSeridi extends StatelessWidget {
         style: GoogleFonts.dmSans(
           fontSize: AppLayout.fs(context, 10),
           fontWeight: FontWeight.w400,
-          color: _zeminRengi == Colors.black.withValues(alpha: 0.72)
-              ? Colors.white
-              : Colors.black,
+          color: Colors.white,
         ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
