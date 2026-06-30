@@ -696,3 +696,64 @@ export const iletisimGonder = functions
     });
     return { success: true };
   });
+
+// ── Hesap Sil (Sunucu Tarafı) ──────────────────────────────────────────────
+//
+// Bu fonksiyon, admin SDK ile çalıştığı için Firestore güvenlik kurallarına
+// HİÇ tabi değil — bu yüzden client'ta "karşı tarafın mesajını silme" gibi
+// kural gevşetmelerine ihtiyaç kalmıyor. Tüm silme işlemi (kullanicilar +
+// ilanlar + favoriler + bildirimler + sohbetler + mesajlar alt-koleksiyonu +
+// Firebase Auth kaydı) burada, SIRALI ve TEK YERDEN yönetiliyor — client
+// tarafındaki ayrı ayrı batch'lerin arasında bir adım başarısız olup
+// "yarım silinmiş hesap" durumuna düşme riski ortadan kalkıyor.
+export const hesapSilSunucu = functions
+  .region("europe-west1")
+  .https.onCall(async (_data, context) => {
+    if (!context.auth) {
+      throw new functions.https.HttpsError("unauthenticated", "Giriş yapmalısın.");
+    }
+    const uid = context.auth.uid;
+
+    try {
+      const batch = db.batch();
+
+      batch.delete(db.collection("kullanicilar").doc(uid));
+
+      const ilanlarSnap = await db.collection("ilanlar")
+        .where("kullaniciId", "==", uid).get();
+      for (const doc of ilanlarSnap.docs) batch.delete(doc.ref);
+
+      const favorilerSnap = await db.collection("favoriler")
+        .where("kullaniciId", "==", uid).get();
+      for (const doc of favorilerSnap.docs) batch.delete(doc.ref);
+
+      const bildirimlerSnap = await db.collection("bildirimler")
+        .where("kullaniciId", "==", uid).get();
+      for (const doc of bildirimlerSnap.docs) batch.delete(doc.ref);
+
+      await batch.commit();
+
+      // Sohbetler + mesajlar — subcollection içerdiğinden ayrı siliniyor
+      const sohbetlerSnap = await db.collection("sohbetler")
+        .where("kullanicilar", "array-contains", uid).get();
+
+      for (const sohbet of sohbetlerSnap.docs) {
+        const mesajlarSnap = await sohbet.ref.collection("mesajlar").get();
+        const mesajBatch = db.batch();
+        for (const mesaj of mesajlarSnap.docs) mesajBatch.delete(mesaj.ref);
+        mesajBatch.delete(sohbet.ref);
+        await mesajBatch.commit();
+      }
+
+      // Firebase Authentication kaydı — EN SON adım. Yukarıdaki Firestore
+      // silme işlemlerinden biri patlarsa, buraya hiç ulaşılmaz ve
+      // kullanıcı hâlâ giriş yapabilir durumda kalır — bu da onun tekrar
+      // deneyebilmesi için doğru davranış.
+      await admin.auth().deleteUser(uid);
+
+      return { success: true };
+    } catch (e) {
+      console.error("hesapSilSunucu hatası:", e);
+      throw new functions.https.HttpsError("internal", "Hesap silinemedi.", String(e));
+    }
+  });

@@ -514,7 +514,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                         child: Text('Tümü',
                             style: GoogleFonts.dmSans(
                               fontSize: 12,
-                              fontWeight: FontWeight.w200,
+                              fontWeight: FontWeight.w400,
                               color: secili ? Colors.white : AppColors.textSecondary,
                             )),
                       ),
@@ -564,7 +564,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                           Text(kat.ad,
                               style: GoogleFonts.dmSans(
                                 fontSize: 12,
-                                fontWeight: FontWeight.w200,
+                                fontWeight: FontWeight.w400,
                                 color: secili ? Colors.white : AppColors.textPrimary,
                               )),
                         ],

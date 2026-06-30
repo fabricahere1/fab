@@ -761,8 +761,10 @@ class _GeriSayimDialogState extends State<_GeriSayimDialog> {
         children: [
           const Icon(Icons.warning_amber_rounded, color: Color(0xFFE53935), size: 22),
           const SizedBox(width: 8),
-          Text('Son şans!',
-              style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w700)),
+          Expanded(
+            child: Text('10 saniye içinde iptal edebilirsin',
+                style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w700)),
+          ),
         ],
       ),
       content: Column(

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -209,64 +210,29 @@ class AuthRepository {
   }
 
   // ── Hesap Sil ─────────────────────────────────────────
-
+  //
+  // Tüm silme mantığı artık sunucu tarafında (hesapSilSunucu Cloud
+  // Function, admin SDK ile çalışıyor). Client, sadece tetikliyor —
+  // Firestore güvenlik kurallarına bağımlı, parçalı bir silme akışı
+  // yerine, sunucuda tek, atomik bir işlem.
   Future<void> hesapSil() async {
     final user = auth.currentUser;
     if (user == null) return;
-    final uid = user.uid;
 
-    final batch = firestore.batch();
+    await FirebaseFunctions.instanceFor(region: 'europe-west1')
+        .httpsCallable('hesapSilSunucu')
+        .call({});
 
-    batch.delete(
-        firestore.collection(Collections.kullanicilar).doc(uid));
-
-    final ilanlarSnap = await firestore
-        .collection(Collections.ilanlar)
-        .where('kullaniciId', isEqualTo: uid)
-        .get();
-    for (final doc in ilanlarSnap.docs) {
-      batch.delete(doc.reference);
-    }
-
-    final favorilerSnap = await firestore
-        .collection(Collections.favoriler)
-        .where('kullaniciId', isEqualTo: uid)
-        .get();
-    for (final doc in favorilerSnap.docs) {
-      batch.delete(doc.reference);
-    }
-
-    // Bildirimleri sil
-    final bildirimlerSnap = await firestore
-        .collection(Collections.bildirimler)
-        .where('kullaniciId', isEqualTo: uid)
-        .get();
-    for (final doc in bildirimlerSnap.docs) {
-      batch.delete(doc.reference);
-    }
-
-    await batch.commit();
-
-    // Sohbetler ve mesajlar — subcollection içerdiğinden ayrı siliniyor
-    final sohbetlerSnap = await firestore
-        .collection(Collections.sohbetler)
-        .where('kullanicilar', arrayContains: uid)
-        .get();
-
-    for (final sohbet in sohbetlerSnap.docs) {
-      final mesajlarSnap = await sohbet.reference
-          .collection(Collections.mesajlar)
-          .get();
-      final mesajBatch = firestore.batch();
-      for (final mesaj in mesajlarSnap.docs) {
-        mesajBatch.delete(mesaj.reference);
-      }
-      mesajBatch.delete(sohbet.reference);
-      await mesajBatch.commit();
-    }
-
+    // DÜZELTME: sunucunun admin.auth().deleteUser() çağrısı, client'taki
+    // Firebase Auth SDK'sının authStateChanges() stream'ini OTOMATİK
+    // olarak null'a tetiklemiyor — bu yanlış bir varsayımdı (gerçek
+    // testte doğrulandı: hesap silindikten sonra kullanıcı, login
+    // ekranına yönlendirilmeden, eski oturumla mesaj göndermeyi
+    // sürdürebiliyordu). Client'ın kendi signOut() çağrısı, anlık olarak
+    // authStateChanges()'i null yayınlatıp router'ı hemen login'e
+    // yönlendiriyor.
     try { await _googleSignIn.signOut(); } catch (_) {}
-    await user.delete();
+    try { await auth.signOut(); } catch (_) {}
   }
 
   Future<bool> profilTamamlandiMi(String uid) async {
