@@ -110,7 +110,7 @@ class MesajRepository {
       'tip':       tip,
       'zaman':     FieldValue.serverTimestamp(),
       'okundu':    false,
-      'resimUrl': ?resimUrl,
+      'resimUrl': resimUrl,
     });
 
     await batch.commit();
@@ -399,14 +399,18 @@ class MesajRepository {
     required String ilanBaslik,
     required String sohbetId,
     required String metin,
+    String ilanId = '',
+    String ilanSahibiId = '',
   }) async {
     try {
       await _functions.httpsCallable('mesajBildirimiGonder').call({
-        'aliciId':    aliciId,
-        'gondereAd':  gondereAd,
-        'ilanBaslik': ilanBaslik,
-        'sohbetId':   sohbetId,
-        'metin':      metin,
+        'aliciId':      aliciId,
+        'gondereAd':    gondereAd,
+        'ilanBaslik':   ilanBaslik,
+        'sohbetId':     sohbetId,
+        'metin':        metin,
+        'ilanId':       ilanId,
+        'ilanSahibiId': ilanSahibiId,
       });
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'mesajRepository.mesajBildirimiGonder');

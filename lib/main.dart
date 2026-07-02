@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/services/badge_service.dart';
 import 'core/services/bildirim_banner_service.dart';
 import 'core/services/fcm_service.dart';
+import 'features/mesajlar/presentation/sohbet_screen.dart';
 import 'shared/widgets/baglanti_banner.dart';
 import 'core/theme/app_theme.dart';
 import 'firebase_options.dart';
@@ -98,22 +99,47 @@ class _IsteAppState extends ConsumerState<IsteApp> {
   }
 
   void _bildirimdenAc(RemoteMessage message) {
-    final router   = ref.read(routerProvider);
+    // Router veya context henüz hazır değilse kısa bekle
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _bildirimNavigation(message);
+    });
+  }
+
+  void _bildirimNavigation(RemoteMessage message) {
     final data     = message.data;
     final tip      = data['tip']      as String?;
     final ilanId   = data['ilanId']   as String?;
     final sohbetId = data['sohbetId'] as String?;
 
     if (tip == 'degerlendirme') {
+      final router = ref.read(routerProvider);
       router.go(AppRoutes.home);
       return;
     }
-    if (ilanId != null && ilanId.isNotEmpty) {
+    if (ilanId != null && ilanId.isNotEmpty && tip != 'mesaj') {
+      final router = ref.read(routerProvider);
       router.push(AppRoutes.ilanDetayPath(ilanId));
       return;
     }
     if (sohbetId != null && sohbetId.isNotEmpty) {
-      debugPrint('[FCM] sohbet bildirimi: $sohbetId');
+      final karsiKullaniciId = data['karsiKullaniciId'] as String? ?? '';
+      final karsiKullaniciAd = data['karsiKullaniciAd'] as String? ?? '';
+      final bildirimIlanId   = data['ilanId']           as String? ?? '';
+      final ilanSahibiId     = data['ilanSahibiId']     as String? ?? '';
+      final ilanBaslik       = data['ilanBaslik']        as String? ?? '';
+      final context = navigatorKey.currentContext;
+      if (context != null) {
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => SohbetScreen(
+            sohbetId:         sohbetId,
+            karsiKullaniciId: karsiKullaniciId,
+            karsiKullaniciAd: karsiKullaniciAd,
+            ilanId:           bildirimIlanId,
+            ilanBaslik:       ilanBaslik,
+            ilanSahibiId:     ilanSahibiId,
+          ),
+        ));
+      }
     }
   }
 

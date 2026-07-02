@@ -283,6 +283,8 @@ class SohbetNotifier extends _$SohbetNotifier {
       ilanBaslik: ilanBaslik,
       sohbetId: _sohbetId,
       metin: metin.trim(),
+      ilanId: ilanId,
+      ilanSahibiId: ilanSahibiId,
     ).catchError((_) {});
   }
 
@@ -328,6 +330,8 @@ class SohbetNotifier extends _$SohbetNotifier {
       ilanBaslik: ilanBaslik,
       sohbetId: _sohbetId,
       metin: '📷 Fotoğraf',
+      ilanId: ilanId,
+      ilanSahibiId: ilanSahibiId,
     ).catchError((_) {});
   }
 

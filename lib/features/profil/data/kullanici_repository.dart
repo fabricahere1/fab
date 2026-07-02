@@ -54,11 +54,11 @@ class KullaniciRepository {
   Future<void> profilOlustur({
     required String uid,
     required String adSoyad,
-    String? email,
+    required String email,
   }) async {
     await _col.doc(uid).set({
       'adSoyad':          adSoyad,
-      'email': ?email,
+      'email': email,
       'profilTamamlandi': false,
       'olusturmaTarihi':  FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));

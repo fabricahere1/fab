@@ -1042,7 +1042,7 @@ class _SatirOge extends StatelessWidget {
                       color: labelColor,
                       fontWeight: FontWeight.w400)),
             ),
-            ?trailing,
+            if (trailing != null) trailing!,
             if (trailing == null && showArrow)
               const Icon(Icons.chevron_right,
                   color: AppColors.textSecondary, size: 20),
