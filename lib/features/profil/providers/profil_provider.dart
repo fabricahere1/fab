@@ -109,11 +109,15 @@ class Engelleme extends _$Engelleme {
   }
 }
 
+// Eskiden ayrı bir engellenenlerStream(uid) açıyordu — bu, benimKullaniciProfil
+// ile aynı dökümanı 2 kez dinlemek anlamına geliyordu. Artık zaten açık olan
+// benimKullaniciProfil stream'inden map ediliyor — ekstra Firestore listener yok.
+// AsyncValue<List<String>> döndürür — kullanım tarafları (.value ?? []) değişmez.
 @riverpod
-Stream<List<String>> engellenenler(Ref ref) {
-  final uid = ref.watch(currentUserProvider)?.uid;
-  if (uid == null) return Stream.value([]);
-  return ref.watch(kullaniciRepositoryProvider).engellenenlerStream(uid);
+AsyncValue<List<String>> engellenenler(Ref ref) {
+  return ref
+      .watch(benimKullaniciProfilProvider)
+      .whenData((profil) => profil?.engellenenler ?? []);
 }
 
 @riverpod

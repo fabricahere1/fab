@@ -235,10 +235,10 @@ final class EngellenenlerProvider
     extends
         $FunctionalProvider<
           AsyncValue<List<String>>,
-          List<String>,
-          Stream<List<String>>
+          AsyncValue<List<String>>,
+          AsyncValue<List<String>>
         >
-    with $FutureModifier<List<String>>, $StreamProvider<List<String>> {
+    with $Provider<AsyncValue<List<String>>> {
   EngellenenlerProvider._()
     : super(
         from: null,
@@ -255,17 +255,25 @@ final class EngellenenlerProvider
 
   @$internal
   @override
-  $StreamProviderElement<List<String>> $createElement(
+  $ProviderElement<AsyncValue<List<String>>> $createElement(
     $ProviderPointer pointer,
-  ) => $StreamProviderElement(pointer);
+  ) => $ProviderElement(pointer);
 
   @override
-  Stream<List<String>> create(Ref ref) {
+  AsyncValue<List<String>> create(Ref ref) {
     return engellenenler(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AsyncValue<List<String>> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AsyncValue<List<String>>>(value),
+    );
   }
 }
 
-String _$engellenenlerHash() => r'c75318ff134d7f08cd483e7cc5bd33b22293c3bd';
+String _$engellenenlerHash() => r'89a1a45f50240b8744888cf384637843156a8269';
 
 @ProviderFor(Sikayet)
 final sikayetProvider = SikayetProvider._();

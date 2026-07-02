@@ -144,8 +144,10 @@ class IstekIlanlar extends _$IstekIlanlar {
         sonTarih: state.sonTarih!,
         siralama: 'olusturma',
       );
+      // Set ile O(1) arama — eskiden state.ilanlar.any() ile O(n²) idi
+      final mevcutIdler = state.ilanlar.map((m) => m.id).toSet();
       state = state.copyWith(
-        ilanlar: [...state.ilanlar, ...sonuc.ilanlar.where((i) => !state.ilanlar.any((m) => m.id == i.id))],
+        ilanlar: [...state.ilanlar, ...sonuc.ilanlar.where((i) => !mevcutIdler.contains(i.id))],
         sonTarih: sonuc.sonTarih ?? state.sonTarih,
         dahaFazlaVar: !sonuc.bitti,
         yukleniyor: false,
@@ -249,8 +251,10 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
         sonTarih: state.sonTarih!,
         siralama: state.siralama,
       );
+      // Set ile O(1) arama — eskiden state.ilanlar.any() ile O(n²) idi
+      final mevcutIdler = state.ilanlar.map((m) => m.id).toSet();
       state = state.copyWith(
-        ilanlar: [...state.ilanlar, ...sonuc.ilanlar.where((i) => !state.ilanlar.any((m) => m.id == i.id))],
+        ilanlar: [...state.ilanlar, ...sonuc.ilanlar.where((i) => !mevcutIdler.contains(i.id))],
         sonTarih: sonuc.sonTarih ?? state.sonTarih,
         dahaFazlaVar: !sonuc.bitti,
         yukleniyor: false,
@@ -478,7 +482,10 @@ Stream<bool> ilanFavorideMi(Ref ref, String ilanId) {
   );
 }
 
-@Riverpod(keepAlive: true)
+// keepAlive kasıtlı olarak kaldırıldı — family provider'da keepAlive, her farklı
+// kullaniciId için ayrı bir stream instance'ı sonsuza kadar hafızada biriktirir.
+// autoDispose (varsayılan) ile, provider widget tree'den kalkınca stream kapanır.
+@riverpod
 Stream<List<IlanModel>> kullaniciIlanlarStream(Ref ref, String kullaniciId) {
   return ref.watch(ilanRepositoryProvider).kullaniciIlanlarStream(kullaniciId);
 }

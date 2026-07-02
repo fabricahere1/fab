@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -7,6 +6,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/mesaj_model.dart';
 import '../domain/islem_durumu.dart';
 import '../../../shared/constants/app_constants.dart';
+import '../../../shared/utils/app_hata_yonetici.dart';
 
 part 'mesaj_repository.g.dart';
 
@@ -185,8 +185,8 @@ class MesajRepository {
         }
         await batch.commit();
       }
-    } catch (e) {
-      debugPrint('[MesajRepository] okunduIsaretle hatası: $e');
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'mesajRepository.okunduIsaretle');
     }
   }
 
@@ -311,8 +311,8 @@ class MesajRepository {
         'gondereId':   gondereId,
         'gondereAd':   gondereAd,
       });
-    } catch (e) {
-      debugPrint('[MesajRepository] islemBildirimiYaz hatası: $e');
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'mesajRepository.islemBildirimiYaz');
     }
   }
 
@@ -408,8 +408,8 @@ class MesajRepository {
         'sohbetId':   sohbetId,
         'metin':      metin,
       });
-    } catch (e) {
-      debugPrint('[MesajRepository] mesajBildirimiGonder hatası: $e');
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'mesajRepository.mesajBildirimiGonder');
     }
   }
 
@@ -420,46 +420,6 @@ class MesajRepository {
       if (!doc.exists) return <String, dynamic>{};
       return Map<String, dynamic>.from(
           doc.data() as Map<String, dynamic>? ?? {});
-    });
-  }
-
-  Stream<Map<String, dynamic>> islemDurumuStream(String sohbetId) {
-    return _sohbetler.doc(sohbetId).snapshots().map((doc) {
-      if (!doc.exists) return <String, dynamic>{};
-      final d = doc.data() as Map<String, dynamic>;
-      return Map<String, dynamic>.from(d['islemDurumlari'] ?? {});
-    });
-  }
-
-  Stream<String> ilanSahibiIdStream(String sohbetId) {
-    return _sohbetler.doc(sohbetId).snapshots().map((doc) {
-      if (!doc.exists) return '';
-      final d = doc.data() as Map<String, dynamic>;
-      return d['ilanSahibiId'] as String? ?? '';
-    });
-  }
-
-  Stream<String> ilanTipStream(String sohbetId) {
-    return _sohbetler.doc(sohbetId).snapshots().map((doc) {
-      if (!doc.exists) return 'istek';
-      final d = doc.data() as Map<String, dynamic>;
-      return d['ilanTip'] as String? ?? 'istek';
-    });
-  }
-
-  Stream<List<String>> sohbetKullanicilarStream(String sohbetId) {
-    return _sohbetler.doc(sohbetId).snapshots().map((doc) {
-      if (!doc.exists) return <String>[];
-      final d = doc.data() as Map<String, dynamic>;
-      return List<String>.from(d['kullanicilar'] ?? []);
-    });
-  }
-
-  Stream<String> ilanBaslikStream(String sohbetId) {
-    return _sohbetler.doc(sohbetId).snapshots().map((doc) {
-      if (!doc.exists) return '';
-      final d = doc.data() as Map<String, dynamic>;
-      return (d['ilanBaslik'] as String?) ?? '';
     });
   }
 }

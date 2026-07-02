@@ -41,7 +41,7 @@ final class IstekIlanlarProvider
   }
 }
 
-String _$istekIlanlarHash() => r'efeff5bfa6cc1c407eac0507a18112ff61ae322c';
+String _$istekIlanlarHash() => r'69c76fcf4ffbeb97da4b7ef19001904787fcb665';
 
 abstract class _$IstekIlanlar extends $Notifier<IlanListeState> {
   IlanListeState build();
@@ -93,7 +93,7 @@ final class TasiyiciIlanlarProvider
   }
 }
 
-String _$tasiyiciIlanlarHash() => r'23744aecacfefa083ec0526f38b039144e8193c6';
+String _$tasiyiciIlanlarHash() => r'298f63eca821e6539b41352b52e5f88ae8935be9';
 
 abstract class _$TasiyiciIlanlar extends $Notifier<IlanListeState> {
   IlanListeState build();
@@ -444,7 +444,7 @@ final class KullaniciIlanlarStreamProvider
   }) : super(
          retry: null,
          name: r'kullaniciIlanlarStreamProvider',
-         isAutoDispose: false,
+         isAutoDispose: true,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
@@ -484,7 +484,7 @@ final class KullaniciIlanlarStreamProvider
 }
 
 String _$kullaniciIlanlarStreamHash() =>
-    r'708ffde71c4c9d4e00c11355ac2a56e56c834c6b';
+    r'a77ed489851dce352f3d8a361c56e258163b1e90';
 
 final class KullaniciIlanlarStreamFamily extends $Family
     with $FunctionalFamilyOverride<Stream<List<IlanModel>>, String> {
@@ -494,7 +494,7 @@ final class KullaniciIlanlarStreamFamily extends $Family
         name: r'kullaniciIlanlarStreamProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
-        isAutoDispose: false,
+        isAutoDispose: true,
       );
 
   KullaniciIlanlarStreamProvider call(String kullaniciId) =>

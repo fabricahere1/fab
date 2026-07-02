@@ -162,11 +162,12 @@ class IlanRepository {
 
   double _hesapla(IlanModel i) {
     final gunFark = DateTime.now().difference(
-        i.olusturmaTarihi ?? DateTime.now()).inDays.toDouble();
+        i.olusturmaTarihi ?? DateTime.now()).inHours / 24.0;
     double tazelik = 0;
     if (gunFark < 1) { tazelik = 10; }
     else if (gunFark < 3) { tazelik = 6; }
     else if (gunFark < 7) { tazelik = 3; }
+    else if (gunFark < 30) { tazelik = 1; } // Cloud Functions ve kesfet_vitrin_providers ile tutarlı
     final resimPuan = i.resimUrller.length >= 5 ? 5.0
         : i.resimUrller.length >= 3 ? 3.0
         : i.resimUrller.isNotEmpty ? 1.0 : 0.0;

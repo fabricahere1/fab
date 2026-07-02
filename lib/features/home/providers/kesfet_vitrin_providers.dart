@@ -124,17 +124,17 @@ List<IlanModel> kesfetDutyFree(Ref ref) {
 
 @riverpod
 List<IlanModel> kesfetHeroBanner(Ref ref) {
+  final tumIlanlar = _tumIlanlar(ref); // tek çağrı — eskiden 2 kez çağrılıyordu
   final esik = DateTime.now().subtract(const Duration(days: 7));
-  final liste = _tumIlanlar(ref)
+  final liste = tumIlanlar
       .where((i) => i.olusturmaTarihi != null && i.olusturmaTarihi!.isAfter(esik))
       .toList()
     ..sort((a, b) => b.goruntulenmeSayisi.compareTo(a.goruntulenmeSayisi));
 
-  // Eğer son 7 günde yeterli ilan yoksa genel en çok görüntülenenlerle tamamla
   if (liste.length >= 10) return liste.take(15).toList();
 
   final seen = <String>{...liste.map((i) => i.id)};
-  final ek = _tumIlanlar(ref)
+  final ek = tumIlanlar
       .where((i) => seen.add(i.id))
       .toList()
     ..sort((a, b) => b.goruntulenmeSayisi.compareTo(a.goruntulenmeSayisi));
