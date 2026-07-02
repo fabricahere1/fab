@@ -37,6 +37,7 @@ class FcmService {
   /// main.dart'tan inject edilir).
   Future<void> init({
     required void Function(RemoteMessage) onBildirimAc,
+    required void Function(RemoteMessage) onIlkAcilis,
   }) async {
     // 1. İzin iste (iOS + Android 13+)
     final izin = await _messaging.requestPermission();
@@ -70,13 +71,10 @@ class FcmService {
     // 5. Arka planda bildirime tıklandı
     _openedAppSub = FirebaseMessaging.onMessageOpenedApp.listen(onBildirimAc);
 
-    // 6. Uygulama kapalıyken bildirime tıklanıp açıldı
+    // 6. Uygulama kapalıyken bildirime tıklanıp açıldı — HomeScreen'de işlenir
     final initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
-      // Widget ağacı hazır olduktan sonra çalıştır
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        onBildirimAc(initialMessage);
-      });
+      onIlkAcilis(initialMessage);
     }
   }
 

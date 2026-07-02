@@ -53,10 +53,17 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
   final _mesajCtrl  = TextEditingController();
   final _scrollCtrl = ScrollController();
   bool _degerlendirmeAcik = false;
+  String? _ilanResimUrl;
+
+  String? get _gosterilecekResim => widget.ilanResimUrl ?? _ilanResimUrl;
 
   @override
   void initState() {
     super.initState();
+    _ilanResimUrl = widget.ilanResimUrl;
+    if (widget.ilanResimUrl == null && widget.ilanId.isNotEmpty) {
+      _ilanResimUrlCek();
+    }
     if (widget.ilgileniyorumMesaji != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _gonderIlgileniyorum());
     }
@@ -65,6 +72,15 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
       _degerlendirmeyiDinle();
       if (widget.autoOpenPanel) _panelAc();
     });
+  }
+
+  Future<void> _ilanResimUrlCek() async {
+    try {
+      final ilan = await ref.read(ilanRepositoryProvider).ilanGetir(widget.ilanId);
+      if (!mounted || ilan == null) return;
+      final url = ilan.resimThumbUrl.isNotEmpty ? ilan.resimThumbUrl : ilan.resimUrl;
+      if (url.isNotEmpty) setState(() => _ilanResimUrl = url);
+    } catch (_) {}
   }
 
   Future<void> _iletisimBasladiIsaretle() async {
@@ -543,11 +559,11 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                               ),
                               child: Row(
                                 children: [
-                                  if (widget.ilanResimUrl != null && widget.ilanResimUrl!.isNotEmpty)
+                                  if (_gosterilecekResim != null && _gosterilecekResim!.isNotEmpty)
                                     ClipRRect(
                                       borderRadius: BorderRadius.circular(5),
                                       child: CachedNetworkImage(
-                                        imageUrl: widget.ilanResimUrl!,
+                                        imageUrl: _gosterilecekResim!,
                                         width: 28,
                                         height: 28,
                                         fit: BoxFit.cover,

@@ -81,11 +81,17 @@ class IsteApp extends ConsumerStatefulWidget {
   ConsumerState<IsteApp> createState() => _IsteAppState();
 }
 
+// Uygulama kapalıyken gelen bildirim — HomeScreen açılınca işlenir
+RemoteMessage? bekleyenBildirim;
+
 class _IsteAppState extends ConsumerState<IsteApp> {
   @override
   void initState() {
     super.initState();
-    FcmService.instance.init(onBildirimAc: _bildirimdenAc);
+    FcmService.instance.init(
+      onBildirimAc: _bildirimdenAc,
+      onIlkAcilis: (message) => bekleyenBildirim = message,
+    );
     BildirimBannerService.instance.init();
     BadgeService.instance.init();
   }
@@ -99,10 +105,7 @@ class _IsteAppState extends ConsumerState<IsteApp> {
   }
 
   void _bildirimdenAc(RemoteMessage message) {
-    // Router veya context henüz hazır değilse kısa bekle
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _bildirimNavigation(message);
-    });
+    _bildirimNavigation(message);
   }
 
   void _bildirimNavigation(RemoteMessage message) {

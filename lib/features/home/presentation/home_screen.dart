@@ -16,10 +16,12 @@ import '../../ilanlar/providers/grid_tercihi_notifier.dart';
 import '../../ilanlar/presentation/gelenler_screen.dart';
 import '../../ilanlar/presentation/ilan_form_screen.dart';
 import '../../mesajlar/presentation/mesajlar_screen.dart';
+import '../../mesajlar/presentation/sohbet_screen.dart';
 import '../../mesajlar/providers/mesaj_provider.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
 import '../../profil/presentation/profil_screen.dart';
 import 'kesfet_screen.dart';
+import '../../../main.dart' show bekleyenBildirim;
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -41,6 +43,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bekleyenBildirimiIsle());
+  }
+
+  void _bekleyenBildirimiIsle() {
+    final mesaj = bekleyenBildirim;
+    if (mesaj == null) return;
+    bekleyenBildirim = null;
+
+    final data             = mesaj.data;
+    final sohbetId         = data['sohbetId']         as String? ?? '';
+    final karsiKullaniciId = data['karsiKullaniciId'] as String? ?? '';
+    final karsiKullaniciAd = data['karsiKullaniciAd'] as String? ?? '';
+    final ilanId           = data['ilanId']           as String? ?? '';
+    final ilanSahibiId     = data['ilanSahibiId']     as String? ?? '';
+    final ilanBaslik       = data['ilanBaslik']        as String? ?? '';
+
+    if (sohbetId.isEmpty || !mounted) return;
+
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => SohbetScreen(
+        sohbetId:         sohbetId,
+        karsiKullaniciId: karsiKullaniciId,
+        karsiKullaniciAd: karsiKullaniciAd,
+        ilanId:           ilanId,
+        ilanBaslik:       ilanBaslik,
+        ilanSahibiId:     ilanSahibiId,
+      ),
+    ));
   }
 
   void _ilanVer() {

@@ -379,6 +379,12 @@ class IlanRepository {
     }
   }
 
+  Future<IlanModel?> ilanGetir(String ilanId) async {
+    final snap = await _col.doc(ilanId).get();
+    if (!snap.exists) return null;
+    return IlanModel.fromFirestore(snap);
+  }
+
   Future<void> ilanGuncelle(String ilanId, Map<String, dynamic> data) =>
       _col.doc(ilanId).update(data);
 
