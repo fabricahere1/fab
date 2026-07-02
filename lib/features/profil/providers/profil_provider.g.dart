@@ -879,7 +879,7 @@ final class TakipEdiyorMuProvider
   }
 }
 
-String _$takipEdiyorMuHash() => r'1f89e5ebd027b26b1316601f0aee525ac23d16eb';
+String _$takipEdiyorMuHash() => r'5498354c59525dba0429ca710c45a018940c2c7d';
 
 final class TakipEdiyorMuFamily extends $Family
     with $FunctionalFamilyOverride<Stream<bool>, String> {
@@ -931,7 +931,7 @@ final class TakipIslemleriProvider
   }
 }
 
-String _$takipIslemleriHash() => r'f85008a623b713f0b3cf6dfae0a7d461934bf159';
+String _$takipIslemleriHash() => r'73e781b3357205780533c823acf8e5f686070b4b';
 
 abstract class _$TakipIslemleri extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();

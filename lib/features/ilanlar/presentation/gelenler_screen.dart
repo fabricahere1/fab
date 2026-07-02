@@ -77,6 +77,8 @@ IlanModel _gHittenIlan(Map<String, dynamic> hit) {
     durum:           hit['durum']       as String? ?? 'yayinda',
     kullaniciId:     hit['kullaniciId'] as String? ?? '',
     kullaniciAd:     hit['kullaniciAd'] as String? ?? '',
+    favoriSayisi:    (hit['favoriSayisi']          as num?)?.toInt() ?? 0,
+    goruntulenmeSayisi: (hit['goruntulenmeSayisi'] as num?)?.toInt() ?? 0,
     olusturmaTarihi: tarihMs != null
         ? DateTime.fromMillisecondsSinceEpoch(tarihMs)
         : null,
@@ -514,7 +516,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                         child: Text('Tümü',
                             style: GoogleFonts.dmSans(
                               fontSize: 12,
-                              fontWeight: FontWeight.w400,
+                              fontWeight: FontWeight.w200,
                               color: secili ? Colors.white : AppColors.textSecondary,
                             )),
                       ),
@@ -564,7 +566,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                           Text(kat.ad,
                               style: GoogleFonts.dmSans(
                                 fontSize: 12,
-                                fontWeight: FontWeight.w400,
+                                fontWeight: FontWeight.w200,
                                 color: secili ? Colors.white : AppColors.textPrimary,
                               )),
                         ],

@@ -145,7 +145,7 @@ final class IlanOlusturProvider
   }
 }
 
-String _$ilanOlusturHash() => r'd041787584c84d5897fc5edc0ac70e0e73d7cfce';
+String _$ilanOlusturHash() => r'c1871fdfda42577b3caead25b673261ed3d318d9';
 
 abstract class _$IlanOlustur extends $Notifier<IlanOlusturState> {
   IlanOlusturState build();
@@ -691,7 +691,7 @@ final class OptimistikFavoriProvider
         argument: null,
         retry: null,
         name: r'optimistikFavoriProvider',
-        isAutoDispose: false,
+        isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -712,7 +712,7 @@ final class OptimistikFavoriProvider
   }
 }
 
-String _$optimistikFavoriHash() => r'bece6372712d06df55a4ee231b8fb0b76f857688';
+String _$optimistikFavoriHash() => r'f583497affb1f1da58a218fb61bc14e8a127a080';
 
 abstract class _$OptimistikFavori extends $Notifier<Map<String, bool>> {
   Map<String, bool> build();

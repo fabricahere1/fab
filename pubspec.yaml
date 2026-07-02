@@ -71,6 +71,9 @@ dev_dependencies:
   freezed: ^3.2.3
   json_serializable: ^6.11.2
 
+  # ── App Icon ─────────────────────────────────────────────
+  flutter_launcher_icons: ^0.14.1
+
 flutter:
   uses-material-design: true
 
@@ -78,6 +81,15 @@ flutter:
     - assets/splash/
     - assets/images/
     - assets/images/rehber/
+
+# ── App Icon ─────────────────────────────────────────────────────────────────
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/app_icon.png"
+  adaptive_icon_background: "#E53935"
+  adaptive_icon_foreground: "assets/images/app_icon.png"
+  min_sdk_android: 21
 
 # ── Splash Ekranı ────────────────────────────────────────────────────────────
 flutter_native_splash:

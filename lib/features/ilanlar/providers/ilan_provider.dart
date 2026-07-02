@@ -510,10 +510,10 @@ class BreadcrumbKategoriFiltresi extends _$BreadcrumbKategoriFiltresi {
 
 // ── Optimistik favori state ───────────────────────────────────────────────────
 
-@Riverpod(keepAlive: true)
+@riverpod
 class OptimistikFavori extends _$OptimistikFavori {
   @override
-  Map<String, bool> build() => {}; // ilanId → true:eklendi / false:çıkarıldı
+  Map<String, bool> build() => {};
 
   void ekle(String ilanId) => state = {...state, ilanId: true};
   void cikar(String ilanId) => state = {...state, ilanId: false};
