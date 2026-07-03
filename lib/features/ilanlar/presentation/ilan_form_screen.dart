@@ -162,6 +162,13 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
       if (_istekMi && _urunCtrl.text.trim().isEmpty) {
         _snack('Ürün adını girin.'); return false;
       }
+      if (_istekMi && _urunCtrl.text.trim().length < 3) {
+        _snack('Ürün adı en az 3 karakter olmalı.'); return false;
+      }
+      if (!_istekMi && !_sadeceGeliyorum && _urunCtrl.text.trim().isNotEmpty &&
+          _urunCtrl.text.trim().length < 3) {
+        _snack('İlan adı en az 3 karakter olmalı.'); return false;
+      }
       if (_istekMi && _kategoriYolu.isEmpty) {
         _snack('Kategori seçin.'); return false;
       }
@@ -573,7 +580,7 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
                             Center(
                               child: Column(
                                 children: [
-                                  Icon(tanim.ikon, size: 34, color: const Color(0xFF1A1A1A)),
+                                  Icon(tanim.ikon, size: 34, color: AppColors.primary),
                                   const SizedBox(height: 18),
                                   Text('ADIM ${_adim + 1} / $_toplamAdim',
                                       style: GoogleFonts.dmSans(
@@ -698,11 +705,21 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
                 children: [
                   _alanEtiket(_istekMi ? 'Ürün adı *' : 'İlan adı'),
                   const SizedBox(height: 6),
-                  _altCizgiAlan(
-                    controller: _urunCtrl,
-                    hint: _istekMi
-                        ? 'Örn: iPhone 15 Pro, Nike Air Max...'
-                        : 'Örn: Elektronik, Kozmetik, Giyim...',
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: _urunCtrl,
+                    builder: (context, val, _) {
+                      final text = val.text.trim();
+                      final hata = text.isNotEmpty && text.length < 3
+                          ? 'En az 3 karakter girin'
+                          : null;
+                      return _altCizgiAlan(
+                        controller: _urunCtrl,
+                        hint: _istekMi
+                            ? 'Örn: iPhone 15 Pro, Nike Air Max...'
+                            : 'Örn: Elektronik, Kozmetik, Giyim...',
+                        errorText: _sadeceGeliyorum ? null : hata,
+                      );
+                    },
                   ),
                   const SizedBox(height: 22),
                   _alanEtiket(_istekMi ? 'Kategori *' : 'Kategori'),
@@ -1099,6 +1116,7 @@ Widget _altCizgiAlan({
   required String hint,
   int maxLines = 1,
   int? maxLength,
+  String? errorText,
 }) {
   return TextField(
     controller: controller,
@@ -1108,6 +1126,8 @@ Widget _altCizgiAlan({
     decoration: InputDecoration(
       hintText: hint,
       hintStyle: GoogleFonts.dmSans(fontSize: 14, color: const Color(0xFFBBBBBB)),
+      errorText: errorText,
+      errorStyle: GoogleFonts.dmSans(fontSize: 11, color: const Color(0xFFE53935)),
       counterText: '',
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -1117,6 +1137,10 @@ Widget _altCizgiAlan({
           borderSide: BorderSide(color: Color(0xFFEEEEEE))),
       focusedBorder: const UnderlineInputBorder(
           borderSide: BorderSide(color: Color(0xFF1A1A1A), width: 1.5)),
+      errorBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(color: Color(0xFFE53935))),
+      focusedErrorBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(color: Color(0xFFE53935), width: 1.5)),
     ),
   );
 }
