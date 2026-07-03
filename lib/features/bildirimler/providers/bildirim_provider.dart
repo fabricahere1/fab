@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/bildirim_repository.dart';
 import '../domain/bildirim_model.dart';
@@ -16,7 +17,8 @@ Stream<List<BildirimModel>> bildirimler(Ref ref) {
 }
 
 /// Okunmamış bildirim sayısı — navigation badge için.
-@Riverpod(keepAlive: true)
+/// autoDispose: uid değişince (logout/login) eski stream otomatik kapanır.
+@riverpod
 Stream<int> okunmamisBildirimSayi(Ref ref) {
   final uid = ref.watch(currentUserProvider)?.uid;
   if (uid == null) return Stream.value(0);

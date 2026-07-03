@@ -21,7 +21,7 @@ import '../../mesajlar/providers/mesaj_provider.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
 import '../../profil/presentation/profil_screen.dart';
 import 'kesfet_screen.dart';
-import '../../../main.dart' show bekleyenBildirim;
+import '../../bildirimler/providers/bekleyen_bildirim_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -47,9 +47,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _bekleyenBildirimiIsle() {
-    final mesaj = bekleyenBildirim;
+    final mesaj = ref.read(bekleyenBildirimProvider);
     if (mesaj == null) return;
-    bekleyenBildirim = null;
+    ref.read(bekleyenBildirimProvider.notifier).temizle();
 
     final data             = mesaj.data;
     final sohbetId         = data['sohbetId']         as String? ?? '';

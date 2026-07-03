@@ -58,23 +58,26 @@ final class BildirimlerProvider
 String _$bildirimlerHash() => r'45abe9374d338b31e4996cdb3c707a4106b0db9e';
 
 /// Okunmamış bildirim sayısı — navigation badge için.
+/// autoDispose: uid değişince (logout/login) eski stream otomatik kapanır.
 
 @ProviderFor(okunmamisBildirimSayi)
 final okunmamisBildirimSayiProvider = OkunmamisBildirimSayiProvider._();
 
 /// Okunmamış bildirim sayısı — navigation badge için.
+/// autoDispose: uid değişince (logout/login) eski stream otomatik kapanır.
 
 final class OkunmamisBildirimSayiProvider
     extends $FunctionalProvider<AsyncValue<int>, int, Stream<int>>
     with $FutureModifier<int>, $StreamProvider<int> {
   /// Okunmamış bildirim sayısı — navigation badge için.
+  /// autoDispose: uid değişince (logout/login) eski stream otomatik kapanır.
   OkunmamisBildirimSayiProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'okunmamisBildirimSayiProvider',
-        isAutoDispose: false,
+        isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -94,7 +97,7 @@ final class OkunmamisBildirimSayiProvider
 }
 
 String _$okunmamisBildirimSayiHash() =>
-    r'c74335f3f0c942d6b4dd8b3014ffdf11e9c1718f';
+    r'bfdc7c2f50fd3e153e24feb49b74bbd3475d261c';
 
 /// Bildirim işlemleri — okuma, silme, gönderme.
 

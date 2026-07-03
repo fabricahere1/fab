@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/services/badge_service.dart';
 import 'core/services/bildirim_banner_service.dart';
 import 'core/services/fcm_service.dart';
+import 'features/bildirimler/providers/bekleyen_bildirim_provider.dart';
 import 'features/mesajlar/presentation/sohbet_screen.dart';
 import 'shared/widgets/baglanti_banner.dart';
 import 'core/theme/app_theme.dart';
@@ -81,16 +82,14 @@ class IsteApp extends ConsumerStatefulWidget {
   ConsumerState<IsteApp> createState() => _IsteAppState();
 }
 
-// Uygulama kapalıyken gelen bildirim — HomeScreen açılınca işlenir
-RemoteMessage? bekleyenBildirim;
-
 class _IsteAppState extends ConsumerState<IsteApp> {
   @override
   void initState() {
     super.initState();
     FcmService.instance.init(
       onBildirimAc: _bildirimdenAc,
-      onIlkAcilis: (message) => bekleyenBildirim = message,
+      onIlkAcilis: (message) =>
+          ref.read(bekleyenBildirimProvider.notifier).set(message),
     );
     BildirimBannerService.instance.init();
     BadgeService.instance.init();
