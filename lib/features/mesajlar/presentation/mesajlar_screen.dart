@@ -200,7 +200,10 @@ class _SohbetKarti extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final karsiUid = sohbet.karsiKullaniciId(benimUid);
-    final karsiAd = sohbet.karsiKullaniciAdi(benimUid);
+    final karsiAdMap = sohbet.karsiKullaniciAdi(benimUid);
+    final karsiAd = karsiAdMap.isNotEmpty
+        ? karsiAdMap
+        : (ref.watch(karsiKullaniciAdProvider(karsiUid)).value ?? '');
 
     final okunmamisSayi = sohbet.okunmamisSayisi(benimUid);
     final zamanYazi = sohbet.sonMesajZamani != null
