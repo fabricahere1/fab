@@ -425,7 +425,6 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
       setState(() => _overlayAktif = true);
       final yayinda = await ref.read(ilanOlusturProvider.notifier).durumBekle(
         widget.duzenlenecekIlan!.id,
-        ilkSonucuAtla: true,
       );
       if (!mounted) return;
       setState(() => _basarili = yayinda ?? true);

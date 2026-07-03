@@ -378,7 +378,6 @@ class IlanOlustur extends _$IlanOlustur {
     final firestore = ref.read(ilanRepositoryProvider).firestore;
     StreamSubscription? sub;
     Timer? timer;
-    var ilkSnapshot = true;
 
     timer = Timer(timeout, () {
       sub?.cancel();
@@ -387,11 +386,11 @@ class IlanOlustur extends _$IlanOlustur {
 
     sub = firestore.collection('ilanlar').doc(ilanId).snapshots().listen(
       (snap) {
-        if (ilkSonucuAtla && ilkSnapshot) {
-          ilkSnapshot = false;
-          return;
-        }
         final durum = snap.data()?['durum'] as String?;
+        // 'onayBekliyor' = moderasyon henüz sonuçlanmadı, bekle.
+        // Hem create (ilk snapshot zaten onayBekliyor olur) hem edit (guncelle()
+        // durum'u onayBekliyor'a çekiyor) akışında doğru çalışır.
+        if (durum == 'onayBekliyor') return;
         if (durum == 'yayinda' || durum == 'reddedildi') {
           timer?.cancel();
           sub?.cancel();
@@ -421,7 +420,11 @@ class IlanOlustur extends _$IlanOlustur {
     try {
       await ref.read(ilanRepositoryProvider).ilanResimliGuncelle(
         ilanId: ilanId,
-        data: data,
+        data: {
+          ...data,
+          'durum': 'onayBekliyor',
+          'redSebebi': '',
+        },
         yeniResimler: yeniResimler,
         mevcutResimler: mevcutResimler,
         onProgress: (index, progress) {

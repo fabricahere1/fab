@@ -10,12 +10,19 @@ const db = admin.firestore();
 
 // ── Algolia ───────────────────────────────────────────────────────────────────
 
-const ALGOLIA_APP_ID  = "NVHD1ZSPLZ";
-const ALGOLIA_API_KEY = "f5dc5bff05386fc3d86df1d1888d5bbd";
 const ALGOLIA_INDEX        = "ilanlar";
 const ALGOLIA_INDEX_NEREYE = "ilanlar_nereye";
 
-const algoliaClient = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_API_KEY);
+let _algoliaClient: ReturnType<typeof algoliasearch> | null = null;
+function getAlgoliaClient() {
+  if (!_algoliaClient) {
+    _algoliaClient = algoliasearch(
+      process.env.ALGOLIA_APP_ID  ?? "",
+      process.env.ALGOLIA_API_KEY ?? "",
+    );
+  }
+  return _algoliaClient;
+}
 
 // ── Önerilen Puan Hesaplama ───────────────────────────────────────────────────
 //
@@ -245,7 +252,8 @@ export const ilanModerasyonu = functions
     const data   = snap.data();
     if (!data) return;
 
-    const ilanRef = db.collection("ilanlar").doc(ilanId);
+    const ilanRef     = db.collection("ilanlar").doc(ilanId);
+    const kullaniciId = data.kullaniciId as string;
 
     try {
       // nereden/nereye artık Flutter formunda kapalı listeden (ülke/şehir) seçiliyor,
@@ -258,9 +266,9 @@ export const ilanModerasyonu = functions
       if (!metinSonuc.uygun) {
         await ilanRef.update({ aktif: false, durum: "reddedildi", redSebebi: metinSonuc.sebep });
         await Promise.all([
-          bildirimGonder(data.kullaniciId, "İlanın yayınlanamadı", metinSonuc.sebep, "ilan_red", ilanId),
+          bildirimGonder(kullaniciId, "İlanın yayınlanamadı", metinSonuc.sebep, "ilan_red", ilanId),
           db.collection("bildirimler").add({
-            kullaniciId: data.kullaniciId, tip: "ilan_red",
+            kullaniciId, tip: "ilan_red",
             baslik: "İlanın yayınlanamadı", icerik: metinSonuc.sebep,
             okundu: false, tarih: admin.firestore.FieldValue.serverTimestamp(), hedefId: ilanId,
           }),
@@ -273,9 +281,9 @@ export const ilanModerasyonu = functions
       if (!resimSonuc.uygun) {
         await ilanRef.update({ aktif: false, durum: "reddedildi", redSebebi: resimSonuc.sebep });
         await Promise.all([
-          bildirimGonder(data.kullaniciId, "İlanın yayınlanamadı", resimSonuc.sebep, "ilan_red", ilanId),
+          bildirimGonder(kullaniciId, "İlanın yayınlanamadı", resimSonuc.sebep, "ilan_red", ilanId),
           db.collection("bildirimler").add({
-            kullaniciId: data.kullaniciId, tip: "ilan_red",
+            kullaniciId, tip: "ilan_red",
             baslik: "İlanın yayınlanamadı", icerik: resimSonuc.sebep,
             okundu: false, tarih: admin.firestore.FieldValue.serverTimestamp(), hedefId: ilanId,
           }),
@@ -290,9 +298,9 @@ export const ilanModerasyonu = functions
       const ilanAdi = data.urun || `${data.nereden} → ${data.nereye}`;
       try {
         await Promise.all([
-          bildirimGonder(data.kullaniciId, "İlanın yayınlandı", `"${ilanAdi}" ilanın aktif.`, "ilan_onayla", ilanId),
+          bildirimGonder(kullaniciId, "İlanın yayınlandı", `"${ilanAdi}" ilanın aktif.`, "ilan_onayla", ilanId),
           db.collection("bildirimler").add({
-            kullaniciId: data.kullaniciId, tip: "ilan_onayla",
+            kullaniciId, tip: "ilan_onayla",
             baslik: "İlanın yayınlandı", icerik: `"${ilanAdi}" ilanın aktif.`,
             okundu: false, tarih: admin.firestore.FieldValue.serverTimestamp(), hedefId: ilanId,
           }),
@@ -300,7 +308,7 @@ export const ilanModerasyonu = functions
       } catch (e) { console.warn("Bildirim gönderilemedi:", e); }
 
       try {
-        await algoliaClient.saveObject({
+        await getAlgoliaClient().saveObject({
           indexName: ALGOLIA_INDEX,
           body: {
             objectID:        ilanId,
@@ -313,7 +321,7 @@ export const ilanModerasyonu = functions
             tip:             data.tip          ?? "",
             aktif:           true,
             durum:           "yayinda",
-            kullaniciId:        data.kullaniciId ?? "",
+            kullaniciId,
             kullaniciAd:        data.kullaniciAd ?? "",
             resimUrl:           resimUrller.length > 0 ? resimUrller[0] : (data.resimUrl ?? ""),
             olusturmaTarihi:    data.olusturmaTarihi?.toMillis() ?? Date.now(),
@@ -326,7 +334,7 @@ export const ilanModerasyonu = functions
 
       // Nereye index'ine yaz
       try {
-        await algoliaClient.saveObject({
+        await getAlgoliaClient().saveObject({
           indexName: ALGOLIA_INDEX_NEREYE,
           body: {
             objectID: ilanId,
@@ -359,15 +367,14 @@ export const ilanGuncellemeModerasyon = functions
       once.nereden !== sonra.nereden ||
       once.nereye  !== sonra.nereye  ||
       JSON.stringify(once.resimUrller ?? []) !== JSON.stringify(sonra.resimUrller ?? []);
-    // İlan reddedilmiş durumdaysa, kullanıcı "Düzenle"ye basıp kaydettiğinde
-    // izlenen alanlardan hiçbiri teknik olarak değişmemiş olsa bile (örn. sadece
-    // geo alanları aynı bırakılmışsa) moderasyonu yeniden çalıştırıyoruz — aksi
-    // halde reddedilen bir ilan, kullanıcı tekrar denese de sonsuza dek reddedilmiş kalır.
-    const yenidenDenenmeliMi = sonra.durum === "reddedildi";
+    // İlan reddedilmiş durumdayken kullanıcı "Yayınla"ya basınca durum
+    // "reddedildi"→"onayBekliyor" geçişi yapar. once.durum bakarak tetikliyoruz;
+    // yoksa sonra.durum zaten "onayBekliyor" olacağı için hiç tetiklenmez.
+    const yenidenDenenmeliMi = once.durum === "reddedildi" && sonra.durum === "onayBekliyor";
     if (!icerikDegisti && !yenidenDenenmeliMi) return;
 
     const ilanRef           = db.collection("ilanlar").doc(ilanId);
-    const oncedenReddedilmis = sonra.durum === "reddedildi";
+    const oncedenReddedilmis = once.durum === "reddedildi";
     const redBaslik          = oncedenReddedilmis ? "İlanın yayınlanamadı" : "İlanın yayından kaldırıldı";
 
     try {
@@ -442,7 +449,7 @@ export const ilanGuncellendi = functions
     } catch (e) { console.warn("onerilenPuan Firestore hatası:", e); }
 
     try {
-      await algoliaClient.saveObject({
+      await getAlgoliaClient().saveObject({
         indexName: ALGOLIA_INDEX,
         body: {
           objectID:           context.params.ilanId,
@@ -469,7 +476,7 @@ export const ilanGuncellendi = functions
 
     // Nereye index'ini güncelle
     try {
-      await algoliaClient.saveObject({
+      await getAlgoliaClient().saveObject({
         indexName: ALGOLIA_INDEX_NEREYE,
         body: {
           objectID: context.params.ilanId,
@@ -485,10 +492,10 @@ export const ilanSilindi = functions
   .onDelete(async (snap, context) => {
     const ilanId = context.params.ilanId;
     try {
-      await algoliaClient.deleteObject({ indexName: ALGOLIA_INDEX, objectID: ilanId });
+      await getAlgoliaClient().deleteObject({ indexName: ALGOLIA_INDEX, objectID: ilanId });
     } catch (e) { console.warn("Algolia silme hatası:", e); }
     try {
-      await algoliaClient.deleteObject({ indexName: ALGOLIA_INDEX_NEREYE, objectID: ilanId });
+      await getAlgoliaClient().deleteObject({ indexName: ALGOLIA_INDEX_NEREYE, objectID: ilanId });
     } catch (e) { console.warn("Algolia nereye silme hatası:", e); }
 
     for (const koleksiyon of ["favoriler", "goruntulenmeler"]) {
@@ -533,14 +540,14 @@ export const algoliaTopluAktar = functions
         onerilenPuan,
       };
     });
-    await algoliaClient.saveObjects({ indexName: ALGOLIA_INDEX, objects: records });
+    await getAlgoliaClient().saveObjects({ indexName: ALGOLIA_INDEX, objects: records });
 
     // Nereye index'ini toplu aktar
     const nereyeRecords = snap.docs.map((doc) => ({
       objectID: doc.id,
       nereye:   doc.data().nereye ?? "",
     }));
-    await algoliaClient.saveObjects({ indexName: ALGOLIA_INDEX_NEREYE, objects: nereyeRecords });
+    await getAlgoliaClient().saveObjects({ indexName: ALGOLIA_INDEX_NEREYE, objects: nereyeRecords });
 
     return { success: true, count: records.length };
   });
