@@ -69,6 +69,8 @@ class MesajRepository {
     required String ilanId,
     required String ilanBaslik,
     required String metin,
+    String gondereAd = '',
+    String karsiAd = '',
     String ilanResimUrl = '',
     String tip = 'mesaj',
     String? resimUrl,
@@ -101,6 +103,8 @@ class MesajRepository {
       'islemDurumlari':       {'iletisimBasladi': true},
       'olusturmaTarihi':      FieldValue.serverTimestamp(),
       'okunmamis.$karsiId':   FieldValue.increment(1),
+      if (gondereAd.isNotEmpty) 'kullaniciAdlari.$gondereId': gondereAd,
+      if (karsiAd.isNotEmpty)   'kullaniciAdlari.$karsiId':   karsiAd,
     }, SetOptions(merge: true));
 
 

@@ -62,6 +62,7 @@ abstract class SohbetModel with _$SohbetModel {
     @Default({}) Map<String, dynamic> gizli,
     @Default({}) Map<String, bool> sabitlenmis,
     @Default(false) bool degerlendirmeYapildi,
+    @Default({}) Map<String, String> kullaniciAdlari,
   }) = _SohbetModel;
 
   factory SohbetModel.fromFirestore(DocumentSnapshot doc) {
@@ -89,6 +90,11 @@ abstract class SohbetModel with _$SohbetModel {
         ) ?? {},
       ),
       degerlendirmeYapildi: d['degerlendirmeYapildi'] as bool? ?? false,
+      kullaniciAdlari: Map<String, String>.from(
+        (d['kullaniciAdlari'] as Map?)?.map(
+          (k, v) => MapEntry(k.toString(), v.toString()),
+        ) ?? {},
+      ),
     );
   }
 
@@ -102,6 +108,11 @@ extension SohbetModelX on SohbetModel {
 
   String karsiKullaniciId(String benimId) =>
       kullanicilar.firstWhere((id) => id != benimId, orElse: () => '');
+
+  String karsiKullaniciAdi(String benimId) {
+    final karsiId = karsiKullaniciId(benimId);
+    return kullaniciAdlari[karsiId] ?? '';
+  }
 
   bool sabitMi(String kullaniciId) =>
       sabitlenmis[kullaniciId] ?? false;

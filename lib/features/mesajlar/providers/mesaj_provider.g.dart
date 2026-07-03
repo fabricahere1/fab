@@ -28,7 +28,7 @@ final class SohbetlerProvider
         argument: null,
         retry: null,
         name: r'sohbetlerProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -48,7 +48,7 @@ final class SohbetlerProvider
   }
 }
 
-String _$sohbetlerHash() => r'dfb5057bee78bc0e6caa5ccd3cc69e19ab60d26c';
+String _$sohbetlerHash() => r'a262ef544fcacda3e2c3f3cd71c657ca5efb85d0';
 
 @ProviderFor(okunmamisSayi)
 final okunmamisSayiProvider = OkunmamisSayiProvider._();
@@ -102,7 +102,7 @@ final class KarsiKullaniciAdProvider
   }) : super(
          retry: null,
          name: r'karsiKullaniciAdProvider',
-         isAutoDispose: true,
+         isAutoDispose: false,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
@@ -139,7 +139,7 @@ final class KarsiKullaniciAdProvider
   }
 }
 
-String _$karsiKullaniciAdHash() => r'3f5967c58778f33d0bd3e11e274f2ffbf58bb240';
+String _$karsiKullaniciAdHash() => r'a97e9aa1ba001cd59875a636cfff78dadbfad64a';
 
 final class KarsiKullaniciAdFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<String>, String> {
@@ -149,7 +149,7 @@ final class KarsiKullaniciAdFamily extends $Family
         name: r'karsiKullaniciAdProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
-        isAutoDispose: true,
+        isAutoDispose: false,
       );
 
   KarsiKullaniciAdProvider call(String uid) =>
@@ -208,7 +208,7 @@ final class SohbetNotifierProvider
   }
 }
 
-String _$sohbetNotifierHash() => r'e6748e8b1e9bb2df15d22a3e14adb55fb0e4d0e9';
+String _$sohbetNotifierHash() => r'8967b7dd5d9db9ee68fe1fbeeaef9c24e4eb8966';
 
 final class SohbetNotifierFamily extends $Family
     with

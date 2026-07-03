@@ -58,6 +58,11 @@ _SohbetModel _$SohbetModelFromJson(Map<String, dynamic> json) => _SohbetModel(
       ) ??
       const {},
   degerlendirmeYapildi: json['degerlendirmeYapildi'] as bool? ?? false,
+  kullaniciAdlari:
+      (json['kullaniciAdlari'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(k, e as String),
+      ) ??
+      const {},
 );
 
 Map<String, dynamic> _$SohbetModelToJson(
@@ -77,4 +82,5 @@ Map<String, dynamic> _$SohbetModelToJson(
   'gizli': instance.gizli,
   'sabitlenmis': instance.sabitlenmis,
   'degerlendirmeYapildi': instance.degerlendirmeYapildi,
+  'kullaniciAdlari': instance.kullaniciAdlari,
 };

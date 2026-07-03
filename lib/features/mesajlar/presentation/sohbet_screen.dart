@@ -282,6 +282,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
     ).notifier).mesajGonder(
       metin: widget.ilgileniyorumMesaji!,
       karsiKullaniciId: widget.karsiKullaniciId,
+      karsiKullaniciAd: widget.karsiKullaniciAd,
       ilanId: widget.ilanId,
       ilanBaslik: widget.ilanBaslik,
       ilanResimUrl: widget.ilanResimUrl ?? '',
@@ -677,6 +678,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
         .resimGonder(
           dosya: File(picked.path),
           karsiKullaniciId: widget.karsiKullaniciId,
+          karsiKullaniciAd: widget.karsiKullaniciAd,
           ilanId: widget.ilanId,
           ilanBaslik: widget.ilanBaslik,
           ilanResimUrl: widget.ilanResimUrl ?? '',
@@ -697,6 +699,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
         .mesajGonder(
           metin: metin,
           karsiKullaniciId: widget.karsiKullaniciId,
+          karsiKullaniciAd: widget.karsiKullaniciAd,
           ilanId: widget.ilanId,
           ilanBaslik: widget.ilanBaslik,
           ilanResimUrl: widget.ilanResimUrl ?? '',

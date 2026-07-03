@@ -16,7 +16,7 @@ part 'mesaj_provider.g.dart';
 
 // ── Sohbet listesi ────────────────────────────────────────────────────────────
 
-@riverpod
+@Riverpod(keepAlive: true)
 Stream<List<SohbetModel>> sohbetler(Ref ref) {
   final uid = ref.watch(currentUserProvider)?.uid;
   if (uid == null) return const Stream.empty();
@@ -40,7 +40,7 @@ int okunmamisSayi(Ref ref) {
 
 // ── Karşı kullanıcı adı provider ─────────────────────────────────────────────
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<String> karsiKullaniciAd(Ref ref, String uid) async {
   if (uid.isEmpty) return 'Kullanıcı';
   final data = await ref
@@ -237,6 +237,7 @@ class SohbetNotifier extends _$SohbetNotifier {
   Future<void> mesajGonder({
     required String metin,
     required String karsiKullaniciId,
+    required String karsiKullaniciAd,
     required String ilanId,
     required String ilanBaslik,
     String ilanResimUrl = '',
@@ -260,6 +261,8 @@ class SohbetNotifier extends _$SohbetNotifier {
         ilanTip: ilanTip,
         metin: metin.trim(),
         tip: tip,
+        gondereAd: benimAd,
+        karsiAd: karsiKullaniciAd,
       );
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'mesajGonder');
@@ -289,6 +292,7 @@ class SohbetNotifier extends _$SohbetNotifier {
   Future<void> resimGonder({
     required File dosya,
     required String karsiKullaniciId,
+    required String karsiKullaniciAd,
     required String ilanId,
     required String ilanBaslik,
     String ilanResimUrl = '',
@@ -313,6 +317,8 @@ class SohbetNotifier extends _$SohbetNotifier {
         metin: '📷 Fotoğraf',
         tip: 'resim',
         resimUrl: url,
+        gondereAd: benimAd,
+        karsiAd: karsiKullaniciAd,
       );
     } catch (e) {
       if (kDebugMode) print('resimGonder hata: $e');
