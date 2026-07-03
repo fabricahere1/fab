@@ -757,3 +757,132 @@ export const hesapSilSunucu = functions
       throw new functions.https.HttpsError("internal", "Hesap silinemedi.", String(e));
     }
   });
+
+// ── İşlem Paneli Bildirimi ────────────────────────────────────────────────────
+
+const ISLEM_DURUMU_ETIKETLER: Record<string, string> = {
+  siparisVerildi:  "🛒 Sipariş Verildi",
+  urunAlindi:      "🛍️ Ürün Satın Alındı",
+  yolaCikti:       "🚚 Yola Çıktı",
+  teslimEdildi:    "📦 Teslim Edildi",
+  teslimAlindi:    "✅ Teslim Alındı",
+};
+
+export const islemDurumuBildirimiGonder = functions
+  .region("europe-west1")
+  .firestore.document("sohbetler/{sohbetId}")
+  .onUpdate(async (change, context) => {
+    const onceki  = change.before.data() as FirebaseFirestore.DocumentData;
+    const sonraki = change.after.data()  as FirebaseFirestore.DocumentData;
+
+    const oncekiDurumlar  = (onceki.islemDurumlari  ?? {}) as Record<string, unknown>;
+    const sonrakiDurumlar = (sonraki.islemDurumlari ?? {}) as Record<string, unknown>;
+
+    const sohbetId      = context.params.sohbetId as string;
+    const ilanBaslik    = (sonraki.ilanBaslik    as string | undefined) ?? "İlan";
+    const ilanId        = (sonraki.ilanId        as string | undefined) ?? "";
+    const ilanSahibiId  = (sonraki.ilanSahibiId as string | undefined) ?? "";
+    const katilimcilar  = (sonraki.kullanicilar  ?? []) as string[];
+
+    // ── Anlaşıldı (iki taraflı) ──────────────────────────────────────────────
+    // anlasildi_<uid> anahtarı yeni true oldu mu?
+    for (const uid of katilimcilar) {
+      const key = `anlasildi_${uid}`;
+      if (!oncekiDurumlar[key] && sonrakiDurumlar[key] === true) {
+        const yapanUid = uid;
+        const aliciId  = katilimcilar.find((u) => u !== yapanUid);
+        if (!aliciId) break;
+
+        const karsiZatenOnayladi = sonrakiDurumlar[`anlasildi_${aliciId}`] === true
+          && oncekiDurumlar[`anlasildi_${aliciId}`] === true;
+
+        const yapanSnap = await db.collection("kullanicilar").doc(yapanUid).get();
+        const yapanAd   = (yapanSnap.data()?.adSoyad as string | undefined) ?? "Kullanıcı";
+
+        const etiket  = karsiZatenOnayladi ? "🤝 Anlaşıldı" : "🤝 Anlaşma Önerildi";
+        const icerik  = karsiZatenOnayladi
+          ? `${yapanAd}, anlaşmayı kabul etti!`
+          : `${yapanAd}, anlaşma önerdi!`;
+
+        await db.collection("bildirimler").add({
+          kullaniciId: aliciId,
+          tip:         "islem",
+          baslik:      etiket,
+          icerik,
+          okundu:      false,
+          tarih:       admin.firestore.FieldValue.serverTimestamp(),
+          hedefId:     sohbetId,
+          gondereId:   yapanUid,
+          gondereAd:   yapanAd,
+        });
+
+        const aliciSnap    = await db.collection("kullanicilar").doc(aliciId).get();
+        const aliciData    = aliciSnap.data() ?? {};
+        const fcmToken     = aliciData.fcmToken as string | undefined;
+        const sistemTercih = (aliciData.bildirimTercihleri?.sistem ?? true) as boolean;
+        if (!fcmToken || !sistemTercih) break;
+
+        await admin.messaging().send({
+          token: fcmToken,
+          notification: { title: etiket, body: `${yapanAd} • ${ilanBaslik}` },
+          data: {
+            tip: "mesaj", sohbetId, ilanBaslik, ilanId,
+            ilanSahibiId, karsiKullaniciId: yapanUid, karsiKullaniciAd: yapanAd,
+          },
+          android: { priority: "high", notification: { channelId: "mesajlar" } },
+          apns: { payload: { aps: { badge: 1 } } },
+        });
+        break;
+      }
+    }
+
+    // ── Tek taraflı adımlar ───────────────────────────────────────────────────
+    let yeniDurum: string | null = null;
+    for (const durum of Object.keys(ISLEM_DURUMU_ETIKETLER)) {
+      if (!oncekiDurumlar[durum] && sonrakiDurumlar[durum] === true) {
+        yeniDurum = durum;
+        break;
+      }
+    }
+    if (!yeniDurum) return;
+
+    const yapanUid = sonrakiDurumlar[`${yeniDurum}_yapanUid`] as string | undefined;
+    if (!yapanUid) return;
+
+    const aliciId = katilimcilar.find((uid) => uid !== yapanUid);
+    if (!aliciId) return;
+
+    const etiket = ISLEM_DURUMU_ETIKETLER[yeniDurum];
+
+    const yapanSnap = await db.collection("kullanicilar").doc(yapanUid).get();
+    const yapanAd   = (yapanSnap.data()?.adSoyad as string | undefined) ?? "Kullanıcı";
+
+    await db.collection("bildirimler").add({
+      kullaniciId: aliciId,
+      tip:         "islem",
+      baslik:      etiket,
+      icerik:      `${yapanAd}, "${ilanBaslik}" için ${etiket.split(" ").slice(1).join(" ")} adımını onayladı`,
+      okundu:      false,
+      tarih:       admin.firestore.FieldValue.serverTimestamp(),
+      hedefId:     sohbetId,
+      gondereId:   yapanUid,
+      gondereAd:   yapanAd,
+    });
+
+    const aliciSnap    = await db.collection("kullanicilar").doc(aliciId).get();
+    const aliciData    = aliciSnap.data() ?? {};
+    const fcmToken     = aliciData.fcmToken as string | undefined;
+    const sistemTercih = (aliciData.bildirimTercihleri?.sistem ?? true) as boolean;
+    if (!fcmToken || !sistemTercih) return;
+
+    await admin.messaging().send({
+      token: fcmToken,
+      notification: { title: etiket, body: `${yapanAd} • ${ilanBaslik}` },
+      data: {
+        tip: "mesaj", sohbetId, ilanBaslik, ilanId,
+        ilanSahibiId, karsiKullaniciId: yapanUid, karsiKullaniciAd: yapanAd,
+      },
+      android: { priority: "high", notification: { channelId: "mesajlar" } },
+      apns: { payload: { aps: { badge: 1 } } },
+    });
+  });

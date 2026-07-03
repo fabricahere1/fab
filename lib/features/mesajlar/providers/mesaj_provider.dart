@@ -41,18 +41,16 @@ int okunmamisSayi(Ref ref) {
 // ── Karşı kullanıcı adı provider ─────────────────────────────────────────────
 
 @riverpod
-Stream<String> karsiKullaniciAd(Ref ref, String uid) {
-  if (uid.isEmpty) return Stream.value('Kullanıcı');
-  return ref
-      .watch(kullaniciRepositoryProvider)
-      .kullaniciDataStream(uid)
-      .map((data) {
-    if (data == null) return 'Kullanıcı';
-    final adSoyad = data['adSoyad'] as String? ?? '';
-    if (adSoyad.isNotEmpty) return adSoyad;
-    final displayName = data['displayName'] as String? ?? '';
-    return displayName.isNotEmpty ? displayName : 'Kullanıcı';
-  });
+Future<String> karsiKullaniciAd(Ref ref, String uid) async {
+  if (uid.isEmpty) return 'Kullanıcı';
+  final data = await ref
+      .read(kullaniciRepositoryProvider)
+      .kullaniciDataGetir(uid);
+  if (data == null) return 'Kullanıcı';
+  final adSoyad = data['adSoyad'] as String? ?? '';
+  if (adSoyad.isNotEmpty) return adSoyad;
+  final displayName = data['displayName'] as String? ?? '';
+  return displayName.isNotEmpty ? displayName : 'Kullanıcı';
 }
 
 // ── Sohbet ekranı state ───────────────────────────────────────────────────────

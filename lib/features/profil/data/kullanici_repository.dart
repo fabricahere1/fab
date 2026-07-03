@@ -50,6 +50,12 @@ class KullaniciRepository {
       return doc.data() as Map<String, dynamic>?;
     });
   }
+
+  Future<Map<String, dynamic>?> kullaniciDataGetir(String uid) async {
+    final doc = await _col.doc(uid).get();
+    if (!doc.exists) return null;
+    return doc.data() as Map<String, dynamic>?;
+  }
  
   Future<void> profilOlustur({
     required String uid,

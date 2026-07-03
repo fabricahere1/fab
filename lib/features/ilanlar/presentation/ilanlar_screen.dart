@@ -1106,6 +1106,7 @@ class _Son24SaatBolumu extends ConsumerWidget {
                                   ],
                                 ),
                               ),
+                              if (ilan.yeniMi)
                               Positioned(
                                 top: 6,
                                 right: 16,

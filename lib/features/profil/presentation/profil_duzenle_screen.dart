@@ -25,6 +25,7 @@ const _kKadinAltHarf    = ['XS', 'S', 'M', 'L', 'XL'];
 const _kErkekBeden      = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
 const _kAyakkabiKadin   = ['36', '37', '38', '39', '40', '41', '42'];
 const _kAyakkabiErkek   = ['38', '39', '40', '41', '42', '43', '44', '45', '46', '47', '48'];
+const _kAyakkabiCocuk   = ['25', '26', '27', '28', '29', '30', '31', '32', '33', '34', '35'];
 
 class ProfilDuzenleScreen extends ConsumerStatefulWidget {
   const ProfilDuzenleScreen({super.key});
@@ -52,10 +53,12 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
   final List<String> _erkekAltBeden    = [];
   final List<String> _kadinAyakkabi    = [];
   final List<String> _erkekAyakkabi    = [];
+  final List<String> _cocukAyakkabi    = [];
 
   bool get _kadinGiyimSecili => _ilgiKategorileri.contains('kadin_giyim');
   bool get _erkekGiyimSecili => _ilgiKategorileri.contains('erkek_giyim');
-  bool get _herhangiGiyimSecili => _kadinGiyimSecili || _erkekGiyimSecili;
+  bool get _cocukGiyimSecili => _ilgiKategorileri.contains('cocuk_giyim');
+  bool get _herhangiGiyimSecili => _kadinGiyimSecili || _erkekGiyimSecili || _cocukGiyimSecili;
 
   @override
   void initState() {
@@ -89,6 +92,7 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
       _erkekAltBeden.addAll(profil.erkekAltBeden);
       _kadinAyakkabi.addAll(profil.kadinAyakkabi);
       _erkekAyakkabi.addAll(profil.erkekAyakkabi);
+      _cocukAyakkabi.addAll(profil.cocukAyakkabi);
       setState(() => _veriYuklendi = true);
     }
   }
@@ -101,6 +105,8 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
           _kadinUstBeden.clear(); _kadinAltBeden.clear(); _kadinAyakkabi.clear();
         } else if (key == 'erkek_giyim') {
           _erkekUstBeden.clear(); _erkekAltBeden.clear(); _erkekAyakkabi.clear();
+        } else if (key == 'cocuk_giyim') {
+          _cocukAyakkabi.clear();
         }
       } else {
         _ilgiKategorileri.add(key);
@@ -146,6 +152,7 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
           'erkekAltBeden':    _erkekAltBeden,
           'kadinAyakkabi':    _kadinAyakkabi,
           'erkekAyakkabi':    _erkekAyakkabi,
+          'cocukAyakkabi':    _cocukAyakkabi,
         },
       );
 
@@ -178,6 +185,7 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
         _erkekAltBeden.addAll(profil.erkekAltBeden);
         _kadinAyakkabi.addAll(profil.kadinAyakkabi);
         _erkekAyakkabi.addAll(profil.erkekAyakkabi);
+        _cocukAyakkabi.addAll(profil.cocukAyakkabi);
         setState(() => _veriYuklendi = true);
       });
     });
@@ -380,6 +388,12 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
                         _BedenBaslik('👟 Erkek Ayakkabı'),
                         const SizedBox(height: 8),
                         _BedenSecici(liste: _kAyakkabiErkek, secili: _erkekAyakkabi, onToggle: (v) => _bedenToggle(_erkekAyakkabi, v)),
+                      ],
+                      if (_cocukGiyimSecili) ...[
+                        if (_kadinGiyimSecili || _erkekGiyimSecili) const SizedBox(height: 14),
+                        _BedenBaslik('🧸 Çocuk Ayakkabı'),
+                        const SizedBox(height: 8),
+                        _BedenSecici(liste: _kAyakkabiCocuk, secili: _cocukAyakkabi, onToggle: (v) => _bedenToggle(_cocukAyakkabi, v)),
                       ],
                     ],
                   ),

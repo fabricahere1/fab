@@ -33,6 +33,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
   int _aktifResim = 0;
   final _pageController = PageController();
   bool _otuzGunKontrolEdildi = false;
+  bool _sonGoruntulenenKaydedildi = false;
 
   // Oturumda hangi ilanlar sayıldı — çift sayımı önler
   static final _sayilanlar = <String>{};
@@ -47,9 +48,6 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.ilan != null) {
-        ref.read(sonGoruntulenenlerProvider.notifier).kaydet(widget.ilan!);
-      }
       final uid = ref.read(currentUserProvider)?.uid;
       final ilanSahibiId = widget.ilan?.kullaniciId;
       if (uid != null && uid != ilanSahibiId && !_sayilanlar.contains(widget.ilanId)) {
@@ -381,7 +379,10 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
   Widget _detayScaffold(BuildContext context, IlanModel ilan) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _otuzGunKontrol(ilan);
-      ref.read(sonGoruntulenenlerProvider.notifier).kaydet(ilan);
+      if (!_sonGoruntulenenKaydedildi) {
+        _sonGoruntulenenKaydedildi = true;
+        ref.read(sonGoruntulenenlerProvider.notifier).kaydet(ilan);
+      }
     });
     return _IlanDetayIcerik(
       ilan: ilan,

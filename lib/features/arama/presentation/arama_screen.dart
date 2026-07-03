@@ -331,9 +331,9 @@ class _BosHal extends StatelessWidget {
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              itemCount: _kPopulerAramalar.length,
+              itemCount: gecmisFiltreleri.length,
               itemBuilder: (_, i) => GestureDetector(
-                onTap: () => onPopulerArama(_kPopulerAramalar[i]),
+                onTap: () => onGecmisFiltre(gecmisFiltreleri[i]),
                 child: Container(
                   margin: const EdgeInsets.only(right: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
@@ -343,7 +343,7 @@ class _BosHal extends StatelessWidget {
                     border: Border.all(color: const Color(0xFF888888), width: 0.3),
                   ),
                   child: Text(
-                    _kPopulerAramalar[i],
+                    gecmisFiltreleri[i],
                     style: GoogleFonts.dmSans(
                       fontSize: 13,
                       color: AppColors.textPrimary,

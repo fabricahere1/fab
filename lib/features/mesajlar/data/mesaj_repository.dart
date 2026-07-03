@@ -370,26 +370,11 @@ class MesajRepository {
     required String sohbetId,
     required String benimUid,
   }) async {
-    final baglam = await _bildirimBaglamiOku(sohbetId, benimUid);
-    final karsiZatenOnaylamis =
-        baglam.mevcutDurumlar['anlasildi_${baglam.karsiUid}'] == true;
-
     await _sohbetler.doc(sohbetId).update({
       'islemDurumlari.anlasildi_$benimUid': true,
     });
 
-    final icerik = karsiZatenOnaylamis
-        ? '"${baglam.ilanBaslik}" ilanı için anlaşmanızı kabul etti!'
-        : '"${baglam.ilanBaslik}" ilanı için anlaşma önerdi!';
-
-    await _islemBildirimiYaz(
-      kullaniciId: baglam.karsiUid,
-      gondereId: benimUid,
-      gondereAd: baglam.benimAd,
-      icerik: icerik,
-      tip: 'anlasildi',
-      hedefId: sohbetId,
-    );
+    // bildirimler yazma + push Cloud Function tarafından yapılıyor
   }
 
   Future<void> mesajBildirimiGonder({

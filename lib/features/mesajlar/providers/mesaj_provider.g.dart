@@ -94,8 +94,8 @@ String _$okunmamisSayiHash() => r'2e7df4de9216004e8724351c2c00662402e0ee1b';
 final karsiKullaniciAdProvider = KarsiKullaniciAdFamily._();
 
 final class KarsiKullaniciAdProvider
-    extends $FunctionalProvider<AsyncValue<String>, String, Stream<String>>
-    with $FutureModifier<String>, $StreamProvider<String> {
+    extends $FunctionalProvider<AsyncValue<String>, String, FutureOr<String>>
+    with $FutureModifier<String>, $FutureProvider<String> {
   KarsiKullaniciAdProvider._({
     required KarsiKullaniciAdFamily super.from,
     required String super.argument,
@@ -119,11 +119,11 @@ final class KarsiKullaniciAdProvider
 
   @$internal
   @override
-  $StreamProviderElement<String> $createElement($ProviderPointer pointer) =>
-      $StreamProviderElement(pointer);
+  $FutureProviderElement<String> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
 
   @override
-  Stream<String> create(Ref ref) {
+  FutureOr<String> create(Ref ref) {
     final argument = this.argument as String;
     return karsiKullaniciAd(ref, argument);
   }
@@ -139,10 +139,10 @@ final class KarsiKullaniciAdProvider
   }
 }
 
-String _$karsiKullaniciAdHash() => r'3d27a2edbe1c028f4e7a05011c0801e6bb6bcd3f';
+String _$karsiKullaniciAdHash() => r'3f5967c58778f33d0bd3e11e274f2ffbf58bb240';
 
 final class KarsiKullaniciAdFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<String>, String> {
+    with $FunctionalFamilyOverride<FutureOr<String>, String> {
   KarsiKullaniciAdFamily._()
     : super(
         retry: null,
@@ -208,7 +208,7 @@ final class SohbetNotifierProvider
   }
 }
 
-String _$sohbetNotifierHash() => r'688c263f67db88bb869a4f5f71101f0e805e4a73';
+String _$sohbetNotifierHash() => r'e6748e8b1e9bb2df15d22a3e14adb55fb0e4d0e9';
 
 final class SohbetNotifierFamily extends $Family
     with

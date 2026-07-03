@@ -263,7 +263,7 @@ final class KesfetHeroBannerProvider
   }
 }
 
-String _$kesfetHeroBannerHash() => r'8c0576d64dfd0b8d149fd6d60316938a8e6c2967';
+String _$kesfetHeroBannerHash() => r'201e01259ede3a04db5bc08360fc8ed28a624f44';
 
 @ProviderFor(kesfetOnerilenIlanlar)
 final kesfetOnerilenIlanlarProvider = KesfetOnerilenIlanlarProvider._();

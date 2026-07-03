@@ -35,10 +35,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   DateTime? _sonGeriTusu;
   bool _fabAcik = false;
 
-  bool get _fabGoster =>
+  bool _fabGoster(GoruntulemeModeli gridMod) =>
       _selectedIndex <= 1 &&
       !(_selectedIndex == 0 &&
-          ref.read(gridTercihiProvider) == GoruntulemeModeli.swipe);
+          gridMod == GoruntulemeModeli.swipe);
 
   @override
   void initState() {
@@ -81,6 +81,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final uid             = ref.watch(currentUserProvider)?.uid;
     final toplamOkunmamis = ref.watch(okunmamisSayiProvider);
+    final gridMod         = ref.watch(gridTercihiProvider);
     final bottomPadding   = MediaQuery.of(context).padding.bottom;
 
     return PopScope(
@@ -131,7 +132,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
           ],
         ),
-        floatingActionButton: _fabGoster ? Column(
+        floatingActionButton: _fabGoster(gridMod) ? Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
