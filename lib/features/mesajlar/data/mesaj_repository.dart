@@ -225,7 +225,7 @@ class MesajRepository {
     }
   }
 
-  Future<void> sohbetiGizle({
+Future<void> sohbetiGizle({
     required String sohbetId,
     required String kullaniciId,
   }) =>
@@ -390,6 +390,7 @@ class MesajRepository {
     required String metin,
     String ilanId = '',
     String ilanSahibiId = '',
+    String ilanResimUrl = '',
   }) async {
     try {
       await _functions.httpsCallable('mesajBildirimiGonder').call({
@@ -400,6 +401,7 @@ class MesajRepository {
         'metin':        metin,
         'ilanId':       ilanId,
         'ilanSahibiId': ilanSahibiId,
+        'ilanResimUrl': ilanResimUrl,
       });
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'mesajRepository.mesajBildirimiGonder');

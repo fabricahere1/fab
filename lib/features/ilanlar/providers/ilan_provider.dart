@@ -82,8 +82,7 @@ class IstekIlanlar extends _$IstekIlanlar {
         yukleniyor: false,
       );
       if (sonuc.ilanlar.isNotEmpty) {
-        // Resimler yüklensin diye 8 saniye bekle, sonra arka planda güncelle
-        Future.delayed(const Duration(seconds: 8), _arkaGuncelleIstekIlanlar);
+        _arkaGuncelleIstekIlanlar();
       }
     } catch (e) {
       if (deneme < 2) {
@@ -100,22 +99,16 @@ class IstekIlanlar extends _$IstekIlanlar {
     try {
       final sonuc = await _repo.istekIlanlariniGetirSunucu();
       if (!state.yukleniyor) {
-        // Sadece gerçekten değişiklik varsa state'i güncelle
-        final mevcutIdler = state.ilanlar.map((i) => i.id).toSet();
-        final yeniIdler = sonuc.ilanlar.map((i) => i.id).toSet();
-        final degisiklikVar =
-            mevcutIdler.difference(yeniIdler).isNotEmpty ||
-            yeniIdler.difference(mevcutIdler).isNotEmpty;
-        if (degisiklikVar) {
-          state = state.copyWith(
-            ilanlar: sonuc.ilanlar,
-            sonTarih: sonuc.sonTarih,
-            dahaFazlaVar: !sonuc.bitti,
-          );
-        }
+        state = state.copyWith(
+          ilanlar: sonuc.ilanlar,
+          sonTarih: sonuc.sonTarih,
+          dahaFazlaVar: !sonuc.bitti,
+        );
+        ref.read(sayacDeltaProvider.notifier)
+            .temizleToplu(sonuc.ilanlar.map((i) => i.id));
       }
     } catch (e, s) {
-      AppHataYonetici.logla(e, s, etiket: 'ilanlarProvider.daha_fazla_getir');
+      AppHataYonetici.logla(e, s, etiket: 'istekIlanlar.arkaGuncelle');
     }
   }
 
@@ -130,6 +123,8 @@ class IstekIlanlar extends _$IstekIlanlar {
         dahaFazlaVar: !sonuc.bitti,
         yukleniyor: false,
       );
+      ref.read(sayacDeltaProvider.notifier)
+          .temizleToplu(sonuc.ilanlar.map((i) => i.id));
     } catch (_) {
       state = state.copyWith(yukleniyor: false);
     }
@@ -144,14 +139,16 @@ class IstekIlanlar extends _$IstekIlanlar {
         sonTarih: state.sonTarih!,
         siralama: 'olusturma',
       );
-      // Set ile O(1) arama — eskiden state.ilanlar.any() ile O(n²) idi
       final mevcutIdler = state.ilanlar.map((m) => m.id).toSet();
+      final yeniIlanlar = sonuc.ilanlar.where((i) => !mevcutIdler.contains(i.id)).toList();
       state = state.copyWith(
-        ilanlar: [...state.ilanlar, ...sonuc.ilanlar.where((i) => !mevcutIdler.contains(i.id))],
+        ilanlar: [...state.ilanlar, ...yeniIlanlar],
         sonTarih: sonuc.sonTarih ?? state.sonTarih,
         dahaFazlaVar: !sonuc.bitti,
         yukleniyor: false,
       );
+      ref.read(sayacDeltaProvider.notifier)
+          .temizleToplu(yeniIlanlar.map((i) => i.id));
     } catch (_) {
       state = state.copyWith(yukleniyor: false);
     }
@@ -183,6 +180,12 @@ class IstekIlanlar extends _$IstekIlanlar {
   void ilanEkle(IlanModel ilan) {
     if (state.ilanlar.any((i) => i.id == ilan.id)) return;
     state = state.copyWith(ilanlar: [ilan, ...state.ilanlar]);
+  }
+
+  void ilanKaldir(String ilanId) {
+    state = state.copyWith(
+      ilanlar: state.ilanlar.where((i) => i.id != ilanId).toList(),
+    );
   }
 
   void engellenenlerGuncelle(List<String> engellenenler) {
@@ -237,6 +240,8 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
         dahaFazlaVar: !sonuc.bitti,
         siralama: state.siralama,
       );
+      ref.read(sayacDeltaProvider.notifier)
+          .temizleToplu(sonuc.ilanlar.map((i) => i.id));
     } catch (_) {
       state = IlanListeState(siralama: state.siralama);
     }
@@ -251,14 +256,16 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
         sonTarih: state.sonTarih!,
         siralama: state.siralama,
       );
-      // Set ile O(1) arama — eskiden state.ilanlar.any() ile O(n²) idi
       final mevcutIdler = state.ilanlar.map((m) => m.id).toSet();
+      final yeniIlanlar = sonuc.ilanlar.where((i) => !mevcutIdler.contains(i.id)).toList();
       state = state.copyWith(
-        ilanlar: [...state.ilanlar, ...sonuc.ilanlar.where((i) => !mevcutIdler.contains(i.id))],
+        ilanlar: [...state.ilanlar, ...yeniIlanlar],
         sonTarih: sonuc.sonTarih ?? state.sonTarih,
         dahaFazlaVar: !sonuc.bitti,
         yukleniyor: false,
       );
+      ref.read(sayacDeltaProvider.notifier)
+          .temizleToplu(yeniIlanlar.map((i) => i.id));
     } catch (_) {
       state = state.copyWith(yukleniyor: false);
     }
@@ -290,6 +297,12 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
   void ilanEkle(IlanModel ilan) {
     if (state.ilanlar.any((i) => i.id == ilan.id)) return;
     state = state.copyWith(ilanlar: [ilan, ...state.ilanlar]);
+  }
+
+  void ilanKaldir(String ilanId) {
+    state = state.copyWith(
+      ilanlar: state.ilanlar.where((i) => i.id != ilanId).toList(),
+    );
   }
 
   void engellenenlerGuncelle(List<String> engellenenler) {
@@ -518,6 +531,64 @@ class BreadcrumbKategoriFiltresi extends _$BreadcrumbKategoriFiltresi {
   void temizle() => state = [];
 }
 
+// ── Sayaç delta extension — tüm kartlarda tek satırla kullanılır ─────────────
+
+extension CanliSayacX on WidgetRef {
+  int canliFavoriSayisi(IlanModel ilan) {
+    final delta = watch(sayacDeltaProvider.select((s) => s.favori[ilan.id] ?? 0));
+    return (ilan.favoriSayisi + delta).clamp(0, 999999);
+  }
+
+  int canliGoruntulenmeSayisi(IlanModel ilan) {
+    final delta = watch(sayacDeltaProvider.select((s) => s.goruntulenme[ilan.id] ?? 0));
+    return (ilan.goruntulenmeSayisi + delta).clamp(0, 999999);
+  }
+}
+
+// ── Sayaç delta provider ─────────────────────────────────────────────────────
+
+class SayacDeltaState {
+  final Map<String, int> favori;
+  final Map<String, int> goruntulenme;
+  const SayacDeltaState({this.favori = const {}, this.goruntulenme = const {}});
+}
+
+@Riverpod(keepAlive: true)
+class SayacDelta extends _$SayacDelta {
+  @override
+  SayacDeltaState build() => const SayacDeltaState();
+
+  void favoriArttir(String id) => state = SayacDeltaState(
+        favori: {...state.favori, id: (state.favori[id] ?? 0) + 1},
+        goruntulenme: state.goruntulenme,
+      );
+
+  void favoriAzalt(String id) => state = SayacDeltaState(
+        favori: {...state.favori, id: (state.favori[id] ?? 0) - 1},
+        goruntulenme: state.goruntulenme,
+      );
+
+  void goruntulenmeArttir(String id) => state = SayacDeltaState(
+        favori: state.favori,
+        goruntulenme: {
+          ...state.goruntulenme,
+          id: (state.goruntulenme[id] ?? 0) + 1,
+        },
+      );
+
+  void temizleToplu(Iterable<String> ilanIdler) {
+    final idSet = ilanIdler.toSet();
+    final f = Map<String, int>.from(state.favori)
+      ..removeWhere((id, _) => idSet.contains(id));
+    final g = Map<String, int>.from(state.goruntulenme)
+      ..removeWhere((id, _) => idSet.contains(id));
+    if (f.length != state.favori.length ||
+        g.length != state.goruntulenme.length) {
+      state = SayacDeltaState(favori: f, goruntulenme: g);
+    }
+  }
+}
+
 // ── Optimistik favori state ───────────────────────────────────────────────────
 
 @riverpod
@@ -575,8 +646,7 @@ class FavoriNotifier extends _$FavoriNotifier {
       // ileride yanlışlıkla autoDispose'a çevrilirse çökme yerine sessizce
       // çıkmayı garanti eden bir güvenlik ağı olarak kalsın.
       if (!ref.mounted) return;
-      ref.read(istekIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilan.id, 1);
-      ref.read(tasiyiciIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilan.id, 1);
+      ref.read(sayacDeltaProvider.notifier).favoriArttir(ilan.id);
     } catch (_) {
       if (!ref.mounted) return;
       ref.read(optimistikFavoriProvider.notifier).temizle(ilan.id);
@@ -590,8 +660,7 @@ class FavoriNotifier extends _$FavoriNotifier {
     try {
       await _repo.favoridanCikar(kullaniciId: uid, ilanId: ilanId);
       if (!ref.mounted) return;
-      ref.read(istekIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilanId, -1);
-      ref.read(tasiyiciIlanlarProvider.notifier).ilanFavoriSayisiGuncelle(ilanId, -1);
+      ref.read(sayacDeltaProvider.notifier).favoriAzalt(ilanId);
     } catch (_) {
       if (!ref.mounted) return;
       ref.read(optimistikFavoriProvider.notifier).temizle(ilanId);
@@ -642,6 +711,8 @@ class IlanIslemleri extends _$IlanIslemleri {
 
   Future<void> sil(String ilanId) async {
     await _repo.ilanSil(ilanId);
+    ref.read(istekIlanlarProvider.notifier).ilanKaldir(ilanId);
+    ref.read(tasiyiciIlanlarProvider.notifier).ilanKaldir(ilanId);
   }
 
   Future<void> goruntulemeKaydet({

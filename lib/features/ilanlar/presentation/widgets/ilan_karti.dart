@@ -43,7 +43,7 @@ class IlanKarti extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final IlanModel guncelIlan;
+    IlanModel guncelIlan;
     if (ilan.tip == IlanTip.tasiyici) {
       guncelIlan = ref.watch(tasiyiciIlanlarProvider.select((s) {
         try {
@@ -61,6 +61,8 @@ class IlanKarti extends ConsumerWidget {
         }
       }));
     }
+    final gosterFavoriSayisi = ref.canliFavoriSayisi(guncelIlan);
+    final gosterGoruntulenmeSayisi = ref.canliGoruntulenmeSayisi(guncelIlan);
 
     // Kart görünümü: ilk resim thumbnail (varsa), geri kalanlar full
     final resimler = guncelIlan.resimThumbUrl.isNotEmpty
@@ -147,6 +149,8 @@ class IlanKarti extends ConsumerWidget {
               kolonSayisi: kolonSayisi,
               kategoriAdiStr: kategoriAdiStr,
               sabitYukseklik: kolonSayisi == 3,
+              favoriSayisi: gosterFavoriSayisi,
+              goruntulenmeSayisi: gosterGoruntulenmeSayisi,
             ),
           ],
           ),
@@ -721,12 +725,16 @@ class _IlanKartiIcerik extends StatelessWidget {
   final int kolonSayisi;
   final String kategoriAdiStr;
   final bool sabitYukseklik;
+  final int favoriSayisi;
+  final int goruntulenmeSayisi;
 
   const _IlanKartiIcerik({
     required this.ilan,
     required this.kolonSayisi,
     required this.kategoriAdiStr,
     required this.sabitYukseklik,
+    required this.favoriSayisi,
+    required this.goruntulenmeSayisi,
   });
 
   Widget _icerik(BuildContext context) {
@@ -793,8 +801,8 @@ class _IlanKartiIcerik extends StatelessWidget {
                       ),
                     const SizedBox(height: 5),
                     _SayacWidget(
-                      goruntulenmeSayisi: ilan.goruntulenmeSayisi,
-                      favoriSayisi: ilan.favoriSayisi,
+                      goruntulenmeSayisi: goruntulenmeSayisi,
+                      favoriSayisi: favoriSayisi,
                     ),
                   ],
                 ),

@@ -278,7 +278,9 @@ Future<AlgoliaFiltreSonucu> algoliaFiltrele({
     'attributesToRetrieve': [
       'objectID', 'urun', 'nereden', 'nereye', 'kategori',
       'anaKategori', 'kategoriYolu', 'tip', 'aktif', 'durum',
-      'resimUrl', 'olusturmaTarihi', 'kullaniciId', 'kullaniciAd',
+      'resimUrl', 'resimThumbUrl', 'resimUrller', 'olusturmaTarihi',
+      'kullaniciId', 'kullaniciAd', 'favoriSayisi', 'goruntulenmeSayisi',
+      'cinsiyet', 'beden',
     ],
     'facets': ['anaKategori'],
   };

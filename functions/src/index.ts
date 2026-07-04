@@ -330,7 +330,11 @@ export const ilanModerasyonu = functions
             onerilenPuan,
           },
         });
-      } catch (e) { console.warn("Algolia hatası:", e); }
+      } catch (e) {
+        console.error("Algolia ana index hatası:", e);
+        // Algolia sync başarısız — ilan yayında ama aramada çıkmaz, logla
+        await ilanRef.update({ algoliaHata: true }).catch(() => {});
+      }
 
       // Nereye index'ine yaz
       try {
@@ -341,11 +345,25 @@ export const ilanModerasyonu = functions
             nereye:   data.nereye ?? "",
           },
         });
-      } catch (e) { console.warn("Algolia nereye hatası:", e); }
+      } catch (e) { console.error("Algolia nereye index hatası:", e); }
 
     } catch (e) {
       console.error("Moderasyon hatası:", e);
-      await ilanRef.update({ aktif: false, durum: "onayBekliyor" });
+      try {
+        await ilanRef.update({ aktif: false, durum: "onayBekliyor" });
+        // Kullanıcıya moderasyon hatası bildirimi gönder
+        await db.collection("bildirimler").add({
+          kullaniciId,
+          tip: "ilan_red",
+          baslik: "İlanın şu an değerlendirilemedi",
+          icerik: "Teknik bir sorun oluştu. Lütfen birkaç dakika sonra tekrar dene.",
+          okundu: false,
+          tarih: admin.firestore.FieldValue.serverTimestamp(),
+          hedefId: ilanId,
+        });
+      } catch (innerErr) {
+        console.error("Moderasyon hata bildirimi de gönderilemedi:", innerErr);
+      }
     }
   });
 
@@ -590,8 +608,8 @@ export const mesajBildirimiGonder = functions
   .region("europe-west1")
   .https.onCall(async (data, context) => {
     if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Giriş yapmalısın.");
-    const { aliciId, gondereAd, ilanBaslik, sohbetId, metin, ilanId, ilanSahibiId } = data as {
-      aliciId: string; gondereAd: string; ilanBaslik: string; sohbetId: string; metin: string; ilanId: string; ilanSahibiId: string;
+    const { aliciId, gondereAd, ilanBaslik, sohbetId, metin, ilanId, ilanSahibiId, ilanResimUrl } = data as {
+      aliciId: string; gondereAd: string; ilanBaslik: string; sohbetId: string; metin: string; ilanId: string; ilanSahibiId: string; ilanResimUrl: string;
     };
     const gondereId = context.auth.uid;
     const kullaniciSnap = await db.collection("kullanicilar").doc(aliciId).get();
@@ -621,7 +639,7 @@ export const mesajBildirimiGonder = functions
     await admin.messaging().send({
       token: fcmToken,
       notification: { title: gondereAd, body: bildirimMetin },
-      data: { tip: "mesaj", sohbetId, ilanBaslik, ilanId: ilanId ?? "", ilanSahibiId: ilanSahibiId ?? "", karsiKullaniciId: gondereId, karsiKullaniciAd: gondereAd },
+      data: { tip: "mesaj", sohbetId, ilanBaslik, ilanId: ilanId ?? "", ilanSahibiId: ilanSahibiId ?? "", ilanResimUrl: ilanResimUrl ?? "", karsiKullaniciId: gondereId, karsiKullaniciAd: gondereAd },
       android: {
         priority: "high",
         collapseKey: sohbetId,
@@ -737,6 +755,18 @@ export const hesapSilSunucu = functions
       const bildirimlerSnap = await db.collection("bildirimler")
         .where("kullaniciId", "==", uid).get();
       for (const doc of bildirimlerSnap.docs) batch.delete(doc.ref);
+
+      const goruntulenmelerSnap = await db.collection("goruntulenmeler")
+        .where("kullaniciId", "==", uid).get();
+      for (const doc of goruntulenmelerSnap.docs) batch.delete(doc.ref);
+
+      const takipciSnap = await db.collection("takipler")
+        .where("takipciId", "==", uid).get();
+      for (const doc of takipciSnap.docs) batch.delete(doc.ref);
+
+      const takipEdilenSnap = await db.collection("takipler")
+        .where("takipEdilenId", "==", uid).get();
+      for (const doc of takipEdilenSnap.docs) batch.delete(doc.ref);
 
       await batch.commit();
 

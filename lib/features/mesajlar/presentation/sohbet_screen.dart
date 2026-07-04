@@ -57,6 +57,13 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
 
   String? get _gosterilecekResim => widget.ilanResimUrl ?? _ilanResimUrl;
 
+  /// widget.karsiKullaniciAd boş gelirse (eski sohbet, ilk açılış)
+  /// provider'dan çeker. Provider keepAlive olduğu için ikinci açılışta anında gelir.
+  String _karsiAd(WidgetRef ref) {
+    if (widget.karsiKullaniciAd.isNotEmpty) return widget.karsiKullaniciAd;
+    return ref.watch(karsiKullaniciAdProvider(widget.karsiKullaniciId)).value ?? '';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -71,6 +78,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
       _iletisimBasladiIsaretle();
       _degerlendirmeyiDinle();
       if (widget.autoOpenPanel) _panelAc();
+
     });
   }
 
@@ -514,8 +522,8 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                                   radius: 14,
                                   backgroundColor: AppColors.red.withValues(alpha: 0.15),
                                   child: Text(
-                                    widget.karsiKullaniciAd.isNotEmpty
-                                        ? widget.karsiKullaniciAd[0].toUpperCase()
+                                    _karsiAd(ref).isNotEmpty
+                                        ? _karsiAd(ref)[0].toUpperCase()
                                         : '?',
                                     style: GoogleFonts.dmSans(
                                         color: AppColors.red,
@@ -526,7 +534,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    widget.karsiKullaniciAd,
+                                    _karsiAd(ref),
                                     style: GoogleFonts.dmSans(
                                         color: Colors.black87,
                                         fontWeight: FontWeight.w700,
@@ -798,9 +806,11 @@ class _MesajListesi extends ConsumerWidget {
       );
     }
     // reverse:true → index 0 = en yeni mesaj (altta), yüksek index = üstte
-    // Banner en üstte (konuşma başında) görünmesi için en yüksek indexe ekleniyor
+    // Gecici resimler index 0,1,... → en altta görünür
+    final geciciResimler = sohbetState.geciciResimler;
+    final geciciSayi = geciciResimler.length;
     final dahaFazlaOffset = sohbetState.dahaFazlaVar ? 1 : 0;
-    final bannerIndex = sohbetState.siraliMesajlar.length + dahaFazlaOffset;
+    final bannerIndex = geciciSayi + sohbetState.siraliMesajlar.length + dahaFazlaOffset;
 
     return ListView.builder(
       reverse: true,
@@ -808,6 +818,30 @@ class _MesajListesi extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       itemCount: bannerIndex + 1,
       itemBuilder: (context, index) {
+        // Gecici resimler — en altta (index 0..geciciSayi-1)
+        if (index < geciciSayi) {
+          final dosya = geciciResimler[geciciSayi - 1 - index];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 2, top: 2, left: 60, right: 8),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Opacity(
+                opacity: 0.6,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Image.file(dosya, width: 180, height: 180, fit: BoxFit.cover),
+                      const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+        final adjustedIndex = index - geciciSayi;
         // En üstteki item: Mesajlaşma Kuralları
         if (index == bannerIndex) {
           return const Padding(
@@ -816,7 +850,7 @@ class _MesajListesi extends ConsumerWidget {
           );
         }
         // "Daha fazla mesaj yükle" butonu
-        if (index == sohbetState.siraliMesajlar.length) {
+        if (adjustedIndex == sohbetState.siraliMesajlar.length) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Center(
@@ -833,7 +867,7 @@ class _MesajListesi extends ConsumerWidget {
             ),
           );
         }
-        final mesaj = sohbetState.siraliMesajlar[index];
+        final mesaj = sohbetState.siraliMesajlar[adjustedIndex];
         final benimMesajim = mesaj.gondereId == benimUid;
         final zamanYazi = mesaj.zaman != null
             ? '${mesaj.zaman!.hour.toString().padLeft(2, '0')}:${mesaj.zaman!.minute.toString().padLeft(2, '0')}'

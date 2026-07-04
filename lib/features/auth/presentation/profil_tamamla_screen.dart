@@ -7,7 +7,7 @@ import '../../profil/providers/profil_provider.dart';
 import '../providers/auth_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart' show kTurkiyeSehirleri, turkceKarsilastir;
-import '../../../router/app_router.dart';
+import '../../../router/app_router.dart' show AppRoutes;
 import 'profil_tamamla_widgets.dart';
 
 TextStyle _sf({
@@ -102,7 +102,8 @@ const _kYasadigiUlkeler = [
 
 class ProfilTamamlaScreen extends ConsumerStatefulWidget {
   final bool ilkGiris;
-  const ProfilTamamlaScreen({super.key, this.ilkGiris = true});
+  final String? returnRoute;
+  const ProfilTamamlaScreen({super.key, this.ilkGiris = true, this.returnRoute});
 
   @override
   ConsumerState<ProfilTamamlaScreen> createState() =>
@@ -306,7 +307,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
       if (!mounted) return;
       setState(() => _yukleniyor = false);
       if (basarili) {
-        context.go(AppRoutes.home);
+        if (mounted) context.go(widget.returnRoute ?? AppRoutes.home);
       } else {
         setState(() => _hata = 'Bir hata oluştu. Tekrar deneyin.');
       }

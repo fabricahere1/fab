@@ -18,6 +18,7 @@ import '../../../shared/utils/app_layout.dart';
 import '../../../shared/constants/app_constants.dart' as app_constants;
 import '../../../features/home/providers/son_goruntulenenler_provider.dart';
 import '../../../core/cache/app_cache_manager.dart';
+import '../../../shared/widgets/login_gerektiren_aksiyon.dart';
 
 class IlanDetayScreen extends ConsumerStatefulWidget {
   final String ilanId;
@@ -35,7 +36,8 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
   bool _otuzGunKontrolEdildi = false;
   bool _sonGoruntulenenKaydedildi = false;
 
-  // Oturumda hangi ilanlar sayıldı — çift sayımı önler
+  // Oturumda hangi (uid, ilanId) çiftleri sayıldı — çift sayımı önler.
+  // Key formatı: "${uid}_${ilanId}" — farklı hesaplar birbirini bloklamaz.
   static final _sayilanlar = <String>{};
 
   @override
@@ -50,16 +52,14 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final uid = ref.read(currentUserProvider)?.uid;
       final ilanSahibiId = widget.ilan?.kullaniciId;
-      if (uid != null && uid != ilanSahibiId && !_sayilanlar.contains(widget.ilanId)) {
-        // Optimistic: UI'ı hemen güncelle
-        _sayilanlar.add(widget.ilanId);
-        ref.read(istekIlanlarProvider.notifier).ilanGoruntulenmeSayisiArttir(widget.ilanId);
-        ref.read(tasiyiciIlanlarProvider.notifier).ilanGoruntulenmeSayisiArttir(widget.ilanId);
-        // Arka planda Firestore'a kaydet (12 saatlik throttle)
+      final sayacKey = '${uid}_${widget.ilanId}';
+      if (uid != null && uid != ilanSahibiId && !_sayilanlar.contains(sayacKey)) {
+        _sayilanlar.add(sayacKey);
         ref.read(ilanIslemleriProvider.notifier).goruntulemeKaydet(
           kullaniciId: uid,
           ilanId: widget.ilanId,
         );
+        ref.read(sayacDeltaProvider.notifier).goruntulenmeArttir(widget.ilanId);
       }
     });
   }
@@ -78,7 +78,10 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
   String get _benimUid => ref.read(currentUserProvider)?.uid ?? '';
 
   void _favorToggle(IlanModel ilan, bool favorideMi) {
-    if (_benimUid.isEmpty) return;
+    if (_benimUid.isEmpty) {
+      loginBottomSheet(context, returnRoute: AppRoutes.ilanDetayPath(ilan.id));
+      return;
+    }
     if (favorideMi) {
       ref.read(favoriProvider.notifier).cikar(ilan.id);
     } else {
@@ -87,7 +90,10 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
   }
 
   void _mesajGonder(IlanModel ilan) {
-    if (_benimUid.isEmpty) return;
+    if (_benimUid.isEmpty) {
+      loginBottomSheet(context, returnRoute: AppRoutes.ilanDetayPath(ilan.id));
+      return;
+    }
     final resimler = ilan.tumResimler;
     Navigator.push(
       context,
@@ -454,7 +460,7 @@ class _IlanDetayIcerik extends ConsumerWidget {
               onTap: () => context.pop(),
             ),
             actions: [
-              if (uid != null && !benimIlan)
+              if (!benimIlan)
                 _FavoriButon(
                   favorideMi: favorideMi,
                   favoriSayisi: favoriSayisi,
@@ -755,7 +761,7 @@ class _IlanDetayIcerik extends ConsumerWidget {
         ],
       ),
 
-      bottomNavigationBar: uid != null && !benimIlan
+      bottomNavigationBar: !benimIlan
           ? Container(
               padding: EdgeInsets.fromLTRB(
                   16, 10, 16, MediaQuery.of(context).padding.bottom + 10),

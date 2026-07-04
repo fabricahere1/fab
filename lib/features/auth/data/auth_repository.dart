@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -69,7 +70,13 @@ class AuthRepository {
   }
 
   Future<void> sifreSifirlamaGonder(String email) async {
-    await auth.sendPasswordResetEmail(email: email.trim());
+    try {
+      await auth.sendPasswordResetEmail(email: email.trim());
+    } on FirebaseAuthException {
+      rethrow;
+    } catch (e) {
+      throw FirebaseAuthException(code: 'unknown', message: 'Şifre sıfırlama e-postası gönderilemedi.');
+    }
   }
 
   Future<UserCredential> googleIleGiris() async {
@@ -185,14 +192,18 @@ class AuthRepository {
     required String email,
     required String sifre,
   }) async {
+    final user = auth.currentUser;
+    if (user == null) throw FirebaseAuthException(code: 'no-current-user', message: 'Oturum bulunamadı.');
     final credential = EmailAuthProvider.credential(
       email: email.trim(),
       password: sifre.trim(),
     );
-    await auth.currentUser!.reauthenticateWithCredential(credential);
+    await user.reauthenticateWithCredential(credential);
   }
 
   Future<void> googleIleYenidenGiris() async {
+    final user = auth.currentUser;
+    if (user == null) throw FirebaseAuthException(code: 'no-current-user', message: 'Oturum bulunamadı.');
     await _googleSignIn.signOut();
     final googleUser = await _googleSignIn.signIn();
     if (googleUser == null) {
@@ -206,7 +217,7 @@ class AuthRepository {
       idToken: googleAuth.idToken,
       accessToken: googleAuth.accessToken,
     );
-    await auth.currentUser!.reauthenticateWithCredential(credential);
+    await user.reauthenticateWithCredential(credential);
   }
 
   // ── Hesap Sil ─────────────────────────────────────────
@@ -231,8 +242,8 @@ class AuthRepository {
     // sürdürebiliyordu). Client'ın kendi signOut() çağrısı, anlık olarak
     // authStateChanges()'i null yayınlatıp router'ı hemen login'e
     // yönlendiriyor.
-    try { await _googleSignIn.signOut(); } catch (_) {}
-    try { await auth.signOut(); } catch (_) {}
+    try { await _googleSignIn.signOut(); } catch (e, s) { debugPrint('[hesapSil.googleSignOut] $e\n$s'); }
+    try { await auth.signOut(); } catch (e, s) { debugPrint('[hesapSil.signOut] $e\n$s'); }
   }
 
   Future<bool> profilTamamlandiMi(String uid) async {

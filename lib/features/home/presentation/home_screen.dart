@@ -22,6 +22,8 @@ import '../../ilanlar/providers/ilan_provider.dart';
 import '../../profil/presentation/profil_screen.dart';
 import 'kesfet_screen.dart';
 import '../../bildirimler/providers/bekleyen_bildirim_provider.dart';
+import '../../../shared/widgets/login_gerektiren_aksiyon.dart';
+import '../../../router/app_router.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -58,6 +60,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final ilanId           = data['ilanId']           as String? ?? '';
     final ilanSahibiId     = data['ilanSahibiId']     as String? ?? '';
     final ilanBaslik       = data['ilanBaslik']        as String? ?? '';
+    final ilanResimUrl     = data['ilanResimUrl']      as String? ?? '';
 
     if (sohbetId.isEmpty || !mounted) return;
 
@@ -69,6 +72,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ilanId:           ilanId,
         ilanBaslik:       ilanBaslik,
         ilanSahibiId:     ilanSahibiId,
+        ilanResimUrl:     ilanResimUrl.isNotEmpty ? ilanResimUrl : null,
       ),
     ));
   }
@@ -155,6 +159,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           heroTag: 'istek',
                           onPressed: () {
                             setState(() => _fabAcik = false);
+                            if (uid == null) { loginBottomSheet(context, returnRoute: AppRoutes.ilanOlusturIstek); return; }
                             Navigator.push(context, CupertinoPageRoute(
                               builder: (_) => IlanFormScreen(tip: IlanTip.istek),
                             ));
@@ -177,6 +182,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           heroTag: 'gelen',
                           onPressed: () {
                             setState(() { _fabAcik = false; _selectedIndex = 1; });
+                            if (uid == null) { loginBottomSheet(context, returnRoute: AppRoutes.ilanOlusturTasiyici); return; }
                             Navigator.push(context, CupertinoPageRoute(
                               builder: (_) => const IlanFormScreen(tip: IlanTip.tasiyici),
                             ));
@@ -252,7 +258,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     _NavItem(
                       secili: _selectedIndex == 2,
-                      onTap: () { setState(() { _selectedIndex = 2; _fabAcik = false; }); ref.read(navBarGizliProvider.notifier).goster(); },
+                      onTap: () {
+                        if (uid == null) { loginBottomSheet(context); return; }
+                        setState(() { _selectedIndex = 2; _fabAcik = false; });
+                        ref.read(navBarGizliProvider.notifier).goster();
+                      },
                       label: 'Mesajlar',
                       child: uid == null || toplamOkunmamis == 0
                           ? Icon(Symbols.chat_bubble, size: 24, fill: _selectedIndex == 2 ? 1 : 0, weight: 300,
@@ -267,7 +277,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     _NavItem(
                       secili: _selectedIndex == 3,
-                      onTap: () { setState(() { _selectedIndex = 3; _fabAcik = false; }); ref.read(navBarGizliProvider.notifier).goster(); },
+                      onTap: () {
+                        if (uid == null) { loginBottomSheet(context); return; }
+                        setState(() { _selectedIndex = 3; _fabAcik = false; });
+                        ref.read(navBarGizliProvider.notifier).goster();
+                      },
                       label: 'Profil',
                       child: Icon(Symbols.person, size: 24, fill: _selectedIndex == 3 ? 1 : 0, weight: 300,
                           color: _selectedIndex == 3 ? AppColors.red : Colors.black),

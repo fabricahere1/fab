@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/auth_provider.dart';
+import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
+import '../../../router/app_router.dart' show AppRoutes, navigatorKey;
 import '../../profil/presentation/kullanim_kosullari_screen.dart';
 import '../../profil/presentation/gizlilik_politikasi_screen.dart';
 
@@ -17,16 +20,33 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   String _hata = '';
 
+  void _girissonrasiGit(BuildContext ctx) {
+    final returnRoute = GoRouterState.of(ctx).uri.queryParameters['returnRoute'];
+    final profil = ref.read(benimKullaniciProfilProvider).value;
+    if (profil?.profilTamamlandi == true) {
+      ctx.go(returnRoute ?? AppRoutes.home);
+    } else if (returnRoute != null) {
+      ctx.go('${AppRoutes.profilTamamla}?returnRoute=${Uri.encodeComponent(returnRoute)}');
+    } else {
+      ctx.go(AppRoutes.profilTamamla);
+    }
+  }
+
   Future<void> _googleIleGiris() async {
     setState(() => _hata = '');
+    // Zaten giriş yapılmışsa Firebase yeni auth event fırlatmaz — sonradan kontrol et
+    final dejaGiris = ref.read(currentUserProvider) != null;
     final sonuc = await ref.read(authProvider.notifier).googleIleGiris();
     if (!mounted) return;
     if (!sonuc.basarili) {
       setState(() => _hata = sonuc.hata ?? 'Google girişi başarısız.');
+      return;
     }
+    if (mounted) _girissonrasiGit(context);
   }
 
   void _telefonIleGiris() {
+    final returnRoute = GoRouterState.of(context).uri.queryParameters['returnRoute'];
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -34,6 +54,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       builder: (_) => _TelefonGirisSheet(
         onHata: (msg) {
           if (mounted) setState(() => _hata = msg);
+        },
+        onBasari: () {
+          final ctx = navigatorKey.currentContext;
+          if (ctx == null) return;
+          final profil = ref.read(benimKullaniciProfilProvider).value;
+          if (profil?.profilTamamlandi == true) {
+            ctx.go(returnRoute ?? AppRoutes.home);
+          } else if (returnRoute != null) {
+            ctx.go('${AppRoutes.profilTamamla}?returnRoute=${Uri.encodeComponent(returnRoute)}');
+          } else {
+            ctx.go(AppRoutes.profilTamamla);
+          }
         },
       ),
     );
@@ -252,7 +284,8 @@ class _GoogleIkon extends StatelessWidget {
 
 class _TelefonGirisSheet extends ConsumerStatefulWidget {
   final void Function(String) onHata;
-  const _TelefonGirisSheet({required this.onHata});
+  final VoidCallback onBasari;
+  const _TelefonGirisSheet({required this.onHata, required this.onBasari});
 
   @override
   ConsumerState<_TelefonGirisSheet> createState() =>
@@ -383,30 +416,33 @@ class _TelefonGirisSheetState extends ConsumerState<_TelefonGirisSheet> {
       _hata = '';
     });
 
-    await ref.read(authProvider.notifier).telefonKoduGonder(
-      telefon: '+90$numara',
-      onKodGonderildi: (vId) {
-        if (mounted) {
-          setState(() {
-            _verificationId = vId;
-            _kodAsamasi     = true;
-            _yukleniyor     = false;
-          });
-        }
-      },
-      onOtomatikGiris: (smsKodu) {
-        // Android otomatik okuduysa dialog göster
-        _otomatikGirisDialog(smsKodu);
-      },
-      onHata: (msg) {
-        if (mounted) {
-          setState(() {
-            _hata       = msg;
-            _yukleniyor = false;
-          });
-        }
-      },
-    );
+    try {
+      await ref.read(authProvider.notifier).telefonKoduGonder(
+        telefon: '+90$numara',
+        onKodGonderildi: (vId) {
+          if (mounted) {
+            setState(() {
+              _verificationId = vId;
+              _kodAsamasi     = true;
+              _yukleniyor     = false;
+            });
+          }
+        },
+        onOtomatikGiris: (smsKodu) {
+          _otomatikGirisDialog(smsKodu);
+        },
+        onHata: (msg) {
+          if (mounted) {
+            setState(() {
+              _hata       = msg;
+              _yukleniyor = false;
+            });
+          }
+        },
+      );
+    } finally {
+      if (mounted && _yukleniyor) setState(() => _yukleniyor = false);
+    }
   }
 
   Future<void> _girisYap() async {
@@ -419,6 +455,7 @@ class _TelefonGirisSheetState extends ConsumerState<_TelefonGirisSheet> {
       _hata       = '';
     });
 
+    final dejaGiris = ref.read(currentUserProvider) != null;
     final sonuc = await ref.read(authProvider.notifier).telefonIleGiris(
       verificationId: _verificationId,
       smsKodu:        _kodCtrl.text.trim(),
@@ -431,6 +468,7 @@ class _TelefonGirisSheetState extends ConsumerState<_TelefonGirisSheet> {
       setState(() => _hata = sonuc.hata ?? 'Doğrulama başarısız.');
     } else {
       Navigator.pop(context);
+      widget.onBasari();
     }
   }
 

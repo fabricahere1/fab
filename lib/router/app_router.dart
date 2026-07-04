@@ -5,12 +5,15 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
 
+import 'package:flutter/cupertino.dart';
+
 import '../features/auth/presentation/login_screen.dart';
-import '../features/auth/presentation/register_screen.dart';
 import '../features/auth/presentation/profil_tamamla_screen.dart';
 import '../features/home/presentation/home_screen.dart';
 import '../features/ilanlar/domain/ilan_model.dart';
 import '../features/ilanlar/presentation/ilan_detay_screen.dart';
+import '../features/ilanlar/presentation/ilan_form_screen.dart';
+import '../shared/constants/app_constants.dart' show IlanTip;
 import '../features/ilanlar/presentation/gelenler_screen.dart';
 import '../features/ilanlar/presentation/favoriler_screen.dart';
 import '../features/auth/providers/auth_provider.dart';
@@ -21,15 +24,18 @@ part 'app_router.g.dart';
 // ── Global navigator key — in-app banner için ─────────────
 final navigatorKey = GlobalKey<NavigatorState>();
 
+
 abstract class AppRoutes {
-  static const splash        = '/';
-  static const login         = '/login';
-  static const register      = '/register';
-  static const profilTamamla = '/profil-tamamla';
-  static const home          = '/home';
-  static const ilanDetay     = '/ilan/:ilanId';
-  static const gelenler      = '/gelenler';
-  static const favoriler     = '/favoriler';
+  static const splash              = '/';
+  static const login               = '/login';
+  static const register            = '/register';
+  static const profilTamamla       = '/profil-tamamla';
+  static const home                = '/home';
+  static const ilanDetay           = '/ilan/:ilanId';
+  static const gelenler            = '/gelenler';
+  static const favoriler           = '/favoriler';
+  static const ilanOlusturIstek    = '/home/ilan-olustur/istek';
+  static const ilanOlusturTasiyici = '/home/ilan-olustur/tasiyici';
 
   static String ilanDetayPath(String ilanId) => '/ilan/$ilanId';
   static String gelenlerPath({List<String> kategoriYolu = const [], String? tip}) {
@@ -71,11 +77,8 @@ GoRouter router(Ref ref) {
     redirect: (context, state) {
       final authAsync = ref.read(authStateProvider);
       final loc = state.matchedLocation;
+      final returnRoute = state.uri.queryParameters['returnRoute'];
 
-      // Firebase Auth henüz ilk cevabını vermedi (yerel disk cache'i
-      // okunuyor) — bu sırada login'e ATLAMA, splash'ta kal. Cevap
-      // gelince _AppStateNotifier zaten notifyListeners() çağırıp
-      // router'ı yeniden değerlendirtecek.
       if (authAsync.isLoading && !authAsync.hasValue) {
         return loc == AppRoutes.splash ? null : AppRoutes.splash;
       }
@@ -83,27 +86,32 @@ GoRouter router(Ref ref) {
       final user = authAsync.value;
       final girisYapildi = user != null;
 
-      if (loc.startsWith('/ilan/')) {
-        if (!girisYapildi) {
-          return '${AppRoutes.login}?redirect=${state.uri}';
-        }
-        return null;
-      }
-
       if (!girisYapildi) {
-        if (loc == AppRoutes.login || loc == AppRoutes.register) return null;
-        return AppRoutes.login;
+        if (loc == AppRoutes.login ||
+            loc == AppRoutes.register ||
+            loc == AppRoutes.home ||
+            loc.startsWith('/ilan/') ||
+            loc == AppRoutes.gelenler ||
+            loc == AppRoutes.favoriler) { return null; }
+        if (loc == AppRoutes.ilanOlusturIstek ||
+            loc == AppRoutes.ilanOlusturTasiyici) {
+          return '${AppRoutes.login}?returnRoute=${Uri.encodeComponent(loc)}';
+        }
+        return AppRoutes.home;
       }
 
+      // Giriş yapılmışsa splash/login/register → home veya profil tamamlama
       if (loc == AppRoutes.splash ||
           loc == AppRoutes.login  ||
           loc == AppRoutes.register) {
-        return _hedefBelirle(ref, user);
+        return _hedefBelirle(ref, user, returnRoute: returnRoute);
       }
 
       if (loc == AppRoutes.profilTamamla) {
         final profil = ref.read(benimKullaniciProfilProvider).value;
-        if (profil?.profilTamamlandi == true) return AppRoutes.home;
+        if (profil?.profilTamamlandi == true) {
+          return returnRoute ?? AppRoutes.home;
+        }
         return null;
       }
 
@@ -120,15 +128,32 @@ GoRouter router(Ref ref) {
       ),
       GoRoute(
         path: AppRoutes.register,
-        builder: (_, _) => const RegisterScreen(),
+        builder: (_, _) => const LoginScreen(),
       ),
       GoRoute(
         path: AppRoutes.profilTamamla,
-        builder: (_, _) => const ProfilTamamlaScreen(ilkGiris: true),
+        builder: (_, state) => ProfilTamamlaScreen(
+          ilkGiris: true,
+          returnRoute: state.uri.queryParameters['returnRoute'],
+        ),
       ),
       GoRoute(
         path: AppRoutes.home,
         builder: (_, _) => const HomeScreen(),
+        routes: [
+          GoRoute(
+            path: 'ilan-olustur/istek',
+            pageBuilder: (_, _) => const CupertinoPage(
+              child: IlanFormScreen(tip: IlanTip.istek),
+            ),
+          ),
+          GoRoute(
+            path: 'ilan-olustur/tasiyici',
+            pageBuilder: (_, _) => const CupertinoPage(
+              child: IlanFormScreen(tip: IlanTip.tasiyici),
+            ),
+          ),
+        ],
       ),
       GoRoute(
         path: AppRoutes.ilanDetay,
@@ -157,9 +182,8 @@ GoRouter router(Ref ref) {
   );
 }
 
-String? _hedefBelirle(Ref ref, User user) {
+String? _hedefBelirle(Ref ref, User user, {String? returnRoute}) {
   final profilAsync = ref.read(benimKullaniciProfilProvider);
-  // Profil henüz yüklenmediyse bekle — router profil gelince tekrar tetiklenecek
   if (profilAsync.isLoading) return null;
 
   final emailKullanicisi =
@@ -169,13 +193,18 @@ String? _hedefBelirle(Ref ref, User user) {
   final telefonKullanicisi =
       user.providerData.any((p) => p.providerId == 'phone');
 
-  // Sadece email/password kullananlar profil tamamlama adımını atlar
   if (emailKullanicisi && !googleKullanicisi && !telefonKullanicisi) {
-    return AppRoutes.home;
+    return returnRoute ?? AppRoutes.home;
   }
 
   final tamamlandi = profilAsync.value?.profilTamamlandi ?? false;
-  return tamamlandi ? AppRoutes.home : AppRoutes.profilTamamla;
+  if (!tamamlandi) {
+    if (returnRoute != null) {
+      return '${AppRoutes.profilTamamla}?returnRoute=${Uri.encodeComponent(returnRoute)}';
+    }
+    return AppRoutes.profilTamamla;
+  }
+  return returnRoute ?? AppRoutes.home;
 }
 
 class _SplashPage extends StatefulWidget {

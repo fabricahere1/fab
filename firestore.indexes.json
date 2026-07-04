@@ -54,6 +54,14 @@
       ]
     },
     {
+      "collectionGroup": "bildirimler",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "kullaniciId", "order": "ASCENDING" },
+        { "fieldPath": "tarih", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "favoriler",
       "queryScope": "COLLECTION",
       "fields": [

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../features/auth/providers/auth_provider.dart';
 import '../../features/ilanlar/presentation/ilan_form_screen.dart';
+import '../../router/app_router.dart' show AppRoutes;
 import '../../shared/constants/app_colors.dart';
 import '../../shared/constants/app_constants.dart';
+import 'login_gerektiren_aksiyon.dart' show loginBottomSheet;
 
 class NedenIsteBar extends StatelessWidget {
   const NedenIsteBar({super.key});
@@ -59,11 +63,12 @@ class NedenIsteBar extends StatelessWidget {
   }
 }
 
-class _IlanSecPanel extends StatelessWidget {
+class _IlanSecPanel extends ConsumerWidget {
   const _IlanSecPanel();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final uid = ref.read(currentUserProvider)?.uid;
     return Align(
       alignment: Alignment.centerLeft,
       child: GestureDetector(
@@ -119,9 +124,13 @@ class _IlanSecPanel extends StatelessWidget {
                   aciklama: 'Yurt dışından bir ürün almak istiyorum',
                   onTap: () {
                     Navigator.pop(context);
+                    if (uid == null) {
+                      loginBottomSheet(context, returnRoute: AppRoutes.ilanOlusturIstek);
+                      return;
+                    }
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const IlanFormScreen(tip: 'istek')),
+                      MaterialPageRoute(builder: (_) => const IlanFormScreen(tip: IlanTip.istek)),
                     );
                   },
                 ),
@@ -132,6 +141,10 @@ class _IlanSecPanel extends StatelessWidget {
                   aciklama: 'Seyahat edip ürün taşıyabilirim',
                   onTap: () {
                     Navigator.pop(context);
+                    if (uid == null) {
+                      loginBottomSheet(context, returnRoute: AppRoutes.ilanOlusturTasiyici);
+                      return;
+                    }
                     Navigator.push(
                       context,
                       MaterialPageRoute(

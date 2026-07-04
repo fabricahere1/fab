@@ -12,6 +12,8 @@ import '../../../shared/constants/app_colors.dart';
 import '../../../shared/utils/app_snackbar.dart';
 import '../../../shared/widgets/avatar_widget.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:go_router/go_router.dart';
+import '../../../router/app_router.dart' show AppRoutes, navigatorKey;
 import 'sss_screen.dart';
 import 'kullanim_kosullari_screen.dart';
 import 'gizlilik_politikasi_screen.dart';
@@ -652,14 +654,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       final yenidenGiris = await ref.read(authProvider.notifier)
           .emailIleYenidenGiris(email: email, sifre: sifreCtrl.text.trim());
       if (!yenidenGiris.basarili) throw Exception(yenidenGiris.hata);
-      final silSonuc = await ref.read(authProvider.notifier).hesapSil();
-      if (mounted) {
-        if (silSonuc.basarili) {
-          AppSnackBar.bilgi(context, 'Hesabın silindi.');
-        } else {
-          AppSnackBar.hata(context, silSonuc.hata ?? 'Hesap silinemedi.');
-        }
-      }
+      await _hesapSilVeYonlendir();
     } catch (e) {
       if (mounted) {
         AppSnackBar.hata(context, 'Hata: Şifre yanlış veya bir sorun oluştu.');
@@ -703,15 +698,54 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       final yenidenGiris = await ref.read(authProvider.notifier)
           .googleIleYenidenGiris();
       if (!yenidenGiris.basarili) throw Exception(yenidenGiris.hata);
-      final silSonuc = await ref.read(authProvider.notifier).hesapSil();
+      await _hesapSilVeYonlendir();
+    } catch (e) {
       if (mounted) {
-        if (silSonuc.basarili) {
-          AppSnackBar.bilgi(context, 'Hesabın silindi.');
-        } else {
+        AppSnackBar.hata(context, 'Hata oluştu. Tekrar dene.');
+      }
+    }
+  }
+
+  Future<void> _hesapSilVeYonlendir() async {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => PopScope(
+        canPop: false,
+        child: Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Row(children: [
+              const CircularProgressIndicator(strokeWidth: 2.5),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Text('Hesabın siliniyor...',
+                    style: GoogleFonts.manrope(fontSize: 14)),
+              ),
+            ]),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final silSonuc = await ref.read(authProvider.notifier).hesapSil();
+      navigatorKey.currentState?.popUntil((r) => r.isFirst);
+      if (silSonuc.basarili) {
+        navigatorKey.currentContext?.go(AppRoutes.login);
+        final ctx = navigatorKey.currentContext;
+        if (ctx != null) {
+          AppSnackBar.bilgi(ctx, 'Hesabın silindi. Seni tekrar aramızda görmek isteriz.');
+        }
+      } else {
+        if (mounted) {
           AppSnackBar.hata(context, silSonuc.hata ?? 'Hesap silinemedi.');
         }
       }
     } catch (e) {
+      navigatorKey.currentState?.pop();
       if (mounted) {
         AppSnackBar.hata(context, 'Hata oluştu. Tekrar dene.');
       }

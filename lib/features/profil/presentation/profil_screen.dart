@@ -19,6 +19,8 @@ import 'takip_listesi_screen.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/widgets/avatar_widget.dart';
+import '../../../router/app_router.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/rendering.dart';
 
 class ProfilScreen extends ConsumerStatefulWidget {
@@ -96,8 +98,89 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
   Widget build(BuildContext context) {
     super.build(context);
     final user = ref.watch(currentUserProvider);
+
+    // Misafir durumu — giriş yapılmamış
+    if (user == null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF5F5F5),
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          backgroundColor: Colors.white,
+          elevation: 0,
+          title: Text('Profil',
+              style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 80, height: 80,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFEDE8E3),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.person_outline,
+                      size: 40, color: AppColors.textHint),
+                ),
+                const SizedBox(height: 20),
+                Text('Profilini görüntülemek için giriş yap',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.dmSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary)),
+                const SizedBox(height: 8),
+                Text('İlanlarını yönet, mesajlarını gör ve değerlendirmelerini takip et.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.dmSans(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                        height: 1.5)),
+                const SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: FilledButton(
+                    onPressed: () => context.push(AppRoutes.login),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.red,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: Text('Giriş Yap',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 15, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: OutlinedButton(
+                    onPressed: () => context.push(AppRoutes.register),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.textPrimary,
+                      side: const BorderSide(color: AppColors.divider),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: Text('Kayıt Ol',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 15, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final benimProfilAsync = ref.watch(benimKullaniciProfilProvider);
-    final uid = user?.uid ?? '';
+    final uid = user.uid;
 
     // Reddedilen ilan sayısı badge için
     final ilanlarAsync = ref.watch(ilanlarimProvider);
@@ -130,8 +213,8 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
             child: Row(
               children: [
                 AvatarWidget(
-                  isim: user?.displayName ?? user?.email ?? '',
-                  fotoUrl: benimProfilAsync.value?.fotoUrl ?? user?.photoURL,
+                  isim: user.displayName ?? user.email ?? '',
+                  fotoUrl: benimProfilAsync.value?.fotoUrl ?? user.photoURL,
                   radius: 36,
                 ),
                 const SizedBox(width: 16),
@@ -140,11 +223,11 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        user?.displayName ?? 'Kullanıcı',
+                        user.displayName ?? 'Kullanıcı',
                         style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                       ),
                       const SizedBox(height: 2),
-                      Text(user?.email ?? '',
+                      Text(user.email ?? '',
                           style: GoogleFonts.manrope(fontSize: 13, color: AppColors.textSecondary)),
                       const SizedBox(height: 8),
                       benimProfilAsync.when(

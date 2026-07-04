@@ -41,7 +41,7 @@ final class IstekIlanlarProvider
   }
 }
 
-String _$istekIlanlarHash() => r'69c76fcf4ffbeb97da4b7ef19001904787fcb665';
+String _$istekIlanlarHash() => r'f99f54f3615d8580f973ed9399052699d9c6d346';
 
 abstract class _$IstekIlanlar extends $Notifier<IlanListeState> {
   IlanListeState build();
@@ -93,7 +93,7 @@ final class TasiyiciIlanlarProvider
   }
 }
 
-String _$tasiyiciIlanlarHash() => r'298f63eca821e6539b41352b52e5f88ae8935be9';
+String _$tasiyiciIlanlarHash() => r'4e72d9712045d8267f2ad388f2e9b90e2def968e';
 
 abstract class _$TasiyiciIlanlar extends $Notifier<IlanListeState> {
   IlanListeState build();
@@ -680,6 +680,58 @@ abstract class _$BreadcrumbKategoriFiltresi extends $Notifier<List<String>> {
   }
 }
 
+@ProviderFor(SayacDelta)
+final sayacDeltaProvider = SayacDeltaProvider._();
+
+final class SayacDeltaProvider
+    extends $NotifierProvider<SayacDelta, SayacDeltaState> {
+  SayacDeltaProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'sayacDeltaProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$sayacDeltaHash();
+
+  @$internal
+  @override
+  SayacDelta create() => SayacDelta();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(SayacDeltaState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<SayacDeltaState>(value),
+    );
+  }
+}
+
+String _$sayacDeltaHash() => r'a835b1523963d49d598f49e8bfa77e0e57e68ffb';
+
+abstract class _$SayacDelta extends $Notifier<SayacDeltaState> {
+  SayacDeltaState build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<SayacDeltaState, SayacDeltaState>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<SayacDeltaState, SayacDeltaState>,
+              SayacDeltaState,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
 @ProviderFor(OptimistikFavori)
 final optimistikFavoriProvider = OptimistikFavoriProvider._();
 
@@ -805,7 +857,7 @@ final class FavoriNotifierProvider
   }
 }
 
-String _$favoriNotifierHash() => r'16b4ae9802af2f997535eef910de34ce749b33db';
+String _$favoriNotifierHash() => r'dbd1ab5ba6fe6cb4c4c1cda5c97c99a6d1d920b7';
 
 abstract class _$FavoriNotifier extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();
@@ -857,7 +909,7 @@ final class IlanIslemleriProvider
   }
 }
 
-String _$ilanIslemleriHash() => r'2e5fd37f316269be1446756b0c7887944de02367';
+String _$ilanIslemleriHash() => r'8cb341cb8e5fa3e335576453dc1760cd104abc62';
 
 abstract class _$IlanIslemleri extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();

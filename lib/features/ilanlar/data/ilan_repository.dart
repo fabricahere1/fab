@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -162,7 +163,7 @@ class IlanRepository {
 
   double _hesapla(IlanModel i) {
     final gunFark = DateTime.now().difference(
-        i.olusturmaTarihi ?? DateTime.now()).inHours / 24.0;
+        i.olusturmaTarihi ?? DateTime.fromMillisecondsSinceEpoch(0)).inHours / 24.0;
     double tazelik = 0;
     if (gunFark < 1) { tazelik = 10; }
     else if (gunFark < 3) { tazelik = 6; }
@@ -262,7 +263,15 @@ class IlanRepository {
       minHeight: 1080,
       format: CompressFormat.jpeg,
     );
-    return sonuc != null ? File(sonuc.path) : dosya;
+    if (sonuc == null) return dosya;
+    final sikistirilmis = File(sonuc.path);
+    // Sıkıştırılmış dosya yüklenip işi bitince temizlenir
+    unawaited(Future.delayed(const Duration(minutes: 5), () async {
+      if (await sikistirilmis.exists()) {
+        await sikistirilmis.delete().catchError((_) => sikistirilmis as FileSystemEntity);
+      }
+    }));
+    return sikistirilmis;
   }
 
   /// Thumbnail: max 300px, %65 kalite → 10-25 KB
@@ -278,7 +287,14 @@ class IlanRepository {
       minHeight: 300,
       format: CompressFormat.jpeg,
     );
-    return sonuc != null ? File(sonuc.path) : dosya;
+    if (sonuc == null) return dosya;
+    final thumb = File(sonuc.path);
+    unawaited(Future.delayed(const Duration(minutes: 5), () async {
+      if (await thumb.exists()) {
+        await thumb.delete().catchError((_) => thumb as FileSystemEntity);
+      }
+    }));
+    return thumb;
   }
 
   Future<String> ilanOlustur({

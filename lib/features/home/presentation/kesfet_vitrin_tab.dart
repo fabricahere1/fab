@@ -316,7 +316,7 @@ class _KesfetKart extends ConsumerWidget {
               child: Stack(fit: StackFit.expand, children: [
                 resim.isNotEmpty ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, fadeInDuration: Duration.zero, errorWidget: (_, _, _) => _RenkliArkaplan(cicekTipi: cicekTipi)) : _RenkliArkaplan(cicekTipi: cicekTipi),
                 if (rozetTipi != RozetTipi.yok)
-                  Positioned(top: 6, left: 6, child: _Rozet(ilan: ilan, tipi: rozetTipi)),
+                  Positioned(top: 6, left: 6, child: _Rozet(ilan: ilan, tipi: rozetTipi, favoriSayisi: ref.canliFavoriSayisi(ilan), goruntulenmeSayisi: ref.canliGoruntulenmeSayisi(ilan))),
               ]))),
           Expanded(child: Padding(padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -332,11 +332,11 @@ class _KesfetKart extends ConsumerWidget {
               Row(children: [
                 const Icon(Icons.visibility_outlined, size: 10, color: AppColors.textSecondary),
                 const SizedBox(width: 2),
-                Text('${ilan.goruntulenmeSayisi}', style: GoogleFonts.dmSans(fontSize: 9, color: AppColors.textSecondary)),
+                Text('${ref.canliGoruntulenmeSayisi(ilan)}', style: GoogleFonts.dmSans(fontSize: 9, color: AppColors.textSecondary)),
                 const SizedBox(width: 6),
                 const Icon(Icons.favorite_border, size: 10, color: AppColors.textSecondary),
                 const SizedBox(width: 2),
-                Text('${ilan.favoriSayisi}', style: GoogleFonts.dmSans(fontSize: 9, color: AppColors.textSecondary)),
+                Text('${ref.canliFavoriSayisi(ilan)}', style: GoogleFonts.dmSans(fontSize: 9, color: AppColors.textSecondary)),
               ]),
             ]))),
         ]),
@@ -346,15 +346,18 @@ class _KesfetKart extends ConsumerWidget {
 }
 
 class _Rozet extends StatelessWidget {
-  final IlanModel ilan; final RozetTipi tipi;
-  const _Rozet({required this.ilan, required this.tipi});
+  final IlanModel ilan;
+  final RozetTipi tipi;
+  final int favoriSayisi;
+  final int goruntulenmeSayisi;
+  const _Rozet({required this.ilan, required this.tipi, required this.favoriSayisi, required this.goruntulenmeSayisi});
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
     switch (tipi) {
-      case RozetTipi.goruntulenme: return _pill(ikon: Icons.visibility_rounded, metin: _sayiFormat(ilan.goruntulenmeSayisi), renk: const Color(0xCC1A1A1A));
-      case RozetTipi.favori:       return _pill(ikon: Icons.favorite_rounded, metin: _sayiFormat(ilan.favoriSayisi), renk: AppColors.red.withValues(alpha: 0.92));
+      case RozetTipi.goruntulenme: return _pill(ikon: Icons.visibility_rounded, metin: _sayiFormat(goruntulenmeSayisi), renk: const Color(0xCC1A1A1A));
+      case RozetTipi.favori:       return _pill(ikon: Icons.favorite_rounded, metin: _sayiFormat(favoriSayisi), renk: AppColors.red.withValues(alpha: 0.92));
       case RozetTipi.yeni:         return _pill(metin: 'YENİ', renk: AppColors.red.withValues(alpha: 0.92));
       case RozetTipi.eta:          return _pill(ikon: Icons.schedule_rounded, metin: _etaMetin(ilan.tarih, now), renk: _etaRenk(ilan.tarih, now));
       case RozetTipi.dutyFree:     return _pill(ikon: Icons.local_mall_rounded, metin: 'DUTY FREE', renk: const Color(0xE6B8860B));

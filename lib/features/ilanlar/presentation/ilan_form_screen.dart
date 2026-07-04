@@ -457,7 +457,9 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
       anaKategori:  _kayitAnaKategoriKey,
       kategoriYolu: _kategoriYolu,
       kullaniciId:  user.uid,
-      kullaniciAd:  user.displayName ?? user.email ?? '',
+      kullaniciAd:  profilSnapshot?.adSoyad.isNotEmpty == true
+          ? profilSnapshot!.adSoyad
+          : (user.displayName ?? user.email ?? ''),
       tarih:        _seciliTarih,
       cinsiyet:     _cinsiyet,
       beden:        bedenDeger,

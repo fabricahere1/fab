@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../shared/utils/app_hata_yonetici.dart';
@@ -64,6 +63,7 @@ class SohbetEkraniState {
   final bool dahaFazlaVar;
   final DateTime? enEskiZaman;
   final String? hata;
+  final List<File> geciciResimler;
 
   const SohbetEkraniState({
     this.mesajMap = const {},
@@ -73,6 +73,7 @@ class SohbetEkraniState {
     this.dahaFazlaVar = true,
     this.enEskiZaman,
     this.hata,
+    this.geciciResimler = const [],
   });
 
   SohbetEkraniState copyWith({
@@ -84,6 +85,7 @@ class SohbetEkraniState {
     DateTime? enEskiZaman,
     String? hata,
     bool temizleHata = false,
+    List<File>? geciciResimler,
   }) =>
       SohbetEkraniState(
         mesajMap: mesajMap ?? this.mesajMap,
@@ -93,6 +95,7 @@ class SohbetEkraniState {
         dahaFazlaVar: dahaFazlaVar ?? this.dahaFazlaVar,
         enEskiZaman: enEskiZaman ?? this.enEskiZaman,
         hata: temizleHata ? null : (hata ?? this.hata),
+        geciciResimler: geciciResimler ?? this.geciciResimler,
       );
 }
 
@@ -191,6 +194,7 @@ class SohbetNotifier extends _$SohbetNotifier {
     try {
       await _repo.okunduIsaretle(sohbetId: _sohbetId, kullaniciId: _benimId);
     } catch (_) {}
+    if (!ref.mounted) return;
   }
 
   // ✅ Timestamp yok — MesajModel.zaman zaten DateTime
@@ -286,6 +290,7 @@ class SohbetNotifier extends _$SohbetNotifier {
       metin: metin.trim(),
       ilanId: ilanId,
       ilanSahibiId: ilanSahibiId,
+      ilanResimUrl: ilanResimUrl,
     ).catchError((_) {});
   }
 
@@ -302,9 +307,16 @@ class SohbetNotifier extends _$SohbetNotifier {
     if (state.gonderiyor) return;
     final benimAd = await _getBenimAd();
     if (!ref.mounted) return;
-    state = state.copyWith(gonderiyor: true);
+
+    // Optimistic: resmi hemen ekrana düşür
+    state = state.copyWith(
+      gonderiyor: true,
+      geciciResimler: [...state.geciciResimler, dosya],
+    );
+
     try {
       final url = await _repo.resimYukle(dosya: dosya, gondereId: _benimId);
+      if (!ref.mounted) return;
       await _repo.mesajGonder(
         sohbetId: _sohbetId,
         gondereId: _benimId,
@@ -320,8 +332,22 @@ class SohbetNotifier extends _$SohbetNotifier {
         gondereAd: benimAd,
         karsiAd: karsiKullaniciAd,
       );
-    } catch (e) {
-      if (kDebugMode) print('resimGonder hata: $e');
+      // Gerçek mesaj stream'den gelince gecici otomatik kaybolur
+      if (ref.mounted) {
+        final updated = List<File>.from(state.geciciResimler)..remove(dosya);
+        state = state.copyWith(geciciResimler: updated);
+      }
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'resimGonder');
+      if (ref.mounted) {
+        final updated = List<File>.from(state.geciciResimler)..remove(dosya);
+        state = state.copyWith(
+          gonderiyor: false,
+          geciciResimler: updated,
+          hata: 'Resim gönderilemedi. Tekrar dene.',
+        );
+      }
+      return;
     } finally {
       if (ref.mounted) state = state.copyWith(gonderiyor: false);
     }
@@ -336,10 +362,11 @@ class SohbetNotifier extends _$SohbetNotifier {
       metin: '📷 Fotoğraf',
       ilanId: ilanId,
       ilanSahibiId: ilanSahibiId,
+      ilanResimUrl: ilanResimUrl,
     ).catchError((_) {});
   }
 
-  Future<void> mesajSil({
+Future<void> mesajSil({
     required String mesajId,
     required String metin,
   }) async {
@@ -358,17 +385,11 @@ class SohbetNotifier extends _$SohbetNotifier {
   }
 
   Future<String> _getBenimAd() async {
-    try {
-      final doc = await ref
-          .read(kullaniciRepositoryProvider)
-          .kullaniciGetir(_benimId)
-          .timeout(const Duration(seconds: 5));
-      final adSoyad = doc?.adSoyad ?? '';
-      if (adSoyad.isNotEmpty) return adSoyad;
-      return ref.read(currentUserProvider)?.displayName ?? '';
-    } catch (_) {
-      return ref.read(currentUserProvider)?.displayName ?? '';
-    }
+    // Önce profil provider'dan bak — zaten keepAlive, Firestore query yok
+    final profil = ref.read(kullaniciBilgiProvider(_benimId)).value;
+    if (profil != null && profil.adSoyad.isNotEmpty) return profil.adSoyad;
+    // Fallback: auth display name
+    return ref.read(currentUserProvider)?.displayName ?? '';
   }
 
   String get sohbetId => _sohbetId;

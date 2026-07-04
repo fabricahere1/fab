@@ -23,6 +23,7 @@ import 'package:iste_v3/features/home/presentation/kesfet_bolum_baslik.dart';
 import 'package:iste_v3/features/home/presentation/kesfet_bolum_detay_screen.dart';
 import 'package:iste_v3/features/profil/presentation/profil_duzenle_screen.dart';
 import 'package:iste_v3/features/auth/providers/auth_provider.dart';
+import 'package:iste_v3/shared/widgets/login_gerektiren_aksiyon.dart' show loginBottomSheet;
 import 'package:iste_v3/shared/widgets/avatar_widget.dart';
 import 'package:iste_v3/features/profil/presentation/kullanici_profil_screen.dart';
 import 'package:iste_v3/features/ilanlar/presentation/ilan_form_screen.dart';
@@ -491,11 +492,11 @@ class _SanaOzelKart extends ConsumerWidget {
               Row(children: [
                 const Icon(Icons.visibility_outlined, size: 10, color: AppColors.textSecondary),
                 const SizedBox(width: 2),
-                Text('${ilan.goruntulenmeSayisi}', style: GoogleFonts.dmSans(fontSize: 9, color: AppColors.textSecondary)),
+                Text('${ref.canliGoruntulenmeSayisi(ilan)}', style: GoogleFonts.dmSans(fontSize: 9, color: AppColors.textSecondary)),
                 const SizedBox(width: 6),
                 const Icon(Icons.favorite_border, size: 10, color: AppColors.textSecondary),
                 const SizedBox(width: 2),
-                Text('${ilan.favoriSayisi}', style: GoogleFonts.dmSans(fontSize: 9, color: AppColors.textSecondary)),
+                Text('${ref.canliFavoriSayisi(ilan)}', style: GoogleFonts.dmSans(fontSize: 9, color: AppColors.textSecondary)),
               ]),
             ]),
           )),
@@ -675,11 +676,12 @@ class _TasiyiciProfilKarti extends StatelessWidget {
 
 // ── İlan aç çağrı bölümü ───────────────────────────────────────────────────────
 
-class _IlanAcCagriBolumu extends StatelessWidget {
+class _IlanAcCagriBolumu extends ConsumerWidget {
   const _IlanAcCagriBolumu();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final uid = ref.read(currentUserProvider)?.uid;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
       child: ClipRRect(
@@ -720,8 +722,13 @@ class _IlanAcCagriBolumu extends StatelessWidget {
                     Row(children: [
                       Expanded(
                         child: GestureDetector(
-                          onTap: () => Navigator.push(context,
-                              MaterialPageRoute(builder: (_) => const IlanFormScreen(tip: IlanTip.istek))),
+                          onTap: () {
+                            if (uid == null) {
+                              loginBottomSheet(context, returnRoute: AppRoutes.ilanOlusturIstek);
+                              return;
+                            }
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const IlanFormScreen(tip: IlanTip.istek)));
+                          },
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(color: const Color(0xFFFFC857), borderRadius: BorderRadius.circular(12)),
@@ -737,8 +744,13 @@ class _IlanAcCagriBolumu extends StatelessWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: GestureDetector(
-                          onTap: () => Navigator.push(context,
-                              MaterialPageRoute(builder: (_) => const IlanFormScreen(tip: IlanTip.tasiyici))),
+                          onTap: () {
+                            if (uid == null) {
+                              loginBottomSheet(context, returnRoute: AppRoutes.ilanOlusturTasiyici);
+                              return;
+                            }
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const IlanFormScreen(tip: IlanTip.tasiyici)));
+                          },
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
