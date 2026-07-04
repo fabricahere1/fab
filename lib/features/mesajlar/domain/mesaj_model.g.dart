@@ -14,6 +14,7 @@ _MesajModel _$MesajModelFromJson(Map<String, dynamic> json) => _MesajModel(
   zaman: const TimestampConverter().fromJson(json['zaman']),
   okundu: json['okundu'] as bool? ?? false,
   resimUrl: json['resimUrl'] as String?,
+  gonderiliyor: json['gonderiliyor'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$MesajModelToJson(_MesajModel instance) =>
@@ -25,6 +26,7 @@ Map<String, dynamic> _$MesajModelToJson(_MesajModel instance) =>
       'zaman': const TimestampConverter().toJson(instance.zaman),
       'okundu': instance.okundu,
       'resimUrl': instance.resimUrl,
+      'gonderiliyor': instance.gonderiliyor,
     };
 
 const _$MesajTipEnumMap = {

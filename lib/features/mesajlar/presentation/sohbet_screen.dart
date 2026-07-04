@@ -892,6 +892,7 @@ class _MesajListesi extends ConsumerWidget {
             benimMesajim: benimMesajim,
             zaman: zamanYazi,
             karsiOkudu: benimMesajim && mesaj.okundu,
+            gonderiliyor: benimMesajim && mesaj.gonderiliyor,
             gondereAd: benimMesajim ? null : karsiAd,
             ilgileniyorum: ilgileniyorum,
           ),
@@ -1059,6 +1060,7 @@ class _MesajBalonu extends StatelessWidget {
   final String zaman;
   final String? gondereAd;
   final bool karsiOkudu;
+  final bool gonderiliyor;
   final bool ilgileniyorum;
 
   const _MesajBalonu({
@@ -1067,6 +1069,7 @@ class _MesajBalonu extends StatelessWidget {
     required this.zaman,
     this.gondereAd,
     this.karsiOkudu = false,
+    this.gonderiliyor = false,
     this.ilgileniyorum = false,
   });
 
@@ -1139,10 +1142,14 @@ class _MesajBalonu extends StatelessWidget {
                       style: TextStyle(color: zamanRenk, fontSize: 11)),
                   if (benimMesajim) ...[
                     const SizedBox(width: 3),
-                    Icon(Icons.done_all, size: 14,
-                        color: karsiOkudu
-                            ? const Color(0xFF1A73E8)
-                            : metin202124.withValues(alpha: 0.35)),
+                    if (gonderiliyor)
+                      Icon(Icons.access_time, size: 13,
+                          color: metin202124.withValues(alpha: 0.35))
+                    else
+                      Icon(Icons.done_all, size: 14,
+                          color: karsiOkudu
+                              ? const Color(0xFF1A73E8)
+                              : metin202124.withValues(alpha: 0.35)),
                   ],
                 ],
               ),

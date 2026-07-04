@@ -140,7 +140,6 @@ class MesajRepository {
         .snapshots()
         .map((snap) => snap.docs
             .map((doc) => MesajModel.fromFirestore(doc))
-            .where((m) => m.zaman != null)
             .toList());
   }
 
@@ -156,7 +155,6 @@ class MesajRepository {
         .get();
     return snap.docs
         .map((doc) => MesajModel.fromFirestore(doc))
-        .where((m) => m.zaman != null)
         .toList();
   }
 

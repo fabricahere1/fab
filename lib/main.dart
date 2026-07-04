@@ -129,6 +129,7 @@ class _IsteAppState extends ConsumerState<IsteApp> {
       final bildirimIlanId   = data['ilanId']           as String? ?? '';
       final ilanSahibiId     = data['ilanSahibiId']     as String? ?? '';
       final ilanBaslik       = data['ilanBaslik']        as String? ?? '';
+      final autoOpenPanel    = data['islem']             == 'true';
       final context = navigatorKey.currentContext;
       if (context != null) {
         Navigator.of(context).push(MaterialPageRoute(
@@ -139,6 +140,7 @@ class _IsteAppState extends ConsumerState<IsteApp> {
             ilanId:           bildirimIlanId,
             ilanBaslik:       ilanBaslik,
             ilanSahibiId:     ilanSahibiId,
+            autoOpenPanel:    autoOpenPanel,
           ),
         ));
       }

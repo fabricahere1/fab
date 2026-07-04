@@ -863,7 +863,7 @@ export const islemDurumuBildirimiGonder = functions
           token: fcmToken,
           notification: { title: etiket, body: `${yapanAd} • ${ilanBaslik}` },
           data: {
-            tip: "mesaj", sohbetId, ilanBaslik, ilanId,
+            tip: "mesaj", islem: "true", sohbetId, ilanBaslik, ilanId,
             ilanSahibiId, karsiKullaniciId: yapanUid, karsiKullaniciAd: yapanAd,
           },
           android: { priority: "high", notification: { channelId: "mesajlar" } },
@@ -916,7 +916,7 @@ export const islemDurumuBildirimiGonder = functions
       token: fcmToken,
       notification: { title: etiket, body: `${yapanAd} • ${ilanBaslik}` },
       data: {
-        tip: "mesaj", sohbetId, ilanBaslik, ilanId,
+        tip: "mesaj", islem: "true", sohbetId, ilanBaslik, ilanId,
         ilanSahibiId, karsiKullaniciId: yapanUid, karsiKullaniciAd: yapanAd,
       },
       android: { priority: "high", notification: { channelId: "mesajlar" } },

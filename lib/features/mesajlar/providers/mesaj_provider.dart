@@ -249,10 +249,9 @@ class SohbetNotifier extends _$SohbetNotifier {
     String ilanTip = 'istek',
     String tip = 'mesaj',
   }) async {
-    if (metin.trim().isEmpty || state.gonderiyor) return;
+    if (metin.trim().isEmpty) return;
     final benimAd = await _getBenimAd();
     if (!ref.mounted) return;
-    state = state.copyWith(gonderiyor: true);
     try {
       await _repo.mesajGonder(
         sohbetId: _sohbetId,
@@ -271,14 +270,9 @@ class SohbetNotifier extends _$SohbetNotifier {
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'mesajGonder');
       if (ref.mounted) {
-        state = state.copyWith(
-          gonderiyor: false,
-          hata: 'Mesaj gönderilemedi. Tekrar dene.',
-        );
+        state = state.copyWith(hata: 'Mesaj gönderilemedi. Tekrar dene.');
       }
       return;
-    } finally {
-      if (ref.mounted) state = state.copyWith(gonderiyor: false);
     }
     // Push bildirimi arka planda
     _repo.mesajBildirimiGonder(

@@ -17,23 +17,25 @@ abstract class MesajModel with _$MesajModel {
     @TimestampConverter() DateTime? zaman,
     @Default(false) bool okundu,
     String? resimUrl,
+    @Default(false) bool gonderiliyor,
   }) = _MesajModel;
 
   factory MesajModel.fromFirestore(DocumentSnapshot doc) {
     final d = doc.data() as Map<String, dynamic>;
     final tipStr = d['tip'] as String? ?? 'mesaj';
     return MesajModel(
-      id:        doc.id,
-      metin:     d['metin']     as String? ?? '',
-      gondereId: d['gondereId'] as String? ?? '',
-      tip:       tipStr == 'sistem'
+      id:           doc.id,
+      metin:        d['metin']     as String? ?? '',
+      gondereId:    d['gondereId'] as String? ?? '',
+      tip:          tipStr == 'sistem'
           ? MesajTip.sistem
           : tipStr == 'resim'
               ? MesajTip.resim
               : MesajTip.mesaj,
-      zaman:     (d['zaman'] as Timestamp?)?.toDate(),
-      okundu:    d['okundu']    as bool?   ?? false,
-      resimUrl:  d['resimUrl']  as String?,
+      zaman:        (d['zaman'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      okundu:       d['okundu']    as bool?   ?? false,
+      resimUrl:     d['resimUrl']  as String?,
+      gonderiliyor: doc.metadata.hasPendingWrites,
     );
   }
 

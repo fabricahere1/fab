@@ -31,17 +31,19 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
     with TickerProviderStateMixin {
 
   int _idx = 0;
-  final List<int> _gecmis = [];
+  final List<({int idx, int yon})> _gecmis = [];
 
   Offset _konum = Offset.zero;
+  int _sonFirlatmaYonu = 1;
 
   late final AnimationController _animCtrl;
   late Animation<Offset> _animKonum;
 
-  bool _animasyonAktif  = false;
-  bool _kartFirliyor    = false;
-  bool _kartGeriAliyor  = false;
-  bool _geriAlAnimasyonu = false; // geri alma sırasında arka kartı gizler
+  bool _animasyonAktif   = false;
+  bool _kartFirliyor     = false;
+  bool _kartGeriAliyor   = false;
+  bool _geriAlAnimasyonu = false;
+  bool _rewindAktif      = false;
 
   late final AnimationController _favCtrl;
   late final Animation<double>   _favScale;
@@ -102,14 +104,16 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
   void _animasyonBitti() {
     _animasyonAktif = false;
 
-    if (_kartGeriAliyor) {
-      // Sola fırlatma bitti — arka kart gizliydi, şimdi geri al
+    if (_rewindAktif) {
+      _rewindAktif = false;
+      setState(() => _konum = Offset.zero);
+    } else if (_kartGeriAliyor) {
       _kartGeriAliyor    = false;
       _geriAlAnimasyonu  = false;
       if (_gecmis.isNotEmpty) {
         setState(() {
           _konum = Offset.zero;
-          _idx   = _gecmis.removeLast();
+          _idx   = _gecmis.removeLast().idx;
         });
       } else {
         setState(() => _konum = Offset.zero);
@@ -123,10 +127,27 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
       }
 
       setState(() {
-        _gecmis.add(_idx);
+        _gecmis.add((idx: _idx, yon: _sonFirlatmaYonu));
         if (_gecmis.length > _maxGecmis) _gecmis.removeAt(0);
-        _idx  = yeniIdx;
+        _idx   = yeniIdx;
         _konum = Offset.zero;
+      });
+
+      // İki sonrakini önceden yükle
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final ikiSonraki = _idx + 1 < widget.ilanlar.length
+            ? widget.ilanlar[_idx + 1]
+            : null;
+        if (ikiSonraki != null && ikiSonraki.tumResimler.isNotEmpty) {
+          precacheImage(
+            CachedNetworkImageProvider(
+              ikiSonraki.tumResimler.first,
+              cacheManager: AppCacheManager.instance,
+            ),
+            context,
+          );
+        }
       });
     } else {
       setState(() => _konum = Offset.zero);
@@ -142,6 +163,7 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
       _kartFirliyor      = false;
       _kartGeriAliyor    = false;
       _geriAlAnimasyonu  = false;
+      _rewindAktif       = false;
     }
   }
 
@@ -176,6 +198,7 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
     final yon = (_konum.dx != 0)
         ? _konum.dx.sign
         : (vx != 0 ? vx.sign : 1);
+    if (!geriAl) _sonFirlatmaYonu = yon.toInt();
     final hedef = Offset(yon * w * 1.5, _konum.dy + 80 * yon);
 
     final hizFaktoru = (vx.abs() / 1000).clamp(0.3, 1.0);
@@ -184,7 +207,8 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
     _animasyonAktif   = true;
     _kartFirliyor     = !geriAl;
     _kartGeriAliyor   = geriAl;
-    _geriAlAnimasyonu = geriAl; // geri alma sırasında arka kartı gizle
+    _geriAlAnimasyonu = geriAl;
+    _rewindAktif      = false; // geri alma sırasında arka kartı gizle
 
     _animKonum = Tween<Offset>(begin: _konum, end: hedef).animate(
       CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutCubic),
@@ -199,11 +223,13 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
   void _firlatYon(double yon) {
     if (_animasyonAktif) return;
     final w = MediaQuery.of(context).size.width;
+    _sonFirlatmaYonu = yon.sign.toInt();
 
     _animasyonAktif   = true;
     _kartFirliyor     = true;
     _kartGeriAliyor   = false;
     _geriAlAnimasyonu = false;
+    _rewindAktif      = false;
 
     _animKonum = Tween<Offset>(
       begin: Offset.zero,
@@ -243,10 +269,29 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
 
   void _geriButon() {
     if (_gecmis.isEmpty || _animasyonAktif) return;
+    final son = _gecmis.removeLast();
+    final w = MediaQuery.of(context).size.width;
+
+    _animasyonAktif = true;
+    _rewindAktif    = true;
+    _kartFirliyor   = false;
+    _kartGeriAliyor = false;
+
     setState(() {
-      _idx   = _gecmis.removeLast();
-      _konum = Offset.zero;
+      _idx   = son.idx;
+      _konum = Offset(son.yon * w * 1.2, 0);
     });
+
+    _animKonum = Tween<Offset>(
+      begin: _konum,
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animCtrl,
+      curve: Curves.easeOutCubic,
+    ));
+
+    _animCtrl.duration = const Duration(milliseconds: 270);
+    _animCtrl.forward(from: 0);
   }
 
   // ── Favori ───────────────────────────────────────────────────────────────
@@ -279,10 +324,13 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
     final isFav        = favIdler.contains(mevcut.id);
     final gosterFavori = uid != null && uid != mevcut.kullaniciId;
 
-    // Geri alma sırasında arka kartta önceki ilanı göster
-    final arkaIlan = _geriAlAnimasyonu
-        ? (_gecmis.isNotEmpty ? widget.ilanlar[_gecmis.last] : null)
-        : sonraki;
+    // Rewind: geri dönen kartın altında az önce üstte olan kart görünür.
+    // Drag-geri: arka kartı geçmişten göster. Normal: sonraki ilan.
+    final arkaIlan = _rewindAktif
+        ? sonraki
+        : _geriAlAnimasyonu
+            ? (_gecmis.isNotEmpty ? widget.ilanlar[_gecmis.last.idx] : null)
+            : sonraki;
 
     final x         = _konum.dx;
     final y         = _konum.dy;
@@ -303,7 +351,7 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
               clipBehavior: Clip.hardEdge,
               children: [
 
-                // Arka kart
+                // Arka kart — tam kart, etkileşimsiz
                 if (arkaIlan != null)
                   Positioned.fill(
                     child: Transform(
@@ -313,7 +361,18 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
                         ..setTranslationRaw(0, 18 * (1 - ilerleme), 0),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: _KartArkaplan(ilan: arkaIlan),
+                        child: IgnorePointer(
+                          child: _OnKart(
+                            ilan:         arkaIlan,
+                            isFav:        false,
+                            gosterFavori: false,
+                            idx:          _idx + 1,
+                            toplam:       widget.ilanlar.length,
+                            suruklenmeX:  0,
+                            favScale:     _favScale,
+                            onPlanda:     false,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -464,6 +523,7 @@ class _OnKart extends StatelessWidget {
   final double suruklenmeX;
   final Animation<double> favScale;
   final VoidCallback? onFav;
+  final bool onPlanda;
 
   const _OnKart({
     required this.ilan,
@@ -474,19 +534,20 @@ class _OnKart extends StatelessWidget {
     required this.suruklenmeX,
     required this.favScale,
     this.onFav,
+    this.onPlanda = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    final gecOp   = suruklenmeX < -15
+    final gecOp   = onPlanda && suruklenmeX < -15
         ? ((-suruklenmeX - 15) / 85).clamp(0.0, 1.0)
         : 0.0;
-    final ileriOp = suruklenmeX > 15
+    final ileriOp = onPlanda && suruklenmeX > 15
         ? ((suruklenmeX - 15) / 85).clamp(0.0, 1.0)
         : 0.0;
 
     return GestureDetector(
-      onTap: () => Navigator.push(
+      onTap: onPlanda ? () => Navigator.push(
         context,
         PageRouteBuilder(
           pageBuilder: (_, _, _) =>
@@ -501,7 +562,7 @@ class _OnKart extends StatelessWidget {
           transitionDuration: const Duration(milliseconds: 280),
           reverseTransitionDuration: const Duration(milliseconds: 220),
         ),
-      ),
+      ) : null,
       child: Stack(
         children: [
           Positioned.fill(child: _KartArkaplan(ilan: ilan)),
@@ -708,8 +769,8 @@ class _OnKart extends StatelessWidget {
           ),
         ),
 
-        // Kalp animasyonu — sadece favorileme mümkünse gösterilir
-        if (gosterFavori)
+        // Kalp animasyonu — sadece ön kartta ve favorileme mümkünse
+        if (onPlanda && gosterFavori)
           Positioned.fill(
             child: IgnorePointer(
               child: Center(
