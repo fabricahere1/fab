@@ -10,13 +10,14 @@ import '../../ilanlar/providers/ilan_provider.dart';
 import '../../ilanlar/domain/ilan_model.dart';
 import '../../mesajlar/presentation/sohbet_screen.dart';
 import '../../../shared/constants/app_colors.dart';
+import '../../../shared/constants/profil_stilleri.dart';
 import '../../degerlendirme/presentation/degerlendirmeler_liste_screen.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../../../shared/widgets/avatar_widget.dart';
 import '../../../router/app_router.dart';
 import '../domain/kullanici_model.dart';
 
-class KullaniciProfilScreen extends ConsumerWidget {
+class KullaniciProfilScreen extends ConsumerStatefulWidget {
   final String kullaniciId;
   final String kullaniciAd;
 
@@ -25,6 +26,21 @@ class KullaniciProfilScreen extends ConsumerWidget {
     required this.kullaniciId,
     required this.kullaniciAd,
   });
+
+  @override
+  ConsumerState<KullaniciProfilScreen> createState() =>
+      _KullaniciProfilScreenState();
+}
+
+class _KullaniciProfilScreenState extends ConsumerState<KullaniciProfilScreen> {
+  String get kullaniciId => widget.kullaniciId;
+  String get kullaniciAd => widget.kullaniciAd;
+
+  @override
+  void dispose() {
+    ref.read(takipciDeltaProvider.notifier).temizle(kullaniciId);
+    super.dispose();
+  }
 
   void _degerlendirmeleriGoster(
       BuildContext context, String kullaniciId, String kullaniciAd) {
@@ -40,11 +56,14 @@ class KullaniciProfilScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final benimUid  = ref.watch(currentUserProvider)?.uid;
-    final benimKisi = benimUid != null && benimUid != kullaniciId;
-    final profilAsync  = ref.watch(kullaniciBilgiProvider(kullaniciId));
-    final ilanlarAsync = ref.watch(kullaniciIlanlarStreamProvider(kullaniciId));
+  @override
+  Widget build(BuildContext context) {
+    final benimUid      = ref.watch(currentUserProvider)?.uid;
+    final benimKisi     = benimUid != null && benimUid != kullaniciId;
+    final profilAsync   = ref.watch(kullaniciBilgiProvider(kullaniciId));
+    final ilanlarAsync  = ref.watch(kullaniciIlanlarStreamProvider(kullaniciId));
+    final takipciDelta  = ref.watch(
+        takipciDeltaProvider.select((m) => m[kullaniciId] ?? 0));
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -56,15 +75,30 @@ class KullaniciProfilScreen extends ConsumerWidget {
               style: GoogleFonts.dmSans(color: AppColors.textSecondary)),
         ),
         data: (profil) {
-          final ad = profil?.adSoyad ?? kullaniciAd;
-          final hakkinda = profil?.hakkinda ?? '';
-          final sehir = profil?.bulunduguSehir.isNotEmpty == true
-              ? profil!.bulunduguSehir
-              : profil?.yasadigiUlke ?? '';
-          final puan = profil?.ortalamaPuan ?? 0.0;
-          final degerlendirmeSayisi = profil?.degerlendirmeSayisi ?? 0;
-          final telefon = profil?.telefonGizli == false
-              ? profil?.telefon ?? ''
+          if (profil == null) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.person_off_outlined,
+                      size: 48, color: AppColors.divider),
+                  const SizedBox(height: 12),
+                  Text('Kullanıcı bulunamadı.',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 15, color: AppColors.textSecondary)),
+                ],
+              ),
+            );
+          }
+          final ad = profil.adSoyad;
+          final hakkinda = profil.hakkinda;
+          final sehir = profil.bulunduguSehir.isNotEmpty
+              ? profil.bulunduguSehir
+              : profil.yasadigiUlke;
+          final puan = profil.ortalamaPuan;
+          final degerlendirmeSayisi = profil.degerlendirmeSayisi;
+          final telefon = profil.telefonGizli == false
+              ? profil.telefon ?? ''
               : '';
 
           return CustomScrollView(
@@ -96,13 +130,7 @@ class KullaniciProfilScreen extends ConsumerWidget {
                         children: [
                           AvatarWidget(isim: ad, radius: 44),
                           const SizedBox(height: 16),
-                          Text(
-                            ad,
-                            style: GoogleFonts.dmSans(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary),
-                          ),
+                          Text(ad, style: ProfilStilleri.isim),
                           if (sehir.isNotEmpty) ...[
                             const SizedBox(height: 4),
                             Row(
@@ -111,9 +139,7 @@ class KullaniciProfilScreen extends ConsumerWidget {
                                 const Icon(Icons.location_on_outlined,
                                     size: 14, color: AppColors.textSecondary),
                                 const SizedBox(width: 4),
-                                Text(sehir,
-                                    style: GoogleFonts.dmSans(
-                                        fontSize: 13, color: AppColors.textSecondary)),
+                                Text(sehir, style: ProfilStilleri.altBilgi),
                               ],
                             ),
                           ],
@@ -141,10 +167,7 @@ class KullaniciProfilScreen extends ConsumerWidget {
                                   const SizedBox(width: 6),
                                   Text(
                                     '${puan.toStringAsFixed(1)} ($degerlendirmeSayisi değerlendirme)',
-                                    style: GoogleFonts.dmSans(
-                                        fontSize: 13,
-                                        color: AppColors.textSecondary,
-                                        decoration: TextDecoration.underline),
+                                    style: ProfilStilleri.puanYazi,
                                   ),
                                 ],
                               ),
@@ -157,10 +180,7 @@ class KullaniciProfilScreen extends ConsumerWidget {
                             const SizedBox(height: 12),
                             Text(
                               hakkinda,
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 14,
-                                  color: AppColors.textSecondary,
-                                  height: 1.5),
+                              style: ProfilStilleri.altBilgi.copyWith(height: 1.5),
                               textAlign: TextAlign.center,
                             ),
                           ],
@@ -175,9 +195,7 @@ class KullaniciProfilScreen extends ConsumerWidget {
                                 const Icon(Icons.phone_outlined,
                                     size: 16, color: AppColors.textSecondary),
                                 const SizedBox(width: 6),
-                                Text(telefon,
-                                    style: GoogleFonts.dmSans(
-                                        fontSize: 14, color: AppColors.textPrimary)),
+                                Text(telefon, style: ProfilStilleri.altBilgi.copyWith(color: AppColors.textPrimary)),
                               ],
                             ),
                           ],
@@ -188,27 +206,27 @@ class KullaniciProfilScreen extends ConsumerWidget {
                           Row(
                             children: [
                               Expanded(child: Column(children: [
-                                Text('${profil?.takipciSayisi ?? 0}', style: GoogleFonts.dmSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                                Text('Takipçi', style: GoogleFonts.dmSans(fontSize: 11, color: AppColors.textSecondary)),
+                                Text('${(profil.takipciSayisi + takipciDelta).clamp(0, 999999)}', style: ProfilStilleri.istatistikSayi),
+                                Text('Takipçi', style: ProfilStilleri.istatistikEtiket),
                               ])),
                               Container(width: 0.5, height: 36, color: AppColors.divider),
                               Expanded(child: Column(children: [
-                                Text('${profil?.takipSayisi ?? 0}', style: GoogleFonts.dmSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                                Text('Takip', style: GoogleFonts.dmSans(fontSize: 11, color: AppColors.textSecondary)),
+                                Text('${profil.takipSayisi}', style: ProfilStilleri.istatistikSayi),
+                                Text('Takip', style: ProfilStilleri.istatistikEtiket),
                               ])),
                             ],
                           ),
 
                           // ── Güven Skoru ───────────────────
-                          if ((profil?.guvenSkoru ?? 0) > 0) ...[
+                          if ((profil.guvenSkoru) > 0) ...[
                             const SizedBox(height: 12),
                             const Divider(color: AppColors.divider),
                             const SizedBox(height: 12),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Güven Skoru', style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                                Text('${profil!.guvenSkoru}/100', style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.red)),
+                                Text('Güven Skoru', style: ProfilStilleri.bolumBaslik),
+                                Text('${profil.guvenSkoru}/100', style: ProfilStilleri.guvenSkoruDeger),
                               ],
                             ),
                             const SizedBox(height: 8),
@@ -227,18 +245,18 @@ class KullaniciProfilScreen extends ConsumerWidget {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(profil.guvenSkoruEtiketi, style: GoogleFonts.dmSans(fontSize: 12, color: AppColors.textSecondary)),
+                            Text(profil.guvenSkoruEtiketi, style: ProfilStilleri.detaySatiri),
                           ],
 
                           // ── Rozetler ──────────────────────
-                          if ((profil?.rozetler ?? []).isNotEmpty) ...[
+                          if ((profil.rozetler).isNotEmpty) ...[
                             const SizedBox(height: 12),
                             const Divider(color: AppColors.divider),
                             const SizedBox(height: 12),
                             Wrap(
                               spacing: 8,
                               runSpacing: 8,
-                              children: profil!.rozetler.map((rozet) => Container(
+                              children: profil.rozetler.map((rozet) => Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFFFF8E1),
@@ -247,7 +265,7 @@ class KullaniciProfilScreen extends ConsumerWidget {
                                 ),
                                 child: Text(
                                   '${profil.rozetEmoji(rozet)} ${profil.rozetAdi(rozet)}',
-                                  style: GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w500, color: const Color(0xFF633806)),
+                                  style: ProfilStilleri.rozet,
                                 ),
                               )).toList(),
                             ),
@@ -439,9 +457,9 @@ class _IlanSatiri extends StatelessWidget {
     return InkWell(
       onTap: () => context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan),
       child: Container(
-        color: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: const BoxDecoration(
+          color: Colors.white,
           border: Border(bottom: BorderSide(color: Color(0xFFF5F5F5), width: 0.5)),
         ),
         child: Row(

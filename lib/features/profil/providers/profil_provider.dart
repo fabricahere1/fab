@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../../../shared/utils/app_hata_yonetici.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
 import '../../ilanlar/domain/ilan_model.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -220,6 +221,24 @@ class OptimistikTakip extends _$OptimistikTakip {
   }
 }
 
+// ── Takipçi sayısı delta (optimistik) ────────────────────────────────────────
+
+@Riverpod(keepAlive: true)
+class TakipciDelta extends _$TakipciDelta {
+  @override
+  Map<String, int> build() => {};
+
+  void arttir(String uid) =>
+      state = {...state, uid: (state[uid] ?? 0) + 1};
+  void azalt(String uid) =>
+      state = {...state, uid: (state[uid] ?? 0) - 1};
+  void temizle(String uid) {
+    if (!state.containsKey(uid)) return;
+    final yeni = Map<String, int>.from(state)..remove(uid);
+    state = yeni;
+  }
+}
+
 // ── Takip provider'ları ───────────────────────────────────────────────────────
 
 @riverpod
@@ -266,7 +285,9 @@ class TakipIslemleri extends _$TakipIslemleri {
       // göstermesine) sebep oluyordu.
       if (!ref.mounted) return;
       ref.read(optimistikTakipProvider.notifier).temizle(takipEdilenId);
-    } catch (_) {
+      ref.read(takipciDeltaProvider.notifier).arttir(takipEdilenId);
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'takip.et');
       if (!ref.mounted) return;
       ref.read(optimistikTakipProvider.notifier).temizle(takipEdilenId);
     }
@@ -280,7 +301,9 @@ class TakipIslemleri extends _$TakipIslemleri {
       await _repo.takipiBirak(takipciId: uid, takipEdilenId: takipEdilenId);
       if (!ref.mounted) return;
       ref.read(optimistikTakipProvider.notifier).temizle(takipEdilenId);
-    } catch (_) {
+      ref.read(takipciDeltaProvider.notifier).azalt(takipEdilenId);
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'takip.birak');
       if (!ref.mounted) return;
       ref.read(optimistikTakipProvider.notifier).temizle(takipEdilenId);
     }

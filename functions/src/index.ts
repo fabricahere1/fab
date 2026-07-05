@@ -684,6 +684,32 @@ export const degerlendirmeBildirimiGonder = functions
     });
   });
 
+// ── Değerlendirme Puan Güncelle (sunucu tarafı) ───────────────────────────────
+
+export const degerlendirmePuanGuncelle = functions
+  .region("europe-west1")
+  .firestore.document("degerlendirmeler/{degId}")
+  .onCreate(async (snap) => {
+    const data = snap.data();
+    if (!data) return;
+    const { hedefKullaniciId, puan } = data as { hedefKullaniciId: string; puan: number };
+    if (!hedefKullaniciId || typeof puan !== "number" || puan < 1 || puan > 5) return;
+    const kullaniciRef = db.collection("kullanicilar").doc(hedefKullaniciId);
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(kullaniciRef);
+      if (!snap.exists) return;
+      const d = snap.data()!;
+      const eskiSayi: number = (d.degerlendirmeSayisi as number) || 0;
+      const eskiOrtalama: number = (d.ortalamaPuan as number) || 0;
+      const yeniSayi = eskiSayi + 1;
+      const yeniOrtalama = (eskiOrtalama * eskiSayi + puan) / yeniSayi;
+      tx.update(kullaniciRef, {
+        degerlendirmeSayisi: yeniSayi,
+        ortalamaPuan: Math.round(yeniOrtalama * 10) / 10,
+      });
+    });
+  });
+
 // ── Bize Ulaşın — Email Gönder ────────────────────────────────────────────────
 
 export const iletisimGonder = functions

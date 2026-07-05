@@ -26,29 +26,30 @@ service cloud.firestore {
               yeniGoruntulenme == eskiGoruntulenme + 1);
     }
 
-    // Başka bir kullanıcı, takip ettiğinde/takipten çıktığında bu profildeki
-    // takipciSayisi / takipSayisi alanlarını ±1 değiştirebilir
-    function takipSayaciGecerliMi() {
+    // Takip oluşturulunca/silinince karşı taraftaki sayaç ±1 değişebilir.
+    // getAfter kilidi: bu transaction'da gerçek bir takip belgesi var mı?
+    function takipSayaciGecerliMi(uid) {
       let alanlar = request.resource.data.diff(resource.data).affectedKeys();
       let eskiTakipci = resource.data.get('takipciSayisi', 0);
       let yeniTakipci = request.resource.data.get('takipciSayisi', 0);
       let eskiTakip   = resource.data.get('takipSayisi', 0);
       let yeniTakip   = request.resource.data.get('takipSayisi', 0);
-      return (alanlar.hasOnly(['takipciSayisi']) &&
-                (yeniTakipci == eskiTakipci + 1 || yeniTakipci == eskiTakipci - 1))
-          || (alanlar.hasOnly(['takipSayisi']) &&
-                (yeniTakip == eskiTakip + 1 || yeniTakip == eskiTakip - 1));
-    }
-
-    // Başka bir kullanıcı bu profile değerlendirme bıraktığında
-    // ortalamaPuan + degerlendirmeSayisi birlikte güncellenir
-    function degerlendirmeSayaciGecerliMi(uid) {
-      let alanlar = request.resource.data.diff(resource.data).affectedKeys();
-      let eskiSayi = resource.data.get('degerlendirmeSayisi', 0);
-      let yeniSayi = request.resource.data.get('degerlendirmeSayisi', 0);
-      return alanlar.hasOnly(['ortalamaPuan', 'degerlendirmeSayisi'])
-        && yeniSayi == eskiSayi + 1
-        && request.auth.uid != uid;
+      // Karşı tarafın takipciSayisi: ancak AYNI işlemde gerçek takip
+      // belgesi oluşuyorsa (+1) ya da siliniyorsa (-1) değişebilir.
+      let takipId = request.auth.uid + '_' + uid;
+      return (alanlar.hasOnly(['takipciSayisi']) && (
+                (yeniTakipci == eskiTakipci + 1
+                   && !exists(/databases/$(database)/documents/takipler/$(takipId))
+                   && existsAfter(/databases/$(database)/documents/takipler/$(takipId)))
+             || (yeniTakipci == eskiTakipci - 1
+                   && exists(/databases/$(database)/documents/takipler/$(takipId))
+                   && !existsAfter(/databases/$(database)/documents/takipler/$(takipId)))
+             ))
+          // Kendi takipSayisi: karşı taraf bu bağlamda bilinemez, existsAfter kilidi kurulamaz.
+          // BİLİNEN TAVİZ: kullanıcı kendi takip sayısını ±1 şişirebilir (düşük risk).
+          // Kalıcı çözüm: sayaçları CF trigger'a taşımak.
+          || (alanlar.hasOnly(['takipSayisi']) && request.auth.uid == uid
+                && (yeniTakip == eskiTakip + 1 || yeniTakip == eskiTakip - 1));
     }
 
     match /kullanicilar/{uid} {
@@ -62,8 +63,7 @@ service cloud.firestore {
                      'takipSayisi', 'rozetler', 'guvenSkoru',
                      'spamUyarisi', 'spamTarihi', 'spamIlanSayisi'])
         ) ||
-        takipSayaciGecerliMi() ||
-        degerlendirmeSayaciGecerliMi(uid)
+        takipSayaciGecerliMi(uid)
       );
 
       match /bekleyenDegerlendirmeler/{sohbetId} {
@@ -100,8 +100,9 @@ service cloud.firestore {
         allow create: if girisYapilmis()
           && request.resource.data.gondereId == request.auth.uid;
         allow update: if girisYapilmis()
-          && request.resource.data.diff(resource.data).affectedKeys()
-              .hasOnly(['okundu']);
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['okundu'])
+          && resource.data.gondereId != request.auth.uid
+          && request.resource.data.okundu == true;
         allow delete: if girisYapilmis()
           && resource.data.gondereId == request.auth.uid;
       }
@@ -117,7 +118,8 @@ service cloud.firestore {
     }
 
     match /goruntulenmeler/{kayitId} {
-      allow read: if girisYapilmis();
+      allow read: if girisYapilmis()
+        && resource.data.kullaniciId == request.auth.uid;
       allow write: if girisYapilmis()
         && request.resource.data.kullaniciId == request.auth.uid
         && request.resource.data.keys().hasAll(['kullaniciId', 'ilanId', 'sonTarih']);
@@ -127,7 +129,10 @@ service cloud.firestore {
       allow get, list: if true;
       allow create: if girisYapilmis()
         && request.resource.data.degerlendireninId == request.auth.uid
-        && request.resource.data.hedefKullaniciId != request.auth.uid;
+        && request.resource.data.hedefKullaniciId != request.auth.uid
+        && request.resource.data.puan is int
+        && request.resource.data.puan >= 1
+        && request.resource.data.puan <= 5;
     }
 
     match /bildirimler/{bildirimId} {

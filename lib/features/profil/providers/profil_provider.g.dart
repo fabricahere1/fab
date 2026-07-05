@@ -838,6 +838,58 @@ abstract class _$OptimistikTakip extends $Notifier<Map<String, bool>> {
   }
 }
 
+@ProviderFor(TakipciDelta)
+final takipciDeltaProvider = TakipciDeltaProvider._();
+
+final class TakipciDeltaProvider
+    extends $NotifierProvider<TakipciDelta, Map<String, int>> {
+  TakipciDeltaProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'takipciDeltaProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$takipciDeltaHash();
+
+  @$internal
+  @override
+  TakipciDelta create() => TakipciDelta();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(Map<String, int> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<Map<String, int>>(value),
+    );
+  }
+}
+
+String _$takipciDeltaHash() => r'76b7f8fb49c0ddb38e29251323852ca8836469e7';
+
+abstract class _$TakipciDelta extends $Notifier<Map<String, int>> {
+  Map<String, int> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<Map<String, int>, Map<String, int>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<Map<String, int>, Map<String, int>>,
+              Map<String, int>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
 @ProviderFor(takipEdiyorMu)
 final takipEdiyorMuProvider = TakipEdiyorMuFamily._();
 
@@ -939,7 +991,7 @@ final class TakipIslemleriProvider
   }
 }
 
-String _$takipIslemleriHash() => r'73e781b3357205780533c823acf8e5f686070b4b';
+String _$takipIslemleriHash() => r'5c9a6d4b8a76125b168c0d7e4b84618bbc0fa982';
 
 abstract class _$TakipIslemleri extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();

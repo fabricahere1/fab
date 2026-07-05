@@ -81,7 +81,7 @@ class _DegerlendirmeModalState extends ConsumerState<DegerlendirmeModal> {
     if (basarili) {
       Navigator.pop(context, true);
     } else {
-      setState(() => _gonderiyor = false);
+      Navigator.pop(context, false);
       AppSnackBar.hata(context, 'Bir hata oluştu. Tekrar dene.');
     }
   }

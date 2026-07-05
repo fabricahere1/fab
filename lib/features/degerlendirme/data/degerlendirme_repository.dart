@@ -45,13 +45,11 @@ class DegerlendirmeRepository {
         .doc(sohbetId);
 
     await _db.runTransaction((tx) async {
-      final sohbetRef  = _db.collection(Collections.sohbetler).doc(sohbetId);
-      final userRef    = _db.collection(Collections.kullanicilar).doc(hedefKullaniciId);
-      final degRef     = _db.collection(Collections.degerlendirmeler).doc();
+      final sohbetRef    = _db.collection(Collections.sohbetler).doc(sohbetId);
+      final degRef       = _db.collection(Collections.degerlendirmeler).doc();
       final bekleyenSnap = await tx.get(bekleyenRef);
 
       final sohbetSnap = await tx.get(sohbetRef);
-      final snap       = await tx.get(userRef);
 
       // Mükerrer değerlendirmeyi önle — transaction içinde atomik kontrol
       if (sohbetSnap.exists) {
@@ -65,7 +63,7 @@ class DegerlendirmeRepository {
         'sohbetId':          sohbetId,
         'degerlendireninId': degerlendireninId,
         'hedefKullaniciId':  hedefKullaniciId,
-        'puan':              puan,
+        'puan':              puan.round(),
         'yorum':             yorum,
         'ilanBaslik':        ilanBaslik,
         'tarih':             FieldValue.serverTimestamp(),
@@ -81,17 +79,7 @@ class DegerlendirmeRepository {
         tx.update(bekleyenRef, {'tamamlandi': true});
       }
 
-      if (snap.exists) {
-        final d = snap.data() as Map<String, dynamic>;
-        final mevcutPuan = (d['ortalamaPuan']        as num?)?.toDouble() ?? 0.0;
-        final mevcutSayi = (d['degerlendirmeSayisi'] as num?)?.toInt()    ?? 0;
-        final yeniSayi   = mevcutSayi + 1;
-        final yeniPuan   = ((mevcutPuan * mevcutSayi) + puan) / yeniSayi;
-        tx.update(userRef, {
-          'ortalamaPuan':        yeniPuan,
-          'degerlendirmeSayisi': yeniSayi,
-        });
-      }
+      // ortalamaPuan ve degerlendirmeSayisi CF trigger tarafından güncellenir
     });
   }
 

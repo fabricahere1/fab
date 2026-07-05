@@ -7,6 +7,7 @@ import '../../profil/providers/profil_provider.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
 import '../../mesajlar/presentation/sohbet_screen.dart';
 import '../../../shared/constants/app_colors.dart';
+import '../../../shared/constants/profil_stilleri.dart';
 import '../../../shared/widgets/avatar_widget.dart';
 import '../../degerlendirme/presentation/degerlendirmeler_liste_screen.dart';
 import '../../ilanlar/domain/ilan_model.dart';
@@ -159,12 +160,8 @@ class _KullaniciProfilPanelState extends ConsumerState<KullaniciProfilPanel>
                                     const SizedBox(height: 12),
                                     Text(
                                       ad,
-                                      style: GoogleFonts.dmSans(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.textPrimary,
-                                        decoration: TextDecoration.none,
-                                      ),
+                                      style: ProfilStilleri.isim.copyWith(
+                                          decoration: TextDecoration.none),
                                     ),
                                     if (sehir.isNotEmpty) ...[
                                       const SizedBox(height: 4),
@@ -178,11 +175,8 @@ class _KullaniciProfilPanelState extends ConsumerState<KullaniciProfilPanel>
                                               color: AppColors.textSecondary),
                                           const SizedBox(width: 4),
                                           Text(sehir,
-                                              style: GoogleFonts.dmSans(
-                                                fontSize: 13,
-                                                color: AppColors.textSecondary,
-                                                decoration: TextDecoration.none,
-                                              )),
+                                              style: ProfilStilleri.altBilgi
+                                                  .copyWith(decoration: TextDecoration.none)),
                                         ],
                                       ),
                                     ],
@@ -221,12 +215,7 @@ class _KullaniciProfilPanelState extends ConsumerState<KullaniciProfilPanel>
                                             const SizedBox(width: 6),
                                             Text(
                                               '${puan.toStringAsFixed(1)} ($degerlendirmeSayisi)',
-                                              style: GoogleFonts.dmSans(
-                                                fontSize: 12,
-                                                color: AppColors.textSecondary,
-                                                decoration:
-                                                    TextDecoration.underline,
-                                              ),
+                                              style: ProfilStilleri.puanYazi,
                                             ),
                                           ],
                                         ),
@@ -239,12 +228,9 @@ class _KullaniciProfilPanelState extends ConsumerState<KullaniciProfilPanel>
                                       const SizedBox(height: 10),
                                       Text(
                                         hakkinda,
-                                        style: GoogleFonts.dmSans(
-                                          fontSize: 13,
-                                          color: AppColors.textSecondary,
-                                          height: 1.5,
-                                          decoration: TextDecoration.none,
-                                        ),
+                                        style: ProfilStilleri.altBilgi.copyWith(
+                                            height: 1.5,
+                                            decoration: TextDecoration.none),
                                         textAlign: TextAlign.center,
                                       ),
                                     ],

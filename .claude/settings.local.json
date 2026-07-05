@@ -41,7 +41,9 @@
       "Bash(curl -s -o DMSans-Medium.ttf \"https://fonts.gstatic.com/s/a/cd8be6a6d9a5579d829e3f4902d7d9acdaa01230bac60a024764c13afc6a049c.ttf\")",
       "Bash(curl -s -o DMSans-SemiBold.ttf \"https://fonts.gstatic.com/s/a/b0a9fe8b3a029cfaf00e31437c32a57e8adead3cade26ad1c6637a4908f4278e.ttf\")",
       "Bash(curl -s -o DMSans-Bold.ttf \"https://fonts.gstatic.com/s/a/9909c4fcfbfe7b2c4a658b8d74eeb3ed38401a31cd4a3854546369c174f41440.ttf\")",
-      "Bash(curl -s -o Inter-SemiBold.ttf \"https://fonts.gstatic.com/s/a/d7ba633bab7f40576e539a7e934a1301d7618dceea59c743de477c2c493462fc.ttf\")"
+      "Bash(curl -s -o Inter-SemiBold.ttf \"https://fonts.gstatic.com/s/a/d7ba633bab7f40576e539a7e934a1301d7618dceea59c743de477c2c493462fc.ttf\")",
+      "Bash(firebase --version)",
+      "Bash(grep -v \"^$\")"
     ]
   }
 }

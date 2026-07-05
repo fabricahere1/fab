@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../domain/kullanici_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../shared/constants/profil_stilleri.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../favoriler/presentation/favoriler_screen.dart';
@@ -224,11 +225,10 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                     children: [
                       Text(
                         user.displayName ?? 'Kullanıcı',
-                        style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                        style: ProfilStilleri.isim,
                       ),
                       const SizedBox(height: 2),
-                      Text(user.email ?? '',
-                          style: GoogleFonts.manrope(fontSize: 13, color: AppColors.textSecondary)),
+                      Text(user.email ?? '', style: ProfilStilleri.altBilgi),
                       const SizedBox(height: 8),
                       benimProfilAsync.when(
                         data: (profil) {
@@ -242,11 +242,11 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                                 Row(children: [
                                   const Icon(Icons.location_on_outlined, size: 13, color: AppColors.textSecondary),
                                   const SizedBox(width: 3),
-                                  Text(sehir, style: GoogleFonts.manrope(fontSize: 12, color: AppColors.textSecondary)),
+                                  Text(sehir, style: ProfilStilleri.detaySatiri),
                                 ])
                               else
                                 Text('Profil tamamlanmamış',
-                                    style: GoogleFonts.manrope(fontSize: 12, color: AppColors.textHint)),
+                                    style: ProfilStilleri.detaySatiriHint),
                               if (sayi > 0) ...[
                                 const SizedBox(height: 4),
                                 GestureDetector(
@@ -268,7 +268,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                                     const SizedBox(width: 4),
                                     Text(
                                       '${puan.toStringAsFixed(1)} ($sayi)',
-                                      style: GoogleFonts.manrope(fontSize: 11, color: AppColors.textSecondary, decoration: TextDecoration.underline),
+                                      style: ProfilStilleri.puanYazi,
                                     ),
                                   ]),
                                 ),
@@ -348,8 +348,8 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Güven Skoru', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                              Text('${profil.guvenSkoru}/100', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.red)),
+                              Text('Güven Skoru', style: ProfilStilleri.bolumBaslik),
+                              Text('${profil.guvenSkoru}/100', style: ProfilStilleri.guvenSkoruDeger),
                             ],
                           ),
                           const SizedBox(height: 8),
@@ -368,8 +368,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                             ),
                           ),
                           const SizedBox(height: 6),
-                          Text(profil.guvenSkoruEtiketi,
-                              style: GoogleFonts.manrope(fontSize: 12, color: AppColors.textSecondary)),
+                          Text(profil.guvenSkoruEtiketi, style: ProfilStilleri.detaySatiri),
                         ],
                       ),
                     ),
@@ -387,7 +386,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Rozetler', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                          Text('Rozetler', style: ProfilStilleri.bolumBaslik),
                           const SizedBox(height: 10),
                           Wrap(
                             spacing: 8, runSpacing: 8,
@@ -400,7 +399,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                               ),
                               child: Text(
                                 '${profil.rozetEmoji(rozet)} ${profil.rozetAdi(rozet)}',
-                                style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w500, color: const Color(0xFF633806)),
+                                style: ProfilStilleri.rozet,
                               ),
                             )).toList(),
                           ),
@@ -747,7 +746,7 @@ class _BolumBasligi extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
       child: Text(
         baslik.toUpperCase(),
-        style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary, letterSpacing: 1.0),
+        style: ProfilStilleri.bolumUstBaslik,
       ),
     );
   }
@@ -996,9 +995,9 @@ class _StatKutu extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 14),
         child: Column(
           children: [
-            Text(sayi, style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w400, color: AppColors.textPrimary)),
+            Text(sayi, style: ProfilStilleri.istatistikSayi),
             const SizedBox(height: 2),
-            Text(label, style: GoogleFonts.manrope(fontSize: 11, color: AppColors.textSecondary)),
+            Text(label, style: ProfilStilleri.istatistikEtiket),
           ],
         ),
       ),
