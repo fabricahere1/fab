@@ -322,7 +322,7 @@ class _AlisverisRehberiBolumState extends State<AlisverisRehberiBolum> {
                         Image.asset(
                           s.resimYolu,
                           fit: BoxFit.fill,
-                          errorBuilder: (_, __, ___) => Container(
+                          errorBuilder: (_, _, _) => Container(
                             color: AppColors.surface,
                             child: const Icon(Icons.location_city_outlined,
                                 color: AppColors.textHint),

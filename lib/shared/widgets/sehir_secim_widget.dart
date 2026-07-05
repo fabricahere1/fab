@@ -175,7 +175,7 @@ class SehirSecimBolumu extends StatelessWidget {
                 ),
               if (seciliSehirler.isNotEmpty && sagWidget != null)
                 const SizedBox(width: 12),
-              if (sagWidget != null) sagWidget!,
+              ?sagWidget,
             ],
           ),
         ),

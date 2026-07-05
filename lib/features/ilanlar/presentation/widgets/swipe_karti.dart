@@ -810,13 +810,13 @@ class _KartArkaplan extends StatelessWidget {
       final dpr     = MediaQuery.of(context).devicePixelRatio;
       // Thumb zaten cache'lenmişse anında basılır, full-res sessizce üzerine oturur
       final thumbPlaceholder = ilan.resimThumbUrl.isNotEmpty
-          ? (_, __) => CachedNetworkImage(
+          ? (_, _) => CachedNetworkImage(
                 cacheManager: AppCacheManager.instance,
                 imageUrl: ilan.resimThumbUrl,
                 fit: BoxFit.cover,
                 fadeInDuration: Duration.zero,
               )
-          : (_, __) => placeholder;
+          : (_, _) => placeholder;
       return CachedNetworkImage(
         cacheManager: AppCacheManager.instance,
         imageUrl: resimler.first,

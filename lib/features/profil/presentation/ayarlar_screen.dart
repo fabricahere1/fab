@@ -760,9 +760,9 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       final silSonuc = await ref.read(authProvider.notifier).hesapSil();
       navigatorKey.currentState?.popUntil((r) => r.isFirst);
       if (silSonuc.basarili) {
-        navigatorKey.currentContext?.go(AppRoutes.login);
         final ctx = navigatorKey.currentContext;
-        if (ctx != null) {
+        if (ctx != null && ctx.mounted) {
+          ctx.go(AppRoutes.login);
           AppSnackBar.bilgi(ctx, 'Hesabın silindi. Seni tekrar aramızda görmek isteriz.');
         }
       } else {
@@ -1099,7 +1099,7 @@ class _SatirOge extends StatelessWidget {
                       color: labelColor,
                       fontWeight: FontWeight.w400)),
             ),
-            if (trailing != null) trailing!,
+            ?trailing,
             if (trailing == null && showArrow)
               const Icon(Icons.chevron_right,
                   color: AppColors.textSecondary, size: 20),

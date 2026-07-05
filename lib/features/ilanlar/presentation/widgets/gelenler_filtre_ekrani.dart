@@ -192,7 +192,7 @@ class _GelenlerFiltreEkraniState extends State<GelenlerFiltreEkrani> {
       PageRouteBuilder(
         opaque: false,
         barrierColor: Colors.black54,
-        pageBuilder: (_, __, ___) =>
+        pageBuilder: (_, _, _) =>
             TurkiyeDisiAramaEkrani(mevcutSecim: _modalUlkeSehir),
         transitionsBuilder: (_, anim, _, child) =>
             FadeTransition(opacity: anim, child: child),

@@ -34,8 +34,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _googleIleGiris() async {
     setState(() => _hata = '');
-    // Zaten giriş yapılmışsa Firebase yeni auth event fırlatmaz — sonradan kontrol et
-    final dejaGiris = ref.read(currentUserProvider) != null;
     final sonuc = await ref.read(authProvider.notifier).googleIleGiris();
     if (!mounted) return;
     if (!sonuc.basarili) {
@@ -455,7 +453,6 @@ class _TelefonGirisSheetState extends ConsumerState<_TelefonGirisSheet> {
       _hata       = '';
     });
 
-    final dejaGiris = ref.read(currentUserProvider) != null;
     final sonuc = await ref.read(authProvider.notifier).telefonIleGiris(
       verificationId: _verificationId,
       smsKodu:        _kodCtrl.text.trim(),
