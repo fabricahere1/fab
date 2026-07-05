@@ -7,7 +7,7 @@ class AppCacheManager {
     Config(
       key,
       stalePeriod: const Duration(days: 7),
-      maxNrOfCacheObjects: 200,
+      maxNrOfCacheObjects: 600,
     ),
   );
 }

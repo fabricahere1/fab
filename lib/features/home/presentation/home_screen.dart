@@ -16,8 +16,8 @@ import '../../ilanlar/providers/grid_tercihi_notifier.dart';
 import '../../ilanlar/presentation/gelenler_screen.dart';
 import '../../ilanlar/presentation/ilan_form_screen.dart';
 import '../../mesajlar/presentation/mesajlar_screen.dart';
-import '../../mesajlar/presentation/sohbet_screen.dart';
 import '../../mesajlar/providers/mesaj_provider.dart';
+import '../../../core/services/bildirim_yonlendirici.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
 import '../../profil/presentation/profil_screen.dart';
 import 'kesfet_screen.dart';
@@ -52,29 +52,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final mesaj = ref.read(bekleyenBildirimProvider);
     if (mesaj == null) return;
     ref.read(bekleyenBildirimProvider.notifier).temizle();
-
-    final data             = mesaj.data;
-    final sohbetId         = data['sohbetId']         as String? ?? '';
-    final karsiKullaniciId = data['karsiKullaniciId'] as String? ?? '';
-    final karsiKullaniciAd = data['karsiKullaniciAd'] as String? ?? '';
-    final ilanId           = data['ilanId']           as String? ?? '';
-    final ilanSahibiId     = data['ilanSahibiId']     as String? ?? '';
-    final ilanBaslik       = data['ilanBaslik']        as String? ?? '';
-    final ilanResimUrl     = data['ilanResimUrl']      as String? ?? '';
-
-    if (sohbetId.isEmpty || !mounted) return;
-
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => SohbetScreen(
-        sohbetId:         sohbetId,
-        karsiKullaniciId: karsiKullaniciId,
-        karsiKullaniciAd: karsiKullaniciAd,
-        ilanId:           ilanId,
-        ilanBaslik:       ilanBaslik,
-        ilanSahibiId:     ilanSahibiId,
-        ilanResimUrl:     ilanResimUrl.isNotEmpty ? ilanResimUrl : null,
-      ),
-    ));
+    if (!mounted) return;
+    bildirimNavigasyonuIsle(ref, mesaj);
   }
 
   void _ilanVer() {

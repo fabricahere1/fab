@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -13,8 +14,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/services/badge_service.dart';
 import 'core/services/bildirim_banner_service.dart';
 import 'core/services/fcm_service.dart';
+import 'core/services/bildirim_yonlendirici.dart';
 import 'features/bildirimler/providers/bekleyen_bildirim_provider.dart';
-import 'features/mesajlar/presentation/sohbet_screen.dart';
 import 'shared/widgets/baglanti_banner.dart';
 import 'core/theme/app_theme.dart';
 import 'firebase_options.dart';
@@ -27,6 +28,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  GoogleFonts.config.allowRuntimeFetching = false;
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   await Firebase.initializeApp(
@@ -107,45 +109,8 @@ class _IsteAppState extends ConsumerState<IsteApp> {
     _bildirimNavigation(message);
   }
 
-  void _bildirimNavigation(RemoteMessage message) {
-    final data     = message.data;
-    final tip      = data['tip']      as String?;
-    final ilanId   = data['ilanId']   as String?;
-    final sohbetId = data['sohbetId'] as String?;
-
-    if (tip == 'degerlendirme') {
-      final router = ref.read(routerProvider);
-      router.go(AppRoutes.home);
-      return;
-    }
-    if (ilanId != null && ilanId.isNotEmpty && tip != 'mesaj') {
-      final router = ref.read(routerProvider);
-      router.push(AppRoutes.ilanDetayPath(ilanId));
-      return;
-    }
-    if (sohbetId != null && sohbetId.isNotEmpty) {
-      final karsiKullaniciId = data['karsiKullaniciId'] as String? ?? '';
-      final karsiKullaniciAd = data['karsiKullaniciAd'] as String? ?? '';
-      final bildirimIlanId   = data['ilanId']           as String? ?? '';
-      final ilanSahibiId     = data['ilanSahibiId']     as String? ?? '';
-      final ilanBaslik       = data['ilanBaslik']        as String? ?? '';
-      final autoOpenPanel    = data['islem']             == 'true';
-      final context = navigatorKey.currentContext;
-      if (context != null) {
-        Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => SohbetScreen(
-            sohbetId:         sohbetId,
-            karsiKullaniciId: karsiKullaniciId,
-            karsiKullaniciAd: karsiKullaniciAd,
-            ilanId:           bildirimIlanId,
-            ilanBaslik:       ilanBaslik,
-            ilanSahibiId:     ilanSahibiId,
-            autoOpenPanel:    autoOpenPanel,
-          ),
-        ));
-      }
-    }
-  }
+  void _bildirimNavigation(RemoteMessage message) =>
+      bildirimNavigasyonuIsle(ref, message);
 
   @override
   Widget build(BuildContext context) {

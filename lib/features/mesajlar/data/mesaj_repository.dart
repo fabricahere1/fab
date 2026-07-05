@@ -62,7 +62,7 @@ class MesajRepository {
     return snap.data() as Map<String, dynamic>;
   }
 
-  Future<void> mesajGonder({
+  Future<String> mesajGonder({
     required String sohbetId,
     required String gondereId,
     required String karsiId,
@@ -118,6 +118,7 @@ class MesajRepository {
     });
 
     await batch.commit();
+    return mesajRef.id;
   }
 
   Stream<List<SohbetModel>> sohbetlerStream(String kullaniciId) {
@@ -389,6 +390,8 @@ Future<void> sohbetiGizle({
     String ilanId = '',
     String ilanSahibiId = '',
     String ilanResimUrl = '',
+    String mesajId = '',
+    String mesajZaman = '',
   }) async {
     try {
       await _functions.httpsCallable('mesajBildirimiGonder').call({
@@ -400,6 +403,8 @@ Future<void> sohbetiGizle({
         'ilanId':       ilanId,
         'ilanSahibiId': ilanSahibiId,
         'ilanResimUrl': ilanResimUrl,
+        'mesajId':      mesajId,
+        'mesajZaman':   mesajZaman,
       });
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'mesajRepository.mesajBildirimiGonder');

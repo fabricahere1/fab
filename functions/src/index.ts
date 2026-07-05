@@ -608,8 +608,8 @@ export const mesajBildirimiGonder = functions
   .region("europe-west1")
   .https.onCall(async (data, context) => {
     if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Giriş yapmalısın.");
-    const { aliciId, gondereAd, ilanBaslik, sohbetId, metin, ilanId, ilanSahibiId, ilanResimUrl } = data as {
-      aliciId: string; gondereAd: string; ilanBaslik: string; sohbetId: string; metin: string; ilanId: string; ilanSahibiId: string; ilanResimUrl: string;
+    const { aliciId, gondereAd, ilanBaslik, sohbetId, metin, ilanId, ilanSahibiId, ilanResimUrl, mesajId, mesajZaman } = data as {
+      aliciId: string; gondereAd: string; ilanBaslik: string; sohbetId: string; metin: string; ilanId: string; ilanSahibiId: string; ilanResimUrl: string; mesajId?: string; mesajZaman?: string;
     };
     const gondereId = context.auth.uid;
     const kullaniciSnap = await db.collection("kullanicilar").doc(aliciId).get();
@@ -639,7 +639,7 @@ export const mesajBildirimiGonder = functions
     await admin.messaging().send({
       token: fcmToken,
       notification: { title: gondereAd, body: bildirimMetin },
-      data: { tip: "mesaj", sohbetId, ilanBaslik, ilanId: ilanId ?? "", ilanSahibiId: ilanSahibiId ?? "", ilanResimUrl: ilanResimUrl ?? "", karsiKullaniciId: gondereId, karsiKullaniciAd: gondereAd },
+      data: { tip: "mesaj", sohbetId, ilanBaslik, ilanId: ilanId ?? "", ilanSahibiId: ilanSahibiId ?? "", ilanResimUrl: ilanResimUrl ?? "", karsiKullaniciId: gondereId, karsiKullaniciAd: gondereAd, mesajId: mesajId ?? "", mesajMetin: metin ?? "", mesajZaman: mesajZaman ?? "" },
       android: {
         priority: "high",
         collapseKey: sohbetId,

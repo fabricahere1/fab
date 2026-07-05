@@ -30,11 +30,18 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
   bool _mesajBildirimleri   = true;
   bool _sistemBildirimleri  = true;
   bool _bildirimlerYuklendi = false;
+  final _silmeAsamasi = ValueNotifier<String>('Kimlik doğrulanıyor...');
 
   @override
   void initState() {
     super.initState();
     _bildirimlerYukle();
+  }
+
+  @override
+  void dispose() {
+    _silmeAsamasi.dispose();
+    super.dispose();
   }
 
   Future<void> _bildirimlerYukle() async {
@@ -650,15 +657,17 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       return;
     }
 
+    // Dialog reauth'tan ÖNCE açılıyor — "Kimlik doğrulanıyor..." görünür
+    _silmeProgressGoster('Kimlik doğrulanıyor...');
     try {
       final yenidenGiris = await ref.read(authProvider.notifier)
           .emailIleYenidenGiris(email: email, sifre: sifreCtrl.text.trim());
       if (!yenidenGiris.basarili) throw Exception(yenidenGiris.hata);
+      // Reauth başarılı → metin güncelle, CF çağrısına geç
       await _hesapSilVeYonlendir();
     } catch (e) {
-      if (mounted) {
-        AppSnackBar.hata(context, 'Hata: Şifre yanlış veya bir sorun oluştu.');
-      }
+      _silmeDialogKapat();
+      if (mounted) AppSnackBar.hata(context, 'Hata: Şifre yanlış veya bir sorun oluştu.');
     }
     sifreCtrl.dispose();
   }
@@ -698,16 +707,21 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       final yenidenGiris = await ref.read(authProvider.notifier)
           .googleIleYenidenGiris();
       if (!yenidenGiris.basarili) throw Exception(yenidenGiris.hata);
+      // Google popup kapandı, reauth tamam → şimdi dialog aç
+      if (mounted) _silmeProgressGoster('Hesabın siliniyor...');
       await _hesapSilVeYonlendir();
     } catch (e) {
-      if (mounted) {
-        AppSnackBar.hata(context, 'Hata oluştu. Tekrar dene.');
-      }
+      // Google popup iptal veya hata — dialog açılmamıştı, sadece snackbar
+      if (mounted) AppSnackBar.hata(context, 'Hata oluştu. Tekrar dene.');
     }
   }
 
-  Future<void> _hesapSilVeYonlendir() async {
-    if (!mounted) return;
+  bool _silmeDialogAcik = false;
+
+  void _silmeProgressGoster(String asama) {
+    _silmeAsamasi.value = asama;
+    if (_silmeDialogAcik) return; // metin zaten güncellendi, yeni dialog açma
+    _silmeDialogAcik = true;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -721,14 +735,26 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
               const CircularProgressIndicator(strokeWidth: 2.5),
               const SizedBox(width: 20),
               Expanded(
-                child: Text('Hesabın siliniyor...',
-                    style: GoogleFonts.manrope(fontSize: 14)),
+                child: ValueListenableBuilder<String>(
+                  valueListenable: _silmeAsamasi,
+                  builder: (_, metin, _) =>
+                      Text(metin, style: GoogleFonts.manrope(fontSize: 14)),
+                ),
               ),
             ]),
           ),
         ),
       ),
-    );
+    ).whenComplete(() => _silmeDialogAcik = false);
+  }
+
+  void _silmeDialogKapat() {
+    if (_silmeDialogAcik) navigatorKey.currentState?.pop();
+  }
+
+  Future<void> _hesapSilVeYonlendir() async {
+    if (!mounted) return;
+    _silmeAsamasi.value = 'Hesabın siliniyor...'; // metin güncelle (dialog açıksa anında yansır)
 
     try {
       final silSonuc = await ref.read(authProvider.notifier).hesapSil();
@@ -740,15 +766,12 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           AppSnackBar.bilgi(ctx, 'Hesabın silindi. Seni tekrar aramızda görmek isteriz.');
         }
       } else {
-        if (mounted) {
-          AppSnackBar.hata(context, silSonuc.hata ?? 'Hesap silinemedi.');
-        }
+        _silmeDialogKapat();
+        if (mounted) AppSnackBar.hata(context, silSonuc.hata ?? 'Hesap silinemedi.');
       }
     } catch (e) {
-      navigatorKey.currentState?.pop();
-      if (mounted) {
-        AppSnackBar.hata(context, 'Hata oluştu. Tekrar dene.');
-      }
+      _silmeDialogKapat();
+      if (mounted) AppSnackBar.hata(context, 'Hata oluştu. Tekrar dene.');
     }
   }
 }

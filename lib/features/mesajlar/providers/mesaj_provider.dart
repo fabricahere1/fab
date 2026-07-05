@@ -106,6 +106,7 @@ class SohbetNotifier extends _$SohbetNotifier {
   StreamSubscription? _mesajSub;
   Timer? _okunduTimer;
   String? _sonOkunduMesajId;
+  final _geciciIdler = <String>{};
 
   @override
   SohbetEkraniState build({
@@ -152,9 +153,11 @@ class SohbetNotifier extends _$SohbetNotifier {
         yeniMap[mesaj.id] = mesaj;
       }
 
-      // Snapshot'ta olmayan (silinen) mesajları kaldır
+      // Snapshot'ta olmayan (silinen) mesajları kaldır.
+      // Geçici (bildirimden eklenen) mesajlar sunucu onayı gelene kadar korunur.
       final snapIds = mesajlar.map((m) => m.id).toSet();
-      yeniMap.removeWhere((id, _) => !snapIds.contains(id));
+      _geciciIdler.removeWhere((id) => snapIds.contains(id)); // sunucudan gelince geçici listeden düş
+      yeniMap.removeWhere((id, _) => !snapIds.contains(id) && !_geciciIdler.contains(id));
 
       // En eski zamanı cursor olarak sakla
       final enEskiZaman = mesajlar.isNotEmpty ? mesajlar.last.zaman : state.enEskiZaman;
@@ -208,6 +211,29 @@ class SohbetNotifier extends _$SohbetNotifier {
     return liste;
   }
 
+  void geciciMesajEkle({
+    required String id,
+    required String metin,
+    required String gondereId,
+    DateTime? zaman,
+  }) {
+    if (state.mesajMap.containsKey(id)) return; // snapshot erken geldiyse zaten var
+    _geciciIdler.add(id);
+    final gecici = MesajModel(
+      id:           id,
+      metin:        metin,
+      gondereId:    gondereId,
+      zaman:        zaman ?? DateTime.now(),
+      okundu:       false,
+      gonderiliyor: false,
+    );
+    final yeniMap = Map<String, MesajModel>.from(state.mesajMap)..[id] = gecici;
+    state = state.copyWith(
+      mesajMap:       yeniMap,
+      siraliMesajlar: _sirala(yeniMap),
+    );
+  }
+
   Future<void> dahaFazlaYukle() async {
     if (state.yukleniyor || !state.dahaFazlaVar || state.enEskiZaman == null) return;
 
@@ -252,8 +278,10 @@ class SohbetNotifier extends _$SohbetNotifier {
     if (metin.trim().isEmpty) return;
     final benimAd = await _getBenimAd();
     if (!ref.mounted) return;
+    final String mesajId;
+    final gonderimZamani = DateTime.now();
     try {
-      await _repo.mesajGonder(
+      mesajId = await _repo.mesajGonder(
         sohbetId: _sohbetId,
         gondereId: _benimId,
         karsiId: karsiKullaniciId,
@@ -274,7 +302,7 @@ class SohbetNotifier extends _$SohbetNotifier {
       }
       return;
     }
-    // Push bildirimi arka planda
+    // Push bildirimi arka planda — mesajId ve zaman payload'a ekleniyor
     _repo.mesajBildirimiGonder(
       aliciId: karsiKullaniciId,
       gondereId: _benimId,
@@ -285,6 +313,8 @@ class SohbetNotifier extends _$SohbetNotifier {
       ilanId: ilanId,
       ilanSahibiId: ilanSahibiId,
       ilanResimUrl: ilanResimUrl,
+      mesajId: mesajId,
+      mesajZaman: gonderimZamani.toIso8601String(),
     ).catchError((_) {});
   }
 

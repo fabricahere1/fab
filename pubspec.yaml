@@ -81,6 +81,7 @@ flutter:
     - assets/splash/
     - assets/images/
     - assets/images/rehber/
+    - assets/google_fonts/
 
 # ── App Icon ─────────────────────────────────────────────────────────────────
 flutter_launcher_icons:

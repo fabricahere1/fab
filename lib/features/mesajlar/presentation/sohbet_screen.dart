@@ -30,6 +30,7 @@ class SohbetScreen extends ConsumerStatefulWidget {
   final String ilanSahibiId;
   final String ilanTip;
   final bool autoOpenPanel;
+  final ({String id, String metin, DateTime? zaman})? bildirimMesaji;
 
   const SohbetScreen({
     super.key,
@@ -43,6 +44,7 @@ class SohbetScreen extends ConsumerStatefulWidget {
     this.ilanSahibiId = '',
     this.ilanTip = 'istek',
     this.autoOpenPanel = false,
+    this.bildirimMesaji,
   });
 
   @override
@@ -78,7 +80,18 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
       _iletisimBasladiIsaretle();
       _degerlendirmeyiDinle();
       if (widget.autoOpenPanel) _panelAc();
-
+      if (widget.bildirimMesaji != null) {
+        final bm = widget.bildirimMesaji!;
+        ref.read(sohbetProvider(
+          karsiKullaniciId: widget.karsiKullaniciId,
+          ilanId: widget.ilanId,
+        ).notifier).geciciMesajEkle(
+          id:        bm.id,
+          metin:     bm.metin,
+          gondereId: widget.karsiKullaniciId,
+          zaman:     bm.zaman,
+        );
+      }
     });
   }
 
