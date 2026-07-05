@@ -4,6 +4,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../../core/services/fcm_service.dart';
 import '../../../shared/constants/app_constants.dart';
 
 part 'auth_repository.g.dart';
@@ -182,6 +183,7 @@ class AuthRepository {
   }
 
   Future<void> cikisYap() async {
+    await FcmService.instance.oturumKapanisTemizligi();
     try { await _googleSignIn.signOut(); } catch (_) {}
     await auth.signOut();
   }

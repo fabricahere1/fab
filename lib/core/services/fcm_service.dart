@@ -32,6 +32,8 @@ class FcmService {
   StreamSubscription<RemoteMessage>? _messageSub;
   StreamSubscription<RemoteMessage>? _openedAppSub;
 
+  String? _sonUid;
+
   /// [onBildirimAc] — bildirime tıklanınca çağrılır (router erişimi için
   /// main.dart'tan inject edilir).
   Future<void> init({
@@ -79,14 +81,15 @@ class FcmService {
 
   /// Auth değişince çağrılır.
   /// - user != null → token al ve kaydet
-  /// - user == null → token sil (çıkış yapıldı)
+  /// - user == null → güvenlik ağı: oturumKapanisTemizligi asıl temizliği yapar,
+  ///   ama ikisi de idempotent, burada da deneriz.
   Future<void> _authDegisti(User? user) async {
     if (user == null) {
-      // AuthRepository.cikisYap() çağrısından önce token zaten silinir,
-      // ama güvence olarak burada da deneriz.
-      await _tokenSil();
+      await _tokenSil(_sonUid);
+      _sonUid = null;
       return;
     }
+    _sonUid = user.uid;
     final token = await _messaging.getToken();
     if (token != null) await _tokenKaydet(user.uid, token);
   }
@@ -106,8 +109,23 @@ class FcmService {
   }
 
   /// Firestore'dan fcmToken alanını siler.
-  /// Sadece kullanıcı oturumu açıkken çağrılır.
-  Future<void> _tokenSil() async {
+  Future<void> _tokenSil(String? uid) async {
+    if (uid == null) return;
+    try {
+      await _firestore
+          .collection(Collections.kullanicilar)
+          .doc(uid)
+          .update({'fcmToken': FieldValue.delete()});
+      debugPrint('[FCM] Token silindi uid=$uid');
+    } catch (e) {
+      debugPrint('[FCM] Token silinemedi: $e');
+    }
+  }
+
+  /// Çıkış öncesi çağrılır: Firestore token'ını siler ve cihaz token'ını iptal eder.
+  /// deleteToken → eski hesapta kopya kalsa bile geçersiz; yeni girişte taze token üretilir.
+  /// Ağ hatası çıkışı engellemez (catch, rethrow yok).
+  Future<void> oturumKapanisTemizligi() async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return;
     try {
@@ -115,9 +133,11 @@ class FcmService {
           .collection(Collections.kullanicilar)
           .doc(uid)
           .update({'fcmToken': FieldValue.delete()});
-      debugPrint('[FCM] Token silindi');
-    } catch (e) {
-      debugPrint('[FCM] Token silinemedi: $e');
+      await _messaging.deleteToken();
+      _sonUid = null;
+      debugPrint('[FCM] Çıkış temizliği tamamlandı uid=$uid');
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'cikis.fcmTemizlik');
     }
   }
 

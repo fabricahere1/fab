@@ -214,6 +214,22 @@ async function resimKontrol(resimUrller: string[]): Promise<{ uygun: boolean; se
   return { uygun: true, sebep: "" };
 }
 
+// ── FCM yardımcıları ──────────────────────────────────────────────────────────
+
+/** Bayat/silinmiş token hatası gelince Firestore'dan temizler. */
+async function bayatTokenTemizle(err: unknown, hedefUid: string): Promise<void> {
+  const kod = (err as { errorInfo?: { code?: string } })?.errorInfo?.code ?? "";
+  if (kod === "messaging/registration-token-not-registered") {
+    try {
+      await db.collection("kullanicilar").doc(hedefUid)
+        .update({ fcmToken: admin.firestore.FieldValue.delete() });
+      console.log(`[FCM] Bayat token temizlendi uid=${hedefUid}`);
+    } catch (e) {
+      console.warn("[FCM] Bayat token temizlenemedi:", e);
+    }
+  }
+}
+
 // ── FCM bildirimi ─────────────────────────────────────────────────────────────
 
 async function bildirimGonder(
@@ -237,6 +253,7 @@ async function bildirimGonder(
       android: { priority: "high", notification: { channelId: "ilanlar" } },
     });
   } catch (e) {
+    await bayatTokenTemizle(e, kullaniciId);
     console.warn("FCM gönderim hatası:", e);
   }
 }
@@ -636,20 +653,25 @@ export const mesajBildirimiGonder = functions
     const mesajTercih = (kullaniciData.bildirimTercihleri?.mesaj ?? true) as boolean;
     if (!fcmToken || !mesajTercih) return { success: true };
 
-    await admin.messaging().send({
-      token: fcmToken,
-      notification: { title: gondereAd, body: bildirimMetin },
-      data: { tip: "mesaj", sohbetId, ilanBaslik, ilanId: ilanId ?? "", ilanSahibiId: ilanSahibiId ?? "", ilanResimUrl: ilanResimUrl ?? "", karsiKullaniciId: gondereId, karsiKullaniciAd: gondereAd, mesajId: mesajId ?? "", mesajMetin: metin ?? "", mesajZaman: mesajZaman ?? "" },
-      android: {
-        priority: "high",
-        collapseKey: sohbetId,
-        notification: { tag: sohbetId, channelId: "mesajlar", ticker: `${gondereAd}: ${bildirimMetin}`, notificationCount: 1 },
-      },
-      apns: {
-        headers: { "apns-collapse-id": sohbetId.substring(0, 64) },
-        payload: { aps: { threadId: sohbetId, badge: 1 } },
-      },
-    });
+    try {
+      await admin.messaging().send({
+        token: fcmToken,
+        notification: { title: gondereAd, body: bildirimMetin },
+        data: { tip: "mesaj", sohbetId, ilanBaslik, ilanId: ilanId ?? "", ilanSahibiId: ilanSahibiId ?? "", ilanResimUrl: ilanResimUrl ?? "", karsiKullaniciId: gondereId, karsiKullaniciAd: gondereAd, mesajId: mesajId ?? "", mesajMetin: metin ?? "", mesajZaman: mesajZaman ?? "" },
+        android: {
+          priority: "high",
+          collapseKey: sohbetId,
+          notification: { tag: sohbetId, channelId: "mesajlar", ticker: `${gondereAd}: ${bildirimMetin}`, notificationCount: 1 },
+        },
+        apns: {
+          headers: { "apns-collapse-id": sohbetId.substring(0, 64) },
+          payload: { aps: { threadId: sohbetId, badge: 1 } },
+        },
+      });
+    } catch (e) {
+      await bayatTokenTemizle(e, aliciId);
+      console.warn("[FCM] mesajBildirimi gönderilemedi:", e);
+    }
     return { success: true };
   });
 
@@ -673,15 +695,20 @@ export const degerlendirmeBildirimiGonder = functions
     const sistemTercih = (hedefData.bildirimTercihleri?.sistem ?? true) as boolean;
     if (!sistemTercih) return;
     const yildizlar = "⭐".repeat(Math.min(puan, 5));
-    await admin.messaging().send({
-      token: fcmToken,
-      notification: {
-        title: "Yeni değerlendirme aldın!",
-        body: `${degerlendireninAd} seni ${yildizlar} olarak değerlendirdi.`,
-      },
-      data: { tip: "degerlendirme", hedefKullaniciId },
-      android: { priority: "high", notification: { channelId: "genel" } },
-    });
+    try {
+      await admin.messaging().send({
+        token: fcmToken,
+        notification: {
+          title: "Yeni değerlendirme aldın!",
+          body: `${degerlendireninAd} seni ${yildizlar} olarak değerlendirdi.`,
+        },
+        data: { tip: "degerlendirme", hedefKullaniciId },
+        android: { priority: "high", notification: { channelId: "genel" } },
+      });
+    } catch (e) {
+      await bayatTokenTemizle(e, hedefKullaniciId);
+      console.warn("[FCM] degerlendirmeBildirimi gönderilemedi:", e);
+    }
   });
 
 // ── Takip Sayaç Trigger'ları ─────────────────────────────────────────────────
@@ -924,16 +951,21 @@ export const islemDurumuBildirimiGonder = functions
         const sistemTercih = (aliciData.bildirimTercihleri?.sistem ?? true) as boolean;
         if (!fcmToken || !sistemTercih) break;
 
-        await admin.messaging().send({
-          token: fcmToken,
-          notification: { title: etiket, body: `${yapanAd} • ${ilanBaslik}` },
-          data: {
-            tip: "mesaj", islem: "true", sohbetId, ilanBaslik, ilanId,
-            ilanResimUrl, ilanSahibiId, karsiKullaniciId: yapanUid, karsiKullaniciAd: yapanAd,
-          },
-          android: { priority: "high", notification: { channelId: "mesajlar" } },
-          apns: { payload: { aps: { badge: 1 } } },
-        });
+        try {
+          await admin.messaging().send({
+            token: fcmToken,
+            notification: { title: etiket, body: `${yapanAd} • ${ilanBaslik}` },
+            data: {
+              tip: "mesaj", islem: "true", sohbetId, ilanBaslik, ilanId,
+              ilanResimUrl, ilanSahibiId, karsiKullaniciId: yapanUid, karsiKullaniciAd: yapanAd,
+            },
+            android: { priority: "high", notification: { channelId: "mesajlar" } },
+            apns: { payload: { aps: { badge: 1 } } },
+          });
+        } catch (e) {
+          await bayatTokenTemizle(e, aliciId);
+          console.warn("[FCM] anlasildiBildirimi gönderilemedi:", e);
+        }
         break;
       }
     }
@@ -977,14 +1009,19 @@ export const islemDurumuBildirimiGonder = functions
     const sistemTercih = (aliciData.bildirimTercihleri?.sistem ?? true) as boolean;
     if (!fcmToken || !sistemTercih) return;
 
-    await admin.messaging().send({
-      token: fcmToken,
-      notification: { title: etiket, body: `${yapanAd} • ${ilanBaslik}` },
-      data: {
-        tip: "mesaj", islem: "true", sohbetId, ilanBaslik, ilanId,
-        ilanResimUrl, ilanSahibiId, karsiKullaniciId: yapanUid, karsiKullaniciAd: yapanAd,
-      },
-      android: { priority: "high", notification: { channelId: "mesajlar" } },
-      apns: { payload: { aps: { badge: 1 } } },
-    });
+    try {
+      await admin.messaging().send({
+        token: fcmToken,
+        notification: { title: etiket, body: `${yapanAd} • ${ilanBaslik}` },
+        data: {
+          tip: "mesaj", islem: "true", sohbetId, ilanBaslik, ilanId,
+          ilanResimUrl, ilanSahibiId, karsiKullaniciId: yapanUid, karsiKullaniciAd: yapanAd,
+        },
+        android: { priority: "high", notification: { channelId: "mesajlar" } },
+        apns: { payload: { aps: { badge: 1 } } },
+      });
+    } catch (e) {
+      await bayatTokenTemizle(e, aliciId);
+      console.warn("[FCM] islemDurumBildirimi gönderilemedi:", e);
+    }
   });
