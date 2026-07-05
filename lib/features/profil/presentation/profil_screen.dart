@@ -232,7 +232,9 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                       const SizedBox(height: 8),
                       benimProfilAsync.when(
                         data: (profil) {
-                          final sehir = profil?.sehir ?? '';
+                          final sehir = (profil?.bulunduguSehir.isNotEmpty ?? false)
+                              ? profil!.bulunduguSehir
+                              : (profil?.yasadigiUlke ?? '');
                           final puan = profil?.ortalamaPuan ?? 0.0;
                           final sayi = profil?.degerlendirmeSayisi ?? 0;
                           return Column(
@@ -245,7 +247,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                                   Text(sehir, style: ProfilStilleri.detaySatiri),
                                 ])
                               else
-                                Text('Profil tamamlanmamış',
+                                Text('Konum eklenmemiş',
                                     style: ProfilStilleri.detaySatiriHint),
                               if (sayi > 0) ...[
                                 const SizedBox(height: 4),

@@ -166,8 +166,7 @@ class KullaniciRepository {
         'takipEdilenId': takipEdilenId,
         'tarih':         FieldValue.serverTimestamp(),
       });
-      txn.update(_col.doc(takipEdilenId), {'takipciSayisi': FieldValue.increment(1)});
-      txn.update(_col.doc(takipciId), {'takipSayisi': FieldValue.increment(1)});
+      // Sayaç güncellemesi CF trigger'ı (takipOlustuSayacArttir) tarafından yapılır.
     });
   }
 
@@ -178,8 +177,7 @@ class KullaniciRepository {
       final snap = await txn.get(takipRef);
       if (!snap.exists) return;
       txn.delete(takipRef);
-      txn.update(_col.doc(takipEdilenId), {'takipciSayisi': FieldValue.increment(-1)});
-      txn.update(_col.doc(takipciId), {'takipSayisi': FieldValue.increment(-1)});
+      // Sayaç güncellemesi CF trigger'ı (takipSilindiSayacAzalt) tarafından yapılır.
     });
   }
 

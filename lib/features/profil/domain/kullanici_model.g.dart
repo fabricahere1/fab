@@ -26,7 +26,6 @@ _KullaniciModel _$KullaniciModelFromJson(Map<String, dynamic> json) =>
               .toList() ??
           const [],
       hakkinda: json['hakkinda'] as String? ?? '',
-      sehir: json['sehir'] as String? ?? '',
       telefonGizli: json['telefonGizli'] as bool? ?? false,
       engellenenler:
           (json['engellenenler'] as List<dynamic>?)
@@ -101,7 +100,6 @@ Map<String, dynamic> _$KullaniciModelToJson(_KullaniciModel instance) =>
       'bulunduguSehir': instance.bulunduguSehir,
       'geldigiSehirler': instance.geldigiSehirler,
       'hakkinda': instance.hakkinda,
-      'sehir': instance.sehir,
       'telefonGizli': instance.telefonGizli,
       'engellenenler': instance.engellenenler,
       'ilgiKategorileri': instance.ilgiKategorileri,

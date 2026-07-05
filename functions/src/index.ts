@@ -684,6 +684,38 @@ export const degerlendirmeBildirimiGonder = functions
     });
   });
 
+// ── Takip Sayaç Trigger'ları ─────────────────────────────────────────────────
+
+export const takipOlustuSayacArttir = functions
+  .region("europe-west1")
+  .firestore.document("takipler/{takipId}")
+  .onCreate(async (snap) => {
+    const { takipciId, takipEdilenId } = snap.data() as { takipciId: string; takipEdilenId: string };
+    if (!takipciId || !takipEdilenId) return;
+    const takipciRef    = db.collection("kullanicilar").doc(takipciId);
+    const takipEdilenRef = db.collection("kullanicilar").doc(takipEdilenId);
+    const batch = db.batch();
+    const [takipciSnap, takipEdilenSnap] = await Promise.all([takipciRef.get(), takipEdilenRef.get()]);
+    if (takipciSnap.exists)    batch.update(takipciRef,    { takipSayisi:   admin.firestore.FieldValue.increment(1) });
+    if (takipEdilenSnap.exists) batch.update(takipEdilenRef, { takipciSayisi: admin.firestore.FieldValue.increment(1) });
+    await batch.commit();
+  });
+
+export const takipSilindiSayacAzalt = functions
+  .region("europe-west1")
+  .firestore.document("takipler/{takipId}")
+  .onDelete(async (snap) => {
+    const { takipciId, takipEdilenId } = snap.data() as { takipciId: string; takipEdilenId: string };
+    if (!takipciId || !takipEdilenId) return;
+    const takipciRef    = db.collection("kullanicilar").doc(takipciId);
+    const takipEdilenRef = db.collection("kullanicilar").doc(takipEdilenId);
+    const batch = db.batch();
+    const [takipciSnap, takipEdilenSnap] = await Promise.all([takipciRef.get(), takipEdilenRef.get()]);
+    if (takipciSnap.exists)    batch.update(takipciRef,    { takipSayisi:   admin.firestore.FieldValue.increment(-1) });
+    if (takipEdilenSnap.exists) batch.update(takipEdilenRef, { takipciSayisi: admin.firestore.FieldValue.increment(-1) });
+    await batch.commit();
+  });
+
 // ── Değerlendirme Puan Güncelle (sunucu tarafı) ───────────────────────────────
 
 export const degerlendirmePuanGuncelle = functions
@@ -768,6 +800,12 @@ export const hesapSilSunucu = functions
     try {
       const batch = db.batch();
 
+      // bekleyenDegerlendirmeler alt-koleksiyonu — Firestore subcollection
+      // doküman silinince otomatik temizlenmez; recursiveDelete halleder.
+      await db.recursiveDelete(
+        db.collection("kullanicilar").doc(uid).collection("bekleyenDegerlendirmeler")
+      );
+
       batch.delete(db.collection("kullanicilar").doc(uid));
 
       const ilanlarSnap = await db.collection("ilanlar")
@@ -844,7 +882,8 @@ export const islemDurumuBildirimiGonder = functions
     const sohbetId      = context.params.sohbetId as string;
     const ilanBaslik    = (sonraki.ilanBaslik    as string | undefined) ?? "İlan";
     const ilanId        = (sonraki.ilanId        as string | undefined) ?? "";
-    const ilanSahibiId  = (sonraki.ilanSahibiId as string | undefined) ?? "";
+    const ilanSahibiId  = (sonraki.ilanSahibiId  as string | undefined) ?? "";
+    const ilanResimUrl  = (sonraki.ilanResimUrl  as string | undefined) ?? "";
     const katilimcilar  = (sonraki.kullanicilar  ?? []) as string[];
 
     // ── Anlaşıldı (iki taraflı) ──────────────────────────────────────────────
@@ -890,7 +929,7 @@ export const islemDurumuBildirimiGonder = functions
           notification: { title: etiket, body: `${yapanAd} • ${ilanBaslik}` },
           data: {
             tip: "mesaj", islem: "true", sohbetId, ilanBaslik, ilanId,
-            ilanSahibiId, karsiKullaniciId: yapanUid, karsiKullaniciAd: yapanAd,
+            ilanResimUrl, ilanSahibiId, karsiKullaniciId: yapanUid, karsiKullaniciAd: yapanAd,
           },
           android: { priority: "high", notification: { channelId: "mesajlar" } },
           apns: { payload: { aps: { badge: 1 } } },
@@ -943,7 +982,7 @@ export const islemDurumuBildirimiGonder = functions
       notification: { title: etiket, body: `${yapanAd} • ${ilanBaslik}` },
       data: {
         tip: "mesaj", islem: "true", sohbetId, ilanBaslik, ilanId,
-        ilanSahibiId, karsiKullaniciId: yapanUid, karsiKullaniciAd: yapanAd,
+        ilanResimUrl, ilanSahibiId, karsiKullaniciId: yapanUid, karsiKullaniciAd: yapanAd,
       },
       android: { priority: "high", notification: { channelId: "mesajlar" } },
       apns: { payload: { aps: { badge: 1 } } },

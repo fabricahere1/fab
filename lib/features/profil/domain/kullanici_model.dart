@@ -21,7 +21,6 @@ abstract class KullaniciModel with _$KullaniciModel {
     @Default('') String bulunduguSehir,
     @Default([]) List<String> geldigiSehirler,
     @Default('') String hakkinda,
-    @Default('') String sehir,
     @Default(false) bool telefonGizli,
     @Default([]) List<String> engellenenler,
     // Kayıt ekranından gelen tercihler
@@ -59,7 +58,6 @@ abstract class KullaniciModel with _$KullaniciModel {
       bulunduguSehir:       d['bulunduguSehir']       as String? ?? '',
       geldigiSehirler:      List<String>.from(d['geldigiSehirler'] ?? []),
       hakkinda:             d['hakkinda']             as String? ?? '',
-      sehir:                d['sehir']                as String? ?? '',
       telefonGizli:         d['telefonGizli']         as bool?   ?? false,
       engellenenler:        List<String>.from(d['engellenenler'] ?? []),
       ilgiKategorileri:     List<String>.from(d['ilgiKategorileri'] ?? []),
@@ -98,7 +96,6 @@ extension KullaniciModelX on KullaniciModel {
     'bulunduguSehir':      bulunduguSehir,
     'geldigiSehirler':     geldigiSehirler,
     'hakkinda':            hakkinda,
-    'sehir':               sehir,
     'telefonGizli':        telefonGizli,
     'engellenenler':       engellenenler,
     'ilgiKategorileri':    ilgiKategorileri,

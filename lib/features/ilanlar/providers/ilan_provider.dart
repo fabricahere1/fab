@@ -711,6 +711,7 @@ class IlanIslemleri extends _$IlanIslemleri {
 
   Future<void> sil(String ilanId) async {
     await _repo.ilanSil(ilanId);
+    if (!ref.mounted) return;
     ref.read(istekIlanlarProvider.notifier).ilanKaldir(ilanId);
     ref.read(tasiyiciIlanlarProvider.notifier).ilanKaldir(ilanId);
   }

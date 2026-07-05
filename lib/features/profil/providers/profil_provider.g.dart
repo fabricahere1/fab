@@ -902,7 +902,7 @@ final class TakipEdiyorMuProvider
   }) : super(
          retry: null,
          name: r'takipEdiyorMuProvider',
-         isAutoDispose: true,
+         isAutoDispose: false,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
@@ -939,7 +939,7 @@ final class TakipEdiyorMuProvider
   }
 }
 
-String _$takipEdiyorMuHash() => r'5498354c59525dba0429ca710c45a018940c2c7d';
+String _$takipEdiyorMuHash() => r'04eedc74c71ac793ef75dc23410383e5e078b44d';
 
 final class TakipEdiyorMuFamily extends $Family
     with $FunctionalFamilyOverride<Stream<bool>, String> {
@@ -949,7 +949,7 @@ final class TakipEdiyorMuFamily extends $Family
         name: r'takipEdiyorMuProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
-        isAutoDispose: true,
+        isAutoDispose: false,
       );
 
   TakipEdiyorMuProvider call(String takipEdilenId) =>

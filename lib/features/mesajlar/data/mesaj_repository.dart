@@ -91,20 +91,21 @@ class MesajRepository {
     // sadece o alt-alanı güncelliyor, diğer kullanıcının sayacına dokunmuyor.
     batch.set(sohbetRef, {
       'kullanicilar':         [gondereId, karsiId],
-      'ilanId':               ilanId,
-      'ilanBaslik':           ilanBaslik,
-      'ilanResimUrl':         ilanResimUrl,
       'sonMesaj':             tip == 'resim' ? '📷 Fotoğraf' : metin,
       'sonMesajZamani':       FieldValue.serverTimestamp(),
       'sonGondereId':         gondereId,
-      'ilanSahibiId':         ilanSahibiId,
       'ilanTip':              ilanTip,
       'degerlendirmeYapildi': false,
       'islemDurumlari':       {'iletisimBasladi': true},
       'olusturmaTarihi':      FieldValue.serverTimestamp(),
       'okunmamis.$karsiId':   FieldValue.increment(1),
-      if (gondereAd.isNotEmpty) 'kullaniciAdlari.$gondereId': gondereAd,
-      if (karsiAd.isNotEmpty)   'kullaniciAdlari.$karsiId':   karsiAd,
+      if (gondereAd.isNotEmpty)   'kullaniciAdlari.$gondereId': gondereAd,
+      if (karsiAd.isNotEmpty)     'kullaniciAdlari.$karsiId':   karsiAd,
+      // İlan meta: boş geçilirse mevcut değeri ezme
+      if (ilanId.isNotEmpty)       'ilanId':       ilanId,
+      if (ilanBaslik.isNotEmpty)   'ilanBaslik':   ilanBaslik,
+      if (ilanResimUrl.isNotEmpty) 'ilanResimUrl': ilanResimUrl,
+      if (ilanSahibiId.isNotEmpty) 'ilanSahibiId': ilanSahibiId,
     }, SetOptions(merge: true));
 
 

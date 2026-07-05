@@ -33,6 +33,7 @@ void bildirimNavigasyonuIsle(WidgetRef ref, RemoteMessage message) {
     final bildirimIlanId   = data['ilanId']           as String? ?? '';
     final ilanSahibiId     = data['ilanSahibiId']     as String? ?? '';
     final ilanBaslik       = data['ilanBaslik']        as String? ?? '';
+    final ilanResimUrl     = data['ilanResimUrl']      as String? ?? '';
     final mesajId          = data['mesajId']           as String? ?? '';
     final mesajMetin       = data['mesajMetin']        as String? ?? '';
     final mesajZamanStr    = data['mesajZaman']        as String? ?? '';
@@ -49,6 +50,7 @@ void bildirimNavigasyonuIsle(WidgetRef ref, RemoteMessage message) {
         karsiKullaniciAd: karsiKullaniciAd,
         ilanId:           bildirimIlanId,
         ilanBaslik:       ilanBaslik,
+        ilanResimUrl:     ilanResimUrl,
         ilanSahibiId:     ilanSahibiId,
         autoOpenPanel:    panelBildirimi,
         bildirimMesaji:   bildirimMesaji,

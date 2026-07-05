@@ -216,7 +216,46 @@ class _ProfilSatiri extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final takipAsync = ref.watch(takipEdiyorMuProvider(profil.id));
-    final takipEdiyor = takipAsync.asData?.value ?? false;
+
+    final Widget takipButonu = takipAsync.when(
+      loading: () => Container(
+        width: 108,
+        height: 32,
+        decoration: BoxDecoration(
+          color: const Color(0xFFEEEEEE),
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (takipEdiyor) => GestureDetector(
+        onTap: () {
+          if (takipEdiyor) {
+            ref.read(takipIslemleriProvider.notifier).takipiBirak(profil.id);
+          } else {
+            ref.read(takipIslemleriProvider.notifier).takipEt(profil.id);
+          }
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          decoration: BoxDecoration(
+            color: takipEdiyor ? Colors.transparent : AppColors.textPrimary,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: takipEdiyor ? AppColors.divider : AppColors.textPrimary,
+            ),
+          ),
+          child: Text(
+            takipEdiyor ? 'Takip Ediliyor' : 'Takip Et',
+            style: GoogleFonts.dmSans(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: takipEdiyor ? AppColors.textSecondary : Colors.white,
+            ),
+          ),
+        ),
+      ),
+    );
 
     return GestureDetector(
       onTap: () => Navigator.push(
@@ -262,10 +301,10 @@ class _ProfilSatiri extends ConsumerWidget {
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  if (profil.sehir.isNotEmpty) ...[
+                  if (profil.bulunduguSehir.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(
-                      profil.sehir,
+                      profil.bulunduguSehir,
                       style: GoogleFonts.dmSans(
                         fontSize: 12,
                         color: AppColors.textSecondary,
@@ -275,34 +314,7 @@ class _ProfilSatiri extends ConsumerWidget {
                 ],
               ),
             ),
-            GestureDetector(
-              onTap: () {
-                if (takipEdiyor) {
-                  ref.read(takipIslemleriProvider.notifier).takipiBirak(profil.id);
-                } else {
-                  ref.read(takipIslemleriProvider.notifier).takipEt(profil.id);
-                }
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                decoration: BoxDecoration(
-                  color: takipEdiyor ? Colors.transparent : AppColors.textPrimary,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: takipEdiyor ? AppColors.divider : AppColors.textPrimary,
-                  ),
-                ),
-                child: Text(
-                  takipEdiyor ? 'Takip Ediliyor' : 'Takip Et',
-                  style: GoogleFonts.dmSans(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: takipEdiyor ? AppColors.textSecondary : Colors.white,
-                  ),
-                ),
-              ),
-            ),
+            takipButonu,
           ],
         ),
       ),
