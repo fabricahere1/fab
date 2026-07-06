@@ -9,6 +9,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/ilan_model.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../../../shared/utils/app_hata_yonetici.dart';
+import '../../../shared/utils/oneri_skoru.dart';
 
 part 'ilan_repository.g.dart';
 
@@ -153,31 +154,10 @@ class IlanRepository {
   }
 
   List<IlanModel> _puanaGoreSirala(List<IlanModel> ilanlar, int limit) {
-    // onerilenPuan formülü: favori×3 + goruntuleme×1 + kullaniciPuan×5 + tazelik + resim
-    ilanlar.sort((a, b) {
-      final pA = _hesapla(a);
-      final pB = _hesapla(b);
-      return pB.compareTo(pA);
-    });
-    return ilanlar.take(limit).toList();
-  }
-
-  double _hesapla(IlanModel i) {
-    final gunFark = DateTime.now().difference(
-        i.olusturmaTarihi ?? DateTime.fromMillisecondsSinceEpoch(0)).inHours / 24.0;
-    double tazelik = 0;
-    if (gunFark < 1) { tazelik = 10; }
-    else if (gunFark < 3) { tazelik = 6; }
-    else if (gunFark < 7) { tazelik = 3; }
-    else if (gunFark < 30) { tazelik = 1; } // Cloud Functions ve kesfet_vitrin_providers ile tutarlı
-    final resimPuan = i.resimUrller.length >= 5 ? 5.0
-        : i.resimUrller.length >= 3 ? 3.0
-        : i.resimUrller.isNotEmpty ? 1.0 : 0.0;
-    return i.favoriSayisi * 3 +
-        i.goruntulenmeSayisi * 1 +
-        i.kullaniciPuan * 5 +
-        tazelik +
-        resimPuan;
+    final skorlar = {for (final i in ilanlar) i.id: oneriSkoru(i)};
+    final sirali = [...ilanlar]
+      ..sort((a, b) => skorlar[b.id]!.compareTo(skorlar[a.id]!));
+    return sirali.take(limit).toList();
   }
 
   Future<IlanSayfasi> tasiyiciIlanlariniGetir({
@@ -422,52 +402,75 @@ class IlanRepository {
     final ts = DateTime.now().millisecondsSinceEpoch;
     final List<String> yeniUrller = [];
     String? yeniThumbUrl;
+    final List<Reference> yuklenenRefler = [];
+    Reference? thumbRef;
 
-    if (yeniResimler.isNotEmpty) {
-      // Paralel sıkıştır + yükle
-      final sikistirilmisler = await Future.wait(
-        List.generate(yeniResimler.length, (i) => _resimSikistir(yeniResimler[i], i)),
-      );
-      final refs = List.generate(
-        yeniResimler.length,
-        (i) => storage
-            .ref()
-            .child(StoragePaths.ilanResimleri)
-            .child('${user.uid}_${ts}_d$i.jpg'),
-      );
-      final progresses = List<double>.filled(yeniResimler.length, 0.0);
-      await Future.wait(List.generate(yeniResimler.length, (i) async {
-        onProgress?.call(i, 0.0);
-        final task = refs[i].putFile(sikistirilmisler[i]);
-        task.snapshotEvents.listen((snap) {
-          progresses[i] = snap.bytesTransferred / snap.totalBytes;
-          onProgress?.call(
-              i, progresses.reduce((a, b) => a + b) / progresses.length);
-        });
-        await task;
-      }));
-      yeniUrller.addAll(await Future.wait(refs.map((r) => r.getDownloadURL())));
+    try {
+      if (yeniResimler.isNotEmpty) {
+        // Paralel sıkıştır + yükle
+        final sikistirilmisler = await Future.wait(
+          List.generate(yeniResimler.length, (i) => _resimSikistir(yeniResimler[i], i)),
+        );
+        final refs = List.generate(
+          yeniResimler.length,
+          (i) => storage
+              .ref()
+              .child(StoragePaths.ilanResimleri)
+              .child('${user.uid}_${ts}_d$i.jpg'),
+        );
+        final progresses = List<double>.filled(yeniResimler.length, 0.0);
+        await Future.wait(List.generate(yeniResimler.length, (i) async {
+          onProgress?.call(i, 0.0);
+          final task = refs[i].putFile(sikistirilmisler[i]);
+          task.snapshotEvents.listen((snap) {
+            progresses[i] = snap.bytesTransferred / snap.totalBytes;
+            onProgress?.call(
+                i, progresses.reduce((a, b) => a + b) / progresses.length);
+          });
+          await task;
+          yuklenenRefler.add(refs[i]);
+        }));
+        yeniUrller.addAll(await Future.wait(refs.map((r) => r.getDownloadURL())));
 
-      // İlk resim yeni (yerel) bir dosyaysa thumbnail üret
-      if (mevcutResimler.isEmpty) {
-        final thumb = await _thumbnailOlustur(yeniResimler.first);
-        final thumbRef = storage
-            .ref()
-            .child(StoragePaths.ilanThumbnailleri)
-            .child('${user.uid}_${ts}_thumb.jpg');
-        await thumbRef.putFile(thumb);
-        yeniThumbUrl = await thumbRef.getDownloadURL();
+        // İlk resim yeni (yerel) bir dosyaysa thumbnail üret
+        if (mevcutResimler.isEmpty) {
+          final thumb = await _thumbnailOlustur(yeniResimler.first);
+          thumbRef = storage
+              .ref()
+              .child(StoragePaths.ilanThumbnailleri)
+              .child('${user.uid}_${ts}_thumb.jpg');
+          await thumbRef.putFile(thumb);
+          yeniThumbUrl = await thumbRef.getDownloadURL();
+        }
       }
-    }
 
-    final tumResimler = [...mevcutResimler, ...yeniUrller];
-    if (tumResimler.isNotEmpty) {
-      data['resimUrl'] = tumResimler.first;
-      data['resimUrller'] = tumResimler;
-      if (yeniThumbUrl != null) data['resimThumbUrl'] = yeniThumbUrl;
-    }
+      final tumResimler = [...mevcutResimler, ...yeniUrller];
+      if (tumResimler.isNotEmpty) {
+        data['resimUrl'] = tumResimler.first;
+        data['resimUrller'] = tumResimler;
+        if (yeniThumbUrl != null) data['resimThumbUrl'] = yeniThumbUrl;
+      }
 
-    await _col.doc(ilanId).update(data);
+      await _col.doc(ilanId).update(data);
+    } catch (e) {
+      // Yüklenmiş ama işlem tamamlanmamış YENİ dosyaları temizle
+      // (mevcut eski resimlere dokunulmaz)
+      for (final ref in yuklenenRefler) {
+        try {
+          await ref.delete();
+        } catch (de, ds) {
+          AppHataYonetici.logla(de, ds, etiket: 'ilanGuncelle.resimTemizlik');
+        }
+      }
+      if (thumbRef != null) {
+        try {
+          await thumbRef.delete();
+        } catch (de, ds) {
+          AppHataYonetici.logla(de, ds, etiket: 'ilanGuncelle.thumbTemizlik');
+        }
+      }
+      rethrow;
+    }
   }
 
   Future<void> ilanSil(String ilanId) async {

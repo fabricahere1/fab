@@ -41,7 +41,6 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
   final _yasadigiUlkeCtrl   = TextEditingController();
   final _bulunduguSehirCtrl = TextEditingController();
 
-  bool _telefonGizli = false;
   bool _yukleniyor   = false;
   bool _veriYuklendi = false;
 
@@ -84,7 +83,6 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
       _hakkindaCtrl.text       = profil.hakkinda;
       _yasadigiUlkeCtrl.text   = profil.yasadigiUlke;
       _bulunduguSehirCtrl.text = profil.bulunduguSehir;
-      _telefonGizli            = profil.telefonGizli;
       _ilgiKategorileri.addAll(profil.ilgiKategorileri);
       _kadinUstBeden.addAll(profil.kadinUstBeden);
       _kadinAltBeden.addAll(profil.kadinAltBeden);
@@ -144,7 +142,6 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
           'hakkinda':         _hakkindaCtrl.text.trim(),
           'yasadigiUlke':     _yasadigiUlkeCtrl.text.trim(),
           'bulunduguSehir':   _bulunduguSehirCtrl.text.trim(),
-          'telefonGizli':     _telefonGizli,
           'ilgiKategorileri': _ilgiKategorileri,
           'kadinUstBeden':    _kadinUstBeden,
           'kadinAltBeden':    _kadinAltBeden,
@@ -177,8 +174,7 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
         _hakkindaCtrl.text       = profil.hakkinda;
         _yasadigiUlkeCtrl.text   = profil.yasadigiUlke;
         _bulunduguSehirCtrl.text = profil.bulunduguSehir;
-        _telefonGizli            = profil.telefonGizli;
-        _ilgiKategorileri.addAll(profil.ilgiKategorileri);
+          _ilgiKategorileri.addAll(profil.ilgiKategorileri);
         _kadinUstBeden.addAll(profil.kadinUstBeden);
         _kadinAltBeden.addAll(profil.kadinAltBeden);
         _erkekUstBeden.addAll(profil.erkekUstBeden);
@@ -253,31 +249,10 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
                     _Etiket('Telefon'),
                     const SizedBox(height: 8),
                     _Alan(controller: _telefonCtrl, hint: '05XX XXX XX XX', icon: Icons.phone_outlined, klavye: TextInputType.phone),
-                    const SizedBox(height: 12),
-                    GestureDetector(
-                      onTap: () => setState(() => _telefonGizli = !_telefonGizli),
-                      child: Row(children: [
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 150),
-                          width: 44, height: 24,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            color: _telefonGizli ? AppColors.primary : AppColors.divider,
-                          ),
-                          child: AnimatedAlign(
-                            duration: const Duration(milliseconds: 150),
-                            alignment: _telefonGizli ? Alignment.centerRight : Alignment.centerLeft,
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 3),
-                              width: 18, height: 18,
-                              decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Text('Telefon numaramı gizle',
-                            style: GoogleFonts.dmSans(fontSize: 13, color: AppColors.textSecondary)),
-                      ]),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Numaranın görünürlüğünü Ayarlar > Numarayı Gizle\'den yönetebilirsin.',
+                      style: GoogleFonts.dmSans(fontSize: 12, color: AppColors.textHint),
                     ),
                   ],
                 ),

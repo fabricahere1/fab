@@ -10,6 +10,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:iste_v3/features/ilanlar/domain/ilan_model.dart';
 import 'package:iste_v3/features/ilanlar/providers/ilan_provider.dart';
+import 'package:iste_v3/shared/utils/oneri_skoru.dart';
 
 part 'kesfet_vitrin_providers.g.dart';
 
@@ -142,48 +143,13 @@ List<IlanModel> kesfetHeroBanner(Ref ref) {
   return [...liste, ...ek].take(15).toList();
 }
 
-// ── 7) Önerilen ilanlar — favori/görüntülenme/güven/tazelik/resim ağırlıklı ──
-//
-// Cloud Functions'taki onerilenPuanHesapla ile aynı formül, client-side
-// (model'e ekstra alan eklemeden) hesaplanır: favori×3 + görüntülenme×1 +
-// kullanıcıPuan×5 + tazelik(24s=10/3g=6/7g=3/30g=1) + resim sayısı puanı.
-// 30 ilan döner; ekrana 2 satır (15+15) olarak bölünür.
-
-double _onerilenPuanHesapla(IlanModel i) {
-  final simdi  = DateTime.now();
-  final gunFark = i.olusturmaTarihi == null
-      ? 999.0
-      : simdi.difference(i.olusturmaTarihi!).inHours / 24.0;
-  double tazelik = 0;
-  if (gunFark < 1) {
-    tazelik = 10;
-  } else if (gunFark < 3) {
-    tazelik = 6;
-  } else if (gunFark < 7) {
-    tazelik = 3;
-  } else if (gunFark < 30) {
-    tazelik = 1;
-  }
-  final resimSayisi = i.resimUrller.length;
-  double resimPuan = 0;
-  if (resimSayisi >= 5) {
-    resimPuan = 5;
-  } else if (resimSayisi >= 3) {
-    resimPuan = 3;
-  } else if (resimSayisi >= 1) {
-    resimPuan = 1;
-  }
-  return i.favoriSayisi * 3 +
-      i.goruntulenmeSayisi * 1 +
-      i.kullaniciPuan * 5 +
-      tazelik +
-      resimPuan;
-}
+// ── 7) Önerilen ilanlar ───────────────────────────────────────────────────────
+// Sıralama: shared/utils/oneri_skoru.dart — TEK formül, yerel kopya yasak.
 
 @riverpod
 List<IlanModel> kesfetOnerilenIlanlar(Ref ref) {
-  final liste = _tumIlanlar(ref).toList()
-    ..sort((a, b) => _onerilenPuanHesapla(b).compareTo(_onerilenPuanHesapla(a)));
+  final liste = _tumIlanlar(ref).toList();
+  oneriSkoruylasirala(liste);
   return liste.take(30).toList();
 }
 

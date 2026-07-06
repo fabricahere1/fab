@@ -303,7 +303,6 @@ class _YildizRozetiPainter extends CustomPainter {
   static const int _kenarSayisi = 12;
   static const double _disYaricapOrani = 0.48;
   static const double _icYaricapOrani = 0.41;
-  static const Color _renk = Color(0xFFF2912E);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -340,7 +339,69 @@ class _YildizRozetiPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 3.3,
     );
-    canvas.drawPath(yol, Paint()..color = _renk);
+    // ── Gradient dolgu (Varyant A — "ışık üstten") ──────────────────────────
+    final rect = Rect.fromCircle(center: Offset(cx, cy), radius: disYaricap);
+    final gradient = const LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [Color(0xFFFFB35C), Color(0xFFF2912E), Color(0xFFD97A1F)],
+      stops: [0.0, 0.55, 1.0],
+    );
+    // Varyant B (turuncunun çok koyusuna akış — yorumu kaldırıp A'yı
+    // yorumlayarak dene):
+    // final gradient = const LinearGradient(
+    //   begin: Alignment.topCenter,
+    //   end: Alignment.bottomCenter,
+    //   colors: [Color(0xFFF2912E), Color(0xFF4A2C0E)],
+    //   stops: [0.6, 1.0],
+    // );
+    canvas.drawPath(yol, Paint()..shader = gradient.createShader(rect));
+
+    // ── Parlaklık vurgusu — AKTİF: Varyant C (kavisli parlak bant) ────────────
+    // Varyant A — yumuşak geçiş (en güvenli, en az iddialı):
+    // canvas.drawPath(
+    //   yol,
+    //   Paint()
+    //     ..shader = LinearGradient(
+    //       begin: Alignment.topCenter,
+    //       end: Alignment.center,
+    //       colors: [
+    //         Colors.white.withValues(alpha: 0.35),
+    //         Colors.white.withValues(alpha: 0.0),
+    //       ],
+    //     ).createShader(rect),
+    // );
+
+    // Varyant B — keskin kenarlı naylon (stops 0.44→0.45 = sıfır geçiş):
+    // canvas.drawPath(
+    //   yol,
+    //   Paint()
+    //     ..shader = LinearGradient(
+    //       begin: Alignment.topCenter,
+    //       end: Alignment.bottomCenter,
+    //       colors: [
+    //         Colors.white.withValues(alpha: 0.40),
+    //         Colors.white.withValues(alpha: 0.22),
+    //         Colors.white.withValues(alpha: 0.0),
+    //         Colors.white.withValues(alpha: 0.0),
+    //       ],
+    //       stops: [0.0, 0.44, 0.45, 1.0],
+    //     ).createShader(rect),
+    // );
+
+    // Varyant C — kavisli parlak bant (Path.combine intersect, alt kenar kavisli):
+    final oval = Path()
+      ..addOval(Rect.fromCenter(
+        center: Offset(cx, cy - disYaricap * 0.9),
+        width: disYaricap * 3.2,
+        height: disYaricap * 2.4,
+      ));
+    final parlakBolge = Path.combine(PathOperation.intersect, yol, oval);
+    canvas.drawPath(
+      parlakBolge,
+      Paint()..color = Colors.white.withValues(alpha: 0.30),
+    );
+
     // Sticker efekti — yıldızın etrafında ince beyaz çerçeve
     canvas.drawPath(
       yol,

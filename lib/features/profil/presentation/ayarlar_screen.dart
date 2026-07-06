@@ -155,7 +155,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 trailing: Switch(
                   value: benimProfilAsync.value?.telefonGizli ?? false,
                   onChanged: (val) => _telefonGizliDegistir(val),
-                  activeColor: AppColors.primary,
+                  activeThumbColor: AppColors.primary,
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 onTap: () => _telefonGizliDegistir(

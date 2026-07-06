@@ -100,6 +100,9 @@ class KullaniciRepository {
     );
   }
  
+  // KULLANILMIYOR — profil fotoğrafı yükleme bilinçli kapalı (ürün kararı).
+  // Açılırsa: Vision moderasyonu + dosya adını '${uid}_...' desenine getir
+  // + storage.rules'a profil_fotograflari klasör kuralı ekle.
   Future<String> profilFotoYukle({
     required String uid,
     required File foto,

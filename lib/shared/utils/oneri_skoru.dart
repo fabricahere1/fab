@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import '../../features/ilanlar/domain/ilan_model.dart';
 
+/// Bu formülün client'taki TEK kopyası budur — başka dosyada yerel kopya YASAK.
 /// Adil öneri skoru — [0, 1] aralığında (float, ince sıralama için).
 ///
 /// Bileşenler:

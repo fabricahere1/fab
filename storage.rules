@@ -1,0 +1,43 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function girisli() { return request.auth != null; }
+
+    // Sahiplik kilidi: dosya adı uid ile başlar, uid'i _ ile ayırır.
+    // split()[0] niyeti açık ifade eder; regex'e kıyasla kırılgan değil.
+    function benimDosyam(dosyaAdi) {
+      return dosyaAdi.split('_')[0] == request.auth.uid;
+    }
+
+    // contentType client beyanına dayanır — gerçek bayt doğrulaması yok.
+    // Vision moderasyonu (CF) ikinci hat olarak bu riski kapıyor.
+    function gecerliResim() {
+      return request.resource.contentType.matches('image/.*')
+          && request.resource.size < 5 * 1024 * 1024; // 5 MB emniyet tavanı
+    }
+
+    match /ilan_resimleri/{dosya} {
+      allow read: if true;
+      allow create, update: if girisli() && benimDosyam(dosya) && gecerliResim();
+      allow delete: if girisli() && benimDosyam(dosya);
+    }
+
+    match /ilan_thumbnailleri/{dosya} {
+      allow read: if true;
+      allow create, update: if girisli() && benimDosyam(dosya) && gecerliResim();
+      allow delete: if girisli() && benimDosyam(dosya);
+    }
+
+    match /mesaj_resimleri/{dosya} {
+      allow read: if girisli(); // sohbet görselleri halka açık değil
+      allow create: if girisli() && benimDosyam(dosya) && gecerliResim();
+      allow delete: if girisli() && benimDosyam(dosya);
+    }
+
+    // profil_fotograflari BİLEREK TANIMSIZ — akış kapalı (ürün kararı),
+    // canlıda klasör hiç doğmamış. Açılırsa: Vision moderasyonu +
+    // dosya adı desenini uid_ formatına getir + buraya kural ekle.
+    // Eşleşmeyen tüm diğer yollar: varsayılan RED.
+  }
+}
