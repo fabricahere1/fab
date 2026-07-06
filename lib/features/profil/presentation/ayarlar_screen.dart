@@ -17,6 +17,7 @@ import '../../../router/app_router.dart' show AppRoutes, navigatorKey;
 import 'sss_screen.dart';
 import 'kullanim_kosullari_screen.dart';
 import 'gizlilik_politikasi_screen.dart';
+import 'widgets/iletisim_form_sheet.dart';
 
 class AyarlarScreen extends ConsumerStatefulWidget {
   const AyarlarScreen({super.key});
@@ -134,12 +135,6 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
               ),
               _Ayrac(),
               _SatirOge(
-                icon: Icons.lock_outline,
-                label: 'Şifre Değiştir',
-                onTap: () => _sifreDegistirDialog(user?.email),
-              ),
-              _Ayrac(),
-              _SatirOge(
                 icon: Icons.phone_outlined,
                 label: 'Telefon Numarası',
                 trailing: Text(
@@ -151,6 +146,20 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 ),
                 onTap: () => _telefonGuncelleDialog(
                     benimProfilAsync.value?.telefon ?? ''),
+              ),
+              _Ayrac(),
+              _SatirOge(
+                icon: Icons.visibility_off_outlined,
+                label: 'Numarayı Gizle',
+                showArrow: false,
+                trailing: Switch(
+                  value: benimProfilAsync.value?.telefonGizli ?? false,
+                  onChanged: (val) => _telefonGizliDegistir(val),
+                  activeColor: AppColors.primary,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                onTap: () => _telefonGizliDegistir(
+                    !(benimProfilAsync.value?.telefonGizli ?? false)),
               ),
             ],
           ),
@@ -281,9 +290,14 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           _Kart(
             children: [
               _SatirOge(
-                icon: Icons.mail_outline,
-                label: 'Bize Ulaşın',
-                onTap: () => _iletisimDialog(),
+                icon: Icons.support_agent_outlined,
+                label: 'Destek',
+                onTap: () => iletisimFormAc(
+                  context: context,
+                  kaynak: 'destek',
+                  onGonderildi: () =>
+                      AppSnackBar.basari(context, 'Mesajınız iletildi, teşekkürler!'),
+                ),
               ),
               _Ayrac(),
               _SatirOge(
@@ -355,63 +369,22 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     );
   }
 
-  Future<void> _sifreDegistirDialog(String? email) async {
-    await showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Şifre Sıfırla',
-            style: GoogleFonts.manrope(
-                fontSize: 16, fontWeight: FontWeight.w600)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'E-posta adresinize şifre sıfırlama bağlantısı göndereceğiz.',
-              style: GoogleFonts.manrope(
-                  fontSize: 13, color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 12),
-            Text(email ?? '',
-                style: GoogleFonts.manrope(
-                    fontSize: 14, fontWeight: FontWeight.w600)),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('İptal',
-                style: GoogleFonts.manrope(color: AppColors.textSecondary)),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              if (email != null) {
-                await ref.read(authProvider.notifier).sifreSifirla(email);
-                if (mounted) {
-                  AppSnackBar.basari(
-                      context, 'Şifre sıfırlama e-postası gönderildi.');
-                }
-              }
-            },
-            child: Text('Gönder',
-                style: GoogleFonts.manrope(
-                    color: AppColors.red, fontWeight: FontWeight.w600)),
-          ),
-        ],
-      ),
+  Future<void> _telefonGizliDegistir(bool yeniDeger) async {
+    final uid = ref.read(currentUserProvider)?.uid;
+    if (uid == null) return;
+    await ref.read(profilDuzenleProvider.notifier).profilGuncelle(
+      uid: uid,
+      data: {'telefonGizli': yeniDeger},
     );
+    ref.invalidate(benimKullaniciProfilProvider);
   }
 
   Future<void> _telefonGuncelleDialog(String mevcutTelefon) async {
     final ctrl = TextEditingController(text: mevcutTelefon);
-    bool gizli =
-        ref.read(benimKullaniciProfilProvider).value?.telefonGizli ?? false;
 
     await showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setS) => AlertDialog(
+      builder: (ctx) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text('Telefon Numarası',
               style: GoogleFonts.manrope(
@@ -448,40 +421,6 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                       horizontal: 12, vertical: 12),
                 ),
               ),
-              const SizedBox(height: 12),
-              GestureDetector(
-                onTap: () => setS(() => gizli = !gizli),
-                child: Row(
-                  children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      width: 44, height: 24,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        color: gizli ? AppColors.primary : AppColors.divider,
-                      ),
-                      child: AnimatedAlign(
-                        duration: const Duration(milliseconds: 150),
-                        alignment: gizli
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 3),
-                          width: 18, height: 18,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Text('Telefon numaramı gizle',
-                        style: GoogleFonts.manrope(
-                            fontSize: 13, color: AppColors.textSecondary)),
-                  ],
-                ),
-              ),
             ],
           ),
           actions: [
@@ -497,11 +436,9 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 if (uid == null) return;
                 await ref.read(profilDuzenleProvider.notifier).profilGuncelle(
                   uid: uid,
-                  data: {
-                    'telefon': ctrl.text.trim(),
-                    'telefonGizli': gizli,
-                  },
+                  data: {'telefon': ctrl.text.trim()},
                 );
+                ref.invalidate(benimKullaniciProfilProvider);
                 if (mounted) {
                   AppSnackBar.basari(context, 'Telefon numarası güncellendi.');
                 }
@@ -512,7 +449,6 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
             ),
           ],
         ),
-      ),
     );
     ctrl.dispose();
   }
@@ -527,17 +463,6 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     );
   }
 
-  Future<void> _iletisimDialog() async {
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _BizeUlasinSheet(
-        onGonderildi: () =>
-            AppSnackBar.basari(context, 'Mesajınız iletildi, teşekkürler!'),
-      ),
-    );
-  }
 
   Future<void> _hesapSilDialog() async {
     final user = ref.read(currentUserProvider);
@@ -1156,227 +1081,3 @@ class _SwitchSatir extends StatelessWidget {
   }
 }
 
-// ── Bize Ulaşın Bottom Sheet ──────────────────────────────
-
-class _BizeUlasinSheet extends ConsumerStatefulWidget {
-  final VoidCallback onGonderildi;
-  const _BizeUlasinSheet({required this.onGonderildi});
-
-  @override
-  ConsumerState<_BizeUlasinSheet> createState() => _BizeUlasinSheetState();
-}
-
-class _BizeUlasinSheetState extends ConsumerState<_BizeUlasinSheet> {
-  static const _kategoriler = [
-    (ikon: Icons.bug_report_outlined,  etiket: 'Teknik sorun bildirimi',   hint: 'Lütfen yaşadığınız problemi kısaca açıklayın.'),
-    (ikon: Icons.flag_outlined,        etiket: 'Kullanıcı şikayeti',       hint: 'Lütfen ne olduğunu yazın.'),
-    (ikon: Icons.lightbulb_outline,    etiket: 'Öneri veya geri bildirim', hint: 'Önerilerinizi sabırsızlıkla bekliyoruz :)'),
-    (ikon: Icons.help_outline_rounded, etiket: 'Hesap ile ilgili sorun',   hint: 'Sorununuzu dinliyoruz.'),
-    (ikon: Icons.gavel_outlined,       etiket: 'Kural ihlali bildirimi',   hint: 'Sizi dinliyoruz.'),
-    (ikon: Icons.more_horiz_rounded,   etiket: 'Diğer',                    hint: 'Diğer her şey için de buradayız.'),
-  ];
-
-  String? _secilenKategori;
-  final _mesajCtrl = TextEditingController();
-  bool _gonderiyor = false;
-
-  @override
-  void dispose() {
-    _mesajCtrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _gonder() async {
-    if (_mesajCtrl.text.trim().isEmpty || _gonderiyor) return;
-    setState(() => _gonderiyor = true);
-
-    try {
-      final user = ref.read(currentUserProvider);
-      await FirebaseFunctions.instanceFor(region: 'europe-west1')
-          .httpsCallable('iletisimGonder')
-          .call({
-        'konu': _secilenKategori ?? 'Diğer',
-        'mesaj': _mesajCtrl.text.trim(),
-        'gonderenAd': user?.displayName ?? 'Bilinmiyor',
-        'gonderenEmail': user?.email ?? '',
-      });
-
-      if (mounted) {
-        Navigator.pop(context);
-        widget.onGonderildi();
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _gonderiyor = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Gönderilemedi, tekrar dene.',
-              style: GoogleFonts.manrope()),
-          behavior: SnackBarBehavior.floating,
-        ));
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).viewInsets.bottom;
-
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: EdgeInsets.fromLTRB(24, 0, 24, 24 + bottom),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 12),
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.divider,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Bize Ulaşın',
-              style: GoogleFonts.manrope(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Kategori kartları
-            if (_secilenKategori == null) ...[
-              ...List.generate(_kategoriler.length, (i) {
-                final k = _kategoriler[i];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: InkWell(
-                    onTap: () => setState(() => _secilenKategori = k.etiket),
-                    borderRadius: BorderRadius.circular(14),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.divider),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(k.ikon, size: 22, color: AppColors.textSecondary),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Text(
-                              k.etiket,
-                              style: GoogleFonts.manrope(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                          const Icon(Icons.chevron_right_rounded,
-                              size: 20, color: AppColors.textSecondary),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ] else ...[
-              GestureDetector(
-                onTap: () => setState(() {
-                  _secilenKategori = null;
-                  _mesajCtrl.clear();
-                }),
-                child: Row(
-                  children: [
-                    const Icon(Icons.arrow_back_ios_new_rounded,
-                        size: 14, color: AppColors.textSecondary),
-                    const SizedBox(width: 6),
-                    Text(
-                      _secilenKategori!,
-                      style: GoogleFonts.manrope(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _mesajCtrl,
-                maxLines: 6,
-                autofocus: true,
-                style: GoogleFonts.manrope(fontSize: 14),
-                decoration: InputDecoration(
-                  hintText: _kategoriler
-                      .firstWhere((k) => k.etiket == _secilenKategori,
-                          orElse: () => _kategoriler.last)
-                      .hint,
-                  hintStyle: GoogleFonts.manrope(
-                      color: AppColors.textHint, fontSize: 13),
-                  filled: true,
-                  fillColor: AppColors.surface,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.divider),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.divider),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                        color: AppColors.textSecondary, width: 1.5),
-                  ),
-                  contentPadding: const EdgeInsets.all(14),
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _gonderiyor ? null : _gonder,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.textPrimary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    elevation: 0,
-                  ),
-                  child: _gonderiyor
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2),
-                        )
-                      : Text(
-                          'Gönder',
-                          style: GoogleFonts.manrope(
-                              fontSize: 15, fontWeight: FontWeight.w600),
-                        ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}

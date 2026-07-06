@@ -19,6 +19,7 @@ import '../../../shared/constants/app_constants.dart' as app_constants;
 import '../../../features/home/providers/son_goruntulenenler_provider.dart';
 import '../../../core/cache/app_cache_manager.dart';
 import '../../../shared/widgets/login_gerektiren_aksiyon.dart';
+import '../../../shared/utils/app_hata_yonetici.dart';
 
 class IlanDetayScreen extends ConsumerStatefulWidget {
   final String ilanId;
@@ -1000,7 +1001,7 @@ class _IlanSahibiKarti extends ConsumerWidget {
               height: 56,
               child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
             ),
-            error: (_, _) => const SizedBox.shrink(),
+            error: (e, s) { AppHataYonetici.logla(e, s, etiket: 'ilanDetay.saticiProfil'); return const SizedBox.shrink(); },
             data: (profil) {
               final puan = profil?.ortalamaPuan ?? 0.0;
               final sayi = profil?.degerlendirmeSayisi ?? 0;

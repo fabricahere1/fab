@@ -6,6 +6,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/services/fcm_service.dart';
 import '../../../shared/constants/app_constants.dart';
+import '../../../shared/utils/app_hata_yonetici.dart';
 
 part 'auth_repository.g.dart';
 
@@ -68,16 +69,6 @@ class AuthRepository {
       });
     }
     return credential;
-  }
-
-  Future<void> sifreSifirlamaGonder(String email) async {
-    try {
-      await auth.sendPasswordResetEmail(email: email.trim());
-    } on FirebaseAuthException {
-      rethrow;
-    } catch (e) {
-      throw FirebaseAuthException(code: 'unknown', message: 'Şifre sıfırlama e-postası gönderilemedi.');
-    }
   }
 
   Future<UserCredential> googleIleGiris() async {
@@ -184,7 +175,7 @@ class AuthRepository {
 
   Future<void> cikisYap() async {
     await FcmService.instance.oturumKapanisTemizligi();
-    try { await _googleSignIn.signOut(); } catch (_) {}
+    try { await _googleSignIn.signOut(); } catch (e, s) { AppHataYonetici.logla(e, s, etiket: 'cikis.googleSignOut'); /* bilinçli sessiz: kullanıcıya gösterilmez, sadece iz */ }
     await auth.signOut();
   }
 

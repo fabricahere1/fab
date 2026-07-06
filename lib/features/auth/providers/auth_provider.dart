@@ -88,21 +88,6 @@ class AuthNotifier extends _$AuthNotifier {
     }
   }
 
-  Future<AuthSonuc> sifreSifirla(String email) async {
-    state = const AsyncLoading();
-    try {
-      await _repo.sifreSifirlamaGonder(email);
-      if (ref.mounted) state = const AsyncData(null);
-      return AuthSonuc.basarili('');
-    } on FirebaseAuthException catch (e) {
-      if (ref.mounted) state = const AsyncData(null);
-      return AuthSonuc.hata(AuthRepository.hataMesaji(e.code));
-    } catch (e) {
-      if (ref.mounted) state = const AsyncData(null);
-      return AuthSonuc.hata('Şifre sıfırlama başarısız.');
-    }
-  }
-
   Future<void> telefonKoduGonder({
     required String telefon,
     required void Function(String) onKodGonderildi,

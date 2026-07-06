@@ -101,7 +101,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
       if (!mounted || ilan == null) return;
       final url = ilan.resimThumbUrl.isNotEmpty ? ilan.resimThumbUrl : ilan.resimUrl;
       if (url.isNotEmpty) setState(() => _ilanResimUrl = url);
-    } catch (_) {}
+    } catch (e, s) { AppHataYonetici.logla(e, s, etiket: 'sohbetScreen.ilanResimUrl'); /* bilinçli sessiz: resim olmadan sohbet açılmaya devam eder */ }
   }
 
   Future<void> _iletisimBasladiIsaretle() async {

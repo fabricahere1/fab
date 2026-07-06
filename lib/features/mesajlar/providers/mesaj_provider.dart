@@ -196,7 +196,7 @@ class SohbetNotifier extends _$SohbetNotifier {
   Future<void> _okunduIsaretle() async {
     try {
       await _repo.okunduIsaretle(sohbetId: _sohbetId, kullaniciId: _benimId);
-    } catch (_) {}
+    } catch (e, s) { AppHataYonetici.logla(e, s, etiket: 'mesajProvider.okunduIsaretle'); /* bilinçli sessiz: okundu işareti başarısız olsa da mesajlaşma devam eder */ }
     if (!ref.mounted) return;
   }
 

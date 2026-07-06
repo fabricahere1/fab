@@ -23,6 +23,9 @@ import '../../../shared/widgets/avatar_widget.dart';
 import '../../../router/app_router.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/rendering.dart';
+import '../../../shared/utils/app_hata_yonetici.dart';
+import 'widgets/iletisim_form_sheet.dart';
+import '../../../shared/utils/app_snackbar.dart';
 
 class ProfilScreen extends ConsumerStatefulWidget {
   const ProfilScreen({super.key});
@@ -228,10 +231,13 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                         style: ProfilStilleri.isim,
                       ),
                       const SizedBox(height: 2),
-                      Text(user.email ?? '', style: ProfilStilleri.altBilgi),
+                      if ((user.email ?? '').isNotEmpty)
+                        Text(user.email!, style: ProfilStilleri.altBilgi),
                       const SizedBox(height: 8),
                       benimProfilAsync.when(
                         data: (profil) {
+                          final telefon = profil?.telefon ?? '';
+                          final telefonGizli = profil?.telefonGizli ?? false;
                           final sehir = (profil?.bulunduguSehir.isNotEmpty ?? false)
                               ? profil!.bulunduguSehir
                               : (profil?.yasadigiUlke ?? '');
@@ -240,6 +246,20 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              if (telefon.isNotEmpty) ...[
+                                Row(children: [
+                                  const Icon(Icons.phone_outlined, size: 13, color: AppColors.textSecondary),
+                                  const SizedBox(width: 3),
+                                  Text(telefon, style: ProfilStilleri.detaySatiri),
+                                  if (telefonGizli) ...[
+                                    const SizedBox(width: 4),
+                                    const Icon(Icons.visibility_off_outlined, size: 12, color: AppColors.textHint),
+                                    const SizedBox(width: 2),
+                                    Text('Gizli', style: ProfilStilleri.detaySatiriHint),
+                                  ],
+                                ]),
+                                const SizedBox(height: 2),
+                              ],
                               if (sehir.isNotEmpty)
                                 Row(children: [
                                   const Icon(Icons.location_on_outlined, size: 13, color: AppColors.textSecondary),
@@ -279,7 +299,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                           );
                         },
                         loading: () => const SizedBox.shrink(),
-                        error: (_, _) => const SizedBox.shrink(),
+                        error: (e, s) { AppHataYonetici.logla(e, s, etiket: 'profilScreen.puanSatiri'); return const SizedBox.shrink(); },
                       ),
                     ],
                   ),
@@ -413,7 +433,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
               );
             },
             loading: () => const SizedBox.shrink(),
-            error: (_, _) => const SizedBox.shrink(),
+            error: (e, s) { AppHataYonetici.logla(e, s, etiket: 'profilScreen.sohbetGecmisi'); return const SizedBox.shrink(); },
           ),
 
           // ── Hesabım ───────────────────────────────────
@@ -483,7 +503,16 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AyarlarScreen())),
               ),
               _Ayrac(),
-              _SatirOge(icon: Icons.mail_outline, label: 'İletişim', onTap: () {}),
+              _SatirOge(
+                icon: Icons.mail_outline,
+                label: 'İletişim',
+                onTap: () => iletisimFormAc(
+                  context: context,
+                  kaynak: 'iletisim',
+                  onGonderildi: () =>
+                      AppSnackBar.basari(context, 'Mesajınız iletildi, teşekkürler!'),
+                ),
+              ),
               _Ayrac(),
               _SatirOge(
                 icon: Icons.privacy_tip_outlined,
@@ -908,7 +937,7 @@ class _BekleyenKarti extends ConsumerWidget {
 
     return sohbetAsync.when(
       loading: () => const SizedBox(height: 72),
-      error: (_, _) => const SizedBox.shrink(),
+      error: (e, s) { AppHataYonetici.logla(e, s, etiket: 'profilScreen.sohbetDurumu'); return const SizedBox.shrink(); },
       data: (sohbet) {
         if (sohbet.isEmpty) return const SizedBox.shrink();
         final kullanicilar = List<String>.from(sohbet['kullanicilar'] ?? []);

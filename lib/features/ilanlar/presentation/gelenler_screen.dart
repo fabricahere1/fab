@@ -19,6 +19,8 @@ import 'package:go_router/go_router.dart';
 import 'package:iste_v3/features/ilanlar/presentation/favoriler_screen.dart';
 import 'widgets/ilan_karti.dart';
 import 'widgets/gelenler_filtre_ekrani.dart';
+import '../../../shared/widgets/hata_durum_widget.dart';
+import '../../../shared/utils/app_hata_yonetici.dart';
 
 
 
@@ -32,6 +34,7 @@ class _GAlgoliaState {
   final bool dahaFazlaVar;
   final int mevcutSayfa;
   final Map<String, int> kategoriFacets;
+  final String? hata;
 
   const _GAlgoliaState({
     this.ilanlar        = const [],
@@ -39,6 +42,7 @@ class _GAlgoliaState {
     this.dahaFazlaVar   = true,
     this.mevcutSayfa    = 0,
     this.kategoriFacets = const {},
+    this.hata,
   });
 
   _GAlgoliaState copyWith({
@@ -47,12 +51,15 @@ class _GAlgoliaState {
     bool? dahaFazlaVar,
     int? mevcutSayfa,
     Map<String, int>? kategoriFacets,
+    String? hata,
+    bool temizleHata = false,
   }) => _GAlgoliaState(
     ilanlar:        ilanlar        ?? this.ilanlar,
     yukleniyor:     yukleniyor     ?? this.yukleniyor,
     dahaFazlaVar:   dahaFazlaVar   ?? this.dahaFazlaVar,
     mevcutSayfa:    mevcutSayfa    ?? this.mevcutSayfa,
     kategoriFacets: kategoriFacets ?? this.kategoriFacets,
+    hata:           temizleHata ? null : (hata ?? this.hata),
   );
 }
 
@@ -185,8 +192,12 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
               : _algoliaState.kategoriFacets,
         );
       });
-    } catch (_) {
-      setState(() => _algoliaState = _algoliaState.copyWith(yukleniyor: false));
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'gelenlerScreen.algoliaYukle');
+      setState(() => _algoliaState = _algoliaState.copyWith(
+        yukleniyor: false,
+        hata: _algoliaState.ilanlar.isEmpty ? 'İlanlar yüklenemedi.' : null,
+      ));
     }
   }
 
@@ -294,6 +305,14 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
           padding: EdgeInsets.all(40),
           child: CircularProgressIndicator(color: AppColors.red, strokeWidth: 2),
         )),
+      );
+    } else if (_algoliaState.hata != null && ilanlar.isEmpty) {
+      listeWidget = SliverFillRemaining(
+        hasScrollBody: false,
+        child: HataDurumWidget(
+          mesaj: _algoliaState.hata!,
+          onTekrarDene: () => _algoliaYukle(sifirla: true),
+        ),
       );
     } else if (ilanlar.isEmpty) {
       listeWidget = SliverToBoxAdapter(

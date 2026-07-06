@@ -12,6 +12,7 @@ import '../../../shared/widgets/avatar_widget.dart';
 import '../../degerlendirme/presentation/degerlendirmeler_liste_screen.dart';
 import '../../ilanlar/domain/ilan_model.dart';
 import '../../../router/app_router.dart';
+import '../../../shared/utils/app_hata_yonetici.dart';
 
 class KullaniciProfilPanel extends ConsumerStatefulWidget {
   final String kullaniciId;
@@ -99,7 +100,7 @@ class _KullaniciProfilPanelState extends ConsumerState<KullaniciProfilPanel>
                     Expanded(
                       child: profilAsync.when(
                         loading: () => const SizedBox(),
-                        error: (_, _) => const SizedBox(),
+                        error: (e, s) { AppHataYonetici.logla(e, s, etiket: 'profilPanel.ilanBilgi'); return const SizedBox(); },
                         data: (profil) => Text(
                           profil?.adSoyad ?? widget.kullaniciAd,
                           style: GoogleFonts.dmSans(

@@ -25,32 +25,31 @@ function getAlgoliaClient() {
 }
 
 // ── Önerilen Puan Hesaplama ───────────────────────────────────────────────────
-//
-// favoriSayisi × 3 + goruntulenmeSayisi × 1 + kullaniciPuan × 5
-// + tazelikPuani (son 24s=10, 3g=6, 7g=3, 30g=1)
-// + resimPuani  (5+=5, 3-4=3, 1-2=1, 0=0)
+// KAYNAK TANIM: lib/shared/utils/oneri_skoru.dart ile senkron tutulmalı —
+// birini değiştiren diğerini de değiştirir. Tazelik bileşeni SUNUCUDA YOK
+// — Algolia replica'nın ikincil kriteri (olusturmaTarihi desc) karşılıyor.
+// Bu iş bölümünün çalışması için dönüş KOVALANMIŞ TAMSAYI olmalı: float
+// skorda eşitlik neredeyse hiç oluşmaz ve ikincil kriter hiç konuşamaz.
+// kullaniciDegerlendirmeSayisi denormalize edilmedi — n=3 sabit (ayrı görev).
 
 function onerilenPuanHesapla(data: FirebaseFirestore.DocumentData): number {
-  const favori      = (data.favoriSayisi      ?? 0) as number;
+  const n = 3;
+  const puan        = (data.kullaniciPuan ?? 0) as number;
+  const duzeltilmis = (puan * n + 4.0 * 5) / (n + 5); // Bayesian
+
+  const favori      = (data.favoriSayisi       ?? 0) as number;
   const goruntuleme = (data.goruntulenmeSayisi ?? 0) as number;
-  const guven       = (data.kullaniciPuan      ?? 0) as number;
   const resimSayisi = ((data.resimUrller as string[] | undefined) ?? []).length;
 
-  const now     = Date.now();
-  const tarihMs = (data.olusturmaTarihi as admin.firestore.Timestamp | undefined)?.toMillis?.() ?? now;
-  const gunFark = (now - tarihMs) / (1000 * 60 * 60 * 24);
-  let tazelik   = 0;
-  if      (gunFark < 1)  tazelik = 10;
-  else if (gunFark < 3)  tazelik = 6;
-  else if (gunFark < 7)  tazelik = 3;
-  else if (gunFark < 30) tazelik = 1;
+  const favoriPay       = Math.min(Math.log(favori + 1)      / Math.log(50),  1.0);
+  const goruntulenmePay = Math.min(Math.log(goruntuleme + 1) / Math.log(500), 1.0);
+  const resimPay        = Math.min(resimSayisi / 5, 1.0);
+  // Resim = formüldeki tek "emek" sinyali; manipülasyona en kapalı bileşen.
+  const ilgi = 0.6 * favoriPay + 0.25 * goruntulenmePay + 0.15 * resimPay;
 
-  let resimPuan = 0;
-  if      (resimSayisi >= 5) resimPuan = 5;
-  else if (resimSayisi >= 3) resimPuan = 3;
-  else if (resimSayisi >= 1) resimPuan = 1;
-
-  return Math.round(favori * 3 + goruntuleme * 1 + guven * 5 + tazelik + resimPuan);
+  // 0-14 arası kova (×20): aynı kovadakiler arasında Algolia ikincil
+  // sırası (olusturmaTarihi desc) devreye girer.
+  return Math.round((0.5 * (duzeltilmis / 5) + 0.2 * ilgi) * 20);
 }
 
 // ── Yasaklı kelimeler ─────────────────────────────────────────────────────────

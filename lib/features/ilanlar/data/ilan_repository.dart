@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/ilan_model.dart';
 import '../../../shared/constants/app_constants.dart';
+import '../../../shared/utils/app_hata_yonetici.dart';
 
 part 'ilan_repository.g.dart';
 
@@ -124,7 +125,7 @@ class IlanRepository {
       if (cache.docs.isNotEmpty) {
         return cache.docs.map(IlanModel.fromFirestore).toList();
       }
-    } catch (_) {}
+    } catch (e, s) { AppHataYonetici.logla(e, s, etiket: 'ilanRepo.sonIlanlarCache'); /* bilinçli sessiz: sunucudan çekilmeye devam eder */ }
     final snap = await q.get(const GetOptions(source: Source.server));
     return snap.docs.map(IlanModel.fromFirestore).toList();
   }
@@ -145,7 +146,7 @@ class IlanRepository {
         final ilanlar = cache.docs.map(IlanModel.fromFirestore).toList();
         return _puanaGoreSirala(ilanlar, limit);
       }
-    } catch (_) {}
+    } catch (e, s) { AppHataYonetici.logla(e, s, etiket: 'ilanRepo.haftaninEnleriCache'); /* bilinçli sessiz: sunucudan çekilmeye devam eder */ }
     final snap = await q.get(const GetOptions(source: Source.server));
     final ilanlar = snap.docs.map(IlanModel.fromFirestore).toList();
     return _puanaGoreSirala(ilanlar, limit);

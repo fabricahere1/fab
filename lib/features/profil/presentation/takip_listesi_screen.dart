@@ -6,6 +6,7 @@ import '../providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/widgets/avatar_widget.dart';
 import 'kullanici_profil_screen.dart';
+import '../../../shared/utils/app_hata_yonetici.dart';
 
 enum TakipListeTipi { takipcilar, takipEdilenler }
 
@@ -200,7 +201,7 @@ class _KullaniciSatiri extends ConsumerWidget {
 
     return profilAsync.when(
       loading: () => const _SatirSkeleton(),
-      error: (_, _) => const SizedBox.shrink(),
+      error: (e, s) { AppHataYonetici.logla(e, s, etiket: 'takipListesi.kullaniciBilgi'); return const SizedBox.shrink(); },
       data: (profil) {
         if (profil == null) return const SizedBox.shrink();
         return _ProfilSatiri(profil: profil);
@@ -226,7 +227,7 @@ class _ProfilSatiri extends ConsumerWidget {
           borderRadius: BorderRadius.circular(20),
         ),
       ),
-      error: (_, _) => const SizedBox.shrink(),
+      error: (e, s) { AppHataYonetici.logla(e, s, etiket: 'takipListesi.takipDurumu'); return const SizedBox.shrink(); },
       data: (takipEdiyor) => GestureDetector(
         onTap: () {
           if (takipEdiyor) {

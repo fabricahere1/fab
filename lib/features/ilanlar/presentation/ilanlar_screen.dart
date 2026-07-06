@@ -24,6 +24,9 @@ import 'widgets/swipe_karti.dart';
 import 'dart:async';
 import 'package:iste_v3/features/ilanlar/presentation/favoriler_screen.dart';
 import 'ilan_detay_screen.dart';
+import '../../../shared/utils/app_hata_yonetici.dart';
+import '../../../shared/utils/oneri_skoru.dart';
+import '../../../shared/widgets/hata_durum_widget.dart';
 
 
 
@@ -35,6 +38,7 @@ class _AlgoliaState {
   final bool dahaFazlaVar;
   final int mevcutSayfa;
   final Map<String, int> kategoriFacets;
+  final String? hata;
 
   const _AlgoliaState({
     this.ilanlar        = const [],
@@ -42,6 +46,7 @@ class _AlgoliaState {
     this.dahaFazlaVar   = true,
     this.mevcutSayfa    = 0,
     this.kategoriFacets = const {},
+    this.hata,
   });
 
   _AlgoliaState copyWith({
@@ -50,12 +55,15 @@ class _AlgoliaState {
     bool? dahaFazlaVar,
     int? mevcutSayfa,
     Map<String, int>? kategoriFacets,
+    String? hata,
+    bool temizleHata = false,
   }) => _AlgoliaState(
     ilanlar:        ilanlar        ?? this.ilanlar,
     yukleniyor:     yukleniyor     ?? this.yukleniyor,
     dahaFazlaVar:   dahaFazlaVar   ?? this.dahaFazlaVar,
     mevcutSayfa:    mevcutSayfa    ?? this.mevcutSayfa,
     kategoriFacets: kategoriFacets ?? this.kategoriFacets,
+    hata:           temizleHata ? null : (hata ?? this.hata),
   );
 }
 
@@ -217,13 +225,7 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
       }
       // onerilen icin siralama
       if (_siralama == SiralamaTipi.onerilen) {
-        yeniIlanlar.sort((a, b) {
-          final aOnayliMi = a.kullaniciPuan >= 4.0;
-          final bOnayliMi = b.kullaniciPuan >= 4.0;
-          if (aOnayliMi && !bOnayliMi) return -1;
-          if (!aOnayliMi && bOnayliMi) return 1;
-          return b.kullaniciPuan.compareTo(a.kullaniciPuan);
-        });
+        oneriSkoruylasirala(yeniIlanlar);
       }
 
       final mevcutIdler = _algoliaState.ilanlar.map((i) => i.id).toSet();
@@ -240,9 +242,13 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
           kategoriFacets: sifirla ? sonuc.kategoriFacets : _algoliaState.kategoriFacets,
         );
       });
-    } catch (_) {
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'ilanlarScreen.algoliaYukle');
       setState(() {
-        _algoliaState = _algoliaState.copyWith(yukleniyor: false);
+        _algoliaState = _algoliaState.copyWith(
+          yukleniyor: false,
+          hata: _algoliaState.ilanlar.isEmpty ? 'İlanlar yüklenemedi.' : null,
+        );
       });
     }
   }
@@ -358,6 +364,14 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
     } else if (_algoliaState.yukleniyor && ilanlar.isEmpty) {
       ilanWidget = SliverToBoxAdapter(
           child: ShimmerGrid(kolonSayisi: mod.kolonSayisi));
+    } else if (_algoliaState.hata != null && ilanlar.isEmpty) {
+      ilanWidget = SliverFillRemaining(
+        hasScrollBody: false,
+        child: HataDurumWidget(
+          mesaj: _algoliaState.hata!,
+          onTekrarDene: () => _algoliaYukle(sifirla: true),
+        ),
+      );
     } else if (ilanlar.isEmpty) {
       ilanWidget = SliverFillRemaining(
         hasScrollBody: false,
@@ -944,7 +958,7 @@ class _Son24SaatBolumu extends ConsumerWidget {
 
     return async.when(
       loading: () => _Son24SaatSkeleton(),
-      error: (_, _) => const SizedBox.shrink(),
+      error: (e, s) { AppHataYonetici.logla(e, s, etiket: 'ilanlarScreen.haftaninEnleri'); return const SizedBox.shrink(); },
       data: (ilanlar) {
         if (ilanlar.isEmpty) return const SizedBox.shrink();
 

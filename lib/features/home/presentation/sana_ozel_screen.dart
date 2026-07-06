@@ -10,6 +10,7 @@ import 'package:iste_v3/features/profil/providers/profil_provider.dart';
 import 'package:iste_v3/features/profil/domain/kullanici_model.dart';
 import 'package:iste_v3/features/home/providers/sana_ozel_providers.dart';
 import 'package:iste_v3/features/ilanlar/providers/ilan_provider.dart';
+import 'package:iste_v3/shared/utils/app_hata_yonetici.dart';
 import 'package:iste_v3/shared/constants/app_colors.dart';
 import 'package:iste_v3/shared/utils/app_snackbar.dart';
 import 'package:iste_v3/router/app_router.dart';
@@ -51,7 +52,7 @@ class SanaOzelScreen extends ConsumerWidget {
 
     return profilAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => const SizedBox.shrink(),
+      error: (e, s) { AppHataYonetici.logla(e, s, etiket: 'sanaOzel.profil'); return const SizedBox.shrink(); },
       data: (profil) {
         if (profil == null) return const SizedBox.shrink();
         if (profil.kullaniciTipi == 'her_ikisi') {
