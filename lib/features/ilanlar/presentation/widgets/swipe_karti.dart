@@ -377,22 +377,26 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
                     ),
                   ),
 
-                // Ön kart
+                // Ön kart — TEK DEĞİŞİKLİK: ClipRRect(12) eklendi, arka
+                // kartla aynı yarıçap. Boyut/konum/rotasyon aynı kaldı.
                 Positioned.fill(
                   child: Transform(
                     alignment: Alignment.bottomCenter,
                     transform: Matrix4.identity()
                       ..translateByDouble(x, y * 0.3, 0, 1)
                       ..rotateZ(rotasyon),
-                    child: _OnKart(
-                      ilan:        mevcut,
-                      isFav:       isFav,
-                      gosterFavori: gosterFavori,
-                      idx:         _idx,
-                      toplam:      widget.ilanlar.length,
-                      suruklenmeX: x,
-                      favScale:    _favScale,
-                      onFav:       gosterFavori ? () => _favToggle(mevcut) : null,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: _OnKart(
+                        ilan:        mevcut,
+                        isFav:       isFav,
+                        gosterFavori: gosterFavori,
+                        idx:         _idx,
+                        toplam:      widget.ilanlar.length,
+                        suruklenmeX: x,
+                        favScale:    _favScale,
+                        onFav:       gosterFavori ? () => _favToggle(mevcut) : null,
+                      ),
                     ),
                   ),
                 ),
