@@ -1,3 +1,4 @@
+import '../../../core/firebase/app_firestore.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/bildirim_model.dart';
@@ -7,7 +8,7 @@ part 'bildirim_repository.g.dart';
  
 @riverpod
 BildirimRepository bildirimRepository(Ref ref) {
-  return BildirimRepository(firestore: FirebaseFirestore.instance);
+  return BildirimRepository(firestore: AppFirestore.instance);
 }
  
 class BildirimRepository {

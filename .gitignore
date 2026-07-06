@@ -46,3 +46,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+yuk_testi/serviceAccountKey.json
+yuk_testi/node_modules/
+yuk_testi/

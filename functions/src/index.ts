@@ -1,12 +1,27 @@
-import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
+import { getFirestore } from "firebase-admin/firestore";
+import { setGlobalOptions } from "firebase-functions/v2";
+import {
+  onDocumentCreated,
+  onDocumentUpdated,
+  onDocumentDeleted,
+} from "firebase-functions/v2/firestore";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { algoliasearch } from "algoliasearch";
 import * as vision from "@google-cloud/vision";
 import * as nodemailer from "nodemailer";
 
 admin.initializeApp();
 
-const db = admin.firestore();
+// ── VERİTABANI ────────────────────────────────────────────────────────────
+// TEK DEĞİŞİKLİK NOKTASI: "iste-eu" ismini burada değiştirmen yeterli,
+// tüm fonksiyonlar bu tek db referansını kullanıyor.
+const DATABASE_ID = "iste-eu";
+const db = getFirestore(admin.app(), DATABASE_ID);
+
+// Tüm fonksiyonlar için ortak bölge + veritabanı ayarı — her fonksiyonda
+// tekrar tekrar yazmamak için global tanımlıyoruz.
+setGlobalOptions({ region: "europe-west1" });
 
 // ── Algolia ───────────────────────────────────────────────────────────────────
 
@@ -134,6 +149,7 @@ function regexEscape(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+let _kelimeRegexCache: Map<string, RegExp> | null = null;
 function kelimeRegexCache(): Map<string, RegExp> {
   if (!_kelimeRegexCache) {
     _kelimeRegexCache = new Map();
@@ -145,7 +161,6 @@ function kelimeRegexCache(): Map<string, RegExp> {
   }
   return _kelimeRegexCache;
 }
-let _kelimeRegexCache: Map<string, RegExp> | null = null;
 
 function metinKontrol(metin: string): { uygun: boolean; sebep: string } {
   if (TELEFON_REGEX.test(metin)) {
@@ -259,21 +274,22 @@ async function bildirimGonder(
 
 // ── İlan moderasyon fonksiyonu ────────────────────────────────────────────────
 
-export const ilanModerasyonu = functions
-  .region("europe-west1")
-  .runWith({ timeoutSeconds: 180, memory: "512MB" })
-  .firestore.document("ilanlar/{ilanId}")
-  .onCreate(async (snap, context) => {
-    const ilanId = context.params.ilanId;
-    const data   = snap.data();
+export const ilanModerasyonu = onDocumentCreated(
+  {
+    document: "ilanlar/{ilanId}",
+    database: DATABASE_ID,
+    timeoutSeconds: 180,
+    memory: "512MiB",
+  },
+  async (event) => {
+    const ilanId = event.params.ilanId;
+    const data   = event.data?.data();
     if (!data) return;
 
     const ilanRef     = db.collection("ilanlar").doc(ilanId);
     const kullaniciId = data.kullaniciId as string;
 
     try {
-      // nereden/nereye artık Flutter formunda kapalı listeden (ülke/şehir) seçiliyor,
-      // serbest metin girilemiyor — bu yüzden kelime/telefon/link kontrolüne dahil etmiyoruz.
       const tumMetin = [
         data.urun ?? "", data.notlar ?? "",
       ].join(" ");
@@ -348,11 +364,9 @@ export const ilanModerasyonu = functions
         });
       } catch (e) {
         console.error("Algolia ana index hatası:", e);
-        // Algolia sync başarısız — ilan yayında ama aramada çıkmaz, logla
         await ilanRef.update({ algoliaHata: true }).catch(() => {});
       }
 
-      // Nereye index'ine yaz
       try {
         await getAlgoliaClient().saveObject({
           indexName: ALGOLIA_INDEX_NEREYE,
@@ -367,7 +381,6 @@ export const ilanModerasyonu = functions
       console.error("Moderasyon hatası:", e);
       try {
         await ilanRef.update({ aktif: false, durum: "onayBekliyor" });
-        // Kullanıcıya moderasyon hatası bildirimi gönder
         await db.collection("bildirimler").add({
           kullaniciId,
           tip: "ilan_red",
@@ -381,18 +394,22 @@ export const ilanModerasyonu = functions
         console.error("Moderasyon hata bildirimi de gönderilemedi:", innerErr);
       }
     }
-  });
+  }
+);
 
 // ── İlan güncelleme moderasyonu ───────────────────────────────────────────────
 
-export const ilanGuncellemeModerasyon = functions
-  .region("europe-west1")
-  .runWith({ timeoutSeconds: 180, memory: "512MB" })
-  .firestore.document("ilanlar/{ilanId}")
-  .onUpdate(async (change, context) => {
-    const ilanId = context.params.ilanId;
-    const once   = change.before.data();
-    const sonra  = change.after.data();
+export const ilanGuncellemeModerasyon = onDocumentUpdated(
+  {
+    document: "ilanlar/{ilanId}",
+    database: DATABASE_ID,
+    timeoutSeconds: 180,
+    memory: "512MiB",
+  },
+  async (event) => {
+    const ilanId = event.params.ilanId;
+    const once   = event.data?.before.data();
+    const sonra  = event.data?.after.data();
     if (!once || !sonra) return;
 
     const icerikDegisti =
@@ -401,19 +418,14 @@ export const ilanGuncellemeModerasyon = functions
       once.nereden !== sonra.nereden ||
       once.nereye  !== sonra.nereye  ||
       JSON.stringify(once.resimUrller ?? []) !== JSON.stringify(sonra.resimUrller ?? []);
-    // İlan reddedilmiş durumdayken kullanıcı "Yayınla"ya basınca durum
-    // "reddedildi"→"onayBekliyor" geçişi yapar. once.durum bakarak tetikliyoruz;
-    // yoksa sonra.durum zaten "onayBekliyor" olacağı için hiç tetiklenmez.
     const yenidenDenenmeliMi = once.durum === "reddedildi" && sonra.durum === "onayBekliyor";
     if (!icerikDegisti && !yenidenDenenmeliMi) return;
 
-    const ilanRef           = db.collection("ilanlar").doc(ilanId);
+    const ilanRef            = db.collection("ilanlar").doc(ilanId);
     const oncedenReddedilmis = once.durum === "reddedildi";
     const redBaslik          = oncedenReddedilmis ? "İlanın yayınlanamadı" : "İlanın yayından kaldırıldı";
 
     try {
-      // nereden/nereye artık Flutter formunda kapalı listeden (ülke/şehir) seçiliyor,
-      // serbest metin girilemiyor — bu yüzden kelime/telefon/link kontrolüne dahil etmiyoruz.
       const tumMetin = [
         sonra.urun ?? "", sonra.notlar ?? "",
       ].join(" ");
@@ -461,32 +473,30 @@ export const ilanGuncellemeModerasyon = functions
         }
       }
     } catch (e) { console.error("Güncelleme moderasyon hatası:", e); }
-  });
+  }
+);
 
 // ── Algolia güncelleme (favori/görüntülenme değişince önerilen puan da güncellenir) ──────
 
-export const ilanGuncellendi = functions
-  .region("europe-west1")
-  .firestore.document("ilanlar/{ilanId}")
-  .onUpdate(async (change, context) => {
-    const data = change.after.data();
+export const ilanGuncellendi = onDocumentUpdated(
+  { document: "ilanlar/{ilanId}", database: DATABASE_ID },
+  async (event) => {
+    const data = event.data?.after.data();
     if (!data) return;
 
-    // Sadece yayındaki ilanlar için Algolia'yı güncelle
     if (data.aktif !== true || data.durum !== "yayinda") return;
 
     const onerilenPuan = onerilenPuanHesapla(data);
 
-    // Firestore'a da yaz (sonsuz döngü yok çünkü ilanGuncellemeModerasyon sadece içerik değişiminde tetiklenir)
     try {
-      await db.collection("ilanlar").doc(context.params.ilanId).update({ onerilenPuan });
+      await db.collection("ilanlar").doc(event.params.ilanId).update({ onerilenPuan });
     } catch (e) { console.warn("onerilenPuan Firestore hatası:", e); }
 
     try {
       await getAlgoliaClient().saveObject({
         indexName: ALGOLIA_INDEX,
         body: {
-          objectID:           context.params.ilanId,
+          objectID:           event.params.ilanId,
           urun:               data.urun              ?? "",
           nereden:            data.nereden           ?? "",
           nereye:             data.nereye            ?? "",
@@ -508,23 +518,22 @@ export const ilanGuncellendi = functions
       });
     } catch (e) { console.warn("Algolia hatası:", e); }
 
-    // Nereye index'ini güncelle
     try {
       await getAlgoliaClient().saveObject({
         indexName: ALGOLIA_INDEX_NEREYE,
         body: {
-          objectID: context.params.ilanId,
+          objectID: event.params.ilanId,
           nereye:   data.nereye ?? "",
         },
       });
     } catch (e) { console.warn("Algolia nereye hatası:", e); }
-  });
+  }
+);
 
-export const ilanSilindi = functions
-  .region("europe-west1")
-  .firestore.document("ilanlar/{ilanId}")
-  .onDelete(async (snap, context) => {
-    const ilanId = context.params.ilanId;
+export const ilanSilindi = onDocumentDeleted(
+  { document: "ilanlar/{ilanId}", database: DATABASE_ID },
+  async (event) => {
+    const ilanId = event.params.ilanId;
     try {
       await getAlgoliaClient().deleteObject({ indexName: ALGOLIA_INDEX, objectID: ilanId });
     } catch (e) { console.warn("Algolia silme hatası:", e); }
@@ -541,146 +550,134 @@ export const ilanSilindi = functions
         await batch.commit();
       } catch (e) { console.warn(`${koleksiyon} temizleme hatası:`, e); }
     }
+  }
+);
+
+export const algoliaTopluAktar = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Giriş yapmalısın.");
+  }
+  const snap    = await db.collection("ilanlar").get();
+  const records = snap.docs.map((doc) => {
+    const data         = doc.data();
+    const onerilenPuan = onerilenPuanHesapla(data);
+    return {
+      objectID:        doc.id,
+      urun:            data.urun         ?? "",
+      nereden:         data.nereden      ?? "",
+      nereye:          data.nereye       ?? "",
+      kategori:        data.kategori     ?? "",
+      anaKategori:     data.anaKategori  ?? "",
+      kategoriYolu:    data.kategoriYolu ?? [],
+      tip:             data.tip          ?? "",
+      aktif:           data.aktif        ?? false,
+      durum:           data.durum        ?? "onayBekliyor",
+      kullaniciId:        data.kullaniciId ?? "",
+      kullaniciAd:        data.kullaniciAd ?? "",
+      resimUrl:           (data.resimUrller && data.resimUrller.length > 0)
+                            ? data.resimUrller[0] : (data.resimUrl ?? ""),
+      olusturmaTarihi:    data.olusturmaTarihi?.toMillis() ?? Date.now(),
+      favoriSayisi:       data.favoriSayisi       ?? 0,
+      goruntulenmeSayisi: data.goruntulenmeSayisi ?? 0,
+      onerilenPuan,
+    };
   });
+  await getAlgoliaClient().saveObjects({ indexName: ALGOLIA_INDEX, objects: records });
 
-export const algoliaTopluAktar = functions
-  .region("europe-west1")
-  .https.onCall(async (_, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError("unauthenticated", "Giriş yapmalısın.");
-    }
-    const snap    = await db.collection("ilanlar").get();
-    const records = snap.docs.map((doc) => {
-      const data         = doc.data();
-      const onerilenPuan = onerilenPuanHesapla(data);
-      return {
-        objectID:        doc.id,
-        urun:            data.urun         ?? "",
-        nereden:         data.nereden      ?? "",
-        nereye:          data.nereye       ?? "",
-        kategori:        data.kategori     ?? "",
-        anaKategori:     data.anaKategori  ?? "",
-        kategoriYolu:    data.kategoriYolu ?? [],
-        tip:             data.tip          ?? "",
-        aktif:           data.aktif        ?? false,
-        durum:           data.durum        ?? "onayBekliyor",
-        kullaniciId:        data.kullaniciId ?? "",
-        kullaniciAd:        data.kullaniciAd ?? "",
-        resimUrl:           (data.resimUrller && data.resimUrller.length > 0)
-                              ? data.resimUrller[0] : (data.resimUrl ?? ""),
-        olusturmaTarihi:    data.olusturmaTarihi?.toMillis() ?? Date.now(),
-        favoriSayisi:       data.favoriSayisi       ?? 0,
-        goruntulenmeSayisi: data.goruntulenmeSayisi ?? 0,
-        onerilenPuan,
-      };
-    });
-    await getAlgoliaClient().saveObjects({ indexName: ALGOLIA_INDEX, objects: records });
+  const nereyeRecords = snap.docs.map((doc) => ({
+    objectID: doc.id,
+    nereye:   doc.data().nereye ?? "",
+  }));
+  await getAlgoliaClient().saveObjects({ indexName: ALGOLIA_INDEX_NEREYE, objects: nereyeRecords });
 
-    // Nereye index'ini toplu aktar
-    const nereyeRecords = snap.docs.map((doc) => ({
-      objectID: doc.id,
-      nereye:   doc.data().nereye ?? "",
-    }));
-    await getAlgoliaClient().saveObjects({ indexName: ALGOLIA_INDEX_NEREYE, objects: nereyeRecords });
-
-    return { success: true, count: records.length };
-  });
+  return { success: true, count: records.length };
+});
 
 // ── Anlaşma Kabul ─────────────────────────────────────────────────────────────
 
-export const anlasmaKabul = functions
-  .region("europe-west1")
-  .https.onCall(async (data, context) => {
-    if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Giriş yapmalısın.");
-    const { sohbetId, mesajId } = data as { sohbetId: string; mesajId: string };
-    if (!sohbetId || !mesajId) throw new functions.https.HttpsError("invalid-argument", "sohbetId ve mesajId gerekli.");
-    const mesajRef  = db.collection("sohbetler").doc(sohbetId).collection("mesajlar").doc(mesajId);
-    const mesajSnap = await mesajRef.get();
-    if (!mesajSnap.exists) throw new functions.https.HttpsError("not-found", "Mesaj bulunamadı.");
-    if (mesajSnap.data()!.gondereId === context.auth.uid) throw new functions.https.HttpsError("permission-denied", "Kendi anlaşmanı onaylayamazsın.");
-    await mesajRef.update({ anlasmaEvet: true });
-    return { success: true };
-  });
+export const anlasmaKabul = onCall(async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "Giriş yapmalısın.");
+  const { sohbetId, mesajId } = request.data as { sohbetId: string; mesajId: string };
+  if (!sohbetId || !mesajId) throw new HttpsError("invalid-argument", "sohbetId ve mesajId gerekli.");
+  const mesajRef  = db.collection("sohbetler").doc(sohbetId).collection("mesajlar").doc(mesajId);
+  const mesajSnap = await mesajRef.get();
+  if (!mesajSnap.exists) throw new HttpsError("not-found", "Mesaj bulunamadı.");
+  if (mesajSnap.data()!.gondereId === request.auth.uid) throw new HttpsError("permission-denied", "Kendi anlaşmanı onaylayamazsın.");
+  await mesajRef.update({ anlasmaEvet: true });
+  return { success: true };
+});
 
 // ── Anlaşma Red ───────────────────────────────────────────────────────────────
 
-export const anlasmaRed = functions
-  .region("europe-west1")
-  .https.onCall(async (data, context) => {
-    if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Giriş yapmalısın.");
-    const { sohbetId, mesajId } = data as { sohbetId: string; mesajId: string };
-    if (!sohbetId || !mesajId) throw new functions.https.HttpsError("invalid-argument", "sohbetId ve mesajId gerekli.");
-    const mesajRef  = db.collection("sohbetler").doc(sohbetId).collection("mesajlar").doc(mesajId);
-    const mesajSnap = await mesajRef.get();
-    if (!mesajSnap.exists) throw new functions.https.HttpsError("not-found", "Mesaj bulunamadı.");
-    if (mesajSnap.data()!.gondereId === context.auth.uid) throw new functions.https.HttpsError("permission-denied", "Kendi anlaşmanı reddedemezsin.");
-    await mesajRef.update({ anlasmaRed: true });
-    return { success: true };
-  });
+export const anlasmaRed = onCall(async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "Giriş yapmalısın.");
+  const { sohbetId, mesajId } = request.data as { sohbetId: string; mesajId: string };
+  if (!sohbetId || !mesajId) throw new HttpsError("invalid-argument", "sohbetId ve mesajId gerekli.");
+  const mesajRef  = db.collection("sohbetler").doc(sohbetId).collection("mesajlar").doc(mesajId);
+  const mesajSnap = await mesajRef.get();
+  if (!mesajSnap.exists) throw new HttpsError("not-found", "Mesaj bulunamadı.");
+  if (mesajSnap.data()!.gondereId === request.auth.uid) throw new HttpsError("permission-denied", "Kendi anlaşmanı reddedemezsin.");
+  await mesajRef.update({ anlasmaRed: true });
+  return { success: true };
+});
 
 // ── Mesaj Bildirimi ───────────────────────────────────────────────────────────
 
-export const mesajBildirimiGonder = functions
-  .region("europe-west1")
-  .https.onCall(async (data, context) => {
-    if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Giriş yapmalısın.");
-    const { aliciId, gondereAd, ilanBaslik, sohbetId, metin, ilanId, ilanSahibiId, ilanResimUrl, mesajId, mesajZaman } = data as {
-      aliciId: string; gondereAd: string; ilanBaslik: string; sohbetId: string; metin: string; ilanId: string; ilanSahibiId: string; ilanResimUrl: string; mesajId?: string; mesajZaman?: string;
-    };
-    const gondereId = context.auth.uid;
-    const kullaniciSnap = await db.collection("kullanicilar").doc(aliciId).get();
-    if (!kullaniciSnap.exists) return { success: false };
-    const kullaniciData  = kullaniciSnap.data() ?? {};
-    const bildirimMetin  = metin && metin.trim().length > 0 ? metin.trim() : ilanBaslik;
+export const mesajBildirimiGonder = onCall(async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "Giriş yapmalısın.");
+  const { aliciId, gondereAd, ilanBaslik, sohbetId, metin, ilanId, ilanSahibiId, ilanResimUrl, mesajId, mesajZaman } = request.data as {
+    aliciId: string; gondereAd: string; ilanBaslik: string; sohbetId: string; metin: string; ilanId: string; ilanSahibiId: string; ilanResimUrl: string; mesajId?: string; mesajZaman?: string;
+  };
+  const gondereId = request.auth.uid;
+  const kullaniciSnap = await db.collection("kullanicilar").doc(aliciId).get();
+  if (!kullaniciSnap.exists) return { success: false };
+  const kullaniciData  = kullaniciSnap.data() ?? {};
+  const bildirimMetin  = metin && metin.trim().length > 0 ? metin.trim() : ilanBaslik;
 
-    // Uygulama içi bildirim çanı — push tercihi/token durumundan bağımsız,
-    // her zaman yazılır. Bell, bu koleksiyonu dinler.
-    await db.collection("bildirimler").add({
-      kullaniciId: aliciId,
-      tip:         "mesaj",
-      baslik:      gondereAd,
-      icerik:      `${ilanBaslik} hakkında mesaj gönderdi`,
-      okundu:      false,
-      tarih:       admin.firestore.FieldValue.serverTimestamp(),
-      hedefId:     sohbetId,
-      gondereId:   gondereId,
-      gondereAd:   gondereAd,
-    });
-
-    // Push bildirimi — token yoksa veya kullanıcı kapattıysa sessizce atla.
-    const fcmToken    = kullaniciData.fcmToken as string | undefined;
-    const mesajTercih = (kullaniciData.bildirimTercihleri?.mesaj ?? true) as boolean;
-    if (!fcmToken || !mesajTercih) return { success: true };
-
-    try {
-      await admin.messaging().send({
-        token: fcmToken,
-        notification: { title: gondereAd, body: bildirimMetin },
-        data: { tip: "mesaj", sohbetId, ilanBaslik, ilanId: ilanId ?? "", ilanSahibiId: ilanSahibiId ?? "", ilanResimUrl: ilanResimUrl ?? "", karsiKullaniciId: gondereId, karsiKullaniciAd: gondereAd, mesajId: mesajId ?? "", mesajMetin: metin ?? "", mesajZaman: mesajZaman ?? "" },
-        android: {
-          priority: "high",
-          collapseKey: sohbetId,
-          notification: { tag: sohbetId, channelId: "mesajlar", ticker: `${gondereAd}: ${bildirimMetin}`, notificationCount: 1 },
-        },
-        apns: {
-          headers: { "apns-collapse-id": sohbetId.substring(0, 64) },
-          payload: { aps: { threadId: sohbetId, badge: 1 } },
-        },
-      });
-    } catch (e) {
-      await bayatTokenTemizle(e, aliciId);
-      console.warn("[FCM] mesajBildirimi gönderilemedi:", e);
-    }
-    return { success: true };
+  await db.collection("bildirimler").add({
+    kullaniciId: aliciId,
+    tip:         "mesaj",
+    baslik:      gondereAd,
+    icerik:      `${ilanBaslik} hakkında mesaj gönderdi`,
+    okundu:      false,
+    tarih:       admin.firestore.FieldValue.serverTimestamp(),
+    hedefId:     sohbetId,
+    gondereId:   gondereId,
+    gondereAd:   gondereAd,
   });
+
+  const fcmToken    = kullaniciData.fcmToken as string | undefined;
+  const mesajTercih = (kullaniciData.bildirimTercihleri?.mesaj ?? true) as boolean;
+  if (!fcmToken || !mesajTercih) return { success: true };
+
+  try {
+    await admin.messaging().send({
+      token: fcmToken,
+      notification: { title: gondereAd, body: bildirimMetin },
+      data: { tip: "mesaj", sohbetId, ilanBaslik, ilanId: ilanId ?? "", ilanSahibiId: ilanSahibiId ?? "", ilanResimUrl: ilanResimUrl ?? "", karsiKullaniciId: gondereId, karsiKullaniciAd: gondereAd, mesajId: mesajId ?? "", mesajMetin: metin ?? "", mesajZaman: mesajZaman ?? "" },
+      android: {
+        priority: "high",
+        collapseKey: sohbetId,
+        notification: { tag: sohbetId, channelId: "mesajlar", ticker: `${gondereAd}: ${bildirimMetin}`, notificationCount: 1 },
+      },
+      apns: {
+        headers: { "apns-collapse-id": sohbetId.substring(0, 64) },
+        payload: { aps: { threadId: sohbetId, badge: 1 } },
+      },
+    });
+  } catch (e) {
+    await bayatTokenTemizle(e, aliciId);
+    console.warn("[FCM] mesajBildirimi gönderilemedi:", e);
+  }
+  return { success: true };
+});
 
 // ── Değerlendirme Bildirimi ───────────────────────────────────────────────────
 
-export const degerlendirmeBildirimiGonder = functions
-  .region("europe-west1")
-  .firestore.document("degerlendirmeler/{degId}")
-  .onCreate(async (snap) => {
-    const data = snap.data();
+export const degerlendirmeBildirimiGonder = onDocumentCreated(
+  { document: "degerlendirmeler/{degId}", database: DATABASE_ID },
+  async (event) => {
+    const data = event.data?.data();
     if (!data) return;
     const { hedefKullaniciId, degerlendireninId, puan } = data as {
       hedefKullaniciId: string; degerlendireninId: string; puan: number;
@@ -708,47 +705,51 @@ export const degerlendirmeBildirimiGonder = functions
       await bayatTokenTemizle(e, hedefKullaniciId);
       console.warn("[FCM] degerlendirmeBildirimi gönderilemedi:", e);
     }
-  });
+  }
+);
 
 // ── Takip Sayaç Trigger'ları ─────────────────────────────────────────────────
 
-export const takipOlustuSayacArttir = functions
-  .region("europe-west1")
-  .firestore.document("takipler/{takipId}")
-  .onCreate(async (snap) => {
-    const { takipciId, takipEdilenId } = snap.data() as { takipciId: string; takipEdilenId: string };
+export const takipOlustuSayacArttir = onDocumentCreated(
+  { document: "takipler/{takipId}", database: DATABASE_ID },
+  async (event) => {
+    const data = event.data?.data();
+    if (!data) return;
+    const { takipciId, takipEdilenId } = data as { takipciId: string; takipEdilenId: string };
     if (!takipciId || !takipEdilenId) return;
-    const takipciRef    = db.collection("kullanicilar").doc(takipciId);
+    const takipciRef     = db.collection("kullanicilar").doc(takipciId);
     const takipEdilenRef = db.collection("kullanicilar").doc(takipEdilenId);
     const batch = db.batch();
     const [takipciSnap, takipEdilenSnap] = await Promise.all([takipciRef.get(), takipEdilenRef.get()]);
-    if (takipciSnap.exists)    batch.update(takipciRef,    { takipSayisi:   admin.firestore.FieldValue.increment(1) });
+    if (takipciSnap.exists)     batch.update(takipciRef,     { takipSayisi:   admin.firestore.FieldValue.increment(1) });
     if (takipEdilenSnap.exists) batch.update(takipEdilenRef, { takipciSayisi: admin.firestore.FieldValue.increment(1) });
     await batch.commit();
-  });
+  }
+);
 
-export const takipSilindiSayacAzalt = functions
-  .region("europe-west1")
-  .firestore.document("takipler/{takipId}")
-  .onDelete(async (snap) => {
-    const { takipciId, takipEdilenId } = snap.data() as { takipciId: string; takipEdilenId: string };
+export const takipSilindiSayacAzalt = onDocumentDeleted(
+  { document: "takipler/{takipId}", database: DATABASE_ID },
+  async (event) => {
+    const data = event.data?.data();
+    if (!data) return;
+    const { takipciId, takipEdilenId } = data as { takipciId: string; takipEdilenId: string };
     if (!takipciId || !takipEdilenId) return;
-    const takipciRef    = db.collection("kullanicilar").doc(takipciId);
+    const takipciRef     = db.collection("kullanicilar").doc(takipciId);
     const takipEdilenRef = db.collection("kullanicilar").doc(takipEdilenId);
     const batch = db.batch();
     const [takipciSnap, takipEdilenSnap] = await Promise.all([takipciRef.get(), takipEdilenRef.get()]);
-    if (takipciSnap.exists)    batch.update(takipciRef,    { takipSayisi:   admin.firestore.FieldValue.increment(-1) });
+    if (takipciSnap.exists)     batch.update(takipciRef,     { takipSayisi:   admin.firestore.FieldValue.increment(-1) });
     if (takipEdilenSnap.exists) batch.update(takipEdilenRef, { takipciSayisi: admin.firestore.FieldValue.increment(-1) });
     await batch.commit();
-  });
+  }
+);
 
 // ── Değerlendirme Puan Güncelle (sunucu tarafı) ───────────────────────────────
 
-export const degerlendirmePuanGuncelle = functions
-  .region("europe-west1")
-  .firestore.document("degerlendirmeler/{degId}")
-  .onCreate(async (snap) => {
-    const data = snap.data();
+export const degerlendirmePuanGuncelle = onDocumentCreated(
+  { document: "degerlendirmeler/{degId}", database: DATABASE_ID },
+  async (event) => {
+    const data = event.data?.data();
     if (!data) return;
     const { hedefKullaniciId, puan } = data as { hedefKullaniciId: string; puan: number };
     if (!hedefKullaniciId || typeof puan !== "number" || puan < 1 || puan > 5) return;
@@ -766,45 +767,44 @@ export const degerlendirmePuanGuncelle = functions
         ortalamaPuan: Math.round(yeniOrtalama * 10) / 10,
       });
     });
-  });
+  }
+);
 
 // ── Bize Ulaşın — Email Gönder ────────────────────────────────────────────────
 
-export const iletisimGonder = functions
-  .region("europe-west1")
-  .https.onCall(async (data, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError("unauthenticated", "Giriş yapmalısın.");
-    }
-    const { konu, mesaj, gonderenAd, gonderenEmail } = data as {
-      konu: string; mesaj: string; gonderenAd: string; gonderenEmail: string;
-    };
-    if (!konu || !mesaj) {
-      throw new functions.https.HttpsError("invalid-argument", "Konu ve mesaj zorunlu.");
-    }
-    const gmailKullanici = process.env.GMAIL_KULLANICI;
-    const gmailSifre     = process.env.GMAIL_SIFRE;
-    if (!gmailKullanici || !gmailSifre) {
-      throw new functions.https.HttpsError("internal", "Email yapılandırması eksik.");
-    }
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: { user: gmailKullanici, pass: gmailSifre },
-    });
-    await transporter.sendMail({
-      from:    `"İste App" <${gmailKullanici}>`,
-      to:      gmailKullanici,
-      subject: `[İste Destek] ${konu}`,
-      html: `
-        <h3>${konu}</h3>
-        <p><b>Gönderen:</b> ${gonderenAd} (${gonderenEmail})</p>
-        <p><b>Kullanıcı ID:</b> ${context.auth.uid}</p>
-        <hr/>
-        <p>${mesaj.replace(/\n/g, "<br/>")}</p>
-      `,
-    });
-    return { success: true };
+export const iletisimGonder = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Giriş yapmalısın.");
+  }
+  const { konu, mesaj, gonderenAd, gonderenEmail } = request.data as {
+    konu: string; mesaj: string; gonderenAd: string; gonderenEmail: string;
+  };
+  if (!konu || !mesaj) {
+    throw new HttpsError("invalid-argument", "Konu ve mesaj zorunlu.");
+  }
+  const gmailKullanici = process.env.GMAIL_KULLANICI;
+  const gmailSifre     = process.env.GMAIL_SIFRE;
+  if (!gmailKullanici || !gmailSifre) {
+    throw new HttpsError("internal", "Email yapılandırması eksik.");
+  }
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: { user: gmailKullanici, pass: gmailSifre },
   });
+  await transporter.sendMail({
+    from:    `"İste App" <${gmailKullanici}>`,
+    to:      gmailKullanici,
+    subject: `[İste Destek] ${konu}`,
+    html: `
+      <h3>${konu}</h3>
+      <p><b>Gönderen:</b> ${gonderenAd} (${gonderenEmail})</p>
+      <p><b>Kullanıcı ID:</b> ${request.auth.uid}</p>
+      <hr/>
+      <p>${mesaj.replace(/\n/g, "<br/>")}</p>
+    `,
+  });
+  return { success: true };
+});
 
 // ── Hesap Sil (Sunucu Tarafı) ──────────────────────────────────────────────
 //
@@ -812,78 +812,71 @@ export const iletisimGonder = functions
 // HİÇ tabi değil — bu yüzden client'ta "karşı tarafın mesajını silme" gibi
 // kural gevşetmelerine ihtiyaç kalmıyor. Tüm silme işlemi (kullanicilar +
 // ilanlar + favoriler + bildirimler + sohbetler + mesajlar alt-koleksiyonu +
-// Firebase Auth kaydı) burada, SIRALI ve TEK YERDEN yönetiliyor — client
-// tarafındaki ayrı ayrı batch'lerin arasında bir adım başarısız olup
-// "yarım silinmiş hesap" durumuna düşme riski ortadan kalkıyor.
-export const hesapSilSunucu = functions
-  .region("europe-west1")
-  .https.onCall(async (_data, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError("unauthenticated", "Giriş yapmalısın.");
+// Firebase Auth kaydı) burada, SIRALI ve TEK YERDEN yönetiliyor.
+export const hesapSilSunucu = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Giriş yapmalısın.");
+  }
+  const uid = request.auth.uid;
+
+  try {
+    const batch = db.batch();
+
+    await db.recursiveDelete(
+      db.collection("kullanicilar").doc(uid).collection("bekleyenDegerlendirmeler")
+    );
+
+    batch.delete(db.collection("kullanicilar").doc(uid));
+
+    const ilanlarSnap = await db.collection("ilanlar")
+      .where("kullaniciId", "==", uid).get();
+    for (const doc of ilanlarSnap.docs) batch.delete(doc.ref);
+
+    const favorilerSnap = await db.collection("favoriler")
+      .where("kullaniciId", "==", uid).get();
+    for (const doc of favorilerSnap.docs) batch.delete(doc.ref);
+
+    const bildirimlerSnap = await db.collection("bildirimler")
+      .where("kullaniciId", "==", uid).get();
+    for (const doc of bildirimlerSnap.docs) batch.delete(doc.ref);
+
+    const goruntulenmelerSnap = await db.collection("goruntulenmeler")
+      .where("kullaniciId", "==", uid).get();
+    for (const doc of goruntulenmelerSnap.docs) batch.delete(doc.ref);
+
+    const takipciSnap = await db.collection("takipler")
+      .where("takipciId", "==", uid).get();
+    for (const doc of takipciSnap.docs) batch.delete(doc.ref);
+
+    const takipEdilenSnap = await db.collection("takipler")
+      .where("takipEdilenId", "==", uid).get();
+    for (const doc of takipEdilenSnap.docs) batch.delete(doc.ref);
+
+    await batch.commit();
+
+    const sohbetlerSnap = await db.collection("sohbetler")
+      .where("kullanicilar", "array-contains", uid).get();
+
+    for (const sohbet of sohbetlerSnap.docs) {
+      const mesajlarSnap = await sohbet.ref.collection("mesajlar").get();
+      const mesajBatch = db.batch();
+      for (const mesaj of mesajlarSnap.docs) mesajBatch.delete(mesaj.ref);
+      mesajBatch.delete(sohbet.ref);
+      await mesajBatch.commit();
     }
-    const uid = context.auth.uid;
 
-    try {
-      const batch = db.batch();
+    // Firebase Authentication kaydı — EN SON adım. Yukarıdaki Firestore
+    // silme işlemlerinden biri patlarsa, buraya hiç ulaşılmaz ve
+    // kullanıcı hâlâ giriş yapabilir durumda kalır — bu da onun tekrar
+    // deneyebilmesi için doğru davranış.
+    await admin.auth().deleteUser(uid);
 
-      // bekleyenDegerlendirmeler alt-koleksiyonu — Firestore subcollection
-      // doküman silinince otomatik temizlenmez; recursiveDelete halleder.
-      await db.recursiveDelete(
-        db.collection("kullanicilar").doc(uid).collection("bekleyenDegerlendirmeler")
-      );
-
-      batch.delete(db.collection("kullanicilar").doc(uid));
-
-      const ilanlarSnap = await db.collection("ilanlar")
-        .where("kullaniciId", "==", uid).get();
-      for (const doc of ilanlarSnap.docs) batch.delete(doc.ref);
-
-      const favorilerSnap = await db.collection("favoriler")
-        .where("kullaniciId", "==", uid).get();
-      for (const doc of favorilerSnap.docs) batch.delete(doc.ref);
-
-      const bildirimlerSnap = await db.collection("bildirimler")
-        .where("kullaniciId", "==", uid).get();
-      for (const doc of bildirimlerSnap.docs) batch.delete(doc.ref);
-
-      const goruntulenmelerSnap = await db.collection("goruntulenmeler")
-        .where("kullaniciId", "==", uid).get();
-      for (const doc of goruntulenmelerSnap.docs) batch.delete(doc.ref);
-
-      const takipciSnap = await db.collection("takipler")
-        .where("takipciId", "==", uid).get();
-      for (const doc of takipciSnap.docs) batch.delete(doc.ref);
-
-      const takipEdilenSnap = await db.collection("takipler")
-        .where("takipEdilenId", "==", uid).get();
-      for (const doc of takipEdilenSnap.docs) batch.delete(doc.ref);
-
-      await batch.commit();
-
-      // Sohbetler + mesajlar — subcollection içerdiğinden ayrı siliniyor
-      const sohbetlerSnap = await db.collection("sohbetler")
-        .where("kullanicilar", "array-contains", uid).get();
-
-      for (const sohbet of sohbetlerSnap.docs) {
-        const mesajlarSnap = await sohbet.ref.collection("mesajlar").get();
-        const mesajBatch = db.batch();
-        for (const mesaj of mesajlarSnap.docs) mesajBatch.delete(mesaj.ref);
-        mesajBatch.delete(sohbet.ref);
-        await mesajBatch.commit();
-      }
-
-      // Firebase Authentication kaydı — EN SON adım. Yukarıdaki Firestore
-      // silme işlemlerinden biri patlarsa, buraya hiç ulaşılmaz ve
-      // kullanıcı hâlâ giriş yapabilir durumda kalır — bu da onun tekrar
-      // deneyebilmesi için doğru davranış.
-      await admin.auth().deleteUser(uid);
-
-      return { success: true };
-    } catch (e) {
-      console.error("hesapSilSunucu hatası:", e);
-      throw new functions.https.HttpsError("internal", "Hesap silinemedi.", String(e));
-    }
-  });
+    return { success: true };
+  } catch (e) {
+    console.error("hesapSilSunucu hatası:", e);
+    throw new HttpsError("internal", "Hesap silinemedi.", String(e));
+  }
+});
 
 // ── İşlem Paneli Bildirimi ────────────────────────────────────────────────────
 
@@ -895,17 +888,17 @@ const ISLEM_DURUMU_ETIKETLER: Record<string, string> = {
   teslimAlindi:    "✅ Teslim Alındı",
 };
 
-export const islemDurumuBildirimiGonder = functions
-  .region("europe-west1")
-  .firestore.document("sohbetler/{sohbetId}")
-  .onUpdate(async (change, context) => {
-    const onceki  = change.before.data() as FirebaseFirestore.DocumentData;
-    const sonraki = change.after.data()  as FirebaseFirestore.DocumentData;
+export const islemDurumuBildirimiGonder = onDocumentUpdated(
+  { document: "sohbetler/{sohbetId}", database: DATABASE_ID },
+  async (event) => {
+    const onceki  = event.data?.before.data() as FirebaseFirestore.DocumentData | undefined;
+    const sonraki = event.data?.after.data()  as FirebaseFirestore.DocumentData | undefined;
+    if (!onceki || !sonraki) return;
 
     const oncekiDurumlar  = (onceki.islemDurumlari  ?? {}) as Record<string, unknown>;
     const sonrakiDurumlar = (sonraki.islemDurumlari ?? {}) as Record<string, unknown>;
 
-    const sohbetId      = context.params.sohbetId as string;
+    const sohbetId      = event.params.sohbetId as string;
     const ilanBaslik    = (sonraki.ilanBaslik    as string | undefined) ?? "İlan";
     const ilanId        = (sonraki.ilanId        as string | undefined) ?? "";
     const ilanSahibiId  = (sonraki.ilanSahibiId  as string | undefined) ?? "";
@@ -913,7 +906,6 @@ export const islemDurumuBildirimiGonder = functions
     const katilimcilar  = (sonraki.kullanicilar  ?? []) as string[];
 
     // ── Anlaşıldı (iki taraflı) ──────────────────────────────────────────────
-    // anlasildi_<uid> anahtarı yeni true oldu mu?
     for (const uid of katilimcilar) {
       const key = `anlasildi_${uid}`;
       if (!oncekiDurumlar[key] && sonrakiDurumlar[key] === true) {
@@ -1023,4 +1015,5 @@ export const islemDurumuBildirimiGonder = functions
       await bayatTokenTemizle(e, aliciId);
       console.warn("[FCM] islemDurumBildirimi gönderilemedi:", e);
     }
-  });
+  }
+);

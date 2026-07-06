@@ -1,7 +1,14 @@
 {
-  "firestore": {
-    "indexes": "firestore.indexes.json"
-  },
+  "firestore": [
+    {
+      "database": "(default)",
+      "indexes": "firestore.indexes.json"
+    },
+    {
+      "database": "iste-eu",
+      "indexes": "firestore.indexes.json"
+    }
+  ],
   "storage": {
     "rules": "storage.rules"
   },

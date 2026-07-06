@@ -1,3 +1,4 @@
+import '../firebase/app_firestore.dart';
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -24,7 +25,7 @@ class FcmService {
   static final instance = FcmService._();
 
   final _messaging = FirebaseMessaging.instance;
-  final _firestore = FirebaseFirestore.instance;
+  final _firestore = AppFirestore.instance;
   final _auth      = FirebaseAuth.instance;
 
   StreamSubscription<User?>? _authSub;

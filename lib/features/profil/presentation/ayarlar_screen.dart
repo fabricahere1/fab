@@ -1,3 +1,4 @@
+import '../../../core/firebase/app_firestore.dart';
 import 'dart:async';
 import '../../../shared/utils/app_hata_yonetici.dart';
 import 'package:flutter/material.dart';
@@ -58,7 +59,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     // Firestore'dan güncel değeri al (doğru kaynak)
     if (uid == null) return;
     try {
-      final snap = await FirebaseFirestore.instance
+      final snap = await AppFirestore.instance
           .collection('kullanicilar')
           .doc(uid)
           .get();
@@ -85,7 +86,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     if (uid == null) return;
     final firestoreKey = key.replaceFirst('bildirim_', '');
     try {
-      await FirebaseFirestore.instance
+      await AppFirestore.instance
           .collection('kullanicilar')
           .doc(uid)
           .set(

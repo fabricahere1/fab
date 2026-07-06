@@ -1,3 +1,4 @@
+import '../../../core/firebase/app_firestore.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -14,7 +15,7 @@ part 'auth_repository.g.dart';
 AuthRepository authRepository(Ref ref) {
   return AuthRepository(
     auth: FirebaseAuth.instance,
-    firestore: FirebaseFirestore.instance,
+    firestore: AppFirestore.instance,
   );
 }
 

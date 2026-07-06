@@ -1,3 +1,4 @@
+import '../../../core/firebase/app_firestore.dart';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -18,7 +19,7 @@ String sohbetIdUret(String uid1, String uid2, String ilanId) {
 @riverpod
 MesajRepository mesajRepository(Ref ref) {
   return MesajRepository(
-    firestore: FirebaseFirestore.instance,
+    firestore: AppFirestore.instance,
     storage: FirebaseStorage.instance,
   );
 }

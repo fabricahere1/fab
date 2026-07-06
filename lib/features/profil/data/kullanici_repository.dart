@@ -1,3 +1,4 @@
+import '../../../core/firebase/app_firestore.dart';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,7 +12,7 @@ part 'kullanici_repository.g.dart';
 @riverpod
 KullaniciRepository kullaniciRepository(Ref ref) {
   return KullaniciRepository(
-    firestore: FirebaseFirestore.instance,
+    firestore: AppFirestore.instance,
     storage: FirebaseStorage.instance,
     auth: FirebaseAuth.instance,
   );

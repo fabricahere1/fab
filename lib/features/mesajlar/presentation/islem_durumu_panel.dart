@@ -191,6 +191,9 @@ class IslemDurumuPanel extends ConsumerWidget {
                         oncekiTamamlandi: oncekiTamamlandi,
                         karsiKullaniciAd: karsiKullaniciAd,
                         sonMu: idx == adimlar.length - 1,
+                        // Artık VoidCallback değil, Future<void> Function() —
+                        // butonun kendisi bu Future'ı await edip yükleniyor/
+                        // hata durumunu yönetiyor.
                         onTap: (!benimOnayim && oncekiTamamlandi)
                             ? () => _anlasildiIsaretle(ref, benimUid)
                             : null,
@@ -269,6 +272,8 @@ class IslemDurumuPanel extends ConsumerWidget {
     return durumlari[durum.firestoreKey] == true;
   }
 
+  // Artık Future<void> döndürüyor ve çağıran widget'a rethrow ediyor —
+  // widget bu hatayı yakalayıp kullanıcıya snackbar ile gösteriyor.
   Future<void> _anlasildiIsaretle(WidgetRef ref, String benimUid) async {
     await ref.read(islemDurumuIslemleriProvider(sohbetId).notifier)
         .anlasildiIsaretle(benimUid);
@@ -286,15 +291,23 @@ class IslemDurumuPanel extends ConsumerWidget {
 }
 
 // ── Normal Adım Satırı ────────────────────────────────────
+//
+// StatelessWidget'tan StatefulWidget'a çevrildi — buton artık kendi
+// yerel "gönderiliyor" durumunu tutuyor. Neden gerekli: eskiden bu
+// buton, Firestore stream'i güncelleyip UI'ı yeniden çizene kadar HİÇBİR
+// görsel değişiklik göstermiyordu (ne devre dışı kalma ne "yükleniyor"
+// ifadesi) — kullanıcı "çalışmadı" sanıp 2-3 kez basıyordu. Şimdi:
+// tıklanır tıklanmaz buton devre dışı kalıp "..." gösteriyor, hata
+// olursa snackbar ile bildirilip buton tekrar aktif oluyor.
 
-class _AdimSatiri extends StatelessWidget {
+class _AdimSatiri extends StatefulWidget {
   final IslemDurumu durum;
   final bool tamamlandi;
   final bool aktif;
   final bool isaretleyebilir;
   final bool sonMu;
   final String ilanTip;
-  final VoidCallback? onTap;
+  final Future<void> Function()? onTap;
 
   const _AdimSatiri({
     required this.durum,
@@ -307,7 +320,43 @@ class _AdimSatiri extends StatelessWidget {
   });
 
   @override
+  State<_AdimSatiri> createState() => _AdimSatiriState();
+}
+
+class _AdimSatiriState extends State<_AdimSatiri> {
+  bool _gonderiliyor = false;
+
+  Future<void> _handleTap() async {
+    if (widget.onTap == null || _gonderiliyor) return;
+    setState(() => _gonderiliyor = true);
+    try {
+      await widget.onTap!();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('İşaretlenemedi. Lütfen tekrar dene.'),
+            backgroundColor: Color(0xFFE24B4A),
+          ),
+        );
+      }
+    } finally {
+      // Başarılı olduğunda zaten stream üzerinden 'tamamlandi' true
+      // olup bu widget tamamen farklı bir dala (check ikonu) düşecek —
+      // yine de yerel bayrağı sıfırlamak zarar vermez ve hata durumunda
+      // butonu tekrar tıklanabilir yapmak için ZORUNLU.
+      if (mounted) setState(() => _gonderiliyor = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final durum = widget.durum;
+    final tamamlandi = widget.tamamlandi;
+    final aktif = widget.aktif;
+    final isaretleyebilir = widget.isaretleyebilir;
+    final ilanTip = widget.ilanTip;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       child: Container(
@@ -383,19 +432,30 @@ class _AdimSatiri extends StatelessWidget {
                   color: Color(0xFF4CAF50), size: 20)
             else if (isaretleyebilir)
               GestureDetector(
-                onTap: onTap,
+                onTap: _gonderiliyor ? null : _handleTap,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 12, vertical: 5),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE24B4A),
+                    color: _gonderiliyor
+                        ? const Color(0xFFE24B4A).withValues(alpha: 0.5)
+                        : const Color(0xFFE24B4A),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text('İşaretle',
-                      style: GoogleFonts.dmSans(
-                          fontSize: 11,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600)),
+                  child: _gonderiliyor
+                      ? const SizedBox(
+                          width: 12,
+                          height: 12,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                          ),
+                        )
+                      : Text('İşaretle',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 11,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600)),
                 ),
               )
             else if (!aktif)
@@ -424,7 +484,7 @@ class _AnlasildiSatiri extends StatefulWidget {
   final bool oncekiTamamlandi;
   final String karsiKullaniciAd;
   final bool sonMu;
-  final VoidCallback? onTap;
+  final Future<void> Function()? onTap;
 
   const _AnlasildiSatiri({
     required this.tamamlandi,
@@ -445,6 +505,12 @@ class _AnlasildiSatiriState extends State<_AnlasildiSatiri>
   late AnimationController _ctrl;
   late Animation<double> _progress;
 
+  // Yerel "gönderiliyor" bayrağı — az önce _AdimSatiri'de anlattığımız
+  // aynı gerekçeyle: tıklamadan Firestore stream'in geri dönüşüne kadar
+  // geçen sürede kullanıcıya "işlendi" hissi vermek + hata varsa haber
+  // vermek için.
+  bool _gonderiliyor = false;
+
   @override
   void initState() {
     super.initState();
@@ -462,6 +528,11 @@ class _AnlasildiSatiriState extends State<_AnlasildiSatiri>
     if (old.benimOnayim != widget.benimOnayim ||
         old.tamamlandi != widget.tamamlandi) {
       _syncAnimation();
+      // Gerçek veri geldi (benimOnayim değişti) — yerel yükleniyor
+      // bayrağının artık hiçbir anlamı yok, kapatalım.
+      if (_gonderiliyor) {
+        _gonderiliyor = false;
+      }
     }
   }
 
@@ -472,6 +543,29 @@ class _AnlasildiSatiriState extends State<_AnlasildiSatiri>
       _ctrl.animateTo(0.5);
     } else {
       _ctrl.animateTo(0.0);
+    }
+  }
+
+  Future<void> _handleTap() async {
+    if (widget.onTap == null || _gonderiliyor) return;
+    setState(() => _gonderiliyor = true);
+    try {
+      await widget.onTap!();
+      // Not: burada _gonderiliyor'u false yapmıyoruz — başarılı olduysa
+      // stream birazdan benimOnayim'i true yapıp didUpdateWidget'ı
+      // tetikleyecek, orada zaten sıfırlanıyor. Erken sıfırlarsak,
+      // stream henüz gelmeden buton kısacık yeniden aktif görünüp
+      // ikinci bir tıklamaya izin verebilir.
+    } catch (e) {
+      if (mounted) {
+        setState(() => _gonderiliyor = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Onaylanamadı. Lütfen tekrar dene.'),
+            backgroundColor: Color(0xFFE24B4A),
+          ),
+        );
+      }
     }
   }
 
@@ -580,7 +674,7 @@ class _AnlasildiSatiriState extends State<_AnlasildiSatiri>
             if (aktif) ...[
               const SizedBox(height: 8),
               GestureDetector(
-                onTap: widget.onTap,
+                onTap: _gonderiliyor ? null : _handleTap,
                 child: AnimatedBuilder(
                   animation: _progress,
                   builder: (_, _) {
@@ -606,16 +700,26 @@ class _AnlasildiSatiriState extends State<_AnlasildiSatiri>
                             ),
                           ),
                           Center(
-                            child: Text(
-                              widget.benimOnayim
-                                  ? '✓ Onayladın'
-                                  : 'Onayla',
-                              style: GoogleFonts.dmSans(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFFE24B4A),
-                              ),
-                            ),
+                            child: _gonderiliyor
+                                ? const SizedBox(
+                                    width: 14,
+                                    height: 14,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation(
+                                          Color(0xFFE24B4A)),
+                                    ),
+                                  )
+                                : Text(
+                                    widget.benimOnayim
+                                        ? '✓ Onayladın'
+                                        : 'Onayla',
+                                    style: GoogleFonts.dmSans(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFFE24B4A),
+                                    ),
+                                  ),
                           ),
                         ],
                       ),

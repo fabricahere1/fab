@@ -1,3 +1,4 @@
+import '../firebase/app_firestore.dart';
 import 'dart:async';
 
 import 'package:app_badge_plus/app_badge_plus.dart';
@@ -9,7 +10,7 @@ class BadgeService {
   BadgeService._();
   static final instance = BadgeService._();
 
-  final _firestore = FirebaseFirestore.instance;
+  final _firestore = AppFirestore.instance;
   final _auth      = FirebaseAuth.instance;
 
   StreamSubscription? _authSub;

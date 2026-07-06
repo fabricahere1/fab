@@ -1,3 +1,4 @@
+import '../../../core/firebase/app_firestore.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -30,7 +31,7 @@ class IlanSayfasi {
 @riverpod
 IlanRepository ilanRepository(Ref ref) {
   return IlanRepository(
-    firestore: FirebaseFirestore.instance,
+    firestore: AppFirestore.instance,
     storage: FirebaseStorage.instance,
     auth: FirebaseAuth.instance,
   );

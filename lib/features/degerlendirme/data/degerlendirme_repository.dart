@@ -1,5 +1,6 @@
 // lib/features/degerlendirme/data/degerlendirme_repository.dart
 
+import '../../../core/firebase/app_firestore.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../shared/constants/app_constants.dart';
@@ -8,7 +9,7 @@ part 'degerlendirme_repository.g.dart';
 
 @riverpod
 DegerlendirmeRepository degerlendirmeRepository(Ref ref) {
-  return DegerlendirmeRepository(firestore: FirebaseFirestore.instance);
+  return DegerlendirmeRepository(firestore: AppFirestore.instance);
 }
 
 class DegerlendirmeRepository {

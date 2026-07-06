@@ -1,3 +1,4 @@
+import 'core/firebase/app_firestore.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
@@ -36,7 +37,7 @@ void main() async {
   );
 
   // Firestore offline persistence — uygulama kapatılıp açılınca cache'den gelir
-  FirebaseFirestore.instance.settings = const Settings(
+  AppFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );

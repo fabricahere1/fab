@@ -1,3 +1,4 @@
+import '../firebase/app_firestore.dart';
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -24,7 +25,7 @@ class BildirimBannerService {
   BildirimBannerService._();
   static final instance = BildirimBannerService._();
 
-  final _firestore = FirebaseFirestore.instance;
+  final _firestore = AppFirestore.instance;
   final _auth      = FirebaseAuth.instance;
 
   StreamSubscription? _authSub;
