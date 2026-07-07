@@ -53,7 +53,10 @@ class MesajRepository {
         .ref()
         .child(StoragePaths.mesajResimleri)
         .child('${gondereId}_${DateTime.now().millisecondsSinceEpoch}.jpg');
-    await ref.putFile(dosya);
+    await ref.putFile(
+      dosya,
+      SettableMetadata(cacheControl: 'public, max-age=31536000'),
+    );
     return await ref.getDownloadURL();
   }
 

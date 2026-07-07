@@ -112,7 +112,10 @@ class KullaniciRepository {
         .ref()
         .child(StoragePaths.profilFotolari)
         .child('$uid.jpg');
-    await ref.putFile(foto);
+    await ref.putFile(
+      foto,
+      SettableMetadata(cacheControl: 'public, max-age=31536000'),
+    );
     final url = await ref.getDownloadURL();
     await _col.doc(uid).update({'fotoUrl': url});
     await auth.currentUser?.updatePhotoURL(url);

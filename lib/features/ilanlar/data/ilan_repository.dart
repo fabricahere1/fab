@@ -309,7 +309,10 @@ class IlanRepository {
 
       final uploadFutures = List.generate(resimler.length, (i) async {
         onProgress?.call(i, 0.0);
-        final task = refs[i].putFile(sikistirilmisler[i]);
+        final task = refs[i].putFile(
+          sikistirilmisler[i],
+          SettableMetadata(cacheControl: 'public, max-age=31536000'),
+        );
         task.snapshotEvents.listen((snap) {
           progresses[i] = snap.bytesTransferred / snap.totalBytes;
           // Toplam progress ortalamasını bildir
@@ -330,7 +333,10 @@ class IlanRepository {
               .ref()
               .child(StoragePaths.ilanThumbnailleri)
               .child('${user.uid}_${ts}_thumb.jpg');
-          await thumbRef!.putFile(thumb);
+          await thumbRef!.putFile(
+            thumb,
+            SettableMetadata(cacheControl: 'public, max-age=31536000'),
+          );
           thumbUrl = await thumbRef!.getDownloadURL();
         }();
       }
@@ -422,7 +428,10 @@ class IlanRepository {
         final progresses = List<double>.filled(yeniResimler.length, 0.0);
         await Future.wait(List.generate(yeniResimler.length, (i) async {
           onProgress?.call(i, 0.0);
-          final task = refs[i].putFile(sikistirilmisler[i]);
+          final task = refs[i].putFile(
+            sikistirilmisler[i],
+            SettableMetadata(cacheControl: 'public, max-age=31536000'),
+          );
           task.snapshotEvents.listen((snap) {
             progresses[i] = snap.bytesTransferred / snap.totalBytes;
             onProgress?.call(
@@ -440,7 +449,10 @@ class IlanRepository {
               .ref()
               .child(StoragePaths.ilanThumbnailleri)
               .child('${user.uid}_${ts}_thumb.jpg');
-          await thumbRef.putFile(thumb);
+          await thumbRef.putFile(
+            thumb,
+            SettableMetadata(cacheControl: 'public, max-age=31536000'),
+          );
           yeniThumbUrl = await thumbRef.getDownloadURL();
         }
       }

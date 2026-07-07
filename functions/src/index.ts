@@ -7,6 +7,7 @@ import {
   onDocumentDeleted,
 } from "firebase-functions/v2/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import { algoliasearch } from "algoliasearch";
 import * as vision from "@google-cloud/vision";
 import * as nodemailer from "nodemailer";
@@ -1015,5 +1016,34 @@ export const islemDurumuBildirimiGonder = onDocumentUpdated(
       await bayatTokenTemizle(e, aliciId);
       console.warn("[FCM] islemDurumBildirimi gönderilemedi:", e);
     }
+  }
+);
+// ── GÖRÜNTÜLENME TEMİZLİĞİ ────────────────────────────────────────────────
+export const goruntulenmeTemizle = onSchedule(
+  {
+    schedule: "every day 03:00",
+    timeZone: "Europe/Istanbul",
+    region: "europe-west1",
+  },
+  async (event) => {
+    const doksanGunOnce = new Date();
+    doksanGunOnce.setDate(doksanGunOnce.getDate() - 90);
+
+    const snap = await db
+      .collection("goruntulenmeler")
+      .where("sonTarih", "<", doksanGunOnce)
+      .limit(500)
+      .get();
+
+    if (snap.empty) {
+      console.log("Silinecek eski görüntülenme kaydı yok.");
+      return;
+    }
+
+    const batch = db.batch();
+    snap.docs.forEach((doc) => batch.delete(doc.ref));
+    await batch.commit();
+
+    console.log(`${snap.size} adet eski görüntülenme kaydı silindi.`);
   }
 );

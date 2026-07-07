@@ -47,7 +47,10 @@
       "Bash(grep -rn \"catch \\(e, s\\) {}\" /c/src/iste_v3/lib --include=\"*.dart\")",
       "Bash(grep -rn \"catch.*{$\" /c/src/iste_v3/lib --include=\"*.dart\")",
       "Bash(head -1085 /c/src/iste_v3/lib/features/profil/presentation/ayarlar_screen.dart)",
-      "Bash(mv /tmp/ayarlar_trimmed.dart /c/src/iste_v3/lib/features/profil/presentation/ayarlar_screen.dart)"
+      "Bash(mv /tmp/ayarlar_trimmed.dart /c/src/iste_v3/lib/features/profil/presentation/ayarlar_screen.dart)",
+      "Bash(grep -v \"//.*FirebaseFirestore\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('indexes:', len\\(d.get\\('indexes',[]\\)\\), 'fieldOverrides:', len\\(d.get\\('fieldOverrides',[]\\)\\)\\)\")",
+      "Bash(node *)"
     ]
   }
 }
