@@ -22,7 +22,7 @@ import 'widgets/filtre_ekrani.dart';
 import 'widgets/ilan_karti.dart';
 import 'widgets/swipe_karti.dart';
 import 'dart:async';
-import 'package:iste_v3/features/ilanlar/presentation/favoriler_screen.dart';
+import 'package:iste_v3/features/favoriler/presentation/favoriler_screen.dart';
 import 'ilan_detay_screen.dart';
 import '../../../shared/utils/app_hata_yonetici.dart';
 import '../../../shared/utils/oneri_skoru.dart';
@@ -829,7 +829,7 @@ class _IsteklerHeader extends StatelessWidget {
                       child: Text('Tümü',
                           style: GoogleFonts.dmSans(
                             fontSize: 12,
-                            fontWeight: FontWeight.w200,
+                            fontWeight: FontWeight.w400,
                             color: secili
                                 ? Colors.white
                                 : AppColors.textSecondary,
@@ -883,7 +883,7 @@ class _IsteklerHeader extends StatelessWidget {
                         Text(kat.ad,
                             style: GoogleFonts.dmSans(
                               fontSize: 12,
-                              fontWeight: FontWeight.w200,
+                              fontWeight: FontWeight.w400,
                               color: secili
                                   ? Colors.white
                                   : AppColors.textPrimary,

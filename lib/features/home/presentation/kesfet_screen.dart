@@ -151,22 +151,32 @@ class _KesfetScreenState extends ConsumerState<KesfetScreen>
             ),
             child: Container(
               width: double.infinity,
-              color: const Color(0xFFEDE7F6),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFEDE7F6), Color(0xFFF3EEFF)],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
               child: Row(
                 children: [
+                  const Icon(Icons.campaign_outlined,
+                      size: 16, color: Color(0xFF7C3AED)),
+                  const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      'İlk ilanını ver, öne çıkaralım!',
+                      'İste\'de ilan vermek tamamen ücretsiz, hemen ilan ver',
                       style: GoogleFonts.dmSans(
-                        fontSize: 12,
+                        fontSize: 12.5,
                         fontWeight: FontWeight.w500,
                         color: Colors.black87,
+                        letterSpacing: 0.1,
                       ),
                     ),
                   ),
                   const Icon(Icons.chevron_right_rounded,
-                      size: 18, color: Colors.black54),
+                      size: 18, color: Color(0xFF7C3AED)),
                 ],
               ),
             ),

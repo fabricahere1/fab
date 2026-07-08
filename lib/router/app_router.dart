@@ -15,7 +15,6 @@ import '../features/ilanlar/presentation/ilan_detay_screen.dart';
 import '../features/ilanlar/presentation/ilan_form_screen.dart';
 import '../shared/constants/app_constants.dart' show IlanTip;
 import '../features/ilanlar/presentation/gelenler_screen.dart';
-import '../features/ilanlar/presentation/favoriler_screen.dart';
 import '../features/auth/providers/auth_provider.dart';
 import '../features/profil/providers/profil_provider.dart';
 
@@ -33,7 +32,6 @@ abstract class AppRoutes {
   static const home                = '/home';
   static const ilanDetay           = '/ilan/:ilanId';
   static const gelenler            = '/gelenler';
-  static const favoriler           = '/favoriler';
   static const ilanOlusturIstek    = '/home/ilan-olustur/istek';
   static const ilanOlusturTasiyici = '/home/ilan-olustur/tasiyici';
 
@@ -91,8 +89,7 @@ GoRouter router(Ref ref) {
             loc == AppRoutes.register ||
             loc == AppRoutes.home ||
             loc.startsWith('/ilan/') ||
-            loc == AppRoutes.gelenler ||
-            loc == AppRoutes.favoriler) { return null; }
+            loc == AppRoutes.gelenler) { return null; }
         if (loc == AppRoutes.ilanOlusturIstek ||
             loc == AppRoutes.ilanOlusturTasiyici) {
           return '${AppRoutes.login}?returnRoute=${Uri.encodeComponent(loc)}';
@@ -163,10 +160,6 @@ GoRouter router(Ref ref) {
           return IlanDetayScreen(ilanId: ilanId, ilan: ilan);
         },
       ), // GoRoute
-      GoRoute(
-        path: AppRoutes.favoriler,
-        builder: (_, _) => const FavorilerScreen(),
-      ),
       GoRoute(
         path: AppRoutes.gelenler,
         builder: (_, state) {

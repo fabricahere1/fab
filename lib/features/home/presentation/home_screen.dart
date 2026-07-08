@@ -148,7 +148,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           label: Text('İstek İlanı Ver',
                               style: GoogleFonts.dmSans(
                                   fontSize: 13,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w400,
                                   color: Colors.white)),
                           icon: const Icon(Icons.shopping_bag_outlined,
                               color: Colors.white, size: 18),
@@ -171,7 +171,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           label: Text('Gelen İlanı Ver',
                               style: GoogleFonts.dmSans(
                                   fontSize: 13,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w400,
                                   color: Colors.white)),
                           icon: const Icon(Icons.flight_takeoff_outlined,
                               color: Colors.white, size: 18),

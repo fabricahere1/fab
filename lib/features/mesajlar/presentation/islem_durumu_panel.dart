@@ -51,24 +51,24 @@ class IslemDurumuPanel extends ConsumerWidget {
 
     return Material(
       color: Colors.transparent,
-      child: Container(
-        width: 300,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            bottomLeft: Radius.circular(24),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Color(0x22000000),
-              blurRadius: 20,
-              offset: Offset(-4, 0),
+      child: SafeArea(
+        child: Container(
+          width: 300,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24),
+              bottomLeft: Radius.circular(24),
             ),
-          ],
-        ),
-        child: SafeArea(
+            boxShadow: [
+              BoxShadow(
+                color: Color(0x22000000),
+                blurRadius: 20,
+                offset: Offset(-4, 0),
+              ),
+            ],
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

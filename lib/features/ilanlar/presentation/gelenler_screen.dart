@@ -16,7 +16,7 @@ import 'package:iste_v3/features/arama/data/arama_service.dart';
 import '../../../shared/widgets/bildirim_cani_widget.dart';
 import '../../../shared/widgets/neden_iste_bar.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iste_v3/features/ilanlar/presentation/favoriler_screen.dart';
+import 'package:iste_v3/features/favoriler/presentation/favoriler_screen.dart';
 import 'widgets/ilan_karti.dart';
 import 'widgets/gelenler_filtre_ekrani.dart';
 import '../../../shared/widgets/hata_durum_widget.dart';
@@ -535,7 +535,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                         child: Text('Tümü',
                             style: GoogleFonts.dmSans(
                               fontSize: 12,
-                              fontWeight: FontWeight.w200,
+                              fontWeight: FontWeight.w400,
                               color: secili ? Colors.white : AppColors.textSecondary,
                             )),
                       ),
@@ -585,7 +585,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                           Text(kat.ad,
                               style: GoogleFonts.dmSans(
                                 fontSize: 12,
-                                fontWeight: FontWeight.w200,
+                                fontWeight: FontWeight.w400,
                                 color: secili ? Colors.white : AppColors.textPrimary,
                               )),
                         ],

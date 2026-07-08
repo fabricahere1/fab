@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../ilanlar/domain/ilan_model.dart';
+import '../../ilanlar/providers/ilan_provider.dart';
 import '../providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/constants/app_constants.dart';
@@ -160,7 +161,7 @@ class _IlanListesi extends StatelessWidget {
 
 // ── İstek Kartı — yatay liste, sol 88x88 resim + sağ metin ───────────────────
 
-class _IstekKarti extends StatelessWidget {
+class _IstekKarti extends ConsumerWidget {
   final IlanModel ilan;
 
   const _IstekKarti({required this.ilan});
@@ -170,7 +171,7 @@ class _IstekKarti extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final gridResim = ilan.gridResim;
     final varResim = gridResim.isNotEmpty;
 
@@ -264,6 +265,7 @@ class _IstekKarti extends StatelessWidget {
                           color: AppColors.red,
                         ),
                       ),
+                    _MiniSayaclar(ilan: ilan),
                   ],
                 ),
               ),
@@ -277,7 +279,7 @@ class _IstekKarti extends StatelessWidget {
 
 // ── Taşıyıcı Kartı (değişmedi) ───────────────────────────────────────────────
 
-class _GelenKarti extends StatelessWidget {
+class _GelenKarti extends ConsumerWidget {
   final IlanModel ilan;
 
   const _GelenKarti({required this.ilan});
@@ -287,7 +289,7 @@ class _GelenKarti extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final gridResim = ilan.gridResim;
     final varResim = gridResim.isNotEmpty;
     final tarih = ilan.tarih;
@@ -351,7 +353,7 @@ class _GelenKarti extends StatelessWidget {
                             '${ilan.nereden} → ${ilan.nereye}',
                             style: GoogleFonts.manrope(
                               fontSize: 14,
-                              fontWeight: FontWeight.w400,
+                              fontWeight: FontWeight.w600,
                               color: AppColors.textPrimary,
                             ),
                             maxLines: 1,
@@ -362,14 +364,20 @@ class _GelenKarti extends StatelessWidget {
                         _AktifBadge(aktif: ilan.aktif, stil: _AktifBadgeStil.light),
                       ],
                     ),
-                    if (tarihYazi.isNotEmpty)
-                      Text(
-                        tarihYazi,
-                        style: GoogleFonts.manrope(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
+                    Row(
+                      children: [
+                        if (tarihYazi.isNotEmpty)
+                          Text(
+                            tarihYazi,
+                            style: GoogleFonts.manrope(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        const Spacer(),
+                        _MiniSayaclar(ilan: ilan),
+                      ],
+                    ),
                     if (ilan.ucret.isNotEmpty)
                       Text(
                         '${ilan.ucret} ₺',
@@ -391,6 +399,37 @@ class _GelenKarti extends StatelessWidget {
 }
 
 // ── Ortak yardımcı widget'lar ─────────────────────────────────────────────────
+
+class _MiniSayaclar extends ConsumerWidget {
+  final IlanModel ilan;
+  const _MiniSayaclar({required this.ilan});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final favori = ref.canliFavoriSayisi(ilan);
+    final goruntulenme = ref.canliGoruntulenmeSayisi(ilan);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.favorite_border, size: 12, color: AppColors.textSecondary),
+        const SizedBox(width: 3),
+        Text('$favori',
+            style: GoogleFonts.manrope(
+                fontSize: 11,
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500)),
+        const SizedBox(width: 10),
+        Icon(Icons.remove_red_eye_outlined, size: 12, color: AppColors.textSecondary),
+        const SizedBox(width: 3),
+        Text('$goruntulenme',
+            style: GoogleFonts.manrope(
+                fontSize: 11,
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500)),
+      ],
+    );
+  }
+}
 
 class _ResimYok extends StatelessWidget {
   @override

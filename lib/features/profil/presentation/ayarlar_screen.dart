@@ -1069,7 +1069,7 @@ class _SwitchSatir extends StatelessWidget {
                 style: GoogleFonts.manrope(
                     fontSize: 15,
                     color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w500)),
+                    fontWeight: FontWeight.w400)),
           ),
           Switch(
             value: acik,

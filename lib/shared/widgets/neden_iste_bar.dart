@@ -21,21 +21,24 @@ class NedenIsteBar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: [
-            const Icon(Icons.add_circle_outline_rounded,
+            const Icon(Icons.bolt_outlined,
                 size: 16, color: AppColors.textSecondary),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'İlk ilanını ver, ücretsiz öne çıkaralım',
+                'Hemen ücretsiz ilan ver',
                 style: GoogleFonts.dmSans(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
+                  color: const Color(0xFF4A4A4A),
+                  letterSpacing: 0.1,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             const Icon(Icons.chevron_right_rounded,
-                size: 18, color: AppColors.textSecondary),
+                size: 16, color: Color(0xFFA8A8A8)),
           ],
         ),
       ),
@@ -73,10 +76,11 @@ class _IlanSecPanel extends ConsumerWidget {
       alignment: Alignment.centerLeft,
       child: GestureDetector(
         onTap: () {}, // iç tıklamalar kapanmasın
-        child: Container(
+        child: Material(
+          color: Colors.white,
+          child: SizedBox(
           width: MediaQuery.of(context).size.width * 0.82,
           height: double.infinity,
-          color: Colors.white,
           child: SafeArea(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,20 +93,21 @@ class _IlanSecPanel extends ConsumerWidget {
                       GestureDetector(
                         onTap: () => Navigator.pop(context),
                         child: const Icon(Icons.close_rounded,
-                            size: 22, color: AppColors.textSecondary),
+                            size: 19, color: Color(0xFFA8A8A8)),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 32),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Text(
                     'Ne yapmak istersin?',
                     style: GoogleFonts.dmSans(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 19,
+                      fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
+                      letterSpacing: -0.2,
                     ),
                   ),
                 ),
@@ -112,14 +117,16 @@ class _IlanSecPanel extends ConsumerWidget {
                   child: Text(
                     'Uygun seçeneği seç, hemen başla.',
                     style: GoogleFonts.dmSans(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
+                      fontSize: 12.5,
+                      color: const Color(0xFF9A9A9A),
                     ),
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 28),
                 _SecenekKarti(
                   ikon: Icons.shopping_bag_outlined,
+                  ikonBg: const Color(0xFFFAECE7),
+                  ikonRenk: const Color(0xFFD85A30),
                   baslik: 'İstek İlanı',
                   aciklama: 'Yurt dışından bir ürün almak istiyorum',
                   onTap: () {
@@ -134,9 +141,11 @@ class _IlanSecPanel extends ConsumerWidget {
                     );
                   },
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 _SecenekKarti(
                   ikon: Icons.flight_takeoff_rounded,
+                  ikonBg: const Color(0xFFE6F1FB),
+                  ikonRenk: const Color(0xFF185FA5),
                   baslik: 'Gelen İlanı',
                   aciklama: 'Seyahat edip ürün taşıyabilirim',
                   onTap: () {
@@ -155,6 +164,7 @@ class _IlanSecPanel extends ConsumerWidget {
               ],
             ),
           ),
+          ),
         ),
       ),
     );
@@ -163,12 +173,16 @@ class _IlanSecPanel extends ConsumerWidget {
 
 class _SecenekKarti extends StatelessWidget {
   final IconData ikon;
+  final Color ikonBg;
+  final Color ikonRenk;
   final String baslik;
   final String aciklama;
   final VoidCallback onTap;
 
   const _SecenekKarti({
     required this.ikon,
+    required this.ikonBg,
+    required this.ikonRenk,
     required this.baslik,
     required this.aciklama,
     required this.onTap,
@@ -191,13 +205,13 @@ class _SecenekKarti extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  color: AppColors.textPrimary.withValues(alpha: 0.08),
-                  shape: BoxShape.circle,
+                  color: ikonBg,
+                  borderRadius: BorderRadius.circular(11),
                 ),
-                child: Icon(ikon, size: 22, color: AppColors.textPrimary),
+                child: Icon(ikon, size: 22, color: ikonRenk),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -207,8 +221,8 @@ class _SecenekKarti extends StatelessWidget {
                     Text(
                       baslik,
                       style: GoogleFonts.dmSans(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
                       ),
                     ),
@@ -216,8 +230,9 @@ class _SecenekKarti extends StatelessWidget {
                     Text(
                       aciklama,
                       style: GoogleFonts.dmSans(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
+                        fontSize: 11.5,
+                        color: const Color(0xFF9A9A9A),
+                        height: 1.4,
                       ),
                     ),
                   ],
