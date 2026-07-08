@@ -26,7 +26,7 @@ class NedenIsteBar extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Hemen ücretsiz ilan ver',
+                'İste\'de ilan vermek ücretsiz, hemen tıkla',
                 style: GoogleFonts.dmSans(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,

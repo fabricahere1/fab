@@ -103,7 +103,7 @@ class FavorilerScreen extends ConsumerWidget {
       urun: favori['urun'] as String? ?? '',
       notlar: favori['notlar'] as String? ?? '',
       kategori: favori['kategori'] as String? ?? 'diger',
-      kullaniciId: favori['kullaniciId'] as String? ?? '',
+      kullaniciId: favori['ilanSahibiId'] as String? ?? '',
       kullaniciAd: favori['kullaniciAd'] as String? ?? '',
       resimUrl: favori['resimUrl'] as String? ?? '',
       resimUrller: List<String>.from(favori['resimUrller'] ?? []),

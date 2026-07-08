@@ -70,7 +70,18 @@
       "Bash(cp tmp.ttf Manrope-Regular.ttf)",
       "Bash(cp tmp.ttf Manrope-SemiBold.ttf)",
       "Bash(cp tmp.ttf Manrope-Bold.ttf)",
-      "Bash(curl -L -k \"https://raw.githubusercontent.com/google/fonts/main/ofl/raleway/Raleway%5Bwght%5D.ttf\" -o tmp.ttf)"
+      "Bash(curl -L -k \"https://raw.githubusercontent.com/google/fonts/main/ofl/raleway/Raleway%5Bwght%5D.ttf\" -o tmp.ttf)",
+      "Bash(sed -n '125,135p' C:/src/iste_v3/lib/features/ilanlar/providers/ilan_provider.dart)",
+      "Bash(sed -n '148,156p' C:/src/iste_v3/lib/features/ilanlar/providers/ilan_provider.dart)",
+      "Bash(sed -n '242,248p' C:/src/iste_v3/lib/features/ilanlar/providers/ilan_provider.dart)",
+      "Bash(sed -n '646,670p' C:/src/iste_v3/lib/features/ilanlar/providers/ilan_provider.dart)",
+      "Bash(sed -n '113,135p' C:/src/iste_v3/lib/features/mesajlar/presentation/sohbet_screen.dart)",
+      "Bash(sed -n '505,525p' C:/src/iste_v3/lib/features/mesajlar/presentation/sohbet_screen.dart)",
+      "Bash(cat .env)",
+      "Bash(ls *.json)",
+      "Bash(firebase login:list)",
+      "Bash(firebase firestore:get \"favoriler\" --project bring-in-3a17c)",
+      "Bash(gcloud auth *)"
     ]
   }
 }

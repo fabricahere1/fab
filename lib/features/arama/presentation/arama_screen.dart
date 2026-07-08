@@ -16,6 +16,7 @@ import 'package:iste_v3/features/ilanlar/presentation/ilan_detay_screen.dart';
 import 'package:iste_v3/features/home/providers/son_goruntulenenler_provider.dart';
 import 'package:iste_v3/features/ilanlar/domain/ilan_model.dart';
 import '../data/arama_service.dart';
+import 'package:iste_v3/features/profil/providers/profil_provider.dart';
 
 // Popüler arama terimleri — sabit liste
 const _kPopulerAramalar = [
@@ -65,7 +66,11 @@ class _AramaScreenState extends ConsumerState<AramaScreen> {
     setState(() => _yukleniyor = true);
     _debounce = Timer(const Duration(milliseconds: 350), () async {
       final sonuclar = await algoliaAra(deger.trim(), katFiltre: katFiltre);
-      if (mounted) setState(() { _sonuclar = sonuclar; _yukleniyor = false; });
+      final engellenenler = ref.read(engellenenlerProvider).value ?? [];
+      final filtreli = engellenenler.isEmpty
+          ? sonuclar
+          : sonuclar.where((s) => !engellenenler.contains(s.kullaniciId)).toList();
+      if (mounted) setState(() { _sonuclar = filtreli; _yukleniyor = false; });
     });
   }
 

@@ -530,6 +530,7 @@ class IlanRepository {
 
       txn.set(favoriRef, {
         'kullaniciId':  kullaniciId,
+        'ilanSahibiId': ilan.kullaniciId,
         'ilanId':       ilan.id,
         'tip':          ilan.tip,
         'kullaniciAd':  ilan.kullaniciAd,

@@ -18,6 +18,7 @@ class AramaSonucu {
   final String kategori;
   final String tip;
   final String? resimUrl;
+  final String kullaniciId;
 
   const AramaSonucu({
     required this.objectID,
@@ -27,16 +28,18 @@ class AramaSonucu {
     required this.kategori,
     required this.tip,
     this.resimUrl,
+    this.kullaniciId = '',
   });
 
   factory AramaSonucu.fromJson(Map<String, dynamic> json) => AramaSonucu(
-        objectID: json['objectID'] as String? ?? '',
-        urun:     json['urun']     as String? ?? '',
-        nereden:  json['nereden']  as String? ?? '',
-        nereye:   json['nereye']   as String? ?? '',
-        kategori: json['kategori'] as String? ?? '',
-        tip:      json['tip']      as String? ?? '',
-        resimUrl: json['resimUrl'] as String?,
+        objectID:    json['objectID']    as String? ?? '',
+        urun:        json['urun']        as String? ?? '',
+        nereden:     json['nereden']     as String? ?? '',
+        nereye:      json['nereye']      as String? ?? '',
+        kategori:    json['kategori']    as String? ?? '',
+        tip:         json['tip']         as String? ?? '',
+        resimUrl:    json['resimUrl']    as String?,
+        kullaniciId: json['kullaniciId'] as String? ?? '',
       );
 }
 

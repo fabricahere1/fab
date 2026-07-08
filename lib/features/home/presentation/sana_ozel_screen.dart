@@ -18,6 +18,7 @@ import 'package:iste_v3/features/home/providers/son_goruntulenenler_provider.dar
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:iste_v3/core/cache/app_cache_manager.dart';
 import 'package:iste_v3/shared/constants/app_constants.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:iste_v3/features/home/presentation/kesfet_vitrin_tab.dart'
     show CicekTipi, KartZeminPainter;
 import 'package:iste_v3/features/home/presentation/kesfet_bolum_baslik.dart';
@@ -51,7 +52,7 @@ class SanaOzelScreen extends ConsumerWidget {
     });
 
     return profilAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => _SanaOzelShimmer(),
       error: (e, s) { AppHataYonetici.logla(e, s, etiket: 'sanaOzel.profil'); return const SizedBox.shrink(); },
       data: (profil) {
         if (profil == null) return const SizedBox.shrink();
@@ -986,6 +987,54 @@ class _ProfilTamamlaBanner extends StatelessWidget {
 }
 
 // ── Boş ekran ─────────────────────────────────────────────────────────────────
+
+class _SanaOzelShimmer extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[200]!,
+      highlightColor: Colors.grey[50]!,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(height: 18, width: 140, color: Colors.white),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 160,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: 4,
+                separatorBuilder: (_, _) => const SizedBox(width: 10),
+                itemBuilder: (_, __) => Container(
+                  width: 130,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(height: 18, width: 100, color: Colors.white),
+            const SizedBox(height: 16),
+            ...List.generate(3, (_) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Container(
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            )),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _BosEkran extends StatelessWidget {
   final String mesaj;

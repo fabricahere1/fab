@@ -166,13 +166,15 @@ class _KesfetScreenState extends ConsumerState<KesfetScreen>
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      'İste\'de ilan vermek tamamen ücretsiz, hemen ilan ver',
+                      'İste\'de ilan vermek ücretsiz, hemen tıkla',
                       style: GoogleFonts.dmSans(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w500,
                         color: Colors.black87,
                         letterSpacing: 0.1,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   const Icon(Icons.chevron_right_rounded,

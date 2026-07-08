@@ -633,6 +633,8 @@ export const mesajBildirimiGonder = onCall(async (request) => {
   const kullaniciSnap = await db.collection("kullanicilar").doc(aliciId).get();
   if (!kullaniciSnap.exists) return { success: false };
   const kullaniciData  = kullaniciSnap.data() ?? {};
+  const engellenenler  = (kullaniciData.engellenenler ?? []) as string[];
+  if (engellenenler.includes(gondereId)) return { success: true };
   const bildirimMetin  = metin && metin.trim().length > 0 ? metin.trim() : ilanBaslik;
 
   await db.collection("bildirimler").add({
@@ -687,6 +689,8 @@ export const degerlendirmeBildirimiGonder = onDocumentCreated(
     const degerlendireninAd   = (degerlendireninSnap.data()?.adSoyad as string | undefined) ?? "Biri";
     const hedefSnap           = await db.collection("kullanicilar").doc(hedefKullaniciId).get();
     const hedefData           = hedefSnap.data() ?? {};
+    const hedefEngellenenler  = (hedefData.engellenenler ?? []) as string[];
+    if (hedefEngellenenler.includes(degerlendireninId)) return;
     const fcmToken            = hedefData.fcmToken as string | undefined;
     if (!fcmToken) return;
     const sistemTercih = (hedefData.bildirimTercihleri?.sistem ?? true) as boolean;
@@ -939,6 +943,8 @@ export const islemDurumuBildirimiGonder = onDocumentUpdated(
 
         const aliciSnap    = await db.collection("kullanicilar").doc(aliciId).get();
         const aliciData    = aliciSnap.data() ?? {};
+        const aliciEngel1  = (aliciData.engellenenler ?? []) as string[];
+        if (aliciEngel1.includes(yapanUid)) break;
         const fcmToken     = aliciData.fcmToken as string | undefined;
         const sistemTercih = (aliciData.bildirimTercihleri?.sistem ?? true) as boolean;
         if (!fcmToken || !sistemTercih) break;
@@ -997,6 +1003,8 @@ export const islemDurumuBildirimiGonder = onDocumentUpdated(
 
     const aliciSnap    = await db.collection("kullanicilar").doc(aliciId).get();
     const aliciData    = aliciSnap.data() ?? {};
+    const aliciEngel2  = (aliciData.engellenenler ?? []) as string[];
+    if (aliciEngel2.includes(yapanUid)) return;
     const fcmToken     = aliciData.fcmToken as string | undefined;
     const sistemTercih = (aliciData.bildirimTercihleri?.sistem ?? true) as boolean;
     if (!fcmToken || !sistemTercih) return;

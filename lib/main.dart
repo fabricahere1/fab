@@ -46,6 +46,9 @@ void main() async {
     androidProvider: kDebugMode
         ? AndroidProvider.debug
         : AndroidProvider.playIntegrity,
+    appleProvider: kDebugMode
+        ? AppleProvider.debug
+        : AppleProvider.deviceCheck,
   );
 
   // Crashlytics — release modda tüm hataları yakala

@@ -125,7 +125,8 @@ class IstekIlanlar extends _$IstekIlanlar {
       );
       ref.read(sayacDeltaProvider.notifier)
           .temizleToplu(sonuc.ilanlar.map((i) => i.id));
-    } catch (_) {
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'istekIlanlar.yenile');
       state = state.copyWith(yukleniyor: false);
     }
   }
@@ -149,7 +150,8 @@ class IstekIlanlar extends _$IstekIlanlar {
       );
       ref.read(sayacDeltaProvider.notifier)
           .temizleToplu(yeniIlanlar.map((i) => i.id));
-    } catch (_) {
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'istekIlanlar.dahaFazlaYukle');
       state = state.copyWith(yukleniyor: false);
     }
   }
@@ -242,7 +244,8 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
       );
       ref.read(sayacDeltaProvider.notifier)
           .temizleToplu(sonuc.ilanlar.map((i) => i.id));
-    } catch (_) {
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'tasiyiciIlanlar.yenile');
       state = IlanListeState(siralama: state.siralama);
     }
   }
@@ -266,7 +269,8 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
       );
       ref.read(sayacDeltaProvider.notifier)
           .temizleToplu(yeniIlanlar.map((i) => i.id));
-    } catch (_) {
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'tasiyiciIlanlar.dahaFazlaYukle');
       state = state.copyWith(yukleniyor: false);
     }
   }
@@ -647,7 +651,8 @@ class FavoriNotifier extends _$FavoriNotifier {
       // çıkmayı garanti eden bir güvenlik ağı olarak kalsın.
       if (!ref.mounted) return;
       ref.read(sayacDeltaProvider.notifier).favoriArttir(ilan.id);
-    } catch (_) {
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'favoriNotifier.ekle');
       if (!ref.mounted) return;
       ref.read(optimistikFavoriProvider.notifier).temizle(ilan.id);
     }
@@ -661,40 +666,13 @@ class FavoriNotifier extends _$FavoriNotifier {
       await _repo.favoridanCikar(kullaniciId: uid, ilanId: ilanId);
       if (!ref.mounted) return;
       ref.read(sayacDeltaProvider.notifier).favoriAzalt(ilanId);
-    } catch (_) {
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'favoriNotifier.cikar');
       if (!ref.mounted) return;
       ref.read(optimistikFavoriProvider.notifier).temizle(ilanId);
     }
   }
 }
-
-// ── Kullanıcının favori ilanları (IlanModel listesi olarak) ──────────────────
-
-final kullaniciFavorileriProvider =
-    StreamProvider.autoDispose.family<List<IlanModel>, String>((ref, uid) {
-  final repo = ref.watch(ilanRepositoryProvider);
-  return repo.favorilerStream(uid).map((liste) => liste
-      .map((map) {
-        try {
-          return IlanModel(
-            id:          map['ilanId']      as String? ?? '',
-            tip:         map['tip']         as String? ?? '',
-            nereden:     map['nereden']     as String? ?? '',
-            nereye:      map['nereye']      as String? ?? '',
-            urun:        map['urun']        as String? ?? '',
-            ucret:       map['ucret']       as String? ?? '',
-            kategori:    map['kategori']    as String? ?? 'diger',
-            kullaniciId: map['ilanSahibiId'] as String? ?? '',
-            kullaniciAd: map['kullaniciAd'] as String? ?? '',
-            resimUrl:    map['resimUrl']    as String? ?? '',
-          );
-        } catch (_) {
-          return null;
-        }
-      })
-      .whereType<IlanModel>()
-      .toList());
-});
 
 // ── İlan işlemleri ────────────────────────────────────────────────────────────
 

@@ -16,6 +16,7 @@ import 'package:iste_v3/features/ilanlar/providers/ilan_provider.dart';
 import 'package:iste_v3/features/home/providers/kesfet_vitrin_providers.dart';
 import 'package:iste_v3/features/home/providers/son_goruntulenenler_provider.dart';
 import 'kesfet_bolum_detay_screen.dart';
+import 'package:iste_v3/features/ilanlar/presentation/widgets/ilan_karti.dart' show ShimmerGrid;
 
 enum RozetTipi { goruntulenme, favori, yeni, eta, dutyFree, yok }
 
@@ -79,7 +80,10 @@ class KesfetVitrinTab extends ConsumerWidget {
 
     if (bosMu) {
       return yukleniyor
-          ? const Center(child: CircularProgressIndicator(color: AppColors.red, strokeWidth: 2))
+          ? const Padding(
+              padding: EdgeInsets.all(10),
+              child: ShimmerGrid(kolonSayisi: 2),
+            )
           : const KesfetBosEkran();
     }
 
