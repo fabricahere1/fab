@@ -63,7 +63,6 @@ abstract class SohbetModel with _$SohbetModel {
     @Default({}) Map<String, int> okunmamis,
     @Default({}) Map<String, dynamic> gizli,
     @Default({}) Map<String, bool> sabitlenmis,
-    @Default(false) bool degerlendirmeYapildi,
     @Default({}) Map<String, String> kullaniciAdlari,
   }) = _SohbetModel;
 
@@ -91,7 +90,6 @@ abstract class SohbetModel with _$SohbetModel {
           (k, v) => MapEntry(k.toString(), v as bool),
         ) ?? {},
       ),
-      degerlendirmeYapildi: d['degerlendirmeYapildi'] as bool? ?? false,
       kullaniciAdlari: Map<String, String>.from(
         (d['kullaniciAdlari'] as Map?)?.map(
           (k, v) => MapEntry(k.toString(), v.toString()),

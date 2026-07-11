@@ -631,13 +631,18 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
 
     try {
       final yenidenGiris = await ref.read(authProvider.notifier)
-          .googleIleYenidenGiris();
+          .googleIleYenidenGiris(
+        onHesapSecildi: () {
+          // Hesap seçildi, reauth ağ çağrıları başlıyor — kullanıcı boşluk görmesin
+          if (mounted) _silmeProgressGoster('Kimlik doğrulanıyor...');
+        },
+      );
       if (!yenidenGiris.basarili) throw Exception(yenidenGiris.hata);
-      // Google popup kapandı, reauth tamam → şimdi dialog aç
-      if (mounted) _silmeProgressGoster('Hesabın siliniyor...');
       await _hesapSilVeYonlendir();
     } catch (e) {
-      // Google popup iptal veya hata — dialog açılmamıştı, sadece snackbar
+      // Dialog artık hata anında açık olabilir (reauth ağ hatasında) ya da
+      // hiç açılmamış olabilir (seçici iptali) — guard sayesinde ikisi de güvenli.
+      _silmeDialogKapat();
       if (mounted) AppSnackBar.hata(context, 'Hata oluştu. Tekrar dene.');
     }
   }

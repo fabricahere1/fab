@@ -376,19 +376,8 @@ class IlanOlustur extends _$IlanOlustur {
   /// "yayinda" veya "reddedildi" durumuna ulaşınca tamamlanır.
   /// [zaman asimi] içinde sonuç gelmezse null döner.
   /// Moderasyon sonucunu bekler: true=yayında, false=reddedildi, null=timeout
-  ///
-  /// [ilkSonucuAtla] — düzenleme akışında, ilan zaten "reddedildi"
-  /// durumundan başlar. Bu true verilmezse (ilk oluşturmada varsayılan),
-  /// ilan başlangıçta 'onayBekliyor' olduğu için ilk anlık görüntü hiçbir
-  /// zaman 'yayinda'/'reddedildi' olamaz, sorun yoktur. Ama düzenlemede,
-  /// sunucunun yeniden moderasyonu HENÜZ başlamadan dinleyici ilanın ESKİ
-  /// durumunu ilk anlık görüntüde görüp yanlışlıkla "sonuç geldi" sanabilir.
-  /// Bu yüzden değer karşılaştırması DEĞİL, "sadece ilk anlık görüntüyü
-  /// atla" mantığı kullanılıyor — sunucu yeniden reddetse bile (durum AYNI
-  /// kalsa bile), o yeni yazma olayını doğru şekilde sonuç olarak yakalar.
   Future<bool?> durumBekle(
     String ilanId, {
-    bool ilkSonucuAtla = false,
     Duration timeout = const Duration(seconds: 40),
   }) {
     final completer = Completer<bool?>();
@@ -649,8 +638,11 @@ class FavoriNotifier extends _$FavoriNotifier {
       // keepAlive eklendiyse bu kontrol artık tetiklenmemeli, ama provider
       // ileride yanlışlıkla autoDispose'a çevrilirse çökme yerine sessizce
       // çıkmayı garanti eden bir güvenlik ağı olarak kalsın.
+      // Başarılı yazma sonrası optimistik kaydı temizle — gerçek Firestore
+      // stream'i artık güncel olduğu için devreye girebilsin.
       if (!ref.mounted) return;
       ref.read(sayacDeltaProvider.notifier).favoriArttir(ilan.id);
+      ref.read(optimistikFavoriProvider.notifier).temizle(ilan.id);
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'favoriNotifier.ekle');
       if (!ref.mounted) return;
@@ -666,6 +658,7 @@ class FavoriNotifier extends _$FavoriNotifier {
       await _repo.favoridanCikar(kullaniciId: uid, ilanId: ilanId);
       if (!ref.mounted) return;
       ref.read(sayacDeltaProvider.notifier).favoriAzalt(ilanId);
+      ref.read(optimistikFavoriProvider.notifier).temizle(ilanId);
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'favoriNotifier.cikar');
       if (!ref.mounted) return;

@@ -99,7 +99,6 @@ class MesajRepository {
       'sonMesajZamani':       FieldValue.serverTimestamp(),
       'sonGondereId':         gondereId,
       'ilanTip':              ilanTip,
-      'degerlendirmeYapildi': false,
       'islemDurumlari':       {'iletisimBasladi': true},
       'olusturmaTarihi':      FieldValue.serverTimestamp(),
       'okunmamis.$karsiId':   FieldValue.increment(1),
@@ -209,7 +208,10 @@ class MesajRepository {
 
     await _mesajlar(sohbetId).doc(mesajId).delete();
 
-    // Silinen mesaj son mesajsa güncelle — metin yerine sonMesajId ile kontrol
+    // Silinen mesaj son mesajsa güncelle — sonMesaj == metin karşılaştırmasıyla tespit
+    // edilir. Aynı metinli iki mesaj varsa yanlış pozitif olabilir; zararsızdır, çünkü
+    // sonMesaj her durumda kalan en son mesajdan yeniden okunup yazılır — maliyeti
+    // yalnızca gereksiz 1 okuma + 1 yazmadır.
     final sonMesaj = sohbetData?['sonMesaj'] as String?;
     if (sohbetSnap.exists && sonMesaj == metin) {
       final onceki = await _mesajlar(sohbetId)

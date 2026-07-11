@@ -76,19 +76,6 @@ class KullaniciRepository {
     required Map<String, dynamic> data,
   }) async {
     await _col.doc(uid).update(data);
-    if (data.containsKey('ortalamaPuan')) {
-      final puan = (data['ortalamaPuan'] as num?)?.toDouble() ?? 0.0;
-      final ilanSnap = await firestore
-          .collection(Collections.ilanlar)
-          .where('kullaniciId', isEqualTo: uid)
-          .where('aktif', isEqualTo: true)
-          .get();
-      final batch = firestore.batch();
-      for (final doc in ilanSnap.docs) {
-        batch.update(doc.reference, {'kullaniciPuan': puan});
-      }
-      await batch.commit();
-    }
   }
  
   Future<void> profilTamamla({

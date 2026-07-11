@@ -48,19 +48,41 @@ class _IletisimFormSheetState extends ConsumerState<_IletisimFormSheet> {
 
   String? _secilenKategori;
   final _mesajCtrl = TextEditingController();
+  late final TextEditingController _emailCtrl;
   bool _gonderiyor = false;
+  String? _emailHata;
 
   bool get _destek => widget.kaynak == 'destek';
   String get _baslik => _destek ? 'Destek' : 'İletişim';
   String get _konuPrefix => _destek ? '[Destek]' : '[İletişim]';
 
   @override
+  void initState() {
+    super.initState();
+    _emailCtrl = TextEditingController(
+      text: ref.read(currentUserProvider)?.email ?? '',
+    );
+  }
+
+  @override
   void dispose() {
     _mesajCtrl.dispose();
+    _emailCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _gonder() async {
+    if (_gonderiyor) return;
+
+    if (!_destek) {
+      final email = _emailCtrl.text.trim();
+      if (email.isEmpty || !email.contains('@')) {
+        setState(() => _emailHata = 'Geçerli bir e-posta gir');
+        return;
+      }
+      setState(() => _emailHata = null);
+    }
+
     if (_mesajCtrl.text.trim().isEmpty || _gonderiyor) return;
     setState(() => _gonderiyor = true);
 
@@ -69,10 +91,12 @@ class _IletisimFormSheetState extends ConsumerState<_IletisimFormSheet> {
       await FirebaseFunctions.instanceFor(region: 'europe-west1')
           .httpsCallable('iletisimGonder')
           .call({
-        'konu': '$_konuPrefix ${_secilenKategori ?? 'Diğer'}',
+        'konu': _destek
+            ? '$_konuPrefix ${_secilenKategori ?? 'Diğer'}'
+            : '$_konuPrefix Genel',
         'mesaj': _mesajCtrl.text.trim(),
         'gonderenAd': user?.displayName ?? 'Bilinmiyor',
-        'gonderenEmail': user?.email ?? '',
+        'gonderenEmail': _destek ? (user?.email ?? '') : _emailCtrl.text.trim(),
       });
 
       if (mounted) {
@@ -125,7 +149,96 @@ class _IletisimFormSheetState extends ConsumerState<_IletisimFormSheet> {
             ),
             const SizedBox(height: 20),
 
-            if (_secilenKategori == null) ...[
+            if (!_destek) ...[
+              TextField(
+                controller: _emailCtrl,
+                keyboardType: TextInputType.emailAddress,
+                autocorrect: false,
+                autofocus: _emailCtrl.text.isEmpty,
+                style: GoogleFonts.manrope(fontSize: 14),
+                decoration: InputDecoration(
+                  labelText: 'E-posta adresin',
+                  hintText: 'Sana dönüş yapabilmemiz için',
+                  hintStyle: GoogleFonts.manrope(
+                      color: AppColors.textHint, fontSize: 13),
+                  filled: true,
+                  fillColor: AppColors.surface,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.divider),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.divider),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                        color: AppColors.textSecondary, width: 1.5),
+                  ),
+                  contentPadding: const EdgeInsets.all(14),
+                ),
+              ),
+              if (_emailHata != null) ...[
+                const SizedBox(height: 6),
+                Text(
+                  _emailHata!,
+                  style: GoogleFonts.manrope(
+                      fontSize: 12, color: AppColors.red),
+                ),
+              ],
+              const SizedBox(height: 16),
+              TextField(
+                controller: _mesajCtrl,
+                maxLines: 6,
+                autofocus: _emailCtrl.text.isNotEmpty,
+                style: GoogleFonts.manrope(fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: 'Bize iletmek istediğin her şey...',
+                  hintStyle: GoogleFonts.manrope(
+                      color: AppColors.textHint, fontSize: 13),
+                  filled: true,
+                  fillColor: AppColors.surface,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.divider),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.divider),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                        color: AppColors.textSecondary, width: 1.5),
+                  ),
+                  contentPadding: const EdgeInsets.all(14),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity, height: 50,
+                child: ElevatedButton(
+                  onPressed: _gonderiyor ? null : _gonder,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.textPrimary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                    elevation: 0,
+                  ),
+                  child: _gonderiyor
+                      ? const SizedBox(
+                          width: 20, height: 20,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2),
+                        )
+                      : Text('Gönder',
+                          style: GoogleFonts.manrope(
+                              fontSize: 15, fontWeight: FontWeight.w600)),
+                ),
+              ),
+            ] else if (_secilenKategori == null) ...[
               ...List.generate(_kategoriler.length, (i) {
                 final k = _kategoriler[i];
                 return Padding(

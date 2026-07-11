@@ -11,7 +11,6 @@
 
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'app_snackbar.dart';
@@ -76,11 +75,11 @@ class AppHataYonetici {
     if (hata is FirebaseAuthException) {
       return _authHatasi(hata.code);
     }
+    if (hata is FirebaseException && hata.plugin == 'firebase_storage') {
+      return 'Dosya yüklenirken bir sorun oluştu.';
+    }
     if (hata is FirebaseException) {
       return _firestoreHatasi(hata.code);
-    }
-    if (hata is FirebaseStorage) {
-      return 'Dosya yüklenirken bir sorun oluştu.';
     }
     final mesaj = hata.toString().toLowerCase();
     if (mesaj.contains('network') || mesaj.contains('socket') ||

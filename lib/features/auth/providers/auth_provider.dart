@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/auth_repository.dart';
 
@@ -141,9 +142,9 @@ class AuthNotifier extends _$AuthNotifier {
     }
   }
 
-  Future<AuthSonuc> googleIleYenidenGiris() async {
+  Future<AuthSonuc> googleIleYenidenGiris({VoidCallback? onHesapSecildi}) async {
     try {
-      await _repo.googleIleYenidenGiris();
+      await _repo.googleIleYenidenGiris(onHesapSecildi: onHesapSecildi);
       return AuthSonuc.basarili('');
     } catch (_) {
       return AuthSonuc.hata('Google doğrulama başarısız.');

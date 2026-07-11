@@ -1,5 +1,5 @@
 import '../../../core/firebase/app_firestore.dart';
-import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:flutter/foundation.dart' show VoidCallback, debugPrint;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -195,7 +195,7 @@ class AuthRepository {
     await user.reauthenticateWithCredential(credential);
   }
 
-  Future<void> googleIleYenidenGiris() async {
+  Future<void> googleIleYenidenGiris({VoidCallback? onHesapSecildi}) async {
     final user = auth.currentUser;
     if (user == null) throw FirebaseAuthException(code: 'no-current-user', message: 'Oturum bulunamadı.');
     await _googleSignIn.signOut();
@@ -206,6 +206,7 @@ class AuthRepository {
         message: 'Google girişi iptal edildi.',
       );
     }
+    onHesapSecildi?.call();
     final googleAuth = await googleUser.authentication;
     final credential = GoogleAuthProvider.credential(
       idToken: googleAuth.idToken,

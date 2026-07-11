@@ -15,7 +15,7 @@ class BannerService {
 
   OverlayEntry? _mevcutBanner;
   bool _susturuldu = false;
-  Map<String, dynamic>? _bekleyenBanner;
+  final List<Map<String, dynamic>> _bekleyenBannerlar = [];
 
   /// Overlay aktifken bannerları beklet
   void sustur() => _susturuldu = true;
@@ -23,9 +23,8 @@ class BannerService {
   /// Overlay kapanınca bekleyen varsa göster
   void aktifEt() {
     _susturuldu = false;
-    if (_bekleyenBanner != null) {
-      final b = _bekleyenBanner!;
-      _bekleyenBanner = null;
+    if (_bekleyenBannerlar.isNotEmpty) {
+      final b = _bekleyenBannerlar.removeAt(0);
       // Widget ağacı teardown aşamasında olabilir (dispose'dan çağrılır),
       // bir sonraki frame'e ertele
       Future.delayed(const Duration(milliseconds: 100), () {
@@ -47,10 +46,12 @@ class BannerService {
     VoidCallback? onTap,
   }) {
     if (_susturuldu) {
-      _bekleyenBanner = {'baslik': baslik, 'icerik': icerik, 'tip': tip, 'onTap': onTap};
+      _bekleyenBannerlar.add({'baslik': baslik, 'icerik': icerik, 'tip': tip, 'onTap': onTap});
+      if (_bekleyenBannerlar.length > 3) _bekleyenBannerlar.removeAt(0);
       return;
     }
-    _kapat();
+    _mevcutBanner?.remove();
+    _mevcutBanner = null;
 
     final overlay = navigatorKey.currentState?.overlay;
     if (overlay == null) return;
@@ -80,6 +81,15 @@ class BannerService {
   void _kapat() {
     _mevcutBanner?.remove();
     _mevcutBanner = null;
+    if (!_susturuldu && _bekleyenBannerlar.isNotEmpty) {
+      final b = _bekleyenBannerlar.removeAt(0);
+      goster(
+        baslik: b['baslik'] as String,
+        icerik: b['icerik'] as String,
+        tip: b['tip'] as String,
+        onTap: b['onTap'] as VoidCallback?,
+      );
+    }
   }
 }
 

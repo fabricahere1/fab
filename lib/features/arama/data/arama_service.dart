@@ -79,13 +79,15 @@ Future<List<AramaSonucu>> algoliaAra(String sorgu, {String? katFiltre}) async {
     ],
   };
 
+  final filtreParcalari = <String>['aktif:true', 'durum:yayinda'];
   if (katFiltre != null) {
     final altKeyler = tumAltKeyler(katFiltre);
-    final filterParts = altKeyler
+    final katFilter = altKeyler
         .map((k) => 'kategoriYolu:$k OR kategori:$k')
         .join(' OR ');
-    body['filters'] = filterParts;
+    filtreParcalari.add('($katFilter)');
   }
+  body['filters'] = filtreParcalari.join(' AND ');
 
   final response = await http.post(
     url,
