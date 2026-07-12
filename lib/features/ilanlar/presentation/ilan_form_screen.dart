@@ -291,6 +291,7 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
         source: ImageSource.camera,
         imageQuality: 80,
       );
+      if (!mounted) return;
       if (picked != null) {
         setState(() => _yeniResimler.add(File(picked.path)));
       }
@@ -299,6 +300,7 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
         imageQuality: 80,
         limit: Pagination.maxResimSayisi - toplam,
       );
+      if (!mounted) return;
       if (picked.isNotEmpty) {
         setState(() {
           for (final img in picked) {

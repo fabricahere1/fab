@@ -42,7 +42,7 @@ class DegerlendirmeRepository {
     final bekleyenRef = _db
         .collection(Collections.kullanicilar)
         .doc(degerlendireninId)
-        .collection('bekleyenDegerlendirmeler')
+        .collection(Collections.bekleyenDegerlendirmeler)
         .doc(sohbetId);
 
     await _db.runTransaction((tx) async {
@@ -110,7 +110,7 @@ class DegerlendirmeRepository {
     await _db
         .collection(Collections.kullanicilar)
         .doc(kullaniciId)
-        .collection('bekleyenDegerlendirmeler')
+        .collection(Collections.bekleyenDegerlendirmeler)
         .doc(sohbetId)
         .set({
       'sohbetId':   sohbetId,
@@ -141,7 +141,7 @@ class DegerlendirmeRepository {
     return _db
         .collection(Collections.kullanicilar)
         .doc(kullaniciId)
-        .collection('bekleyenDegerlendirmeler')
+        .collection(Collections.bekleyenDegerlendirmeler)
         .where('tamamlandi', isEqualTo: false)
         .snapshots()
         .map((snap) {
@@ -162,7 +162,7 @@ class DegerlendirmeRepository {
     final ref = _db
         .collection(Collections.kullanicilar)
         .doc(kullaniciId)
-        .collection('bekleyenDegerlendirmeler')
+        .collection(Collections.bekleyenDegerlendirmeler)
         .doc(sohbetId);
     final snap = await ref.get();
     if (!snap.exists) return;

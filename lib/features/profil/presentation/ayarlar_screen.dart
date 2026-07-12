@@ -1,11 +1,10 @@
-import '../../../core/firebase/app_firestore.dart';
 import 'dart:async';
 import '../../../shared/utils/app_hata_yonetici.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../degerlendirme/presentation/degerlendirmeler_liste_screen.dart';
 import '../../profil/providers/profil_provider.dart';
@@ -50,6 +49,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     final uid = ref.read(currentUserProvider)?.uid;
     // Önce local cache'den yükle (hızlı)
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       _ilanBildirimleri   = prefs.getBool('bildirim_ilan')   ?? true;
       _mesajBildirimleri  = prefs.getBool('bildirim_mesaj')  ?? true;
@@ -59,17 +59,14 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     // Firestore'dan güncel değeri al (doğru kaynak)
     if (uid == null) return;
     try {
-      final snap = await AppFirestore.instance
-          .collection('kullanicilar')
-          .doc(uid)
-          .get();
-      final tercipler = snap.data()?['bildirimTercihleri'] as Map<String, dynamic>?;
-      if (tercipler == null) return;
+      final tercihler = await ref.read(kullaniciRepositoryProvider)
+          .bildirimTercihleriGetir(uid);
+      if (tercihler == null) return;
       if (!mounted) return;
       setState(() {
-        _mesajBildirimleri  = tercipler['mesaj']  as bool? ?? true;
-        _ilanBildirimleri   = tercipler['ilan']   as bool? ?? true;
-        _sistemBildirimleri = tercipler['sistem'] as bool? ?? true;
+        _mesajBildirimleri  = tercihler['mesaj']  ?? true;
+        _ilanBildirimleri   = tercihler['ilan']   ?? true;
+        _sistemBildirimleri = tercihler['sistem'] ?? true;
       });
       await prefs.setBool('bildirim_mesaj',  _mesajBildirimleri);
       await prefs.setBool('bildirim_ilan',   _ilanBildirimleri);
@@ -86,13 +83,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     if (uid == null) return;
     final firestoreKey = key.replaceFirst('bildirim_', '');
     try {
-      await AppFirestore.instance
-          .collection('kullanicilar')
-          .doc(uid)
-          .set(
-            {'bildirimTercihleri': {firestoreKey: value}},
-            SetOptions(merge: true),
-          );
+      await ref.read(kullaniciRepositoryProvider)
+          .bildirimTercihGuncelle(uid, firestoreKey, value);
     } catch (e, s) { AppHataYonetici.logla(e, s, etiket: 'ayarlarScreen'); }
   }
 
@@ -153,11 +145,13 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 icon: Icons.visibility_off_outlined,
                 label: 'Numarayı Gizle',
                 showArrow: false,
-                trailing: Switch(
-                  value: benimProfilAsync.value?.telefonGizli ?? false,
-                  onChanged: (val) => _telefonGizliDegistir(val),
-                  activeThumbColor: AppColors.primary,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                trailing: Transform.scale(
+                  scale: 0.85,
+                  child: CupertinoSwitch(
+                    value: benimProfilAsync.value?.telefonGizli ?? false,
+                    onChanged: (val) => _telefonGizliDegistir(val),
+                    activeTrackColor: AppColors.purple,
+                  ),
                 ),
                 onTap: () => _telefonGizliDegistir(
                     !(benimProfilAsync.value?.telefonGizli ?? false)),
@@ -999,7 +993,7 @@ class _SatirOge extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
-    this.iconColor  = const Color(0xFF7C3AED),
+    this.iconColor  = AppColors.purple,
     this.labelColor = AppColors.textPrimary,
     this.trailing,
     this.showArrow  = true,
@@ -1066,7 +1060,7 @@ class _SwitchSatir extends StatelessWidget {
               color: Colors.grey.shade100,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: const Color(0xFF7C3AED), size: 20),
+            child: Icon(icon, color: AppColors.purple, size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -1076,10 +1070,13 @@ class _SwitchSatir extends StatelessWidget {
                     color: AppColors.textPrimary,
                     fontWeight: FontWeight.w400)),
           ),
-          Switch(
-            value: acik,
-            onChanged: onChanged,
-            activeThumbColor: AppColors.red,
+          Transform.scale(
+            scale: 0.85,
+            child: CupertinoSwitch(
+              value: acik,
+              onChanged: onChanged,
+              activeTrackColor: AppColors.purple,
+            ),
           ),
         ],
       ),

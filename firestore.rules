@@ -135,5 +135,10 @@ service cloud.firestore {
       allow read: if girisYapilmis();
       allow write: if false;
     }
+
+    match /ayarlar/{dokuman} {
+      allow read: if true;
+      allow write: if false;
+    }
   }
 }

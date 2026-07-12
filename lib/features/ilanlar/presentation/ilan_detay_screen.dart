@@ -432,7 +432,7 @@ class _IlanDetayIcerik extends ConsumerWidget {
     final benimIlan = uid != null && uid.isNotEmpty && ilan.kullaniciId.isNotEmpty && uid == ilan.kullaniciId;
 
     final favorideMi = uid != null && !benimIlan
-        ? ref.watch(favoriliIlanIdlerProvider).contains(ilan.id)
+        ? ref.watch(favoriliIlanIdlerProvider.select((ids) => ids.contains(ilan.id)))
         : false;
 
     final favoriSayisi =

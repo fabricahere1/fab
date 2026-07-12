@@ -81,7 +81,16 @@
       "Bash(ls *.json)",
       "Bash(firebase login:list)",
       "Bash(firebase firestore:get \"favoriler\" --project bring-in-3a17c)",
-      "Bash(gcloud auth *)"
+      "Bash(gcloud auth *)",
+      "Bash(Get-Content pubspec.yaml)",
+      "Bash(Select-Object -First 60)",
+      "Bash(GOOGLE_CLOUD_PROJECT=bring-in-3a17c node -e ' *)",
+      "Bash(GOOGLE_APPLICATION_CREDENTIALS=C:/Users/User/AppData/Roaming/gcloud/legacy_credentials/fabricahere@gmail.com/adc.json node -e ' *)",
+      "Bash(GOOGLE_APPLICATION_CREDENTIALS=\"C:/Users/User/AppData/Roaming/gcloud/legacy_credentials/fabricahere@gmail.com/adc.json\" node test_puan_zinciri.js)",
+      "Bash(grep -rn \"ref.watch\\(\" --include=*.dart -l features/*/presentation)",
+      "Bash(grep -rln \"ref.watch\\(\" features/*/presentation/*.dart features/*/presentation/**/*.dart)",
+      "Bash(dart format *)",
+      "Bash(git diff *)"
     ]
   }
 }

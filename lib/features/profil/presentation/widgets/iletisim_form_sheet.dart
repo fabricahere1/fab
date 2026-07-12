@@ -12,13 +12,21 @@ void iletisimFormAc({
   required String kaynak,
   required VoidCallback onGonderildi,
 }) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => _IletisimFormSheet(
-      kaynak: kaynak,
-      onGonderildi: onGonderildi,
+  Navigator.of(context).push(
+    PageRouteBuilder(
+      opaque: true,
+      transitionDuration: const Duration(milliseconds: 280),
+      pageBuilder: (_, _, _) => _IletisimFormSheet(
+        kaynak: kaynak,
+        onGonderildi: onGonderildi,
+      ),
+      transitionsBuilder: (_, animation, _, child) => SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(1, 0),
+          end: Offset.zero,
+        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+        child: child,
+      ),
     ),
   );
 }
@@ -118,239 +126,242 @@ class _IletisimFormSheetState extends ConsumerState<_IletisimFormSheet> {
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
 
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: EdgeInsets.fromLTRB(24, 0, 24, 24 + bottom),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 12),
-            Center(
-              child: Container(
-                width: 40, height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.divider,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              _baslik,
-              style: GoogleFonts.manrope(
-                fontSize: 20, fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            if (!_destek) ...[
-              TextField(
-                controller: _emailCtrl,
-                keyboardType: TextInputType.emailAddress,
-                autocorrect: false,
-                autofocus: _emailCtrl.text.isEmpty,
-                style: GoogleFonts.manrope(fontSize: 14),
-                decoration: InputDecoration(
-                  labelText: 'E-posta adresin',
-                  hintText: 'Sana dönüş yapabilmemiz için',
-                  hintStyle: GoogleFonts.manrope(
-                      color: AppColors.textHint, fontSize: 13),
-                  filled: true,
-                  fillColor: AppColors.surface,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.divider),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.divider),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                        color: AppColors.textSecondary, width: 1.5),
-                  ),
-                  contentPadding: const EdgeInsets.all(14),
-                ),
-              ),
-              if (_emailHata != null) ...[
-                const SizedBox(height: 6),
-                Text(
-                  _emailHata!,
-                  style: GoogleFonts.manrope(
-                      fontSize: 12, color: AppColors.red),
-                ),
-              ],
-              const SizedBox(height: 16),
-              TextField(
-                controller: _mesajCtrl,
-                maxLines: 6,
-                autofocus: _emailCtrl.text.isNotEmpty,
-                style: GoogleFonts.manrope(fontSize: 14),
-                decoration: InputDecoration(
-                  hintText: 'Bize iletmek istediğin her şey...',
-                  hintStyle: GoogleFonts.manrope(
-                      color: AppColors.textHint, fontSize: 13),
-                  filled: true,
-                  fillColor: AppColors.surface,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.divider),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.divider),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                        color: AppColors.textSecondary, width: 1.5),
-                  ),
-                  contentPadding: const EdgeInsets.all(14),
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity, height: 50,
-                child: ElevatedButton(
-                  onPressed: _gonderiyor ? null : _gonder,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.textPrimary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    elevation: 0,
-                  ),
-                  child: _gonderiyor
-                      ? const SizedBox(
-                          width: 20, height: 20,
-                          child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2),
-                        )
-                      : Text('Gönder',
-                          style: GoogleFonts.manrope(
-                              fontSize: 15, fontWeight: FontWeight.w600)),
-                ),
-              ),
-            ] else if (_secilenKategori == null) ...[
-              ...List.generate(_kategoriler.length, (i) {
-                final k = _kategoriler[i];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: InkWell(
-                    onTap: () => setState(() => _secilenKategori = k.etiket),
-                    borderRadius: BorderRadius.circular(14),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.divider),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(k.ikon, size: 22, color: AppColors.textSecondary),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Text(
-                              k.etiket,
-                              style: GoogleFonts.manrope(
-                                fontSize: 14, fontWeight: FontWeight.w500,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                          const Icon(Icons.chevron_right_rounded,
-                              size: 20, color: AppColors.textSecondary),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ] else ...[
-              GestureDetector(
-                onTap: () => setState(() {
-                  _secilenKategori = null;
-                  _mesajCtrl.clear();
-                }),
-                child: Row(
+    return Scaffold(
+      backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: false,
+      body: SafeArea(
+        child: SizedBox.expand(
+          child: Container(
+            color: Colors.white,
+            padding: EdgeInsets.fromLTRB(24, 0, 24, 24 + bottom),
+            child: SingleChildScrollView(
+              child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    const Icon(Icons.arrow_back_ios_new_rounded,
-                        size: 14, color: AppColors.textSecondary),
-                    const SizedBox(width: 6),
-                    Text(
-                      _secilenKategori!,
-                      style: GoogleFonts.manrope(
-                        fontSize: 13, fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                          size: 20, color: AppColors.textPrimary),
+                      onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _mesajCtrl,
-                maxLines: 6,
-                autofocus: true,
-                style: GoogleFonts.manrope(fontSize: 14),
-                decoration: InputDecoration(
-                  hintText: _kategoriler
-                      .firstWhere((k) => k.etiket == _secilenKategori,
-                          orElse: () => _kategoriler.last)
-                      .hint,
-                  hintStyle: GoogleFonts.manrope(
-                      color: AppColors.textHint, fontSize: 13),
-                  filled: true,
-                  fillColor: AppColors.surface,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.divider),
+                Text(
+                  _baslik,
+                  style: GoogleFonts.manrope(
+                    fontSize: 20, fontWeight: FontWeight.w300,
+                    color: AppColors.textPrimary,
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.divider),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                        color: AppColors.textSecondary, width: 1.5),
-                  ),
-                  contentPadding: const EdgeInsets.all(14),
                 ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity, height: 50,
-                child: ElevatedButton(
-                  onPressed: _gonderiyor ? null : _gonder,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.textPrimary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    elevation: 0,
+                const SizedBox(height: 20),
+
+                if (!_destek) ...[
+                  TextField(
+                    controller: _emailCtrl,
+                    keyboardType: TextInputType.emailAddress,
+                    autocorrect: false,
+                    autofocus: _emailCtrl.text.isEmpty,
+                    style: GoogleFonts.manrope(fontSize: 14),
+                    decoration: InputDecoration(
+                      labelText: 'E-posta adresin',
+                      hintText: 'Sana dönüş yapabilmemiz için',
+                      hintStyle: GoogleFonts.manrope(
+                          color: AppColors.textHint, fontSize: 13),
+                      filled: true,
+                      fillColor: AppColors.surface,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.divider),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.divider),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: AppColors.textSecondary, width: 1.5),
+                      ),
+                      contentPadding: const EdgeInsets.all(14),
+                    ),
                   ),
-                  child: _gonderiyor
-                      ? const SizedBox(
-                          width: 20, height: 20,
-                          child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2),
-                        )
-                      : Text('Gönder',
+                  if (_emailHata != null) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      _emailHata!,
+                      style: GoogleFonts.manrope(
+                          fontSize: 12, color: AppColors.red),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _mesajCtrl,
+                    maxLines: 6,
+                    autofocus: _emailCtrl.text.isNotEmpty,
+                    style: GoogleFonts.manrope(fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: 'Bize iletmek istediğin her şey...',
+                      hintStyle: GoogleFonts.manrope(
+                          color: AppColors.textHint, fontSize: 13),
+                      filled: true,
+                      fillColor: AppColors.surface,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.divider),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.divider),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: AppColors.textSecondary, width: 1.5),
+                      ),
+                      contentPadding: const EdgeInsets.all(14),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity, height: 50,
+                    child: ElevatedButton(
+                      onPressed: _gonderiyor ? null : _gonder,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.textPrimary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                        elevation: 0,
+                      ),
+                      child: _gonderiyor
+                          ? const SizedBox(
+                              width: 20, height: 20,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2),
+                            )
+                          : Text('Gönder',
+                              style: GoogleFonts.manrope(
+                                  fontSize: 15, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ] else if (_secilenKategori == null) ...[
+                  ...List.generate(_kategoriler.length, (i) {
+                    final k = _kategoriler[i];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: InkWell(
+                        onTap: () => setState(() => _secilenKategori = k.etiket),
+                        borderRadius: BorderRadius.circular(14),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.divider),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(k.ikon, size: 22, color: AppColors.textSecondary),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Text(
+                                  k.etiket,
+                                  style: GoogleFonts.manrope(
+                                    fontSize: 14, fontWeight: FontWeight.w300,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                              ),
+                              const Icon(Icons.chevron_right_rounded,
+                                  size: 20, color: AppColors.textSecondary),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ] else ...[
+                  GestureDetector(
+                    onTap: () => setState(() {
+                      _secilenKategori = null;
+                      _mesajCtrl.clear();
+                    }),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.arrow_back_ios_new_rounded,
+                            size: 14, color: AppColors.textSecondary),
+                        const SizedBox(width: 6),
+                        Text(
+                          _secilenKategori!,
                           style: GoogleFonts.manrope(
-                              fontSize: 15, fontWeight: FontWeight.w600)),
-                ),
-              ),
-            ],
-          ],
+                            fontSize: 13, fontWeight: FontWeight.w300,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _mesajCtrl,
+                    maxLines: 6,
+                    autofocus: true,
+                    style: GoogleFonts.manrope(fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: _kategoriler
+                          .firstWhere((k) => k.etiket == _secilenKategori,
+                              orElse: () => _kategoriler.last)
+                          .hint,
+                      hintStyle: GoogleFonts.manrope(
+                          color: AppColors.textHint, fontSize: 13),
+                      filled: true,
+                      fillColor: AppColors.surface,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.divider),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.divider),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: AppColors.textSecondary, width: 1.5),
+                      ),
+                      contentPadding: const EdgeInsets.all(14),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity, height: 50,
+                    child: ElevatedButton(
+                      onPressed: _gonderiyor ? null : _gonder,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.textPrimary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                        elevation: 0,
+                      ),
+                      child: _gonderiyor
+                          ? const SizedBox(
+                              width: 20, height: 20,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2),
+                            )
+                          : Text('Gönder',
+                              style: GoogleFonts.manrope(
+                                  fontSize: 15, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          ),
         ),
       ),
     );

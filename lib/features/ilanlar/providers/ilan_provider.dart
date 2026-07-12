@@ -98,6 +98,7 @@ class IstekIlanlar extends _$IstekIlanlar {
   Future<void> _arkaGuncelleIstekIlanlar() async {
     try {
       final sonuc = await _repo.istekIlanlariniGetirSunucu();
+      if (!ref.mounted) return;
       if (!state.yukleniyor) {
         state = state.copyWith(
           ilanlar: sonuc.ilanlar,
@@ -117,6 +118,7 @@ class IstekIlanlar extends _$IstekIlanlar {
     try {
       final sonuc = await _repo.istekIlanlariniGetir(forceServer: true)
           .timeout(const Duration(seconds: 15));
+      if (!ref.mounted) return;
       state = state.copyWith(
         ilanlar: sonuc.ilanlar,
         sonTarih: sonuc.sonTarih,
@@ -140,6 +142,7 @@ class IstekIlanlar extends _$IstekIlanlar {
         sonTarih: state.sonTarih!,
         siralama: 'olusturma',
       );
+      if (!ref.mounted) return;
       final mevcutIdler = state.ilanlar.map((m) => m.id).toSet();
       final yeniIlanlar = sonuc.ilanlar.where((i) => !mevcutIdler.contains(i.id)).toList();
       state = state.copyWith(
@@ -236,6 +239,7 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
     try {
       final sonuc = await _repo.tasiyiciIlanlariniGetir(forceServer: true)
           .timeout(const Duration(seconds: 15));
+      if (!ref.mounted) return;
       state = IlanListeState(
         ilanlar: sonuc.ilanlar,
         sonTarih: sonuc.sonTarih,
@@ -259,6 +263,7 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
         sonTarih: state.sonTarih!,
         siralama: state.siralama,
       );
+      if (!ref.mounted) return;
       final mevcutIdler = state.ilanlar.map((m) => m.id).toSet();
       final yeniIlanlar = sonuc.ilanlar.where((i) => !mevcutIdler.contains(i.id)).toList();
       state = state.copyWith(
@@ -381,7 +386,7 @@ class IlanOlustur extends _$IlanOlustur {
     Duration timeout = const Duration(seconds: 40),
   }) {
     final completer = Completer<bool?>();
-    final firestore = ref.read(ilanRepositoryProvider).firestore;
+    final stream = ref.read(ilanRepositoryProvider).ilanStream(ilanId).map((ilan) => ilan?.durum);
     StreamSubscription? sub;
     Timer? timer;
 
@@ -390,9 +395,8 @@ class IlanOlustur extends _$IlanOlustur {
       if (!completer.isCompleted) completer.complete(null);
     });
 
-    sub = firestore.collection('ilanlar').doc(ilanId).snapshots().listen(
-      (snap) {
-        final durum = snap.data()?['durum'] as String?;
+    sub = stream.listen(
+      (durum) {
         // 'onayBekliyor' = moderasyon henüz sonuçlanmadı, bekle.
         // Hem create (ilk snapshot zaten onayBekliyor olur) hem edit (guncelle()
         // durum'u onayBekliyor'a çekiyor) akışında doğru çalışır.
@@ -634,14 +638,14 @@ class FavoriNotifier extends _$FavoriNotifier {
     if (ilan.kullaniciId == uid) return; // kendi ilanını favorileyemezsin
     ref.read(optimistikFavoriProvider.notifier).ekle(ilan.id);
     try {
-      await _repo.favoriyeEkle(kullaniciId: uid, ilan: ilan);
+      final yazdi = await _repo.favoriyeEkle(kullaniciId: uid, ilan: ilan);
       // keepAlive eklendiyse bu kontrol artık tetiklenmemeli, ama provider
       // ileride yanlışlıkla autoDispose'a çevrilirse çökme yerine sessizce
       // çıkmayı garanti eden bir güvenlik ağı olarak kalsın.
       // Başarılı yazma sonrası optimistik kaydı temizle — gerçek Firestore
       // stream'i artık güncel olduğu için devreye girebilsin.
       if (!ref.mounted) return;
-      ref.read(sayacDeltaProvider.notifier).favoriArttir(ilan.id);
+      if (yazdi) ref.read(sayacDeltaProvider.notifier).favoriArttir(ilan.id);
       ref.read(optimistikFavoriProvider.notifier).temizle(ilan.id);
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'favoriNotifier.ekle');
@@ -655,9 +659,9 @@ class FavoriNotifier extends _$FavoriNotifier {
     if (uid.isEmpty) return;
     ref.read(optimistikFavoriProvider.notifier).cikar(ilanId);
     try {
-      await _repo.favoridanCikar(kullaniciId: uid, ilanId: ilanId);
+      final yazdi = await _repo.favoridanCikar(kullaniciId: uid, ilanId: ilanId);
       if (!ref.mounted) return;
-      ref.read(sayacDeltaProvider.notifier).favoriAzalt(ilanId);
+      if (yazdi) ref.read(sayacDeltaProvider.notifier).favoriAzalt(ilanId);
       ref.read(optimistikFavoriProvider.notifier).temizle(ilanId);
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'favoriNotifier.cikar');

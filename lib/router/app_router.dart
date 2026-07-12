@@ -17,6 +17,8 @@ import '../shared/constants/app_constants.dart' show IlanTip;
 import '../features/ilanlar/presentation/gelenler_screen.dart';
 import '../features/auth/providers/auth_provider.dart';
 import '../features/profil/providers/profil_provider.dart';
+import '../core/services/surum_kapisi.dart';
+import '../shared/widgets/guncelleme_gerekli_screen.dart';
 
 part 'app_router.g.dart';
 
@@ -26,6 +28,7 @@ final navigatorKey = GlobalKey<NavigatorState>();
 
 abstract class AppRoutes {
   static const splash              = '/';
+  static const guncellemeGerekli   = '/guncelleme-gerekli';
   static const login               = '/login';
   static const register            = '/register';
   static const profilTamamla       = '/profil-tamamla';
@@ -49,16 +52,19 @@ class _AppStateNotifier extends ChangeNotifier {
   _AppStateNotifier(this._ref) {
     _authSub   = _ref.listen(authStateProvider, (_, _) => notifyListeners());
     _profilSub = _ref.listen(benimKullaniciProfilProvider, (_, _) => notifyListeners());
+    _surumSub  = _ref.listen(surumDurumuProvider, (_, _) => notifyListeners());
   }
 
   final Ref _ref;
   late final ProviderSubscription _authSub;
   late final ProviderSubscription _profilSub;
+  late final ProviderSubscription _surumSub;
 
   @override
   void dispose() {
     _authSub.close();
     _profilSub.close();
+    _surumSub.close();
     super.dispose();
   }
 }
@@ -76,6 +82,22 @@ GoRouter router(Ref ref) {
       final authAsync = ref.read(authStateProvider);
       final loc = state.matchedLocation;
       final returnRoute = state.uri.queryParameters['returnRoute'];
+
+      // Sürüm kapısı — auth durumundan bile önce kontrol edilir, misafir
+      // kullanıcı da dahil hiçbir route'a izin verilmez.
+      final surumAsync = ref.read(surumDurumuProvider);
+      if (surumAsync.isLoading && !surumAsync.hasValue) {
+        return loc == AppRoutes.splash ? null : AppRoutes.splash;
+      }
+      final surumUygunMu = surumAsync.value?.uygun ?? true;
+      if (!surumUygunMu) {
+        return loc == AppRoutes.guncellemeGerekli
+            ? null
+            : AppRoutes.guncellemeGerekli;
+      }
+      if (loc == AppRoutes.guncellemeGerekli) {
+        return AppRoutes.splash;
+      }
 
       if (authAsync.isLoading && !authAsync.hasValue) {
         return loc == AppRoutes.splash ? null : AppRoutes.splash;
@@ -118,6 +140,13 @@ GoRouter router(Ref ref) {
       GoRoute(
         path: AppRoutes.splash,
         builder: (_, _) => const _SplashPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.guncellemeGerekli,
+        builder: (_, _) {
+          final link = ref.read(surumDurumuProvider).value?.link;
+          return GuncellemeGerekliScreen(guncellemeLinki: link);
+        },
       ),
       GoRoute(
         path: AppRoutes.login,

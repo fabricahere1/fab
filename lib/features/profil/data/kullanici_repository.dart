@@ -87,7 +87,24 @@ class KullaniciRepository {
       SetOptions(merge: true),
     );
   }
- 
+
+  /// bildirimTercihleri map'ini döndürür; doküman/alan yoksa null.
+  Future<Map<String, bool>?> bildirimTercihleriGetir(String uid) async {
+    final snap = await firestore
+        .collection(Collections.kullanicilar).doc(uid).get();
+    final t = snap.data()?['bildirimTercihleri'] as Map<String, dynamic>?;
+    if (t == null) return null;
+    return t.map((k, v) => MapEntry(k, v as bool? ?? true));
+  }
+
+  /// Tek tercihi merge ile yazar (mevcut davranışla aynı: nested map deep-merge,
+  /// diğer anahtarlar korunur).
+  Future<void> bildirimTercihGuncelle(String uid, String anahtar, bool deger) =>
+      firestore.collection(Collections.kullanicilar).doc(uid).set(
+        {'bildirimTercihleri': {anahtar: deger}},
+        SetOptions(merge: true),
+      );
+
   // KULLANILMIYOR — profil fotoğrafı yükleme bilinçli kapalı (ürün kararı).
   // Açılırsa: Vision moderasyonu + dosya adını '${uid}_...' desenine getir
   // + storage.rules'a profil_fotograflari klasör kuralı ekle.
@@ -151,7 +168,7 @@ class KullaniciRepository {
 
   Future<void> takipEt({required String takipciId, required String takipEdilenId}) async {
     final takipId = '${takipciId}_$takipEdilenId';
-    final takipRef = firestore.collection('takipler').doc(takipId);
+    final takipRef = firestore.collection(Collections.takipler).doc(takipId);
     await firestore.runTransaction((txn) async {
       final snap = await txn.get(takipRef);
       if (snap.exists) return;
@@ -166,7 +183,7 @@ class KullaniciRepository {
 
   Future<void> takipiBirak({required String takipciId, required String takipEdilenId}) async {
     final takipId = '${takipciId}_$takipEdilenId';
-    final takipRef = firestore.collection('takipler').doc(takipId);
+    final takipRef = firestore.collection(Collections.takipler).doc(takipId);
     await firestore.runTransaction((txn) async {
       final snap = await txn.get(takipRef);
       if (!snap.exists) return;
@@ -177,7 +194,7 @@ class KullaniciRepository {
 
   Stream<bool> takipEdiyorMu({required String takipciId, required String takipEdilenId}) {
     return firestore
-        .collection('takipler')
+        .collection(Collections.takipler)
         .doc('${takipciId}_$takipEdilenId')
         .snapshots()
         .map((snap) => snap.exists);
@@ -185,7 +202,7 @@ class KullaniciRepository {
 
   Stream<List<String>> takipciIdleriStream(String kullaniciId) {
     return firestore
-        .collection('takipler')
+        .collection(Collections.takipler)
         .where('takipEdilenId', isEqualTo: kullaniciId)
         .snapshots()
         .map((snap) => snap.docs.map((d) => d.data()['takipciId'] as String).toList());
@@ -193,7 +210,7 @@ class KullaniciRepository {
 
   Stream<List<String>> takipEdilenIdleriStream(String kullaniciId) {
     return firestore
-        .collection('takipler')
+        .collection(Collections.takipler)
         .where('takipciId', isEqualTo: kullaniciId)
         .snapshots()
         .map((snap) => snap.docs.map((d) => d.data()['takipEdilenId'] as String).toList());
@@ -204,7 +221,7 @@ class KullaniciRepository {
   /// ilanları filtrelemek için zaman bilgisine ihtiyaç duyan akışlar kullanır.
   Stream<Map<String, DateTime>> takipEdilenTarihleriStream(String kullaniciId) {
     return firestore
-        .collection('takipler')
+        .collection(Collections.takipler)
         .where('takipciId', isEqualTo: kullaniciId)
         .snapshots()
         .map((snap) => {

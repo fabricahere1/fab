@@ -302,10 +302,10 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
     if (isFav) {
       await ref.read(favoriProvider.notifier).cikar(ilan.id);
     } else {
-      await ref.read(favoriProvider.notifier).ekle(ilan);
       _favCtrl.forward(from: 0).then((_) {
         if (mounted) _favCtrl.reverse();
       });
+      await ref.read(favoriProvider.notifier).ekle(ilan);
     }
   }
 
@@ -317,11 +317,10 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
       return _BosSonucEkrani(onYenile: widget.onDahaFazla);
     }
 
-    final favIdler    = ref.watch(favoriliIlanIdlerProvider);
-    final uid          = ref.watch(currentUserProvider)?.uid;
     final mevcut       = _mevcutIlan!;
+    final uid          = ref.watch(currentUserProvider)?.uid;
     final sonraki      = _sonrakiIlan;
-    final isFav        = favIdler.contains(mevcut.id);
+    final isFav        = ref.watch(favoriliIlanIdlerProvider.select((ids) => ids.contains(mevcut.id)));
     final gosterFavori = uid != null && uid != mevcut.kullaniciId;
 
     // Rewind: geri dönen kartın altında az önce üstte olan kart görünür.

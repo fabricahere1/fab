@@ -30,6 +30,7 @@ class AppColors {
  
   // ── Özel ──────────────────────────────────────────────
   static const yellow      = Color(0xFFFFB300);
+  static const purple      = Color(0xFF7C3AED);
   static const redLight    = Color(0xFFFFEBEE);
   static const green       = Color(0xFF00C17C);
   static const greenLight  = Color(0xFFE6F9F3);

@@ -759,6 +759,7 @@ export const degerlendirmePuanGuncelle = onDocumentCreated(
     const { hedefKullaniciId, puan } = data as { hedefKullaniciId: string; puan: number };
     if (!hedefKullaniciId || typeof puan !== "number" || puan < 1 || puan > 5) return;
     const kullaniciRef = db.collection("kullanicilar").doc(hedefKullaniciId);
+    let guncelPuan: number | null = null;
     await db.runTransaction(async (tx) => {
       const snap = await tx.get(kullaniciRef);
       if (!snap.exists) return;
@@ -767,11 +768,42 @@ export const degerlendirmePuanGuncelle = onDocumentCreated(
       const eskiOrtalama: number = (d.ortalamaPuan as number) || 0;
       const yeniSayi = eskiSayi + 1;
       const yeniOrtalama = (eskiOrtalama * eskiSayi + puan) / yeniSayi;
+      guncelPuan = Math.round(yeniOrtalama * 10) / 10;
       tx.update(kullaniciRef, {
         degerlendirmeSayisi: yeniSayi,
-        ortalamaPuan: Math.round(yeniOrtalama * 10) / 10,
+        ortalamaPuan: guncelPuan,
       });
     });
+
+    // Kullanıcı dokümanı yoktu → transaction hiçbir şey yazmadı, fan-out da yapılmaz.
+    if (guncelPuan === null) return;
+
+    // ── kullaniciPuan fan-out ──────────────────────────────────────────────
+    // Satıcının AKTİF ilanlarındaki denormalize kullaniciPuan'ı tazele.
+    // onerilenPuan + Algolia senkronu için EK İŞ GEREKMEZ: bu yazmaların her
+    // biri ilanGuncellendi trigger'ını tetikler; o trigger yeni kullaniciPuan
+    // ile onerilenPuan'ı yeniden hesaplayıp Firestore + Algolia'ya yazar.
+    // Zincir sönümlüdür: değer değişmeyen yazma yeni update event'i üretmez.
+    try {
+      const ilanlarSnap = await db.collection("ilanlar")
+        .where("kullaniciId", "==", hedefKullaniciId)
+        .where("aktif", "==", true)
+        .get();
+      if (!ilanlarSnap.empty) {
+        const docs = ilanlarSnap.docs;
+        for (let i = 0; i < docs.length; i += 450) {  // batch limiti 500 — pay bırak
+          const batch = db.batch();
+          for (const doc of docs.slice(i, i + 450)) {
+            batch.update(doc.ref, { kullaniciPuan: guncelPuan });
+          }
+          await batch.commit();
+        }
+      }
+    } catch (e) {
+      // Fan-out hatası ortalamaPuan yazımını geri almaz — puan güncellendi,
+      // ilanlar bir sonraki değerlendirmede yakalar. Sadece logla.
+      console.error("kullaniciPuan fan-out hatası:", e);
+    }
   }
 );
 

@@ -517,16 +517,18 @@ class IlanRepository {
         .map((snap) => snap.docs.isNotEmpty);
   }
 
-  Future<void> favoriyeEkle({
+  /// Transaction gerçekten yazdıysa true, favoriSnap zaten varsa (guard'lı
+  /// erken çıkış) false döner — çağıran, sayaç delta'sını buna göre uygular.
+  Future<bool> favoriyeEkle({
     required String kullaniciId,
     required IlanModel ilan,
   }) async {
     final favoriId = '${kullaniciId}_${ilan.id}';
     final favoriRef = firestore.collection(Collections.favoriler).doc(favoriId);
 
-    await firestore.runTransaction((txn) async {
+    final yazdi = await firestore.runTransaction<bool>((txn) async {
       final favoriSnap = await txn.get(favoriRef);
-      if (favoriSnap.exists) return;
+      if (favoriSnap.exists) return false;
 
       txn.set(favoriRef, {
         'kullaniciId':  kullaniciId,
@@ -545,23 +547,29 @@ class IlanRepository {
       txn.update(_col.doc(ilan.id), {
         'favoriSayisi': FieldValue.increment(1),
       });
+      return true;
     });
+    return yazdi;
   }
 
-  Future<void> favoridanCikar({
+  /// Transaction gerçekten sildiyse true, favori zaten yoksa (guard'lı
+  /// erken çıkış) false döner — çağıran, sayaç delta'sını buna göre uygular.
+  Future<bool> favoridanCikar({
     required String kullaniciId,
     required String ilanId,
   }) async {
     final favoriId = '${kullaniciId}_$ilanId';
     final favoriRef = firestore.collection(Collections.favoriler).doc(favoriId);
-    await firestore.runTransaction((txn) async {
+    final yazdi = await firestore.runTransaction<bool>((txn) async {
       final snap = await txn.get(favoriRef);
-      if (!snap.exists) return;
+      if (!snap.exists) return false;
       txn.delete(favoriRef);
       txn.update(_col.doc(ilanId), {
         'favoriSayisi': FieldValue.increment(-1),
       });
+      return true;
     });
+    return yazdi;
   }
 
   Future<bool> goruntulenmeyiKaydet({

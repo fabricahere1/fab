@@ -4,6 +4,8 @@ import 'dart:async';
 import 'package:app_badge_plus/app_badge_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../shared/constants/app_constants.dart';
+
 /// Okunmamış bildirim sayısını dinler ve uygulama ikonuna badge yazar.
 class BadgeService {
   BadgeService._();
@@ -28,7 +30,7 @@ class BadgeService {
     }
 
     _bildirimSub = _firestore
-        .collection('bildirimler')
+        .collection(Collections.bildirimler)
         .where('kullaniciId', isEqualTo: user.uid)
         .where('okundu', isEqualTo: false)
         .snapshots()
