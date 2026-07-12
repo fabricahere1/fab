@@ -35,6 +35,8 @@ class FcmService {
 
   String? _sonUid;
 
+  String _maskele(String s) => s.length <= 6 ? s : '...${s.substring(s.length - 6)}';
+
   /// [onBildirimAc] — bildirime tıklanınca çağrılır (router erişimi için
   /// main.dart'tan inject edilir).
   Future<void> init({
@@ -103,9 +105,10 @@ class FcmService {
           .collection(Collections.kullanicilar)
           .doc(uid)
           .set({'fcmToken': token}, SetOptions(merge: true));
-      debugPrint('[FCM] Token kaydedildi: $token');
-    } catch (e) {
+      debugPrint('[FCM] Token kaydedildi: ${_maskele(token)}');
+    } catch (e, stack) {
       debugPrint('[FCM] Token kaydedilemedi: $e');
+      AppHataYonetici.logla(e, stack, etiket: 'FCM.tokenKaydet');
     }
   }
 
@@ -117,9 +120,10 @@ class FcmService {
           .collection(Collections.kullanicilar)
           .doc(uid)
           .update({'fcmToken': FieldValue.delete()});
-      debugPrint('[FCM] Token silindi uid=$uid');
-    } catch (e) {
+      debugPrint('[FCM] Token silindi uid=${_maskele(uid)}');
+    } catch (e, stack) {
       debugPrint('[FCM] Token silinemedi: $e');
+      AppHataYonetici.logla(e, stack, etiket: 'FCM.tokenSil');
     }
   }
 
@@ -136,7 +140,7 @@ class FcmService {
           .update({'fcmToken': FieldValue.delete()});
       await _messaging.deleteToken();
       _sonUid = null;
-      debugPrint('[FCM] Çıkış temizliği tamamlandı uid=$uid');
+      debugPrint('[FCM] Çıkış temizliği tamamlandı uid=${_maskele(uid)}');
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'cikis.fcmTemizlik');
     }
