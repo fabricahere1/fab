@@ -41,7 +41,7 @@ final class IstekIlanlarProvider
   }
 }
 
-String _$istekIlanlarHash() => r'ac795ad0e42046d9dccf2538a4d3e65299692e0c';
+String _$istekIlanlarHash() => r'7116625c76db44d16e31333e1f4a35b5e3bc18b2';
 
 abstract class _$IstekIlanlar extends $Notifier<IlanListeState> {
   IlanListeState build();
@@ -93,7 +93,7 @@ final class TasiyiciIlanlarProvider
   }
 }
 
-String _$tasiyiciIlanlarHash() => r'c503497ce7a32be737a90996113578a21a886dc4';
+String _$tasiyiciIlanlarHash() => r'53dc58c44049fc1bdea712d60455d4d4b6f28aa3';
 
 abstract class _$TasiyiciIlanlar extends $Notifier<IlanListeState> {
   IlanListeState build();
@@ -145,7 +145,7 @@ final class IlanOlusturProvider
   }
 }
 
-String _$ilanOlusturHash() => r'86fe4520f0ea6b63c699c8d1cf53fde29406daaf';
+String _$ilanOlusturHash() => r'11463927a58f268a5c6a8d7d8d86c3a07310918a';
 
 abstract class _$IlanOlustur extends $Notifier<IlanOlusturState> {
   IlanOlusturState build();
@@ -857,7 +857,7 @@ final class FavoriNotifierProvider
   }
 }
 
-String _$favoriNotifierHash() => r'0e0cb0c75aad3dc2619faaf15d5b8eca97664534';
+String _$favoriNotifierHash() => r'880e713f5c6ba907410242f601b1259becb3cf11';
 
 abstract class _$FavoriNotifier extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();

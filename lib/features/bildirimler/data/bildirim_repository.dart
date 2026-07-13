@@ -73,12 +73,19 @@ class BildirimRepository {
         .where('kullaniciId', isEqualTo: kullaniciId)
         .where('okundu', isEqualTo: false)
         .get();
- 
-    final batch = firestore.batch();
-    for (final doc in snap.docs) {
-      batch.update(doc.reference, {'okundu': true});
+    if (snap.docs.isEmpty) return;
+
+    // Firestore batch limiti 500 — gruplara böl (mesaj_repository deseni)
+    const grupBoyutu = 490;
+    for (int i = 0; i < snap.docs.length; i += grupBoyutu) {
+      final grup = snap.docs.sublist(
+          i, (i + grupBoyutu).clamp(0, snap.docs.length));
+      final batch = firestore.batch();
+      for (final doc in grup) {
+        batch.update(doc.reference, {'okundu': true});
+      }
+      await batch.commit();
     }
-    await batch.commit();
   }
  
   // Bildirimi sil

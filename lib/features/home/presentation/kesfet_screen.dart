@@ -3,6 +3,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:iste_v3/shared/constants/app_colors.dart';
@@ -10,6 +11,9 @@ import 'package:iste_v3/shared/constants/app_constants.dart';
 import 'package:iste_v3/features/arama/presentation/arama_screen.dart';
 import 'package:iste_v3/features/ilanlar/providers/ilan_provider.dart';
 import 'package:iste_v3/features/ilanlar/presentation/ilan_form_screen.dart';
+import 'package:iste_v3/features/ilanlar/presentation/widgets/ilan_karti.dart';
+import 'package:iste_v3/features/ilanlar/domain/ilan_model.dart';
+import '../providers/kesfet_akis_provider.dart';
 import 'sana_ozel_screen.dart';
 import 'kesfet_vitrin_tab.dart';
 import 'kesfet_vitrin2_tab.dart';
@@ -211,6 +215,8 @@ class _KesfetTumEkran extends ConsumerWidget {
     await Future.wait([
       ref.read(istekIlanlarProvider.notifier).yenile(),
       ref.read(tasiyiciIlanlarProvider.notifier).yenile(),
+      ref.read(kesfetAkisProvider('istek').notifier).yenile(),
+      ref.read(kesfetAkisProvider('tasiyici').notifier).yenile(),
     ]);
   }
 
@@ -235,40 +241,121 @@ class _KesfetTumEkran extends ConsumerWidget {
       );
     }
 
+    final istekAkis = ref.watch(kesfetAkisProvider('istek'));
+    final tasiyiciAkis = ref.watch(kesfetAkisProvider('tasiyici'));
+
+    final birlesikListe = [...istekAkis.ilanlar, ...tasiyiciAkis.ilanlar]
+      ..sort((a, b) {
+        final ta = a.olusturmaTarihi;
+        final tb = b.olusturmaTarihi;
+        if (ta == null || tb == null) return 0;
+        return tb.compareTo(ta);
+      });
+
+    // Bir akış ilk sayfasını henüz yüklememişse (dahaFazlaVar && sonTarih == null)
+    // frontier'ı tanımsızdır — grid, iki akış da ilk sayfasını getirene kadar boş kalır.
+    // (Boş ilk sayfa bitti=true döndürdüğü için burada takılı kalmaz.)
+    final istekHazir = !istekAkis.dahaFazlaVar || istekAkis.sonTarih != null;
+    final tasiyiciHazir = !tasiyiciAkis.dahaFazlaVar || tasiyiciAkis.sonTarih != null;
+
+    // Frontier kesimi — iki akış farklı derinliklere sayfalanabilir; kesim olmadan
+    // sonraki sayfa listenin ORTASINA eklenir (kullanıcı kaydırırken kartlar yer
+    // değiştirir). Görüntü yalnızca her iki akışın da "buraya kadar eksiksizim"
+    // dediği en geç tarihe kadar gösterilir, gerisi tamponda bekler.
+    final f1 = istekAkis.dahaFazlaVar ? istekAkis.sonTarih : null;
+    final f2 = tasiyiciAkis.dahaFazlaVar ? tasiyiciAkis.sonTarih : null;
+    final kesim = (f1 != null && f2 != null)
+        ? (f1.isAfter(f2) ? f1 : f2)
+        : (f1 ?? f2);
+
+    final gorunurListe = (!istekHazir || !tasiyiciHazir)
+        ? const <IlanModel>[]
+        : (kesim == null
+            ? birlesikListe
+            : birlesikListe
+                .where((i) => i.olusturmaTarihi != null && !i.olusturmaTarihi!.isBefore(kesim))
+                .toList());
+
+    final gridYukleniyor = istekAkis.yukleniyor || tasiyiciAkis.yukleniyor;
+    final gridDahaFazlaVar = istekAkis.dahaFazlaVar || tasiyiciAkis.dahaFazlaVar;
+
     return RefreshIndicator(
-      color: AppColors.red,
       onRefresh: () => _yenile(ref),
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: Column(
-          children: const [
-            // 1. Hero banner
-            KesfetHeroBanner(),
-            // 2. Önerilen ilanlar (2 satır)
-            KesfetOnerilenBolum(),
-            // 3. Haftanın en çok görüntülenenleri + favorilenenleri
-            KesfetGoruntulenenFavorilenenBolum(),
-            // 4. En yeni ilanlar (2 satır, etiketsiz)
-            KesfetEnYeniBolum(),
-            // 5. Bugün eklenen + Yakında gelecek + Duty Free
-            KesfetGuncelBolumler(),
-            // 6. En eski ilanlar (1 satır)
-            KesfetEnEskiBolum1Satir(),
-            // 7. Trend ürünler + Popüler güzergahlar + Bu hafta nereden geliyorlar
-            KesfetTrendGuzergahSehirGrubu(),
-            // 8. En eski ilanlar (2 satır)
-            KesfetEnEskiBolum2Satir(),
-            // 9. İndirim & outlet mağazaları + Dünya trendleri
-            KesfetIndirimDunyaGrubu(),
-            // 10. Alışveriş rehberi (İstekçi Rehberi)
-            // (KesfetRehberBedenIpucuBannerGrubu'nun yerine, araya kategori
-            //  vitrini girebilsin diye burada manuel sıralıyoruz)
-            _AlisverisRehberiVeKategoriVitrini(),
-            // 12. Beden dönüştürücü + Taşıyıcı ipuçları + İlk ilanını ver banner'ı
-            _BedenIpucuVeBanner(),
-            // 13. Rastgele keşfet karması (2 satır)
-            KesfetRastgeleKarmaBolum(),
-            SizedBox(height: 24),
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (n) {
+          if (n.metrics.pixels > n.metrics.maxScrollExtent - 600) {
+            if (istekAkis.dahaFazlaVar && !istekAkis.yukleniyor) {
+              ref.read(kesfetAkisProvider('istek').notifier).dahaFazlaYukle();
+            }
+            if (tasiyiciAkis.dahaFazlaVar && !tasiyiciAkis.yukleniyor) {
+              ref.read(kesfetAkisProvider('tasiyici').notifier).dahaFazlaYukle();
+            }
+          }
+          return false;
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: Column(
+                children: const [
+                  // 1. Hero banner
+                  KesfetHeroBanner(),
+                  // 2. Önerilen ilanlar (2 satır)
+                  KesfetOnerilenBolum(),
+                  // 3. Haftanın en çok görüntülenenleri + favorilenenleri
+                  KesfetGoruntulenenFavorilenenBolum(),
+                  // 4. En yeni ilanlar (2 satır, etiketsiz)
+                  KesfetEnYeniBolum(),
+                  // 5. Bugün eklenen + Yakında gelecek + Duty Free
+                  KesfetGuncelBolumler(),
+                  // 6. En eski ilanlar (1 satır)
+                  KesfetEnEskiBolum1Satir(),
+                  // 7. Trend ürünler + Popüler güzergahlar + Bu hafta nereden geliyorlar
+                  KesfetTrendGuzergahSehirGrubu(),
+                  // 8. En eski ilanlar (2 satır)
+                  KesfetEnEskiBolum2Satir(),
+                  // 9. İndirim & outlet mağazaları + Dünya trendleri
+                  KesfetIndirimDunyaGrubu(),
+                  // 10. Alışveriş rehberi (İstekçi Rehberi)
+                  // (KesfetRehberBedenIpucuBannerGrubu'nun yerine, araya kategori
+                  //  vitrini girebilsin diye burada manuel sıralıyoruz)
+                  _AlisverisRehberiVeKategoriVitrini(),
+                  // 12. Beden dönüştürücü + Taşıyıcı ipuçları + İlk ilanını ver banner'ı
+                  _BedenIpucuVeBanner(),
+                  // 13. Rastgele keşfet karması (2 satır)
+                  KesfetRastgeleKarmaBolum(),
+                  SizedBox(height: 24),
+                ],
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.all(10),
+              sliver: SliverMasonryGrid.count(
+                crossAxisCount: 2,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                childCount: gorunurListe.length,
+                itemBuilder: (context, i) => RepaintBoundary(
+                  key: ValueKey(gorunurListe[i].id),
+                  child: IlanKarti(
+                    ilan: gorunurListe[i],
+                    resimYukseklikleri: kResimYukseklikleri,
+                    kolonSayisi: 2,
+                  ),
+                ),
+              ),
+            ),
+            if (gridDahaFazlaVar || gridYukleniyor)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Center(
+                    child: CircularProgressIndicator(color: AppColors.red, strokeWidth: 2),
+                  ),
+                ),
+              ),
+            const SliverToBoxAdapter(child: SizedBox(height: 24)),
           ],
         ),
       ),

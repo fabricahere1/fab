@@ -264,7 +264,9 @@ class _BildirimSatiri extends ConsumerWidget {
             karsiKullaniciId: karsiUid,
             karsiKullaniciAd: bildirim.gondereAd,
             ilanId: ilanId,
-            ilanBaslik: bildirim.baslik,
+            ilanBaslik: '', // bildirim.baslik = gondereAd (ilan başlığı DEĞİL) —
+                            // gerçek başlık sohbet dokümanından okunur (bkz. sohbet_screen
+                            // efektif başlık fallback'i)
           ),
         ),
       );

@@ -20,8 +20,105 @@ class DegerlendirmelerListeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final listAsync =
-        ref.watch(kullaniciDegerlendirmeleriProvider(kullaniciId));
+    final state = ref.watch(kullaniciDegerlendirmeleriProvider(kullaniciId));
+    final notifier =
+        ref.read(kullaniciDegerlendirmeleriProvider(kullaniciId).notifier);
+
+    Widget body;
+    if (state.yukleniyor && state.liste.isEmpty) {
+      body = LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: const Center(
+                child: CircularProgressIndicator(
+                    color: AppColors.red, strokeWidth: 2)),
+          ),
+        ),
+      );
+    } else if (state.hata != null && state.liste.isEmpty) {
+      body = LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline,
+                      color: AppColors.red, size: 40),
+                  const SizedBox(height: 8),
+                  Text('Değerlendirmeler yüklenemedi.',
+                      style: GoogleFonts.dmSans(
+                          color: AppColors.textSecondary)),
+                  const SizedBox(height: 4),
+                  Text(state.hata.toString(),
+                      style: GoogleFonts.dmSans(
+                          fontSize: 11, color: AppColors.textHint),
+                      textAlign: TextAlign.center),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    } else if (state.liste.isEmpty) {
+      body = LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.star_outline_rounded,
+                      size: 56, color: AppColors.divider),
+                  const SizedBox(height: 12),
+                  Text('Henüz değerlendirme yok',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 15,
+                          color: AppColors.textSecondary)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    } else {
+      body = NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          final metrics = notification.metrics;
+          if (metrics.pixels > metrics.maxScrollExtent - 400) {
+            notifier.dahaFazlaYukle();
+          }
+          return false;
+        },
+        child: ListView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          itemCount: state.liste.length + (state.dahaFazlaVar ? 1 : 0),
+          itemBuilder: (ctx, i) {
+            if (i >= state.liste.length) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                        color: AppColors.red, strokeWidth: 2),
+                  ),
+                ),
+              );
+            }
+            return DegerlendirmeKarti(data: state.liste[i]);
+          },
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -39,52 +136,9 @@ class DegerlendirmelerListeScreen extends ConsumerWidget {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: listAsync.when(
-        loading: () => const Center(
-            child: CircularProgressIndicator(
-                color: AppColors.red, strokeWidth: 2)),
-        error: (err, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline, color: AppColors.red, size: 40),
-              const SizedBox(height: 8),
-              Text('Değerlendirmeler yüklenemedi.',
-                  style:
-                      GoogleFonts.dmSans(color: AppColors.textSecondary)),
-              const SizedBox(height: 4),
-              Text(err.toString(),
-                  style: GoogleFonts.dmSans(
-                      fontSize: 11, color: AppColors.textHint),
-                  textAlign: TextAlign.center),
-            ],
-          ),
-        ),
-        data: (liste) {
-          if (liste.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.star_outline_rounded,
-                      size: 56, color: AppColors.divider),
-                  const SizedBox(height: 12),
-                  Text('Henüz değerlendirme yok',
-                      style: GoogleFonts.dmSans(
-                          fontSize: 15,
-                          color: AppColors.textSecondary)),
-                ],
-              ),
-            );
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: liste.length,
-            itemBuilder: (ctx, i) => DegerlendirmeKarti(
-              data: liste[i],
-            ),
-          );
-        },
+      body: RefreshIndicator(
+        onRefresh: notifier.yenile,
+        child: body,
       ),
     );
   }

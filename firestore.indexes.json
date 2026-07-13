@@ -76,6 +76,14 @@
         { "fieldPath": "kullaniciId", "order": "ASCENDING" },
         { "fieldPath": "olusturmaTarihi", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "degerlendirmeler",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "hedefKullaniciId", "order": "ASCENDING" },
+        { "fieldPath": "tarih", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

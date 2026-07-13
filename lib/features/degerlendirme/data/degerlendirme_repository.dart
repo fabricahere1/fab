@@ -12,6 +12,13 @@ DegerlendirmeRepository degerlendirmeRepository(Ref ref) {
   return DegerlendirmeRepository(firestore: AppFirestore.instance);
 }
 
+class DegerlendirmeSayfasi {
+  final List<Map<String, dynamic>> liste;
+  final DateTime? sonTarih;
+  final bool bitti;
+  const DegerlendirmeSayfasi({required this.liste, required this.bitti, this.sonTarih});
+}
+
 class DegerlendirmeRepository {
   final FirebaseFirestore _db;
 
@@ -119,20 +126,27 @@ class DegerlendirmeRepository {
     }, SetOptions(merge: true));
   }
 
-  // orderBy kaldırıldı — composite index gerektirmesin, client-side sıralanıyor
-  Stream<List<Map<String, dynamic>>> kullaniciDegerlendirmeleriStream(
-      String hedefKullaniciId) {
-    return _db
+  Future<DegerlendirmeSayfasi> degerlendirmeSayfasiGetir(
+    String hedefKullaniciId, {
+    DateTime? sonTarih,
+    int limit = Pagination.degerlendirmeSayfaBoyutu,
+  }) async {
+    var q = _db
         .collection(Collections.degerlendirmeler)
         .where('hedefKullaniciId', isEqualTo: hedefKullaniciId)
-        .snapshots()
-        .map((snap) {
-      final liste = snap.docs
-          .map((doc) => {'id': doc.id, ...doc.data()})
-          .toList();
-      liste.sort((a, b) => _tariheGoreSirala(a['tarih'], b['tarih']));
-      return liste;
-    });
+        .orderBy('tarih', descending: true)
+        .limit(limit);
+    if (sonTarih != null) {
+      q = q.startAfter([Timestamp.fromDate(sonTarih)]);
+    }
+    final snap = await q.get();
+    final liste = snap.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList();
+    final sonDokTarih = liste.isNotEmpty ? (liste.last['tarih'] as Timestamp?)?.toDate() : null;
+    return DegerlendirmeSayfasi(
+      liste: liste,
+      sonTarih: sonDokTarih ?? sonTarih,
+      bitti: snap.docs.length < limit,
+    );
   }
 
   // orderBy kaldırıldı — composite index gerektirmesin, client-side sıralanıyor

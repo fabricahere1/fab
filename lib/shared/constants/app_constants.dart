@@ -229,6 +229,7 @@ class Pagination {
   Pagination._();
   static const int ilanSayfaBoyutu  = 20;
   static const int mesajSayfaBoyutu = 30;
+  static const int degerlendirmeSayfaBoyutu = 20;
   static const int maxResimSayisi   = 4;
 }
 

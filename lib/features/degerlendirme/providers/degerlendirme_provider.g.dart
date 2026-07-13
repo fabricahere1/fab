@@ -165,19 +165,12 @@ final class BekleyenDegerlendirmelerFamily extends $Family
   String toString() => r'bekleyenDegerlendirmelerProvider';
 }
 
-@ProviderFor(kullaniciDegerlendirmeleri)
+@ProviderFor(KullaniciDegerlendirmeleri)
 final kullaniciDegerlendirmeleriProvider = KullaniciDegerlendirmeleriFamily._();
 
 final class KullaniciDegerlendirmeleriProvider
     extends
-        $FunctionalProvider<
-          AsyncValue<List<Map<String, dynamic>>>,
-          List<Map<String, dynamic>>,
-          Stream<List<Map<String, dynamic>>>
-        >
-    with
-        $FutureModifier<List<Map<String, dynamic>>>,
-        $StreamProvider<List<Map<String, dynamic>>> {
+        $NotifierProvider<KullaniciDegerlendirmeleri, DegerlendirmeListeState> {
   KullaniciDegerlendirmeleriProvider._({
     required KullaniciDegerlendirmeleriFamily super.from,
     required String super.argument,
@@ -201,14 +194,14 @@ final class KullaniciDegerlendirmeleriProvider
 
   @$internal
   @override
-  $StreamProviderElement<List<Map<String, dynamic>>> $createElement(
-    $ProviderPointer pointer,
-  ) => $StreamProviderElement(pointer);
+  KullaniciDegerlendirmeleri create() => KullaniciDegerlendirmeleri();
 
-  @override
-  Stream<List<Map<String, dynamic>>> create(Ref ref) {
-    final argument = this.argument as String;
-    return kullaniciDegerlendirmeleri(ref, argument);
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DegerlendirmeListeState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DegerlendirmeListeState>(value),
+    );
   }
 
   @override
@@ -224,10 +217,17 @@ final class KullaniciDegerlendirmeleriProvider
 }
 
 String _$kullaniciDegerlendirmeleriHash() =>
-    r'c257c3a1f03bb88739b3692ac525ac32fa975020';
+    r'04d0df597aadc77665f83895a381d4b742ded4e5';
 
 final class KullaniciDegerlendirmeleriFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<List<Map<String, dynamic>>>, String> {
+    with
+        $ClassFamilyOverride<
+          KullaniciDegerlendirmeleri,
+          DegerlendirmeListeState,
+          DegerlendirmeListeState,
+          DegerlendirmeListeState,
+          String
+        > {
   KullaniciDegerlendirmeleriFamily._()
     : super(
         retry: null,
@@ -242,6 +242,29 @@ final class KullaniciDegerlendirmeleriFamily extends $Family
 
   @override
   String toString() => r'kullaniciDegerlendirmeleriProvider';
+}
+
+abstract class _$KullaniciDegerlendirmeleri
+    extends $Notifier<DegerlendirmeListeState> {
+  late final _$args = ref.$arg as String;
+  String get kullaniciId => _$args;
+
+  DegerlendirmeListeState build(String kullaniciId);
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref =
+        this.ref as $Ref<DegerlendirmeListeState, DegerlendirmeListeState>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<DegerlendirmeListeState, DegerlendirmeListeState>,
+              DegerlendirmeListeState,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, () => build(_$args));
+  }
 }
 
 @ProviderFor(DegerlendirmeIslemleri)

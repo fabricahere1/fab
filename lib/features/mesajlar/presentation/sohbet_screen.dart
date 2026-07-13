@@ -305,7 +305,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
       karsiKullaniciId: widget.karsiKullaniciId,
       karsiKullaniciAd: widget.karsiKullaniciAd,
       ilanId: widget.ilanId,
-      ilanBaslik: widget.ilanBaslik,
+      ilanBaslik: _efektifBaslik,
       ilanResimUrl: widget.ilanResimUrl ?? '',
       ilanSahibiId: widget.ilanSahibiId,
       ilanTip: widget.ilanTip,
@@ -326,6 +326,15 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
     ]..sort();
     return '${ids[0]}_${ids[1]}_${widget.ilanId}';
   }
+
+  // widget.ilanBaslik doluysa (normal akış) onu kullan; boşsa (bildirimden
+  // gelindiğinde — bkz. bildirimler_screen) sohbet dokümanındaki gerçek
+  // ilan başlığına düş. Buton/gönderim metodları build() dışında olduğu
+  // için burada ref.read kullanılır; build()'daki banner ref.watch ile
+  // aynı formülü reaktif olarak tekrarlar.
+  String get _efektifBaslik => widget.ilanBaslik.isNotEmpty
+      ? widget.ilanBaslik
+      : (ref.read(sohbetIlanBaslikProvider(_sohbetId)).value ?? '');
 
   Future<void> _ucNoktaMenu(String benimUid) async {
     final sid = _sohbetId;
@@ -478,6 +487,9 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
     final guzergah = ilanAsync?.value != null
         ? '${ilanAsync!.value!.nereden} → ${ilanAsync.value!.nereye}'
         : '';
+    final efektifBaslik = widget.ilanBaslik.isNotEmpty
+        ? widget.ilanBaslik
+        : (ref.watch(sohbetIlanBaslikProvider(_sohbetId)).value ?? '');
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
@@ -564,7 +576,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                         ),
                         const SizedBox(height: 5),
                         // İlan kartı
-                        if (widget.ilanId.isNotEmpty && widget.ilanBaslik.isNotEmpty)
+                        if (widget.ilanId.isNotEmpty && efektifBaslik.isNotEmpty)
                           GestureDetector(
                             onTap: () => Navigator.push(
                               context,
@@ -602,7 +614,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Text(
-                                          widget.ilanBaslik,
+                                          efektifBaslik,
                                           style: GoogleFonts.dmSans(
                                               color: Colors.black87,
                                               fontWeight: FontWeight.w700,
@@ -701,7 +713,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
           karsiKullaniciId: widget.karsiKullaniciId,
           karsiKullaniciAd: widget.karsiKullaniciAd,
           ilanId: widget.ilanId,
-          ilanBaslik: widget.ilanBaslik,
+          ilanBaslik: _efektifBaslik,
           ilanResimUrl: widget.ilanResimUrl ?? '',
           ilanSahibiId: widget.ilanSahibiId,
           ilanTip: widget.ilanTip,
@@ -722,7 +734,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
           karsiKullaniciId: widget.karsiKullaniciId,
           karsiKullaniciAd: widget.karsiKullaniciAd,
           ilanId: widget.ilanId,
-          ilanBaslik: widget.ilanBaslik,
+          ilanBaslik: _efektifBaslik,
           ilanResimUrl: widget.ilanResimUrl ?? '',
           ilanSahibiId: widget.ilanSahibiId,
           ilanTip: widget.ilanTip,
