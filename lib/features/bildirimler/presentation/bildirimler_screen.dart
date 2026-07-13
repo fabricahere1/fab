@@ -264,9 +264,6 @@ class _BildirimSatiri extends ConsumerWidget {
             karsiKullaniciId: karsiUid,
             karsiKullaniciAd: bildirim.gondereAd,
             ilanId: ilanId,
-            ilanBaslik: '', // bildirim.baslik = gondereAd (ilan başlığı DEĞİL) —
-                            // gerçek başlık sohbet dokümanından okunur (bkz. sohbet_screen
-                            // efektif başlık fallback'i)
           ),
         ),
       );
@@ -283,8 +280,6 @@ class _BildirimSatiri extends ConsumerWidget {
       final d = await ref.read(sohbetIslemleriProvider.notifier).getir(sohbetId);
       if (d == null) return;
       final ilanId     = d['ilanId']     as String? ?? '';
-      final ilanBaslik = d['ilanBaslik'] as String? ?? '';
-      final ilanTip    = d['ilanTip']    as String? ?? 'istek';
 
       if (!context.mounted) return;
 
@@ -295,8 +290,6 @@ class _BildirimSatiri extends ConsumerWidget {
             karsiKullaniciId: karsiId,
             karsiKullaniciAd: karsiAd,
             ilanId:        ilanId,
-            ilanBaslik:    ilanBaslik,
-            ilanTip:       ilanTip,
             autoOpenPanel: true,
           ),
         ),

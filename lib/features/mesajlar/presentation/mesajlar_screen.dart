@@ -236,13 +236,7 @@ class _SohbetKarti extends ConsumerWidget {
             karsiKullaniciId: karsiUid,
             karsiKullaniciAd: karsiAd,
             ilanId: sohbet.ilanId,
-            ilanBaslik: sohbet.ilanBaslik,
-            ilanResimUrl: sohbet.ilanResimUrl.isNotEmpty
-                ? sohbet.ilanResimUrl
-                : null,
             sohbetId: sohbet.id,
-            ilanSahibiId: sohbet.ilanSahibiId,
-            ilanTip: sohbet.ilanTip,
           ),
         ),
       ),

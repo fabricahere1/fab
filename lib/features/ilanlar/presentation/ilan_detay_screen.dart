@@ -95,7 +95,6 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
       loginBottomSheet(context, returnRoute: AppRoutes.ilanDetayPath(ilan.id));
       return;
     }
-    final resimler = ilan.tumResimler;
     Navigator.push(
       context,
       PageRouteBuilder(
@@ -103,10 +102,6 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
           karsiKullaniciId: ilan.kullaniciId,
           karsiKullaniciAd: ilan.kullaniciAd,
           ilanId: ilan.id,
-          ilanBaslik: ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
-          ilanResimUrl: resimler.isNotEmpty ? resimler.first : null,
-          ilanSahibiId: ilan.kullaniciId,
-          ilanTip: ilan.tip,
         ),
         transitionsBuilder: (ctx, anim, secAnim, child) => SlideTransition(
           position: Tween(

@@ -309,7 +309,6 @@ class _KullaniciProfilPanelState extends ConsumerState<KullaniciProfilPanel>
                                                       widget.kullaniciId,
                                                   karsiKullaniciAd: ad,
                                                   ilanId: '',
-                                                  ilanBaslik: '',
                                                 ),
                                                 transitionsBuilder: (ctx, anim,
                                                         secAnim, child) =>

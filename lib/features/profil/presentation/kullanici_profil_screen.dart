@@ -317,7 +317,6 @@ class _KullaniciProfilScreenState extends ConsumerState<KullaniciProfilScreen> {
                                       karsiKullaniciId: kullaniciId,
                                       karsiKullaniciAd: ad,
                                       ilanId: '',
-                                      ilanBaslik: '',
                                     ),
                                     transitionsBuilder: (ctx, anim, secAnim, child) =>
                                         SlideTransition(

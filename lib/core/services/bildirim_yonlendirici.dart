@@ -31,9 +31,6 @@ void bildirimNavigasyonuIsle(WidgetRef ref, RemoteMessage message) {
     final karsiKullaniciId = data['karsiKullaniciId'] as String? ?? '';
     final karsiKullaniciAd = data['karsiKullaniciAd'] as String? ?? '';
     final bildirimIlanId   = data['ilanId']           as String? ?? '';
-    final ilanSahibiId     = data['ilanSahibiId']     as String? ?? '';
-    final ilanBaslik       = data['ilanBaslik']        as String? ?? '';
-    final ilanResimUrl     = data['ilanResimUrl']      as String? ?? '';
     final mesajId          = data['mesajId']           as String? ?? '';
     final mesajMetin       = data['mesajMetin']        as String? ?? '';
     final mesajZamanStr    = data['mesajZaman']        as String? ?? '';
@@ -49,9 +46,6 @@ void bildirimNavigasyonuIsle(WidgetRef ref, RemoteMessage message) {
         karsiKullaniciId: karsiKullaniciId,
         karsiKullaniciAd: karsiKullaniciAd,
         ilanId:           bildirimIlanId,
-        ilanBaslik:       ilanBaslik,
-        ilanResimUrl:     ilanResimUrl,
-        ilanSahibiId:     ilanSahibiId,
         autoOpenPanel:    panelBildirimi,
         bildirimMesaji:   bildirimMesaji,
       ),

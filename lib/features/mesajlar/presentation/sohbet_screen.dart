@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/mesaj_provider.dart';
+import '../providers/sohbet_meta_provider.dart';
 import '../domain/mesaj_model.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
@@ -23,12 +24,8 @@ class SohbetScreen extends ConsumerStatefulWidget {
   final String karsiKullaniciId;
   final String karsiKullaniciAd;
   final String ilanId;
-  final String ilanBaslik;
-  final String? ilanResimUrl;
   final String? sohbetId;
   final String? ilgileniyorumMesaji;
-  final String ilanSahibiId;
-  final String ilanTip;
   final bool autoOpenPanel;
   final ({String id, String metin, DateTime? zaman})? bildirimMesaji;
 
@@ -37,12 +34,8 @@ class SohbetScreen extends ConsumerStatefulWidget {
     required this.karsiKullaniciId,
     required this.karsiKullaniciAd,
     required this.ilanId,
-    required this.ilanBaslik,
-    this.ilanResimUrl,
     this.sohbetId,
     this.ilgileniyorumMesaji,
-    this.ilanSahibiId = '',
-    this.ilanTip = 'istek',
     this.autoOpenPanel = false,
     this.bildirimMesaji,
   });
@@ -55,9 +48,6 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
   final _mesajCtrl  = TextEditingController();
   final _scrollCtrl = ScrollController();
   bool _degerlendirmeAcik = false;
-  String? _ilanResimUrl;
-
-  String? get _gosterilecekResim => widget.ilanResimUrl ?? _ilanResimUrl;
 
   /// widget.karsiKullaniciAd boş gelirse (eski sohbet, ilk açılış)
   /// provider'dan çeker. Provider keepAlive olduğu için ikinci açılışta anında gelir.
@@ -69,10 +59,6 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
   @override
   void initState() {
     super.initState();
-    _ilanResimUrl = widget.ilanResimUrl;
-    if (widget.ilanResimUrl == null && widget.ilanId.isNotEmpty) {
-      _ilanResimUrlCek();
-    }
     if (widget.ilgileniyorumMesaji != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _gonderIlgileniyorum());
     }
@@ -93,15 +79,6 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
         );
       }
     });
-  }
-
-  Future<void> _ilanResimUrlCek() async {
-    try {
-      final ilan = await ref.read(ilanRepositoryProvider).ilanGetir(widget.ilanId);
-      if (!mounted || ilan == null) return;
-      final url = ilan.resimThumbUrl.isNotEmpty ? ilan.resimThumbUrl : ilan.resimUrl;
-      if (url.isNotEmpty) setState(() => _ilanResimUrl = url);
-    } catch (e, s) { AppHataYonetici.logla(e, s, etiket: 'sohbetScreen.ilanResimUrl'); /* bilinçli sessiz: resim olmadan sohbet açılmaya devam eder */ }
   }
 
   Future<void> _iletisimBasladiIsaretle() async {
@@ -305,10 +282,10 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
       karsiKullaniciId: widget.karsiKullaniciId,
       karsiKullaniciAd: widget.karsiKullaniciAd,
       ilanId: widget.ilanId,
-      ilanBaslik: _efektifBaslik,
-      ilanResimUrl: widget.ilanResimUrl ?? '',
-      ilanSahibiId: widget.ilanSahibiId,
-      ilanTip: widget.ilanTip,
+      ilanBaslik: _meta.ilanBaslik,
+      ilanResimUrl: _meta.ilanResimUrl,
+      ilanSahibiId: _meta.ilanSahibiId,
+      ilanTip: _meta.ilanTip,
     );
   }
 
@@ -327,14 +304,13 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
     return '${ids[0]}_${ids[1]}_${widget.ilanId}';
   }
 
-  // widget.ilanBaslik doluysa (normal akış) onu kullan; boşsa (bildirimden
-  // gelindiğinde — bkz. bildirimler_screen) sohbet dokümanındaki gerçek
-  // ilan başlığına düş. Buton/gönderim metodları build() dışında olduğu
-  // için burada ref.read kullanılır; build()'daki banner ref.watch ile
-  // aynı formülü reaktif olarak tekrarlar.
-  String get _efektifBaslik => widget.ilanBaslik.isNotEmpty
-      ? widget.ilanBaslik
-      : (ref.read(sohbetIlanBaslikProvider(_sohbetId)).value ?? '');
+  // İlan meta bilgisi (başlık/resim/sahip/tip) artık widget parametreleri
+  // yerine sohbetMetaProvider'dan gelir — tek kaynak, F2. Buton/gönderim
+  // metodları build() dışında olduğu için burada ref.read kullanılır;
+  // build()'daki banner ref.watch ile aynı provider'ı reaktif izler.
+  SohbetMeta get _meta =>
+      ref.read(sohbetMetaProvider(sohbetId: _sohbetId, ilanId: widget.ilanId)).value ??
+      const SohbetMeta();
 
   Future<void> _ucNoktaMenu(String benimUid) async {
     final sid = _sohbetId;
@@ -487,9 +463,8 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
     final guzergah = ilanAsync?.value != null
         ? '${ilanAsync!.value!.nereden} → ${ilanAsync.value!.nereye}'
         : '';
-    final efektifBaslik = widget.ilanBaslik.isNotEmpty
-        ? widget.ilanBaslik
-        : (ref.watch(sohbetIlanBaslikProvider(_sohbetId)).value ?? '');
+    final meta = ref.watch(sohbetMetaProvider(sohbetId: _sohbetId, ilanId: widget.ilanId)).value
+        ?? const SohbetMeta();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
@@ -576,7 +551,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                         ),
                         const SizedBox(height: 5),
                         // İlan kartı
-                        if (widget.ilanId.isNotEmpty && efektifBaslik.isNotEmpty)
+                        if (widget.ilanId.isNotEmpty && meta.ilanBaslik.isNotEmpty)
                           GestureDetector(
                             onTap: () => Navigator.push(
                               context,
@@ -593,11 +568,11 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                               ),
                               child: Row(
                                 children: [
-                                  if (_gosterilecekResim != null && _gosterilecekResim!.isNotEmpty)
+                                  if (meta.ilanResimUrl.isNotEmpty)
                                     ClipRRect(
                                       borderRadius: BorderRadius.circular(5),
                                       child: CachedNetworkImage(
-                                        imageUrl: _gosterilecekResim!,
+                                        imageUrl: meta.ilanResimUrl,
                                         width: 28,
                                         height: 28,
                                         fit: BoxFit.cover,
@@ -614,7 +589,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Text(
-                                          efektifBaslik,
+                                          meta.ilanBaslik,
                                           style: GoogleFonts.dmSans(
                                               color: Colors.black87,
                                               fontWeight: FontWeight.w700,
@@ -686,7 +661,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
               child: IslemDurumuTetikleyici(
                 sohbetId: _sohbetId,
                 karsiKullaniciAd: widget.karsiKullaniciAd,
-                ilanTip: widget.ilanTip,
+                ilanTip: meta.ilanTip,
               ),
             ),
           ),
@@ -713,10 +688,10 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
           karsiKullaniciId: widget.karsiKullaniciId,
           karsiKullaniciAd: widget.karsiKullaniciAd,
           ilanId: widget.ilanId,
-          ilanBaslik: _efektifBaslik,
-          ilanResimUrl: widget.ilanResimUrl ?? '',
-          ilanSahibiId: widget.ilanSahibiId,
-          ilanTip: widget.ilanTip,
+          ilanBaslik: _meta.ilanBaslik,
+          ilanResimUrl: _meta.ilanResimUrl,
+          ilanSahibiId: _meta.ilanSahibiId,
+          ilanTip: _meta.ilanTip,
         );
   }
 
@@ -734,10 +709,10 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
           karsiKullaniciId: widget.karsiKullaniciId,
           karsiKullaniciAd: widget.karsiKullaniciAd,
           ilanId: widget.ilanId,
-          ilanBaslik: _efektifBaslik,
-          ilanResimUrl: widget.ilanResimUrl ?? '',
-          ilanSahibiId: widget.ilanSahibiId,
-          ilanTip: widget.ilanTip,
+          ilanBaslik: _meta.ilanBaslik,
+          ilanResimUrl: _meta.ilanResimUrl,
+          ilanSahibiId: _meta.ilanSahibiId,
+          ilanTip: _meta.ilanTip,
         );
   }
 }
