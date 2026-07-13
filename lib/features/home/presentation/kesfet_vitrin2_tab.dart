@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shimmer/shimmer.dart';
 import 'kesfet_bolum_baslik.dart';
 
 import 'package:iste_v3/features/home/presentation/alisveris_rehberi_bolum.dart';
@@ -281,7 +282,7 @@ class _TrendUrunlerBolum extends StatelessWidget {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(9),
                       child: resim.isNotEmpty
-                          ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, fadeInDuration: Duration.zero)
+                          ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, fadeInDuration: Duration.zero, placeholder: (_, _) => Shimmer.fromColors(baseColor: Colors.grey[200]!, highlightColor: Colors.grey[50]!, child: Container(color: Colors.white)))
                           : Container(color: AppColors.surfaceAlt, child: const Icon(Icons.inventory_2_outlined, color: AppColors.textHint, size: 26)),
                     ),
                   ),
@@ -395,7 +396,7 @@ class _GuzergahlarBolum extends StatelessWidget {
                                                 decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.5), color: AppColors.surface),
                                                 child: ClipOval(
                                                   child: fotoUrl.isNotEmpty
-                                                      ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: fotoUrl, fit: BoxFit.cover, fadeInDuration: Duration.zero, errorWidget: (_, _, _) => _avatarYok())
+                                                      ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: fotoUrl, fit: BoxFit.cover, fadeInDuration: Duration.zero, placeholder: (_, _) => Shimmer.fromColors(baseColor: Colors.grey[200]!, highlightColor: Colors.grey[50]!, child: Container(color: Colors.white)), errorWidget: (_, _, _) => _avatarYok())
                                                       : _avatarYok(),
                                                 ),
                                               ),

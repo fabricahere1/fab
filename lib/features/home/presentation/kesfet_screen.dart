@@ -296,39 +296,33 @@ class _KesfetTumEkran extends ConsumerWidget {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            SliverToBoxAdapter(
-              child: Column(
-                children: const [
-                  // 1. Hero banner
-                  KesfetHeroBanner(),
-                  // 2. Önerilen ilanlar (2 satır)
-                  KesfetOnerilenBolum(),
-                  // 3. Haftanın en çok görüntülenenleri + favorilenenleri
-                  KesfetGoruntulenenFavorilenenBolum(),
-                  // 4. En yeni ilanlar (2 satır, etiketsiz)
-                  KesfetEnYeniBolum(),
-                  // 5. Bugün eklenen + Yakında gelecek + Duty Free
-                  KesfetGuncelBolumler(),
-                  // 6. En eski ilanlar (1 satır)
-                  KesfetEnEskiBolum1Satir(),
-                  // 7. Trend ürünler + Popüler güzergahlar + Bu hafta nereden geliyorlar
-                  KesfetTrendGuzergahSehirGrubu(),
-                  // 8. En eski ilanlar (2 satır)
-                  KesfetEnEskiBolum2Satir(),
-                  // 9. İndirim & outlet mağazaları + Dünya trendleri
-                  KesfetIndirimDunyaGrubu(),
-                  // 10. Alışveriş rehberi (İstekçi Rehberi)
-                  // (KesfetRehberBedenIpucuBannerGrubu'nun yerine, araya kategori
-                  //  vitrini girebilsin diye burada manuel sıralıyoruz)
-                  _AlisverisRehberiVeKategoriVitrini(),
-                  // 12. Beden dönüştürücü + Taşıyıcı ipuçları + İlk ilanını ver banner'ı
-                  _BedenIpucuVeBanner(),
-                  // 13. Rastgele keşfet karması (2 satır)
-                  KesfetRastgeleKarmaBolum(),
-                  SizedBox(height: 24),
-                ],
-              ),
-            ),
+            // 1. Hero banner
+            const SliverToBoxAdapter(child: KesfetHeroBanner()),
+            // 2. Önerilen ilanlar (2 satır)
+            const SliverToBoxAdapter(child: KesfetOnerilenBolum()),
+            // 3. Haftanın en çok görüntülenenleri + favorilenenleri
+            const SliverToBoxAdapter(child: KesfetGoruntulenenFavorilenenBolum()),
+            // 4. En yeni ilanlar (2 satır, etiketsiz)
+            const SliverToBoxAdapter(child: KesfetEnYeniBolum()),
+            // 5. Bugün eklenen + Yakında gelecek + Duty Free
+            const SliverToBoxAdapter(child: KesfetGuncelBolumler()),
+            // 6. En eski ilanlar (1 satır)
+            const SliverToBoxAdapter(child: KesfetEnEskiBolum1Satir()),
+            // 7. Trend ürünler + Popüler güzergahlar + Bu hafta nereden geliyorlar
+            const SliverToBoxAdapter(child: KesfetTrendGuzergahSehirGrubu()),
+            // 8. En eski ilanlar (2 satır)
+            const SliverToBoxAdapter(child: KesfetEnEskiBolum2Satir()),
+            // 9. İndirim & outlet mağazaları + Dünya trendleri
+            const SliverToBoxAdapter(child: KesfetIndirimDunyaGrubu()),
+            // 10. Alışveriş rehberi (İstekçi Rehberi)
+            // (KesfetRehberBedenIpucuBannerGrubu'nun yerine, araya kategori
+            //  vitrini girebilsin diye burada manuel sıralıyoruz)
+            const SliverToBoxAdapter(child: _AlisverisRehberiVeKategoriVitrini()),
+            // 12. Beden dönüştürücü + Taşıyıcı ipuçları + İlk ilanını ver banner'ı
+            const SliverToBoxAdapter(child: _BedenIpucuVeBanner()),
+            // 13. Rastgele keşfet karması (2 satır)
+            const SliverToBoxAdapter(child: KesfetRastgeleKarmaBolum()),
+            const SliverToBoxAdapter(child: SizedBox(height: 24)),
             SliverPadding(
               padding: const EdgeInsets.all(10),
               sliver: SliverMasonryGrid.count(

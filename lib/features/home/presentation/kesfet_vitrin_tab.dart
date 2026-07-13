@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'kesfet_bolum_baslik.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart';
 
 import 'package:iste_v3/core/cache/app_cache_manager.dart';
 import 'package:iste_v3/router/app_router.dart';
@@ -318,7 +319,7 @@ class _KesfetKart extends ConsumerWidget {
           ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
             child: Container(height: 150, width: double.infinity, color: const Color(0xFFF2F2F2),
               child: Stack(fit: StackFit.expand, children: [
-                resim.isNotEmpty ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, fadeInDuration: Duration.zero, errorWidget: (_, _, _) => _RenkliArkaplan(cicekTipi: cicekTipi)) : _RenkliArkaplan(cicekTipi: cicekTipi),
+                resim.isNotEmpty ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, fadeInDuration: Duration.zero, placeholder: (_, _) => Shimmer.fromColors(baseColor: Colors.grey[200]!, highlightColor: Colors.grey[50]!, child: Container(color: Colors.white)), errorWidget: (_, _, _) => _RenkliArkaplan(cicekTipi: cicekTipi)) : _RenkliArkaplan(cicekTipi: cicekTipi),
                 if (rozetTipi != RozetTipi.yok)
                   Positioned(top: 6, left: 6, child: _Rozet(ilan: ilan, tipi: rozetTipi, favoriSayisi: ref.canliFavoriSayisi(ilan), goruntulenmeSayisi: ref.canliGoruntulenmeSayisi(ilan))),
               ]))),
@@ -631,7 +632,7 @@ class KesfetHeroBanner extends ConsumerWidget {
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(9),
                                     child: resim.isNotEmpty
-                                        ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, fadeInDuration: Duration.zero)
+                                        ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, fadeInDuration: Duration.zero, placeholder: (_, _) => Shimmer.fromColors(baseColor: Colors.grey[200]!, highlightColor: Colors.grey[50]!, child: Container(color: Colors.white)))
                                         : Container(color: Colors.white.withValues(alpha: 0.2), child: const Icon(Icons.inventory_2_outlined, color: Colors.white, size: 26)),
                                   ),
                                 ),

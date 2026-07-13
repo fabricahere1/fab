@@ -34,8 +34,17 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
+  final Set<int> _ziyaretEdilenSekmeler = {0};
   DateTime? _sonGeriTusu;
   bool _fabAcik = false;
+
+  void _sekmeSec(int index) {
+    setState(() {
+      _selectedIndex = index;
+      _ziyaretEdilenSekmeler.add(index);
+      _fabAcik = false;
+    });
+  }
 
   bool _fabGoster(GoruntulemeModeli gridMod) =>
       _selectedIndex <= 1 &&
@@ -72,7 +81,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
         if (_selectedIndex != 0) {
-          setState(() => _selectedIndex = 0);
+          _sekmeSec(0);
           return;
         }
         final simdi = DateTime.now();
@@ -94,12 +103,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           children: [
             IndexedStack(
               index: _selectedIndex,
-              children: const [
-                _IsteklerSayfa(),
-                GelenlerScreen(embedded: true),
-                MesajlarScreen(),
-                ProfilScreen(),
-                KesfetScreen(),
+              children: [
+                _ziyaretEdilenSekmeler.contains(0) ? const _IsteklerSayfa() : const SizedBox.shrink(),
+                _ziyaretEdilenSekmeler.contains(1) ? const GelenlerScreen(embedded: true) : const SizedBox.shrink(),
+                _ziyaretEdilenSekmeler.contains(2) ? const MesajlarScreen() : const SizedBox.shrink(),
+                _ziyaretEdilenSekmeler.contains(3) ? const ProfilScreen() : const SizedBox.shrink(),
+                _ziyaretEdilenSekmeler.contains(4) ? const KesfetScreen() : const SizedBox.shrink(),
               ],
             ),
             if (_fabAcik)
@@ -160,7 +169,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         child: FloatingActionButton.extended(
                           heroTag: 'gelen',
                           onPressed: () {
-                            setState(() { _fabAcik = false; _selectedIndex = 1; });
+                            _sekmeSec(1);
                             if (uid == null) { loginBottomSheet(context, returnRoute: AppRoutes.ilanOlusturTasiyici); return; }
                             Navigator.push(context, CupertinoPageRoute(
                               builder: (_) => const IlanFormScreen(tip: IlanTip.tasiyici),
@@ -223,14 +232,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     _NavItem(
                       secili: _selectedIndex == 0,
-                      onTap: () { setState(() { _selectedIndex = 0; _fabAcik = false; }); ref.read(navBarGizliProvider.notifier).goster(); },
+                      onTap: () { _sekmeSec(0); ref.read(navBarGizliProvider.notifier).goster(); },
                       label: 'İstekler',
                       child: Icon(Symbols.home, size: 24, fill: _selectedIndex == 0 ? 1 : 0, weight: 300,
                           color: _selectedIndex == 0 ? AppColors.red : Colors.black),
                     ),
                     _NavItem(
                       secili: _selectedIndex == 1,
-                      onTap: () { setState(() { _selectedIndex = 1; _fabAcik = false; }); ref.read(navBarGizliProvider.notifier).goster(); },
+                      onTap: () { _sekmeSec(1); ref.read(navBarGizliProvider.notifier).goster(); },
                       label: 'Gelenler',
                       child: Icon(Symbols.flight_land, size: 24, fill: _selectedIndex == 1 ? 1 : 0, weight: 300,
                           color: _selectedIndex == 1 ? AppColors.red : Colors.black),
@@ -239,7 +248,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       secili: _selectedIndex == 2,
                       onTap: () {
                         if (uid == null) { loginBottomSheet(context); return; }
-                        setState(() { _selectedIndex = 2; _fabAcik = false; });
+                        _sekmeSec(2);
                         ref.read(navBarGizliProvider.notifier).goster();
                       },
                       label: 'Mesajlar',
@@ -258,7 +267,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       secili: _selectedIndex == 3,
                       onTap: () {
                         if (uid == null) { loginBottomSheet(context); return; }
-                        setState(() { _selectedIndex = 3; _fabAcik = false; });
+                        _sekmeSec(3);
                         ref.read(navBarGizliProvider.notifier).goster();
                       },
                       label: 'Profil',
@@ -267,7 +276,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     _NavItem(
                       secili: _selectedIndex == 4,
-                      onTap: () { setState(() { _selectedIndex = 4; _fabAcik = false; }); ref.read(navBarGizliProvider.notifier).goster(); },
+                      onTap: () { _sekmeSec(4); ref.read(navBarGizliProvider.notifier).goster(); },
                       label: 'Keşfet',
                       child: Icon(Symbols.explore, size: 24, fill: _selectedIndex == 4 ? 1 : 0, weight: 300,
                           color: _selectedIndex == 4 ? AppColors.red : Colors.black),
