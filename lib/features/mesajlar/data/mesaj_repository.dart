@@ -8,6 +8,7 @@ import '../domain/mesaj_model.dart';
 import '../domain/islem_durumu.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../../../shared/utils/app_hata_yonetici.dart';
+import '../../ilanlar/data/ilan_repository.dart';
 
 part 'mesaj_repository.g.dart';
 
@@ -21,14 +22,20 @@ MesajRepository mesajRepository(Ref ref) {
   return MesajRepository(
     firestore: AppFirestore.instance,
     storage: FirebaseStorage.instance,
+    ilanRepository: ref.read(ilanRepositoryProvider),
   );
 }
 
 class MesajRepository {
   final FirebaseFirestore firestore;
   final FirebaseStorage storage;
+  final IlanRepository ilanRepository;
 
-  MesajRepository({required this.firestore, required this.storage});
+  MesajRepository({
+    required this.firestore,
+    required this.storage,
+    required this.ilanRepository,
+  });
 
   CollectionReference get _sohbetler =>
       firestore.collection(Collections.sohbetler);
@@ -85,6 +92,31 @@ class MesajRepository {
     final mesajRef  = _mesajlar(sohbetId).doc();
     final batch     = firestore.batch();
 
+    // İlk temasta (sohbet dokümanı henüz yokken) çağıran ilanBaslik'i boş geçerse,
+    // guard (aşağıda) hiçbir şey yazmaz ve alan kalıcı olarak boş doğar — F1'in
+    // sohbetMetaProvider'daki ilan-dokümanı fallback'iyle AYNI GÜVENLİK AĞI burada,
+    // yazma tarafında kuruluyor. Yalnızca ilanBaslik boşken (nadir, savunma amaçlı)
+    // tetiklenir — normal akışta hiç çalışmaz, ekstra okuma maliyeti oluşturmaz.
+    var efektifIlanBaslik   = ilanBaslik;
+    var efektifIlanResimUrl = ilanResimUrl;
+    var efektifIlanSahibiId = ilanSahibiId;
+    if (efektifIlanBaslik.isEmpty && ilanId.isNotEmpty) {
+      try {
+        final ilan = await ilanRepository.ilanGetir(ilanId);
+        if (ilan != null) {
+          efektifIlanBaslik   = ilan.urun.isNotEmpty ? ilan.urun : 'İlan';
+          efektifIlanResimUrl = ilan.resimThumbUrl.isNotEmpty
+              ? ilan.resimThumbUrl
+              : ilan.resimUrl;
+          efektifIlanSahibiId = ilan.kullaniciId;
+        }
+      } catch (e, s) {
+        AppHataYonetici.logla(e, s, etiket: 'mesajRepository.ilanFallback');
+        // Sessiz devam — fallback başarısız olursa mesaj yine de gönderilmeli,
+        // sadece meta alanları boş kalır (F1'in okuma-tarafı fallback'i devrede kalır).
+      }
+    }
+
     // Tek bir set() — eskiden aynı dökümana (sohbetRef) iki ayrı set()
     // çağrısı yapılıyordu (ana veri + okunmamis sayacı). İlk temasta
     // (sohbet dökümanı henüz yokken) ikinci yazma, Firestore kuralının
@@ -105,10 +137,10 @@ class MesajRepository {
       if (gondereAd.isNotEmpty)   'kullaniciAdlari.$gondereId': gondereAd,
       if (karsiAd.isNotEmpty)     'kullaniciAdlari.$karsiId':   karsiAd,
       // İlan meta: boş geçilirse mevcut değeri ezme
-      if (ilanId.isNotEmpty)       'ilanId':       ilanId,
-      if (ilanBaslik.isNotEmpty)   'ilanBaslik':   ilanBaslik,
-      if (ilanResimUrl.isNotEmpty) 'ilanResimUrl': ilanResimUrl,
-      if (ilanSahibiId.isNotEmpty) 'ilanSahibiId': ilanSahibiId,
+      if (ilanId.isNotEmpty)             'ilanId':       ilanId,
+      if (efektifIlanBaslik.isNotEmpty)   'ilanBaslik':   efektifIlanBaslik,
+      if (efektifIlanResimUrl.isNotEmpty) 'ilanResimUrl': efektifIlanResimUrl,
+      if (efektifIlanSahibiId.isNotEmpty) 'ilanSahibiId': efektifIlanSahibiId,
     }, SetOptions(merge: true));
 
 
