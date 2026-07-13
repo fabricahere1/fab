@@ -355,8 +355,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
             child: Text('İSTE v3.0',
                 style: GoogleFonts.manrope(
                     fontSize: 12,
-                    color: AppColors.textHint,
-                    fontStyle: FontStyle.italic)),
+                    color: AppColors.textHint)),
           ),
           const SizedBox(height: 16),
         ],

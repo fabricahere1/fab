@@ -482,11 +482,30 @@ export const ilanGuncellemeModerasyon = onDocumentUpdated(
 export const ilanGuncellendi = onDocumentUpdated(
   { document: "ilanlar/{ilanId}", database: DATABASE_ID },
   async (event) => {
-    const data = event.data?.after.data();
-    if (!data) return;
+    const once  = event.data?.before.data();
+    const sonra = event.data?.after.data();
+    if (!sonra) return;
 
-    if (data.aktif !== true || data.durum !== "yayinda") return;
+    const oncedenAktifti = once ? (once.aktif === true && once.durum === "yayinda") : false;
+    const simdiAktif     = sonra.aktif === true && sonra.durum === "yayinda";
 
+    // aktif → pasif GEÇİŞİ: Algolia'dan sil, ilanSilindi'deki İKİ index'lik
+    // silme deseninin birebir aynısı (yalnızca ana index'i silmek yetmez —
+    // ALGOLIA_INDEX_NEREYE'de de kalır, arama sonuçlarında görünmeye devam eder).
+    if (oncedenAktifti && !simdiAktif) {
+      try {
+        await getAlgoliaClient().deleteObject({ indexName: ALGOLIA_INDEX, objectID: event.params.ilanId });
+      } catch (e) { console.warn("Algolia silme hatası (pasife alma):", e); }
+      try {
+        await getAlgoliaClient().deleteObject({ indexName: ALGOLIA_INDEX_NEREYE, objectID: event.params.ilanId });
+      } catch (e) { console.warn("Algolia nereye silme hatası (pasife alma):", e); }
+      return;
+    }
+
+    // Zaten pasifti, hâlâ pasif — geçiş yok, Algolia'ya dokunma (gereksiz çağrı yapma).
+    if (!simdiAktif) return;
+
+    const data = sonra;
     const onerilenPuan = onerilenPuanHesapla(data);
 
     try {

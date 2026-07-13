@@ -545,7 +545,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
           const SizedBox(height: 32),
           Center(
             child: Text('İSTE v3.0',
-                style: GoogleFonts.manrope(fontSize: 12, color: AppColors.textHint, fontStyle: FontStyle.italic)),
+                style: GoogleFonts.manrope(fontSize: 12, color: AppColors.textHint)),
           ),
           const SizedBox(height: 16),
         ],
