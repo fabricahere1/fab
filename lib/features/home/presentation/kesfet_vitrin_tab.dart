@@ -534,38 +534,15 @@ class KesfetHeroBanner extends ConsumerWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          border: Border.all(color: const Color(0xFF7C3AED), width: 1),
+        ),
         child: SizedBox(
-          height: 210,
+          height: 236,
           child: Stack(
-            fit: StackFit.expand,
             children: [
-              Image.asset(
-                'assets/images/hero_banner.png',
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFFFF6B6B), Color(0xFFFFB347)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                ),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.black.withValues(alpha: 0.60),
-                      Colors.black.withValues(alpha: 0.20),
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                ),
-              ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -578,7 +555,7 @@ class KesfetHeroBanner extends ConsumerWidget {
                           child: Text('Bu hafta öne çıkanlar',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.urbanist(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.2)),
+                              style: GoogleFonts.playfairDisplay(fontSize: 15, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
                         ),
                         const SizedBox(width: 8),
                         GestureDetector(
@@ -591,19 +568,16 @@ class KesfetHeroBanner extends ConsumerWidget {
                               ),
                             ),
                           ),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.18),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1),
-                            ),
-                            child: Text('Tümünü Gör',
-                                style: GoogleFonts.dmSans(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white)),
-                          ),
+                          child: Text('Tümü →',
+                              style: GoogleFonts.dmSans(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.primary)),
                         ),
                       ],
                     ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 0, 12, 6),
+                    child: Text('Öne çıkanlar',
+                        style: GoogleFonts.dmSans(fontSize: 11, color: AppColors.textSecondary)),
                   ),
                   Expanded(
                     child: heroIlanlar.isEmpty
@@ -621,19 +595,51 @@ class KesfetHeroBanner extends ConsumerWidget {
                                   context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan);
                                 },
                                 child: Container(
-                                  width: 88,
-                                  height: 120,
+                                  width: 120,
+                                  height: 160,
                                   margin: const EdgeInsets.only(right: 8),
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: Colors.white.withValues(alpha: 0.65), width: 1.5),
-                                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 6, offset: const Offset(0, 2))],
+                                    border: Border.all(color: const Color(0xFFC9A24B), width: 1),
                                   ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(9),
-                                    child: resim.isNotEmpty
-                                        ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, fadeInDuration: Duration.zero, placeholder: (_, _) => Shimmer.fromColors(baseColor: Colors.grey[200]!, highlightColor: Colors.grey[50]!, child: Container(color: Colors.white)))
-                                        : Container(color: Colors.white.withValues(alpha: 0.2), child: const Icon(Icons.inventory_2_outlined, color: Colors.white, size: 26)),
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      resim.isNotEmpty
+                                          ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, fadeInDuration: Duration.zero, placeholder: (_, _) => Shimmer.fromColors(baseColor: Colors.grey[200]!, highlightColor: Colors.grey[50]!, child: Container(color: Colors.white)))
+                                          : Container(color: AppColors.surface, child: Icon(Icons.inventory_2_outlined, color: AppColors.textHint, size: 26)),
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.topCenter,
+                                            end: Alignment.bottomCenter,
+                                            colors: [Colors.transparent, Colors.black.withValues(alpha: 0.55)],
+                                            stops: const [0.5, 1.0],
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        left: 8, right: 8, bottom: 8,
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: GoogleFonts.dmSans(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white),
+                                            ),
+                                            Text(
+                                              ilan.tip == IlanTip.istek
+                                                  ? '→ ${ilan.nereye}'
+                                                  : '${ilan.nereden} → ${ilan.nereye}',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: GoogleFonts.dmSans(fontSize: 9, color: Colors.white.withValues(alpha: 0.85)),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               );

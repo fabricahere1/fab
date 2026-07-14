@@ -789,40 +789,15 @@ class _SanaOzelHeroBanner extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          border: Border.all(color: const Color(0xFF7C3AED), width: 1),
+        ),
         child: SizedBox(
           height: 210,
           child: Stack(
-            fit: StackFit.expand,
             children: [
-              // Arka plan
-              Image.asset(
-                'assets/images/sana.png',
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF1A1A2E), Color(0xFF16213E), Color(0xFF0F3460)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                ),
-              ),
-              // Overlay
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.black.withValues(alpha: 0.65),
-                      Colors.black.withValues(alpha: 0.20),
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                ),
-              ),
               // İçerik
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -833,13 +808,13 @@ class _SanaOzelHeroBanner extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('Senin için önerilen',
-                            style: GoogleFonts.urbanist(
-                                fontSize: 22, fontWeight: FontWeight.w700,
-                                color: Colors.white, letterSpacing: 0.2)),
+                            style: GoogleFonts.playfairDisplay(
+                                fontSize: 15, fontWeight: FontWeight.w500,
+                                color: AppColors.textPrimary)),
                         Text('İlgi alanlarına göre seçildi',
                             style: GoogleFonts.dmSans(
                                 fontSize: 11,
-                                color: Colors.white.withValues(alpha: 0.85))),
+                                color: AppColors.textSecondary)),
                       ],
                     ),
                   ),
@@ -859,29 +834,24 @@ class _SanaOzelHeroBanner extends ConsumerWidget {
                                   context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan);
                                 },
                                 child: Container(
-                                  width: 88, height: 120,
+                                  width: 95, height: 120,
                                   margin: const EdgeInsets.only(right: 8),
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: Colors.white.withValues(alpha: 0.65), width: 1.5),
-                                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 6, offset: const Offset(0, 2))],
+                                    border: Border.all(color: const Color(0xFFC9A24B), width: 1),
                                   ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(9),
-                                    child: resim.isNotEmpty
-                                        ? CachedNetworkImage(
-                                            cacheManager: AppCacheManager.instance,
-                                            imageUrl: resim,
-                                            fit: BoxFit.cover,
-                                            fadeInDuration: Duration.zero,
-                                            placeholder: (_, _) => Shimmer.fromColors(
-                                                baseColor: Colors.grey[200]!,
-                                                highlightColor: Colors.grey[50]!,
-                                                child: Container(color: Colors.white)))
-                                        : Container(
-                                            color: Colors.white.withValues(alpha: 0.2),
-                                            child: const Icon(Icons.inventory_2_outlined, color: Colors.white, size: 26)),
-                                  ),
+                                  child: resim.isNotEmpty
+                                      ? CachedNetworkImage(
+                                          cacheManager: AppCacheManager.instance,
+                                          imageUrl: resim,
+                                          fit: BoxFit.cover,
+                                          fadeInDuration: Duration.zero,
+                                          placeholder: (_, _) => Shimmer.fromColors(
+                                              baseColor: Colors.grey[200]!,
+                                              highlightColor: Colors.grey[50]!,
+                                              child: Container(color: Colors.white)))
+                                      : Container(
+                                          color: AppColors.surface,
+                                          child: Icon(Icons.inventory_2_outlined, color: AppColors.textHint, size: 26)),
                                 ),
                               );
                             },
