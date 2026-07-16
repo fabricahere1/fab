@@ -577,6 +577,14 @@ export const algoliaTopluAktar = onCall(async (request) => {
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "Giriş yapmalısın.");
   }
+
+  // Client tarafındaki admin kontrolüyle (ayarlar_screen.dart:310,312)
+  // AYNI e-posta — Firebase Console'dan doğrulandı, bu hesap Google ile
+  // giriş yapıyor, token.email güvenilir şekilde dolu gelir.
+  if (request.auth.token.email !== "fabricahere@gmail.com") {
+    throw new HttpsError("permission-denied", "Bu işlem için yetkin yok.");
+  }
+
   const snap    = await db.collection("ilanlar").get();
   const records = snap.docs.map((doc) => {
     const data         = doc.data();
@@ -649,6 +657,21 @@ export const mesajBildirimiGonder = onCall(async (request) => {
     aliciId: string; gondereAd: string; ilanBaslik: string; sohbetId: string; metin: string; ilanId: string; ilanSahibiId: string; ilanResimUrl: string; mesajId?: string; mesajZaman?: string;
   };
   const gondereId = request.auth.uid;
+
+  // Katılımcılık doğrulaması — çağıranın gerçekten bu sohbette olduğunu,
+  // aliciId'nin de aynı sohbetin diğer tarafı olduğunu kontrol et. Bu
+  // olmadan, giriş yapmış herhangi biri rastgele aliciId/sohbetId ile
+  // sahte bildirim gönderebilirdi.
+  const sohbetSnap = await db.collection("sohbetler").doc(sohbetId).get();
+  if (!sohbetSnap.exists) {
+    throw new HttpsError("not-found", "Sohbet bulunamadı.");
+  }
+  const sohbetData = sohbetSnap.data() ?? {};
+  const katilimcilar = (sohbetData.kullanicilar ?? []) as string[];
+  if (!katilimcilar.includes(gondereId) || !katilimcilar.includes(aliciId)) {
+    throw new HttpsError("permission-denied", "Bu sohbetin bir parçası değilsin.");
+  }
+
   const kullaniciSnap = await db.collection("kullanicilar").doc(aliciId).get();
   if (!kullaniciSnap.exists) return { success: false };
   const kullaniciData  = kullaniciSnap.data() ?? {};
