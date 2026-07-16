@@ -400,6 +400,7 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
         : _urunCtrl.text.trim();
 
     if (_duzenlemeModuMu) {
+      setState(() => _overlayAktif = true);
       final basarili = await ref.read(ilanOlusturProvider.notifier).guncelle(
         widget.duzenlenecekIlan!.id,
         {
@@ -421,7 +422,18 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
       if (!mounted) return;
 
       if (!basarili) {
-        _snack('İlan güncellenemedi. Tekrar deneyin.');
+        // Yeni-ilan akışındaki (satır ~479-485) teknik hata deseniyle birebir
+        // aynı — overlay KAPATILMIYOR, _basarili=false ile overlay'in kendi
+        // "reddedildi" sonuç ekranına geçmesi sağlanıyor. IlanYuklemeOverlay
+        // her zaman mount durumda (Stack'in sabit çocuğu) olduğu için bu,
+        // gerçek bir didUpdateWidget tetikler, _gosterSonuc() zinciri güvenle
+        // çalışır. _overlayAktif=false ile kapatmak, overlay aktif=true
+        // geçtikten sonra artık stuck-loading bırakır — yanlış olur.
+        final teknikHata = ref.read(ilanOlusturProvider).hata;
+        setState(() {
+          _basarili = false;
+          _hataMesaji = teknikHata;
+        });
         return;
       }
 
@@ -431,7 +443,6 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
       // gösterilip ekran kapatılıyordu — gerçek sonucu (onaylandı/reddedildi)
       // hiç beklemiyordu. Artık aynı progres ekranı, gerçek sonucu gösterene
       // kadar açık kalıyor — push bildirim zamanlamasına bağımlı değil.
-      setState(() => _overlayAktif = true);
       final yayinda = await ref.read(ilanOlusturProvider.notifier).durumBekle(
         widget.duzenlenecekIlan!.id,
       );

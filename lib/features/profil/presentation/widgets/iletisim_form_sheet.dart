@@ -126,7 +126,16 @@ class _IletisimFormSheetState extends ConsumerState<_IletisimFormSheet> {
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
 
-    return Scaffold(
+    return PopScope(
+      canPop: _secilenKategori == null,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        setState(() {
+          _secilenKategori = null;
+          _mesajCtrl.clear();
+        });
+      },
+      child: Scaffold(
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: false,
       body: SafeArea(
@@ -363,6 +372,7 @@ class _IletisimFormSheetState extends ConsumerState<_IletisimFormSheet> {
           ),
           ),
         ),
+      ),
       ),
     );
   }

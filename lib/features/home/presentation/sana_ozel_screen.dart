@@ -459,7 +459,7 @@ class _SanaOzelKart extends ConsumerWidget {
               borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
               child: Container(height: 150, width: double.infinity, color: const Color(0xFFF2F2F2),
                 child: resim.isNotEmpty
-                    ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, fadeInDuration: Duration.zero, placeholder: (_, _) => Shimmer.fromColors(baseColor: Colors.grey[200]!, highlightColor: Colors.grey[50]!, child: Container(color: Colors.white)), errorWidget: (_, _, _) => _RenkliArkaplan(cicekTipi: cicekTipi))
+                    ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, memCacheWidth: 310, memCacheHeight: 300, fadeInDuration: Duration.zero, placeholder: (_, _) => Shimmer.fromColors(baseColor: Colors.grey[200]!, highlightColor: Colors.grey[50]!, child: Container(color: Colors.white)), errorWidget: (_, _, _) => _RenkliArkaplan(cicekTipi: cicekTipi))
                     : _RenkliArkaplan(cicekTipi: cicekTipi)),
             ),
             if (yakinda)
@@ -844,6 +844,8 @@ class _SanaOzelHeroBanner extends ConsumerWidget {
                                           cacheManager: AppCacheManager.instance,
                                           imageUrl: resim,
                                           fit: BoxFit.cover,
+                                          memCacheWidth: 190,
+                                          memCacheHeight: 240,
                                           fadeInDuration: Duration.zero,
                                           placeholder: (_, _) => Shimmer.fromColors(
                                               baseColor: Colors.grey[200]!,

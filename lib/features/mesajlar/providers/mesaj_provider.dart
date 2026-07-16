@@ -29,9 +29,12 @@ int okunmamisSayi(Ref ref) {
   final uid = ref.watch(currentUserProvider)?.uid;
   if (uid == null) return 0;
   final sohbetListesi = ref.watch(sohbetlerProvider).value ?? [];
+  final engellenenUidler = (ref.watch(engellenenlerProvider).value ?? []).toSet();
   int toplam = 0;
   for (final s in sohbetListesi) {
     if (s.gizliMi(uid)) continue;
+    final karsiUid = s.karsiKullaniciId(uid);
+    if (engellenenUidler.contains(karsiUid)) continue;
     toplam += s.okunmamisSayisi(uid);
   }
   return toplam;

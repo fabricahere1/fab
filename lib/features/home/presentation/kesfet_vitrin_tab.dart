@@ -276,28 +276,6 @@ class _Bolum extends StatelessWidget {
   }
 }
 
-class CicekBaslikPainter extends CustomPainter {
-  final CicekTipi tip;
-  const CicekBaslikPainter(this.tip);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-    final Color zemin;
-    switch (tip) {
-      case CicekTipi.papatya:  zemin = const Color(0xFFFFF3E0); break;
-      case CicekTipi.gul:      zemin = const Color(0xFFFCE4EC); break;
-      case CicekTipi.lavanta:  zemin = const Color(0xFFEDE7F6); break;
-      case CicekTipi.aycicegi: zemin = const Color(0xFFFFFDE7); break;
-    }
-    canvas.drawRect(Rect.fromLTWH(0, 0, w, h), Paint()..color = zemin);
-  }
-
-  @override
-  bool shouldRepaint(covariant CicekBaslikPainter old) => old.tip != tip;
-}
-
 class _KesfetKart extends ConsumerWidget {
   final IlanModel ilan;
   final RozetTipi rozetTipi;
@@ -319,7 +297,7 @@ class _KesfetKart extends ConsumerWidget {
           ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
             child: Container(height: 150, width: double.infinity, color: const Color(0xFFF2F2F2),
               child: Stack(fit: StackFit.expand, children: [
-                resim.isNotEmpty ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, fadeInDuration: Duration.zero, placeholder: (_, _) => Shimmer.fromColors(baseColor: Colors.grey[200]!, highlightColor: Colors.grey[50]!, child: Container(color: Colors.white)), errorWidget: (_, _, _) => _RenkliArkaplan(cicekTipi: cicekTipi)) : _RenkliArkaplan(cicekTipi: cicekTipi),
+                resim.isNotEmpty ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, memCacheWidth: 310, memCacheHeight: 300, fadeInDuration: Duration.zero, placeholder: (_, _) => Shimmer.fromColors(baseColor: Colors.grey[200]!, highlightColor: Colors.grey[50]!, child: Container(color: Colors.white)), errorWidget: (_, _, _) => _RenkliArkaplan(cicekTipi: cicekTipi)) : _RenkliArkaplan(cicekTipi: cicekTipi),
                 if (rozetTipi != RozetTipi.yok)
                   Positioned(top: 6, left: 6, child: _Rozet(ilan: ilan, tipi: rozetTipi, favoriSayisi: ref.canliFavoriSayisi(ilan), goruntulenmeSayisi: ref.canliGoruntulenmeSayisi(ilan))),
               ]))),
@@ -605,7 +583,7 @@ class KesfetHeroBanner extends ConsumerWidget {
                                     fit: StackFit.expand,
                                     children: [
                                       resim.isNotEmpty
-                                          ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, fadeInDuration: Duration.zero, placeholder: (_, _) => Shimmer.fromColors(baseColor: Colors.grey[200]!, highlightColor: Colors.grey[50]!, child: Container(color: Colors.white)))
+                                          ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, memCacheWidth: 240, memCacheHeight: 320, fadeInDuration: Duration.zero, placeholder: (_, _) => Shimmer.fromColors(baseColor: Colors.grey[200]!, highlightColor: Colors.grey[50]!, child: Container(color: Colors.white)))
                                           : Container(color: AppColors.surface, child: Icon(Icons.inventory_2_outlined, color: AppColors.textHint, size: 26)),
                                       Container(
                                         decoration: BoxDecoration(

@@ -129,6 +129,7 @@ class IstekIlanlar extends _$IstekIlanlar {
           .temizleToplu(sonuc.ilanlar.map((i) => i.id));
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'istekIlanlar.yenile');
+      if (!ref.mounted) return;
       state = state.copyWith(yukleniyor: false);
     }
   }
@@ -155,6 +156,7 @@ class IstekIlanlar extends _$IstekIlanlar {
           .temizleToplu(yeniIlanlar.map((i) => i.id));
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'istekIlanlar.dahaFazlaYukle');
+      if (!ref.mounted) return;
       state = state.copyWith(yukleniyor: false);
     }
   }
@@ -250,6 +252,7 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
           .temizleToplu(sonuc.ilanlar.map((i) => i.id));
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'tasiyiciIlanlar.yenile');
+      if (!ref.mounted) return;
       state = IlanListeState(siralama: state.siralama);
     }
   }
@@ -276,6 +279,7 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
           .temizleToplu(yeniIlanlar.map((i) => i.id));
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'tasiyiciIlanlar.dahaFazlaYukle');
+      if (!ref.mounted) return;
       state = state.copyWith(yukleniyor: false);
     }
   }

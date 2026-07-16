@@ -241,7 +241,7 @@ class TakipciDelta extends _$TakipciDelta {
 
 // ── Takip provider'ları ───────────────────────────────────────────────────────
 
-@Riverpod(keepAlive: true)
+@riverpod
 Stream<bool> takipEdiyorMu(Ref ref, String takipEdilenId) {
   final uid = ref.watch(currentUserProvider)?.uid;
   if (uid == null) return Stream.value(false);

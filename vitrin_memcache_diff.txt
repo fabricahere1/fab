@@ -1,0 +1,95 @@
+diff --git a/lib/features/home/presentation/kesfet_vitrin2_tab.dart b/lib/features/home/presentation/kesfet_vitrin2_tab.dart
+index 76c615a..1015231 100644
+--- a/lib/features/home/presentation/kesfet_vitrin2_tab.dart
++++ b/lib/features/home/presentation/kesfet_vitrin2_tab.dart
+@@ -282,7 +282,7 @@ class _TrendUrunlerBolum extends StatelessWidget {
+                     child: ClipRRect(
+                       borderRadius: BorderRadius.circular(9),
+                       child: resim.isNotEmpty
+-                          ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, fadeInDuration: Duration.zero, placeholder: (_, _) => Shimmer.fromColors(baseColor: Colors.grey[200]!, highlightColor: Colors.grey[50]!, child: Container(color: Colors.white)))
++                          ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, memCacheWidth: 176, memCacheHeight: 240, fadeInDuration: Duration.zero, placeholder: (_, _) => Shimmer.fromColors(baseColor: Colors.grey[200]!, highlightColor: Colors.grey[50]!, child: Container(color: Colors.white)))
+                           : Container(color: AppColors.surfaceAlt, child: const Icon(Icons.inventory_2_outlined, color: AppColors.textHint, size: 26)),
+                     ),
+                   ),
+@@ -396,7 +396,7 @@ class _GuzergahlarBolum extends StatelessWidget {
+                                                 decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.5), color: AppColors.surface),
+                                                 child: ClipOval(
+                                                   child: fotoUrl.isNotEmpty
+-                                                      ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: fotoUrl, fit: BoxFit.cover, fadeInDuration: Duration.zero, placeholder: (_, _) => Shimmer.fromColors(baseColor: Colors.grey[200]!, highlightColor: Colors.grey[50]!, child: Container(color: Colors.white)), errorWidget: (_, _, _) => _avatarYok())
++                                                      ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: fotoUrl, fit: BoxFit.cover, memCacheWidth: 48, memCacheHeight: 48, fadeInDuration: Duration.zero, placeholder: (_, _) => Shimmer.fromColors(baseColor: Colors.grey[200]!, highlightColor: Colors.grey[50]!, child: Container(color: Colors.white)), errorWidget: (_, _, _) => _avatarYok())
+                                                       : _avatarYok(),
+                                                 ),
+                                               ),
+diff --git a/lib/features/home/presentation/kesfet_vitrin_tab.dart b/lib/features/home/presentation/kesfet_vitrin_tab.dart
+index c8054d2..9d5889c 100644
+--- a/lib/features/home/presentation/kesfet_vitrin_tab.dart
++++ b/lib/features/home/presentation/kesfet_vitrin_tab.dart
+@@ -276,28 +276,6 @@ class _Bolum extends StatelessWidget {
+   }
+ }
+ 
+-class CicekBaslikPainter extends CustomPainter {
+-  final CicekTipi tip;
+-  const CicekBaslikPainter(this.tip);
+-
+-  @override
+-  void paint(Canvas canvas, Size size) {
+-    final w = size.width;
+-    final h = size.height;
+-    final Color zemin;
+-    switch (tip) {
+-      case CicekTipi.papatya:  zemin = const Color(0xFFFFF3E0); break;
+-      case CicekTipi.gul:      zemin = const Color(0xFFFCE4EC); break;
+-      case CicekTipi.lavanta:  zemin = const Color(0xFFEDE7F6); break;
+-      case CicekTipi.aycicegi: zemin = const Color(0xFFFFFDE7); break;
+-    }
+-    canvas.drawRect(Rect.fromLTWH(0, 0, w, h), Paint()..color = zemin);
+-  }
+-
+-  @override
+-  bool shouldRepaint(covariant CicekBaslikPainter old) => old.tip != tip;
+-}
+-
+ class _KesfetKart extends ConsumerWidget {
+   final IlanModel ilan;
+   final RozetTipi rozetTipi;
+@@ -319,7 +297,7 @@ class _KesfetKart extends ConsumerWidget {
+           ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
+             child: Container(height: 150, width: double.infinity, color: const Color(0xFFF2F2F2),
+               child: Stack(fit: StackFit.expand, children: [
+-                resim.isNotEmpty ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, fadeInDuration: Duration.zero, placeholder: (_, _) => Shimmer.fromColors(baseColor: Colors.grey[200]!, highlightColor: Colors.grey[50]!, child: Container(color: Colors.white)), errorWidget: (_, _, _) => _RenkliArkaplan(cicekTipi: cicekTipi)) : _RenkliArkaplan(cicekTipi: cicekTipi),
++                resim.isNotEmpty ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, memCacheWidth: 310, memCacheHeight: 300, fadeInDuration: Duration.zero, placeholder: (_, _) => Shimmer.fromColors(baseColor: Colors.grey[200]!, highlightColor: Colors.grey[50]!, child: Container(color: Colors.white)), errorWidget: (_, _, _) => _RenkliArkaplan(cicekTipi: cicekTipi)) : _RenkliArkaplan(cicekTipi: cicekTipi),
+                 if (rozetTipi != RozetTipi.yok)
+                   Positioned(top: 6, left: 6, child: _Rozet(ilan: ilan, tipi: rozetTipi, favoriSayisi: ref.canliFavoriSayisi(ilan), goruntulenmeSayisi: ref.canliGoruntulenmeSayisi(ilan))),
+               ]))),
+@@ -605,7 +583,7 @@ class KesfetHeroBanner extends ConsumerWidget {
+                                     fit: StackFit.expand,
+                                     children: [
+                                       resim.isNotEmpty
+-                                          ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, fadeInDuration: Duration.zero, placeholder: (_, _) => Shimmer.fromColors(baseColor: Colors.grey[200]!, highlightColor: Colors.grey[50]!, child: Container(color: Colors.white)))
++                                          ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, memCacheWidth: 240, memCacheHeight: 320, fadeInDuration: Duration.zero, placeholder: (_, _) => Shimmer.fromColors(baseColor: Colors.grey[200]!, highlightColor: Colors.grey[50]!, child: Container(color: Colors.white)))
+                                           : Container(color: AppColors.surface, child: Icon(Icons.inventory_2_outlined, color: AppColors.textHint, size: 26)),
+                                       Container(
+                                         decoration: BoxDecoration(
+diff --git a/lib/features/home/presentation/sana_ozel_screen.dart b/lib/features/home/presentation/sana_ozel_screen.dart
+index b7e0113..bfeb44f 100644
+--- a/lib/features/home/presentation/sana_ozel_screen.dart
++++ b/lib/features/home/presentation/sana_ozel_screen.dart
+@@ -459,7 +459,7 @@ class _SanaOzelKart extends ConsumerWidget {
+               borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
+               child: Container(height: 150, width: double.infinity, color: const Color(0xFFF2F2F2),
+                 child: resim.isNotEmpty
+-                    ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, fadeInDuration: Duration.zero, placeholder: (_, _) => Shimmer.fromColors(baseColor: Colors.grey[200]!, highlightColor: Colors.grey[50]!, child: Container(color: Colors.white)), errorWidget: (_, _, _) => _RenkliArkaplan(cicekTipi: cicekTipi))
++                    ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, memCacheWidth: 310, memCacheHeight: 300, fadeInDuration: Duration.zero, placeholder: (_, _) => Shimmer.fromColors(baseColor: Colors.grey[200]!, highlightColor: Colors.grey[50]!, child: Container(color: Colors.white)), errorWidget: (_, _, _) => _RenkliArkaplan(cicekTipi: cicekTipi))
+                     : _RenkliArkaplan(cicekTipi: cicekTipi)),
+             ),
+             if (yakinda)
+@@ -844,6 +844,8 @@ class _SanaOzelHeroBanner extends ConsumerWidget {
+                                           cacheManager: AppCacheManager.instance,
+                                           imageUrl: resim,
+                                           fit: BoxFit.cover,
++                                          memCacheWidth: 190,
++                                          memCacheHeight: 240,
+                                           fadeInDuration: Duration.zero,
+                                           placeholder: (_, _) => Shimmer.fromColors(
+                                               baseColor: Colors.grey[200]!,

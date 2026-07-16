@@ -1,0 +1,1302 @@
+diff --git a/kart_kod.txt b/kart_kod.txt
+deleted file mode 100644
+index c07522a..0000000
+Binary files a/kart_kod.txt and /dev/null differ
+diff --git a/lib/features/auth/presentation/register_screen.dart b/lib/features/auth/presentation/register_screen.dart
+deleted file mode 100644
+index 6befc8b..0000000
+--- a/lib/features/auth/presentation/register_screen.dart
++++ /dev/null
+@@ -1,5 +0,0 @@
+-export 'login_screen.dart' show LoginScreen;
+-
+-// RegisterScreen artık LoginScreen ile aynıdır — Google ve Telefon ile
+-// giriş yapıldığında hesap yoksa otomatik oluşturulur.
+-// Router'da AppRoutes.register → LoginScreen yönlendirilmektedir.
+diff --git a/lib/features/home/presentation/kesfet_vitrin_tab.dart b/lib/features/home/presentation/kesfet_vitrin_tab.dart
+index c8054d2..d3b0753 100644
+--- a/lib/features/home/presentation/kesfet_vitrin_tab.dart
++++ b/lib/features/home/presentation/kesfet_vitrin_tab.dart
+@@ -276,28 +276,6 @@ class _Bolum extends StatelessWidget {
+   }
+ }
+ 
+-class CicekBaslikPainter extends CustomPainter {
+-  final CicekTipi tip;
+-  const CicekBaslikPainter(this.tip);
+-
+-  @override
+-  void paint(Canvas canvas, Size size) {
+-    final w = size.width;
+-    final h = size.height;
+-    final Color zemin;
+-    switch (tip) {
+-      case CicekTipi.papatya:  zemin = const Color(0xFFFFF3E0); break;
+-      case CicekTipi.gul:      zemin = const Color(0xFFFCE4EC); break;
+-      case CicekTipi.lavanta:  zemin = const Color(0xFFEDE7F6); break;
+-      case CicekTipi.aycicegi: zemin = const Color(0xFFFFFDE7); break;
+-    }
+-    canvas.drawRect(Rect.fromLTWH(0, 0, w, h), Paint()..color = zemin);
+-  }
+-
+-  @override
+-  bool shouldRepaint(covariant CicekBaslikPainter old) => old.tip != tip;
+-}
+-
+ class _KesfetKart extends ConsumerWidget {
+   final IlanModel ilan;
+   final RozetTipi rozetTipi;
+diff --git a/lib/features/ilanlar/presentation/widgets/arama_widgetlari.dart b/lib/features/ilanlar/presentation/widgets/arama_widgetlari.dart
+deleted file mode 100644
+index 3aa7530..0000000
+--- a/lib/features/ilanlar/presentation/widgets/arama_widgetlari.dart
++++ /dev/null
+@@ -1,299 +0,0 @@
+-// lib/features/ilanlar/presentation/widgets/arama_widgetlari.dart
+-
+-import 'package:flutter/material.dart';
+-import 'package:google_fonts/google_fonts.dart';
+-import '../../../../shared/constants/app_colors.dart';
+-import '../../../../shared/constants/app_constants.dart';
+-
+-const double kKategoriBarYuksekligi = 46.0;
+-
+-// ── Sıralama enum ─────────────────────────────────────────────────────────────
+-
+-enum AramaSiralamaTipi { enYeni, enEski, ucretArtan, ucretAzalan }
+-
+-extension AramaSiralamaTipiX on AramaSiralamaTipi {
+-  String get label {
+-    switch (this) {
+-      case AramaSiralamaTipi.enYeni:      return 'En yeni';
+-      case AramaSiralamaTipi.enEski:      return 'En eski';
+-      case AramaSiralamaTipi.ucretArtan:  return 'Ücret: Düşük → Yüksek';
+-      case AramaSiralamaTipi.ucretAzalan: return 'Ücret: Yüksek → Düşük';
+-    }
+-  }
+-}
+-
+-// ── Şık Arama Çubuğu ─────────────────────────────────────────────────────────
+-// Köşeli (radius 12), subtle border, temiz görünüm
+-
+-class AramaCubugu extends StatelessWidget {
+-  final TextEditingController controller;
+-  final String aramaMetni;
+-  final ValueChanged<String> onChanged;
+-  final VoidCallback onTemizle;
+-
+-  const AramaCubugu({
+-    super.key,
+-    required this.controller,
+-    required this.aramaMetni,
+-    required this.onChanged,
+-    required this.onTemizle,
+-  });
+-
+-  @override
+-  Widget build(BuildContext context) {
+-    return Container(
+-      height: 42,
+-      decoration: BoxDecoration(
+-        color: AppColors.surface,
+-        borderRadius: BorderRadius.circular(12),
+-        border: Border.all(color: AppColors.divider, width: 1),
+-      ),
+-      child: TextField(
+-        controller: controller,
+-        onChanged: onChanged,
+-        style: GoogleFonts.dmSans(fontSize: 13, color: AppColors.textPrimary),
+-        decoration: InputDecoration(
+-          hintText: 'Ara veya keşfet...',
+-          hintStyle: GoogleFonts.dmSans(
+-              color: AppColors.textHint, fontSize: 13),
+-          prefixIcon: const Padding(
+-            padding: EdgeInsets.only(left: 12, right: 8),
+-            child: Icon(Icons.search_rounded,
+-                color: AppColors.textSecondary, size: 20),
+-          ),
+-          prefixIconConstraints: const BoxConstraints(),
+-          suffixIcon: aramaMetni.isNotEmpty
+-              ? IconButton(
+-                  icon: const Icon(Icons.close_rounded,
+-                      size: 16, color: AppColors.textSecondary),
+-                  onPressed: onTemizle,
+-                  padding: EdgeInsets.zero,
+-                )
+-              : null,
+-          border: InputBorder.none,
+-          enabledBorder: InputBorder.none,
+-          focusedBorder: InputBorder.none,
+-          filled: false,
+-          contentPadding:
+-              const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
+-        ),
+-      ),
+-    );
+-  }
+-}
+-
+-// ── Sıralama Butonu ───────────────────────────────────────────────────────────
+-
+-class SiralamaButon extends StatelessWidget {
+-  final VoidCallback onTap;
+-
+-  const SiralamaButon({super.key, required this.onTap});
+-
+-  @override
+-  Widget build(BuildContext context) {
+-    return GestureDetector(
+-      onTap: onTap,
+-      child: Container(
+-        width: 42,
+-        height: 42,
+-        decoration: BoxDecoration(
+-          color: AppColors.surface,
+-          borderRadius: BorderRadius.circular(12),
+-          border: Border.all(color: AppColors.divider, width: 1),
+-        ),
+-        child: const Icon(Icons.tune_rounded,
+-            color: AppColors.textSecondary, size: 20),
+-      ),
+-    );
+-  }
+-}
+-
+-// ── Filtre Butonu ─────────────────────────────────────────────────────────────
+-// Aktifken kırmızı dolgu
+-
+-class FiltreButon extends StatelessWidget {
+-  final bool aktif;
+-  final VoidCallback onTap;
+-
+-  const FiltreButon({super.key, required this.aktif, required this.onTap});
+-
+-  @override
+-  Widget build(BuildContext context) {
+-    return GestureDetector(
+-      onTap: onTap,
+-      child: AnimatedContainer(
+-        duration: const Duration(milliseconds: 200),
+-        width: 42,
+-        height: 42,
+-        decoration: BoxDecoration(
+-          color: aktif ? AppColors.red : AppColors.surface,
+-          borderRadius: BorderRadius.circular(12),
+-          border: Border.all(
+-            color: aktif ? AppColors.red : AppColors.divider,
+-            width: 1,
+-          ),
+-        ),
+-        child: Stack(
+-          alignment: Alignment.center,
+-          children: [
+-            Icon(
+-              Icons.filter_list_rounded,
+-              color: aktif ? Colors.white : AppColors.textSecondary,
+-              size: 20,
+-            ),
+-            if (aktif)
+-              Positioned(
+-                top: 8,
+-                right: 8,
+-                child: Container(
+-                  width: 6,
+-                  height: 6,
+-                  decoration: const BoxDecoration(
+-                    color: Colors.white,
+-                    shape: BoxShape.circle,
+-                  ),
+-                ),
+-              ),
+-          ],
+-        ),
+-      ),
+-    );
+-  }
+-}
+-
+-// ── Grid Toggle Butonu ────────────────────────────────────────────────────────
+-
+-class GridToggleButon extends StatelessWidget {
+-  final int kolonSayisi;
+-  final VoidCallback onTap;
+-
+-  const GridToggleButon({
+-    super.key,
+-    required this.kolonSayisi,
+-    required this.onTap,
+-  });
+-
+-  @override
+-  Widget build(BuildContext context) {
+-    return GestureDetector(
+-      onTap: onTap,
+-      child: Container(
+-        width: 42,
+-        height: 42,
+-        decoration: BoxDecoration(
+-          color: AppColors.surface,
+-          borderRadius: BorderRadius.circular(12),
+-          border: Border.all(color: AppColors.divider, width: 1),
+-        ),
+-        child: Icon(
+-          kolonSayisi == 2
+-              ? Icons.grid_view_rounded
+-              : Icons.view_column_rounded,
+-          color: AppColors.textSecondary,
+-          size: 20,
+-        ),
+-      ),
+-    );
+-  }
+-}
+-
+-// ── Filtre Badge ──────────────────────────────────────────────────────────────
+-
+-class FiltreBadge extends StatelessWidget {
+-  final String metin;
+-  final VoidCallback onKaldir;
+-
+-  const FiltreBadge({super.key, required this.metin, required this.onKaldir});
+-
+-  @override
+-  Widget build(BuildContext context) {
+-    return Container(
+-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+-      decoration: BoxDecoration(
+-        color: AppColors.red.withValues(alpha: 0.08),
+-        borderRadius: BorderRadius.circular(20),
+-      ),
+-      child: Row(
+-        mainAxisSize: MainAxisSize.min,
+-        children: [
+-          Text(
+-            metin,
+-            style: GoogleFonts.dmSans(
+-              fontSize: 12,
+-              color: AppColors.red,
+-              fontWeight: FontWeight.w500,
+-            ),
+-          ),
+-          const SizedBox(width: 6),
+-          GestureDetector(
+-            onTap: onKaldir,
+-            child: const Icon(Icons.close_rounded,
+-                size: 13, color: AppColors.red),
+-          ),
+-        ],
+-      ),
+-    );
+-  }
+-}
+-
+-// ── Kategori Barı ─────────────────────────────────────────────────────────────
+-
+-class KategoriBar extends StatelessWidget {
+-  final ScrollController scrollController;
+-  final String? seciliKey;
+-  final ValueChanged<String> onSec;
+-
+-  const KategoriBar({
+-    super.key,
+-    required this.scrollController,
+-    required this.seciliKey,
+-    required this.onSec,
+-  });
+-
+-  @override
+-  Widget build(BuildContext context) {
+-    return Container(
+-      height: kKategoriBarYuksekligi,
+-      decoration: const BoxDecoration(
+-        color: Colors.white,
+-        border: Border(
+-          bottom: BorderSide(color: Color(0xFFEEEEEE), width: 0.5),
+-        ),
+-      ),
+-      child: ListView.builder(
+-        controller: scrollController,
+-        scrollDirection: Axis.horizontal,
+-        padding: const EdgeInsets.symmetric(horizontal: 12),
+-        itemCount: kKategoriAgaci.length,
+-        itemBuilder: (context, i) {
+-          final kat    = kKategoriAgaci[i];
+-          final secili = seciliKey == kat.key;
+-
+-          return GestureDetector(
+-            onTap: () => onSec(kat.key),
+-            child: AnimatedContainer(
+-              duration: const Duration(milliseconds: 180),
+-              curve: Curves.easeOut,
+-              margin:
+-                  const EdgeInsets.symmetric(horizontal: 3, vertical: 8),
+-              padding: const EdgeInsets.symmetric(horizontal: 14),
+-              decoration: BoxDecoration(
+-                color: secili ? AppColors.red : Colors.transparent,
+-                borderRadius: BorderRadius.circular(20),
+-              ),
+-              alignment: Alignment.center,
+-              child: Text(
+-                kat.ad,
+-                style: GoogleFonts.dmSans(
+-                  fontSize: 13,
+-                  fontWeight: FontWeight.w600,
+-                  color: secili ? Colors.white : const Color(0xFF222222),
+-                ),
+-              ),
+-            ),
+-          );
+-        },
+-      ),
+-    );
+-  }
+-}
+\ No newline at end of file
+diff --git a/lib/features/ilanlar/presentation/widgets/ilan_banner.dart b/lib/features/ilanlar/presentation/widgets/ilan_banner.dart
+deleted file mode 100644
+index ba8f461..0000000
+--- a/lib/features/ilanlar/presentation/widgets/ilan_banner.dart
++++ /dev/null
+@@ -1,292 +0,0 @@
+-// lib/features/ilanlar/presentation/widgets/ilan_banner.dart
+-
+-import 'package:flutter/material.dart';
+-import 'package:google_fonts/google_fonts.dart';
+-
+-class IlanBanner extends StatefulWidget {
+-  final double yukseklik;
+-  const IlanBanner({super.key, required this.yukseklik});
+-
+-  @override
+-  State<IlanBanner> createState() => _IlanBannerState();
+-}
+-
+-class _IlanBannerState extends State<IlanBanner>
+-    with TickerProviderStateMixin {
+-
+-  static const _slaytlar = [
+-    (
+-      satirlar: ['İster Yurtdışından', "Türkiye'ye"],
+-      resim: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80',
+-    ),
+-    (
+-      satirlar: ["İster Türkiye'den", 'Yurtdışına'],
+-      resim: 'https://images.unsplash.com/photo-1548574505-5e239809ee19?w=800&q=80',
+-    ),
+-    (
+-      satirlar: ['Sen Nerede', 'Olursan Ol'],
+-      resim: 'https://images.unsplash.com/photo-1569154941061-e231b4aa8092?w=800&q=80',
+-    ),
+-    (
+-      satirlar: ['Nerden', 'İstersen İste'],
+-      resim: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&q=80',
+-    ),
+-    (
+-      satirlar: ['Yeterki', 'Sen İste'],
+-      resim: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80',
+-    ),
+-  ];
+-
+-  int  _aktif          = 0;
+-  bool _gecisVar       = false;
+-  bool _otomatikAktif  = true;
+-
+-  final List<AnimationController> _harfCtrls  = [];
+-  final List<AnimationController> _sallaCtrls = [];
+-
+-  @override
+-  void initState() {
+-    super.initState();
+-    WidgetsBinding.instance.addPostFrameCallback((_) => _girisBaslat());
+-    _otomatikGecis();
+-  }
+-
+-  void _temizle() {
+-    for (final c in _harfCtrls)  { c.stop(); c.dispose(); }
+-    for (final c in _sallaCtrls) { c.stop(); c.dispose(); }
+-    _harfCtrls.clear();
+-    _sallaCtrls.clear();
+-  }
+-
+-  void _girisBaslat() {
+-    if (!mounted) return;
+-    _temizle();
+-
+-    final satirlar = _slaytlar[_aktif].satirlar;
+-    final List<(int, int)> esleme = [];
+-    for (int si = 0; si < satirlar.length; si++) {
+-      int hi = 0;
+-      for (final ch in satirlar[si].characters) {
+-        if (ch != ' ') { esleme.add((si, hi)); hi++; }
+-      }
+-    }
+-
+-    for (int i = 0; i < esleme.length; i++) {
+-      final (_, hi) = esleme[i];
+-      final delayMs = (hi * 28 + (i * 13) % 100).toInt();
+-      final ctrl = AnimationController(
+-        vsync: this,
+-        duration: const Duration(milliseconds: 520),
+-      );
+-      _harfCtrls.add(ctrl);
+-      Future.delayed(Duration(milliseconds: delayMs), () {
+-        if (mounted) ctrl.forward();
+-      });
+-    }
+-
+-    final sonMs = esleme.isNotEmpty
+-        ? (esleme.last.$2 * 28 + esleme.length * 13) + 560
+-        : 560;
+-    Future.delayed(Duration(milliseconds: sonMs), () {
+-      if (!mounted) return;
+-      for (int i = 0; i < _harfCtrls.length; i++) {
+-        final sc = AnimationController(
+-          vsync: this,
+-          duration: Duration(milliseconds: 2000 + (i * 41 % 500)),
+-        )..repeat(reverse: true);
+-        _sallaCtrls.add(sc);
+-      }
+-      if (mounted) setState(() {});
+-    });
+-
+-    setState(() {});
+-  }
+-
+-  Future<void> _cikisBaslat() async {
+-    for (int i = _harfCtrls.length - 1; i >= 0; i--) {
+-      _harfCtrls[i].reverse();
+-      await Future.delayed(const Duration(milliseconds: 18));
+-    }
+-    await Future.delayed(const Duration(milliseconds: 240));
+-  }
+-
+-  Future<void> _gecis(int hedef) async {
+-    if (_gecisVar || !mounted) return;
+-    _gecisVar      = true;
+-    _otomatikAktif = false;
+-    await _cikisBaslat();
+-    if (!mounted) return;
+-    setState(() => _aktif = hedef);
+-    _girisBaslat();
+-    _gecisVar      = false;
+-    _otomatikAktif = true;
+-    _otomatikGecis();
+-  }
+-
+-  void _otomatikGecis() {
+-    Future.delayed(const Duration(milliseconds: 3800), () {
+-      if (!mounted || !_otomatikAktif) return;
+-      _gecis((_aktif + 1) % _slaytlar.length);
+-    });
+-  }
+-
+-  @override
+-  void dispose() {
+-    _temizle();
+-    super.dispose();
+-  }
+-
+-  @override
+-  Widget build(BuildContext context) {
+-    final slayt = _slaytlar[_aktif];
+-
+-    return SizedBox(
+-      height: widget.yukseklik,
+-      child: Stack(
+-        fit: StackFit.expand,
+-        children: [
+-          AnimatedSwitcher(
+-            duration: const Duration(milliseconds: 600),
+-            child: Image.network(
+-              slayt.resim,
+-              key: ValueKey(slayt.resim),
+-              fit: BoxFit.cover,
+-              width: double.infinity,
+-              height: widget.yukseklik,
+-              errorBuilder: (_, _, _) =>
+-                  Container(color: const Color(0xFFE53935)),
+-              loadingBuilder: (_, child, prog) => prog == null
+-                  ? child
+-                  : Container(color: const Color(0xFF8B0000)),
+-            ),
+-          ),
+-          Container(
+-            decoration: const BoxDecoration(
+-              gradient: LinearGradient(
+-                begin: Alignment.topCenter,
+-                end: Alignment.bottomCenter,
+-                colors: [Color(0x88000000), Color(0xBB000000)],
+-              ),
+-            ),
+-          ),
+-          Center(
+-            child: Padding(
+-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+-              child: Column(
+-                mainAxisSize: MainAxisSize.min,
+-                children: _buildSatirlar(),
+-              ),
+-            ),
+-          ),
+-          Positioned(
+-            bottom: 8, left: 0, right: 0,
+-            child: Row(
+-              mainAxisAlignment: MainAxisAlignment.center,
+-              children: List.generate(_slaytlar.length, (i) {
+-                final secili = i == _aktif;
+-                return AnimatedContainer(
+-                  duration: const Duration(milliseconds: 280),
+-                  margin: const EdgeInsets.symmetric(horizontal: 3),
+-                  width:  secili ? 20 : 5,
+-                  height: 3,
+-                  decoration: BoxDecoration(
+-                    color: Colors.white.withValues(
+-                        alpha: secili ? 0.95 : 0.35),
+-                    borderRadius: BorderRadius.circular(2),
+-                  ),
+-                );
+-              }),
+-            ),
+-          ),
+-        ],
+-      ),
+-    );
+-  }
+-
+-  List<Widget> _buildSatirlar() {
+-    final satirlar = _slaytlar[_aktif].satirlar;
+-    final widgets  = <Widget>[];
+-    int ctrlIdx    = 0;
+-
+-    for (int si = 0; si < satirlar.length; si++) {
+-      final satirWidgets = <Widget>[];
+-
+-      for (final ch in satirlar[si].characters) {
+-        if (ch == ' ') {
+-          satirWidgets.add(const SizedBox(width: 6));
+-          continue;
+-        }
+-        if (ctrlIdx >= _harfCtrls.length) { ctrlIdx++; continue; }
+-
+-        final harfCtrl  = _harfCtrls[ctrlIdx];
+-        final sallaCtrl = ctrlIdx < _sallaCtrls.length
+-            ? _sallaCtrls[ctrlIdx]
+-            : null;
+-
+-        final seed   = (si * 31 + ctrlIdx * 17).toDouble();
+-        final txBase = ((seed * 7.3) % 60) - 30;
+-        final tyBase = ((seed * 3.7) % 50) + 20;
+-        ctrlIdx++;
+-
+-        final girisAnim = CurvedAnimation(
+-          parent: harfCtrl,
+-          curve: Curves.elasticOut,
+-        );
+-
+-        satirWidgets.add(
+-          AnimatedBuilder(
+-            animation: Listenable.merge([
+-              harfCtrl,
+-              ?sallaCtrl,
+-            ]),
+-            builder: (_, _) {
+-              final t          = girisAnim.value;
+-              final tx         = txBase * (1 - t);
+-              final ty         = tyBase * (1 - t);
+-              final scale      = 0.3 + t * 0.7;
+-              final angle      = ((seed % 40) - 20) / 180 * 3.14 * (1 - t);
+-              final sallaAngle = (sallaCtrl != null && harfCtrl.isCompleted)
+-                  ? (sallaCtrl.value - 0.5) * 0.04
+-                  : 0.0;
+-
+-              return Opacity(
+-                opacity: t.clamp(0.0, 1.0),
+-                child: Transform(
+-                  alignment: Alignment.center,
+-                  transform: Matrix4.identity()
+-                    ..translateByDouble(tx, ty, 0, 1)
+-                    ..rotateZ(angle + sallaAngle)
+-                    ..scaleByDouble(scale, scale, 1, 1),
+-                  child: Text(
+-                    ch,
+-                    style: GoogleFonts.dmSans(
+-                      fontSize: 34,
+-                      fontWeight: FontWeight.w800,
+-                      color: Colors.white,
+-                      height: 1.1,
+-                      shadows: const [
+-                        Shadow(
+-                          color: Color(0x88000000),
+-                          offset: Offset(0, 2),
+-                          blurRadius: 6,
+-                        ),
+-                      ],
+-                    ),
+-                  ),
+-                ),
+-              );
+-            },
+-          ),
+-        );
+-      }
+-
+-      widgets.add(Row(
+-        mainAxisSize: MainAxisSize.min,
+-        mainAxisAlignment: MainAxisAlignment.center,
+-        children: satirWidgets,
+-      ));
+-      if (si < satirlar.length - 1) widgets.add(const SizedBox(height: 3));
+-    }
+-    return widgets;
+-  }
+-}
+diff --git a/lib/features/ilanlar/providers/ilan_provider.dart b/lib/features/ilanlar/providers/ilan_provider.dart
+index d49a6aa..70c6529 100644
+--- a/lib/features/ilanlar/providers/ilan_provider.dart
++++ b/lib/features/ilanlar/providers/ilan_provider.dart
+@@ -129,6 +129,7 @@ class IstekIlanlar extends _$IstekIlanlar {
+           .temizleToplu(sonuc.ilanlar.map((i) => i.id));
+     } catch (e, s) {
+       AppHataYonetici.logla(e, s, etiket: 'istekIlanlar.yenile');
++      if (!ref.mounted) return;
+       state = state.copyWith(yukleniyor: false);
+     }
+   }
+@@ -155,6 +156,7 @@ class IstekIlanlar extends _$IstekIlanlar {
+           .temizleToplu(yeniIlanlar.map((i) => i.id));
+     } catch (e, s) {
+       AppHataYonetici.logla(e, s, etiket: 'istekIlanlar.dahaFazlaYukle');
++      if (!ref.mounted) return;
+       state = state.copyWith(yukleniyor: false);
+     }
+   }
+@@ -250,6 +252,7 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
+           .temizleToplu(sonuc.ilanlar.map((i) => i.id));
+     } catch (e, s) {
+       AppHataYonetici.logla(e, s, etiket: 'tasiyiciIlanlar.yenile');
++      if (!ref.mounted) return;
+       state = IlanListeState(siralama: state.siralama);
+     }
+   }
+@@ -276,6 +279,7 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
+           .temizleToplu(yeniIlanlar.map((i) => i.id));
+     } catch (e, s) {
+       AppHataYonetici.logla(e, s, etiket: 'tasiyiciIlanlar.dahaFazlaYukle');
++      if (!ref.mounted) return;
+       state = state.copyWith(yukleniyor: false);
+     }
+   }
+diff --git a/lib/features/ilanlar/providers/ilan_provider.g.dart b/lib/features/ilanlar/providers/ilan_provider.g.dart
+index ca6c557..7ee32f5 100644
+--- a/lib/features/ilanlar/providers/ilan_provider.g.dart
++++ b/lib/features/ilanlar/providers/ilan_provider.g.dart
+@@ -41,7 +41,7 @@ final class IstekIlanlarProvider
+   }
+ }
+ 
+-String _$istekIlanlarHash() => r'7116625c76db44d16e31333e1f4a35b5e3bc18b2';
++String _$istekIlanlarHash() => r'9aeacc2de7fa12e3a731b2bfc1b517d10eae8f5a';
+ 
+ abstract class _$IstekIlanlar extends $Notifier<IlanListeState> {
+   IlanListeState build();
+@@ -93,7 +93,7 @@ final class TasiyiciIlanlarProvider
+   }
+ }
+ 
+-String _$tasiyiciIlanlarHash() => r'53dc58c44049fc1bdea712d60455d4d4b6f28aa3';
++String _$tasiyiciIlanlarHash() => r'889a7dd9f638363d3c55a954282b0570da52b5d6';
+ 
+ abstract class _$TasiyiciIlanlar extends $Notifier<IlanListeState> {
+   IlanListeState build();
+diff --git a/lib/features/mesajlar/data/mesaj_repository.g.dart b/lib/features/mesajlar/data/mesaj_repository.g.dart
+index 64aec12..f597219 100644
+--- a/lib/features/mesajlar/data/mesaj_repository.g.dart
++++ b/lib/features/mesajlar/data/mesaj_repository.g.dart
+@@ -49,4 +49,4 @@ final class MesajRepositoryProvider
+   }
+ }
+ 
+-String _$mesajRepositoryHash() => r'eaff29959136ff6126c50b5ae9dd5c70f87c6a6b';
++String _$mesajRepositoryHash() => r'abfa2350bf683d30151bfffa1d60aea7c60de22b';
+diff --git a/lib/features/profil/presentation/kullanici_profil_panel.dart b/lib/features/profil/presentation/kullanici_profil_panel.dart
+deleted file mode 100644
+index a465e00..0000000
+--- a/lib/features/profil/presentation/kullanici_profil_panel.dart
++++ /dev/null
+@@ -1,531 +0,0 @@
+-import 'package:flutter/material.dart';
+-import 'package:flutter_riverpod/flutter_riverpod.dart';
+-import 'package:go_router/go_router.dart';
+-import 'package:google_fonts/google_fonts.dart';
+-import '../../auth/providers/auth_provider.dart';
+-import '../../profil/providers/profil_provider.dart';
+-import '../../ilanlar/providers/ilan_provider.dart';
+-import '../../mesajlar/presentation/sohbet_screen.dart';
+-import '../../../shared/constants/app_colors.dart';
+-import '../../../shared/constants/profil_stilleri.dart';
+-import '../../../shared/widgets/avatar_widget.dart';
+-import '../../degerlendirme/presentation/degerlendirmeler_liste_screen.dart';
+-import '../../ilanlar/domain/ilan_model.dart';
+-import '../../../router/app_router.dart';
+-import '../../../shared/utils/app_hata_yonetici.dart';
+-
+-class KullaniciProfilPanel extends ConsumerStatefulWidget {
+-  final String kullaniciId;
+-  final String kullaniciAd;
+-
+-  const KullaniciProfilPanel({
+-    super.key,
+-    required this.kullaniciId,
+-    required this.kullaniciAd,
+-  });
+-
+-  @override
+-  ConsumerState<KullaniciProfilPanel> createState() =>
+-      _KullaniciProfilPanelState();
+-}
+-
+-class _KullaniciProfilPanelState extends ConsumerState<KullaniciProfilPanel>
+-    with SingleTickerProviderStateMixin {
+-  late AnimationController _shakeCtrl;
+-  late Animation<double> _shakeAnim;
+-
+-  @override
+-  void initState() {
+-    super.initState();
+-    _shakeCtrl = AnimationController(
+-      vsync: this,
+-      duration: const Duration(milliseconds: 500),
+-    );
+-    _shakeAnim = TweenSequence<double>([
+-      TweenSequenceItem(tween: Tween(begin: 0.0, end: -8.0), weight: 1),
+-      TweenSequenceItem(tween: Tween(begin: -8.0, end: 8.0), weight: 2),
+-      TweenSequenceItem(tween: Tween(begin: 8.0, end: -6.0), weight: 2),
+-      TweenSequenceItem(tween: Tween(begin: -6.0, end: 6.0), weight: 2),
+-      TweenSequenceItem(tween: Tween(begin: 6.0, end: -3.0), weight: 2),
+-      TweenSequenceItem(tween: Tween(begin: -3.0, end: 3.0), weight: 2),
+-      TweenSequenceItem(tween: Tween(begin: 3.0, end: 0.0), weight: 1),
+-    ]).animate(CurvedAnimation(parent: _shakeCtrl, curve: Curves.linear));
+-
+-    WidgetsBinding.instance.addPostFrameCallback((_) {
+-      if (mounted) _shakeCtrl.forward();
+-    });
+-  }
+-
+-  @override
+-  void dispose() {
+-    _shakeCtrl.dispose();
+-    super.dispose();
+-  }
+-
+-  @override
+-  Widget build(BuildContext context) {
+-    final benimUid = ref.watch(currentUserProvider)?.uid;
+-    final benimKisi = benimUid != null && benimUid != widget.kullaniciId;
+-    final profilAsync = ref.watch(kullaniciBilgiProvider(widget.kullaniciId));
+-    // keepAlive stream — panel içinde yeniden subscribe olmaz
+-    final ilanlarAsync = ref.watch(kullaniciIlanlarStreamProvider(widget.kullaniciId));
+-    final screenWidth = MediaQuery.of(context).size.width;
+-    final panelWidth = screenWidth * 0.85;
+-
+-    return SafeArea(
+-      child: AnimatedBuilder(
+-        animation: _shakeAnim,
+-        builder: (_, child) => Transform.translate(
+-          offset: Offset(_shakeAnim.value, 0),
+-          child: child,
+-        ),
+-        child: Container(
+-          width: panelWidth,
+-          height: double.infinity,
+-          decoration: const BoxDecoration(
+-            color: AppColors.surface,
+-            borderRadius: BorderRadius.only(
+-              topLeft: Radius.circular(16),
+-              bottomLeft: Radius.circular(16),
+-            ),
+-          ),
+-          child: Column(
+-            children: [
+-              // Header
+-              Container(
+-                color: Colors.white,
+-                padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
+-                child: Row(
+-                  children: [
+-                    Expanded(
+-                      child: profilAsync.when(
+-                        loading: () => const SizedBox(),
+-                        error: (e, s) { AppHataYonetici.logla(e, s, etiket: 'profilPanel.ilanBilgi'); return const SizedBox(); },
+-                        data: (profil) => Text(
+-                          profil?.adSoyad ?? widget.kullaniciAd,
+-                          style: GoogleFonts.dmSans(
+-                            fontSize: 17,
+-                            fontWeight: FontWeight.w700,
+-                            decoration: TextDecoration.none,
+-                            color: AppColors.textPrimary,
+-                          ),
+-                          overflow: TextOverflow.ellipsis,
+-                        ),
+-                      ),
+-                    ),
+-                    IconButton(
+-                      icon: const Icon(Icons.close,
+-                          size: 22, color: AppColors.textPrimary),
+-                      onPressed: () => Navigator.pop(context),
+-                    ),
+-                  ],
+-                ),
+-              ),
+-
+-              Expanded(
+-                child: profilAsync.when(
+-                  loading: () => const Center(
+-                      child: CircularProgressIndicator(
+-                          color: AppColors.red, strokeWidth: 2)),
+-                  error: (_, _) => Center(
+-                    child: Text('Profil yüklenemedi.',
+-                        style: GoogleFonts.dmSans(
+-                            color: AppColors.textSecondary,
+-                            decoration: TextDecoration.none)),
+-                  ),
+-                  data: (profil) {
+-                    final ad = profil?.adSoyad ?? widget.kullaniciAd;
+-                    final hakkinda = profil?.hakkinda ?? '';
+-                    final sehir = profil?.bulunduguSehir.isNotEmpty == true
+-                        ? profil!.bulunduguSehir
+-                        : profil?.yasadigiUlke ?? '';
+-                    final puan = profil?.ortalamaPuan ?? 0.0;
+-                    final degerlendirmeSayisi =
+-                        profil?.degerlendirmeSayisi ?? 0;
+-                    final telefon = profil?.telefonGizli == false
+-                        ? profil?.telefon ?? ''
+-                        : '';
+-
+-                    return CustomScrollView(
+-                      slivers: [
+-                        SliverToBoxAdapter(
+-                          child: Column(
+-                            children: [
+-                              // Profil Kartı
+-                              Container(
+-                                color: Colors.white,
+-                                padding: const EdgeInsets.all(20),
+-                                child: Column(
+-                                  children: [
+-                                    AvatarWidget(isim: ad, radius: 40),
+-                                    const SizedBox(height: 12),
+-                                    Text(
+-                                      ad,
+-                                      style: ProfilStilleri.isim.copyWith(
+-                                          decoration: TextDecoration.none),
+-                                    ),
+-                                    if (sehir.isNotEmpty) ...[
+-                                      const SizedBox(height: 4),
+-                                      Row(
+-                                        mainAxisAlignment:
+-                                            MainAxisAlignment.center,
+-                                        children: [
+-                                          const Icon(
+-                                              Icons.location_on_outlined,
+-                                              size: 14,
+-                                              color: AppColors.textSecondary),
+-                                          const SizedBox(width: 4),
+-                                          Text(sehir,
+-                                              style: ProfilStilleri.altBilgi
+-                                                  .copyWith(decoration: TextDecoration.none)),
+-                                        ],
+-                                      ),
+-                                    ],
+-                                    const SizedBox(height: 10),
+-
+-                                    if (degerlendirmeSayisi > 0) ...[
+-                                      GestureDetector(
+-                                        onTap: () {
+-                                          Navigator.pop(context);
+-                                          Navigator.push(
+-                                            context,
+-                                            MaterialPageRoute(
+-                                              builder: (_) =>
+-                                                  DegerlendirmelerListeScreen(
+-                                                kullaniciId: widget.kullaniciId,
+-                                                kullaniciAd: ad,
+-                                              ),
+-                                            ),
+-                                          );
+-                                        },
+-                                        child: Row(
+-                                          mainAxisAlignment:
+-                                              MainAxisAlignment.center,
+-                                          children: [
+-                                            ...List.generate(5, (i) {
+-                                              return Icon(
+-                                                i < puan.floor()
+-                                                    ? Icons.star
+-                                                    : (i < puan
+-                                                        ? Icons.star_half
+-                                                        : Icons.star_border),
+-                                                color: Colors.amber,
+-                                                size: 18,
+-                                              );
+-                                            }),
+-                                            const SizedBox(width: 6),
+-                                            Text(
+-                                              '${puan.toStringAsFixed(1)} ($degerlendirmeSayisi)',
+-                                              style: ProfilStilleri.puanYazi,
+-                                            ),
+-                                          ],
+-                                        ),
+-                                      ),
+-                                      const SizedBox(height: 10),
+-                                    ],
+-
+-                                    if (hakkinda.isNotEmpty) ...[
+-                                      const Divider(color: AppColors.divider),
+-                                      const SizedBox(height: 10),
+-                                      Text(
+-                                        hakkinda,
+-                                        style: ProfilStilleri.altBilgi.copyWith(
+-                                            height: 1.5,
+-                                            decoration: TextDecoration.none),
+-                                        textAlign: TextAlign.center,
+-                                      ),
+-                                    ],
+-
+-                                    if (telefon.isNotEmpty) ...[
+-                                      const SizedBox(height: 10),
+-                                      const Divider(color: AppColors.divider),
+-                                      const SizedBox(height: 10),
+-                                      Row(
+-                                        mainAxisAlignment:
+-                                            MainAxisAlignment.center,
+-                                        children: [
+-                                          const Icon(Icons.phone_outlined,
+-                                              size: 16,
+-                                              color: AppColors.textSecondary),
+-                                          const SizedBox(width: 6),
+-                                          Text(telefon,
+-                                              style: GoogleFonts.dmSans(
+-                                                fontSize: 13,
+-                                                color: AppColors.textPrimary,
+-                                                decoration: TextDecoration.none,
+-                                              )),
+-                                        ],
+-                                      ),
+-                                    ],
+-
+-                                    if (benimKisi) ...[
+-                                      const SizedBox(height: 14),
+-                                      const Divider(color: AppColors.divider),
+-                                      const SizedBox(height: 14),
+-                                      // Takip butonu
+-                                      Consumer(
+-                                        builder: (ctx, ref, _) {
+-                                          final takipAsync = ref.watch(takipEdiyorMuProvider(widget.kullaniciId));
+-                                          final takipEdiyor = takipAsync.value ?? false;
+-                                          return SizedBox(
+-                                            width: double.infinity,
+-                                            height: 44,
+-                                            child: OutlinedButton.icon(
+-                                              onPressed: () {
+-                                                if (takipEdiyor) {
+-                                                  ref.read(takipIslemleriProvider.notifier).takipiBirak(widget.kullaniciId);
+-                                                } else {
+-                                                  ref.read(takipIslemleriProvider.notifier).takipEt(widget.kullaniciId);
+-                                                }
+-                                              },
+-                                              style: OutlinedButton.styleFrom(
+-                                                foregroundColor: takipEdiyor ? AppColors.textSecondary : AppColors.textPrimary,
+-                                                side: BorderSide(color: takipEdiyor ? AppColors.divider : AppColors.textPrimary, width: 0.8),
+-                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+-                                              ),
+-                                              icon: Icon(takipEdiyor ? Icons.person_remove_outlined : Icons.person_add_outlined, size: 16),
+-                                              label: Text(
+-                                                takipEdiyor ? 'Takip Ediliyor' : 'Takip Et',
+-                                                style: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w600),
+-                                              ),
+-                                            ),
+-                                          );
+-                                        },
+-                                      ),
+-                                      const SizedBox(height: 8),
+-                                      SizedBox(
+-                                        width: double.infinity,
+-                                        height: 44,
+-                                        child: ElevatedButton.icon(
+-                                          onPressed: () {
+-                                            Navigator.pop(context);
+-                                            Navigator.push(
+-                                              context,
+-                                              PageRouteBuilder(
+-                                                pageBuilder:
+-                                                    (ctx, anim, secAnim) =>
+-                                                        SohbetScreen(
+-                                                  karsiKullaniciId:
+-                                                      widget.kullaniciId,
+-                                                  karsiKullaniciAd: ad,
+-                                                  ilanId: '',
+-                                                ),
+-                                                transitionsBuilder: (ctx, anim,
+-                                                        secAnim, child) =>
+-                                                    SlideTransition(
+-                                                  position: Tween(
+-                                                    begin: const Offset(1, 0),
+-                                                    end: Offset.zero,
+-                                                  ).animate(CurvedAnimation(
+-                                                      parent: anim,
+-                                                      curve:
+-                                                          Curves.easeOutCubic)),
+-                                                  child: child,
+-                                                ),
+-                                                transitionDuration:
+-                                                    const Duration(
+-                                                        milliseconds: 280),
+-                                              ),
+-                                            );
+-                                          },
+-                                          style: ElevatedButton.styleFrom(
+-                                            backgroundColor: AppColors.red,
+-                                            foregroundColor: Colors.white,
+-                                            elevation: 0,
+-                                            shape: RoundedRectangleBorder(
+-                                                borderRadius:
+-                                                    BorderRadius.circular(12)),
+-                                          ),
+-                                          icon: const Icon(
+-                                              Icons.chat_bubble_outline,
+-                                              size: 16),
+-                                          label: Text('Mesaj Gönder',
+-                                              style: GoogleFonts.dmSans(
+-                                                  fontSize: 14,
+-                                                  fontWeight:
+-                                                      FontWeight.w600)),
+-                                        ),
+-                                      ),
+-                                    ],
+-                                  ],
+-                                ),
+-                              ),
+-
+-                              const SizedBox(height: 8),
+-
+-                              Container(
+-                                color: Colors.white,
+-                                padding:
+-                                    const EdgeInsets.fromLTRB(16, 12, 16, 8),
+-                                child: Row(
+-                                  children: [
+-                                    Text('İlanları',
+-                                        style: GoogleFonts.dmSans(
+-                                          fontSize: 14,
+-                                          fontWeight: FontWeight.w600,
+-                                          color: AppColors.textPrimary,
+-                                          decoration: TextDecoration.none,
+-                                        )),
+-                                  ],
+-                                ),
+-                              ),
+-                            ],
+-                          ),
+-                        ),
+-
+-                        // İlanlar — loading state'i ayrı, data gelince stable
+-                        ilanlarAsync.when(
+-                          loading: () => const SliverToBoxAdapter(
+-                            child: Padding(
+-                              padding: EdgeInsets.all(24),
+-                              child: Center(
+-                                  child: CircularProgressIndicator(
+-                                      color: AppColors.red, strokeWidth: 2)),
+-                            ),
+-                          ),
+-                          error: (_, _) =>
+-                              const SliverToBoxAdapter(child: SizedBox()),
+-                          data: (ilanlar) {
+-                            if (ilanlar.isEmpty) {
+-                              return SliverToBoxAdapter(
+-                                child: Padding(
+-                                  padding: const EdgeInsets.all(24),
+-                                  child: Center(
+-                                    child: Column(
+-                                      children: [
+-                                        const Icon(Icons.inbox_outlined,
+-                                            size: 40,
+-                                            color: AppColors.divider),
+-                                        const SizedBox(height: 8),
+-                                        Text('Henüz ilan yok',
+-                                            style: GoogleFonts.dmSans(
+-                                              fontSize: 13,
+-                                              color: AppColors.textSecondary,
+-                                              decoration: TextDecoration.none,
+-                                            )),
+-                                      ],
+-                                    ),
+-                                  ),
+-                                ),
+-                              );
+-                            }
+-                            return SliverList(
+-                              delegate: SliverChildBuilderDelegate(
+-                                (context, index) =>
+-                                    _PanelIlanSatiri(ilan: ilanlar[index]),
+-                                childCount: ilanlar.length,
+-                              ),
+-                            );
+-                          },
+-                        ),
+-
+-                        const SliverToBoxAdapter(child: SizedBox(height: 24)),
+-                      ],
+-                    );
+-                  },
+-                ),
+-              ),
+-            ],
+-          ),
+-        ),
+-      ),
+-    );
+-  }
+-}
+-
+-class _PanelIlanSatiri extends StatelessWidget {
+-  final IlanModel ilan;
+-
+-  const _PanelIlanSatiri({required this.ilan});
+-
+-  @override
+-  Widget build(BuildContext context) {
+-    final resim = ilan.resimThumbUrl.isNotEmpty
+-        ? ilan.resimThumbUrl
+-        : ilan.resimUrl.isNotEmpty
+-            ? ilan.resimUrl
+-            : ilan.resimUrller.isNotEmpty
+-                ? ilan.resimUrller.first
+-                : null;
+-    final baslik = ilan.urun.isNotEmpty ? ilan.urun : ilan.nereden;
+-    final konum = ilan.nereden.isNotEmpty ? ilan.nereden : '';
+-
+-    return InkWell(
+-      onTap: () {
+-        Navigator.pop(context);
+-        context.push(AppRoutes.ilanDetayPath(ilan.id));
+-      },
+-      child: Container(
+-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+-        padding: const EdgeInsets.all(10),
+-        decoration: BoxDecoration(
+-          color: Colors.white,
+-          borderRadius: BorderRadius.circular(10),
+-          border: Border.all(color: AppColors.divider, width: 0.7),
+-        ),
+-        child: Row(
+-          children: [
+-            if (resim != null)
+-              ClipRRect(
+-                borderRadius: BorderRadius.circular(8),
+-                child: Image.network(
+-                  resim,
+-                  width: 52,
+-                  height: 52,
+-                  fit: BoxFit.cover,
+-                  errorBuilder: (_, _, _) => Container(
+-                    width: 52,
+-                    height: 52,
+-                    color: AppColors.divider,
+-                    child: const Icon(Icons.image_not_supported_outlined,
+-                        size: 22, color: AppColors.textSecondary),
+-                  ),
+-                ),
+-              )
+-            else
+-              Container(
+-                width: 52,
+-                height: 52,
+-                decoration: BoxDecoration(
+-                  color: AppColors.divider,
+-                  borderRadius: BorderRadius.circular(8),
+-                ),
+-                child: const Icon(Icons.image_outlined,
+-                    size: 22, color: AppColors.textSecondary),
+-              ),
+-            const SizedBox(width: 10),
+-            Expanded(
+-              child: Column(
+-                crossAxisAlignment: CrossAxisAlignment.start,
+-                children: [
+-                  Text(
+-                    baslik,
+-                    style: GoogleFonts.dmSans(
+-                      fontSize: 13,
+-                      fontWeight: FontWeight.w600,
+-                      color: AppColors.textPrimary,
+-                      decoration: TextDecoration.none,
+-                    ),
+-                    maxLines: 2,
+-                    overflow: TextOverflow.ellipsis,
+-                  ),
+-                  if (konum.isNotEmpty) ...[
+-                    const SizedBox(height: 3),
+-                    Text(
+-                      konum,
+-                      style: GoogleFonts.dmSans(
+-                        fontSize: 11,
+-                        color: AppColors.textSecondary,
+-                        decoration: TextDecoration.none,
+-                      ),
+-                    ),
+-                  ],
+-                ],
+-              ),
+-            ),
+-          ],
+-        ),
+-      ),
+-    );
+-  }
+-}
+\ No newline at end of file
+diff --git a/lib/features/profil/providers/profil_provider.dart b/lib/features/profil/providers/profil_provider.dart
+index 605b89e..908a524 100644
+--- a/lib/features/profil/providers/profil_provider.dart
++++ b/lib/features/profil/providers/profil_provider.dart
+@@ -241,7 +241,7 @@ class TakipciDelta extends _$TakipciDelta {
+ 
+ // ── Takip provider'ları ───────────────────────────────────────────────────────
+ 
+-@Riverpod(keepAlive: true)
++@riverpod
+ Stream<bool> takipEdiyorMu(Ref ref, String takipEdilenId) {
+   final uid = ref.watch(currentUserProvider)?.uid;
+   if (uid == null) return Stream.value(false);
+diff --git a/lib/features/profil/providers/profil_provider.g.dart b/lib/features/profil/providers/profil_provider.g.dart
+index 5a49f26..8e003a7 100644
+--- a/lib/features/profil/providers/profil_provider.g.dart
++++ b/lib/features/profil/providers/profil_provider.g.dart
+@@ -902,7 +902,7 @@ final class TakipEdiyorMuProvider
+   }) : super(
+          retry: null,
+          name: r'takipEdiyorMuProvider',
+-         isAutoDispose: false,
++         isAutoDispose: true,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+@@ -939,7 +939,7 @@ final class TakipEdiyorMuProvider
+   }
+ }
+ 
+-String _$takipEdiyorMuHash() => r'04eedc74c71ac793ef75dc23410383e5e078b44d';
++String _$takipEdiyorMuHash() => r'5498354c59525dba0429ca710c45a018940c2c7d';
+ 
+ final class TakipEdiyorMuFamily extends $Family
+     with $FunctionalFamilyOverride<Stream<bool>, String> {
+@@ -949,7 +949,7 @@ final class TakipEdiyorMuFamily extends $Family
+         name: r'takipEdiyorMuProvider',
+         dependencies: null,
+         $allTransitiveDependencies: null,
+-        isAutoDispose: false,
++        isAutoDispose: true,
+       );
+ 
+   TakipEdiyorMuProvider call(String takipEdilenId) =>

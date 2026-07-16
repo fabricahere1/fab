@@ -90,7 +90,14 @@
       "Bash(grep -rn \"ref.watch\\(\" --include=*.dart -l features/*/presentation)",
       "Bash(grep -rln \"ref.watch\\(\" features/*/presentation/*.dart features/*/presentation/**/*.dart)",
       "Bash(dart format *)",
-      "Bash(git diff *)"
+      "Bash(git diff *)",
+      "Bash(dart --version)",
+      "Bash(git add *)",
+      "Read(//c/Users/User/AppData/Local/Temp/claude/C--src-iste-v3/919ada37-f954-4959-a1f7-e7f42f4e6b67/scratchpad/**)",
+      "PowerShell(Copy-Item *)",
+      "Read(//c/Users/User/AppData/Local/Pub/Cache/hosted/pub.dev/**)",
+      "Read(//c/Users/User/**)",
+      "Bash(flutter test *)"
     ]
   }
 }

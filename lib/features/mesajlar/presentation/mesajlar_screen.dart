@@ -9,7 +9,6 @@ import '../../mesajlar/domain/mesaj_model.dart';
 import '../../mesajlar/presentation/sohbet_screen.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
-import '../../../shared/widgets/avatar_widget.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
 import 'package:flutter/rendering.dart';
 import '../../../router/app_router.dart';
@@ -261,11 +260,11 @@ class _SohbetKarti extends ConsumerWidget {
                             memCacheWidth: 96,
                             memCacheHeight: 96,
                             errorWidget: (_, _, _) =>
-                                AvatarWidget(isim: karsiAd, radius: 24),
+                                const _IlanResimYokKutusu(),
                           ),
                         ),
                       )
-                    : AvatarWidget(isim: karsiAd, radius: 24),
+                    : const _IlanResimYokKutusu(),
                 if (okunmamisSayi > 0)
                   Positioned(
                     right: 0,
@@ -354,4 +353,18 @@ class _SohbetKarti extends ConsumerWidget {
     if (fark.inDays < 7) return '${fark.inDays} gün';
     return '${zaman.day}.${zaman.month}.${zaman.year}';
   }
+}
+
+class _IlanResimYokKutusu extends StatelessWidget {
+  const _IlanResimYokKutusu();
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Icon(Icons.image_outlined, color: AppColors.textHint, size: 22),
+      );
 }
