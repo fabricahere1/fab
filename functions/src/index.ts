@@ -419,7 +419,9 @@ export const ilanGuncellemeModerasyon = onDocumentUpdated(
       once.nereden !== sonra.nereden ||
       once.nereye  !== sonra.nereye  ||
       JSON.stringify(once.resimUrller ?? []) !== JSON.stringify(sonra.resimUrller ?? []);
-    const yenidenDenenmeliMi = once.durum === "reddedildi" && sonra.durum === "onayBekliyor";
+    const yenidenDenenmeliMi =
+      (once.durum === "reddedildi" && sonra.durum === "onayBekliyor") ||
+      (once.aktif === false && sonra.durum === "onayBekliyor");
     if (!icerikDegisti && !yenidenDenenmeliMi) return;
 
     const ilanRef            = db.collection("ilanlar").doc(ilanId);
