@@ -231,6 +231,7 @@ Future<AlgoliaFiltreSonucu> algoliaFiltrele({
   final indexAdi = switch (siralama) {
     'enCokFavorilenen' => 'ilanlar_favori',
     'onerilen'         => 'ilanlar_onerilen',
+    'enEski'           => 'ilanlar_eski',
     _                  => _kAlgoliaIndex,
   };
 

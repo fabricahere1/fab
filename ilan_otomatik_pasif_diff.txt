@@ -1,0 +1,46 @@
+diff --git a/functions/src/index.ts b/functions/src/index.ts
+index 17a45d8..5af3127 100644
+--- a/functions/src/index.ts
++++ b/functions/src/index.ts
+@@ -1129,3 +1129,41 @@ export const goruntulenmeTemizle = onSchedule(
+     console.log(`${snap.size} adet eski görüntülenme kaydı silindi.`);
+   }
+ );
++
++// ── İLAN OTOMATİK PASİFLEŞTİRME ──────────────────────────────────────────
++// Client-side _otuzGunKontrol (ilan_detay_screen.dart) yalnızca ilan sahibi
++// kendi ilanına girip baktığında çalışıyordu — sunucu tarafında bir eşdeğeri
++// yoktu. Bu fonksiyon, 30+ gün önce oluşturulmuş hâlâ aktif ilanları günlük
++// olarak pasife düşürür. Yalnızca 'aktif': false güncelleniyor — Algolia'ya
++// ayrı bir silme çağrısı YAPILMIYOR, mevcut ilanGuncellendi (onDocumentUpdated)
++// tetikleyicisi bu alan değişikliğini zaten yakalayıp Algolia'nın her iki
++// index'inden de siliyor (C7'de doğrulandı).
++export const ilanOtomatikPasif = onSchedule(
++  {
++    schedule: "every day 04:00",
++    timeZone: "Europe/Istanbul",
++    region: "europe-west1",
++  },
++  async (event) => {
++    const otuzGunOnce = new Date();
++    otuzGunOnce.setDate(otuzGunOnce.getDate() - 30);
++
++    const snap = await db
++      .collection("ilanlar")
++      .where("aktif", "==", true)
++      .where("olusturmaTarihi", "<", otuzGunOnce)
++      .limit(500)
++      .get();
++
++    if (snap.empty) {
++      console.log("Otomatik pasife düşürülecek ilan yok.");
++      return;
++    }
++
++    const batch = db.batch();
++    snap.docs.forEach((doc) => batch.update(doc.ref, { aktif: false }));
++    await batch.commit();
++
++    console.log(`${snap.size} adet ilan otomatik pasife düşürüldü.`);
++  }
++);

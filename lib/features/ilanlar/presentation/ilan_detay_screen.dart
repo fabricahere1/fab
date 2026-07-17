@@ -68,6 +68,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
   Future<void> _otuzGunKontrol(IlanModel ilan) async {
     if (_otuzGunKontrolEdildi) return;
     _otuzGunKontrolEdildi = true;
+    if (_benimUid.isEmpty || _benimUid != ilan.kullaniciId) return;  // yalnızca sahibi
     final tarih = ilan.olusturmaTarihi;
     if (tarih == null) return;
     final fark = DateTime.now().difference(tarih).inDays;

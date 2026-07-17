@@ -213,12 +213,6 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
 
       var yeniIlanlar = sonuc.ilanlar.map(_hittenIlan).toList();
 
-      // enEski icin client-side siralama
-      if (_siralama == SiralamaTipi.enEski) {
-        yeniIlanlar.sort((a, b) =>
-            (a.olusturmaTarihi ?? DateTime(0))
-                .compareTo(b.olusturmaTarihi ?? DateTime(0)));
-      }
       // enCokFavorilenen icin siralama
       if (_siralama == SiralamaTipi.enCokFavorilenen) {
         yeniIlanlar.sort((a, b) => b.favoriSayisi.compareTo(a.favoriSayisi));

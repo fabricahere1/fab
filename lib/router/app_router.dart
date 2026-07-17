@@ -169,14 +169,22 @@ GoRouter router(Ref ref) {
         routes: [
           GoRoute(
             path: 'ilan-olustur/istek',
-            pageBuilder: (_, _) => const CupertinoPage(
-              child: IlanFormScreen(tip: IlanTip.istek),
+            pageBuilder: (context, state) => CupertinoPage(
+              key: state.pageKey,
+              child: IlanFormScreen(
+                tip: IlanTip.istek,
+                duzenlenecekIlan: state.extra as IlanModel?,
+              ),
             ),
           ),
           GoRoute(
             path: 'ilan-olustur/tasiyici',
-            pageBuilder: (_, _) => const CupertinoPage(
-              child: IlanFormScreen(tip: IlanTip.tasiyici),
+            pageBuilder: (context, state) => CupertinoPage(
+              key: state.pageKey,
+              child: IlanFormScreen(
+                tip: IlanTip.tasiyici,
+                duzenlenecekIlan: state.extra as IlanModel?,
+              ),
             ),
           ),
         ],

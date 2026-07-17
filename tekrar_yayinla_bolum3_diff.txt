@@ -1,0 +1,102 @@
+diff --git a/lib/features/profil/presentation/ilanlarim_screen.dart b/lib/features/profil/presentation/ilanlarim_screen.dart
+index 079ce06..31d58ea 100644
+--- a/lib/features/profil/presentation/ilanlarim_screen.dart
++++ b/lib/features/profil/presentation/ilanlarim_screen.dart
+@@ -175,7 +175,9 @@ class _IstekKarti extends ConsumerWidget {
+     final gridResim = ilan.gridResim;
+     final varResim = gridResim.isNotEmpty;
+ 
+-    return GestureDetector(
++    return Opacity(
++      opacity: ilan.aktif ? 1.0 : 0.55,
++      child: GestureDetector(
+       onTap: () => _detayaGit(context),
+       child: Container(
+         decoration: BoxDecoration(
+@@ -246,6 +248,29 @@ class _IstekKarti extends ConsumerWidget {
+                         _AktifBadge(aktif: ilan.aktif),
+                       ],
+                     ),
++                    if (!ilan.aktif)
++                      GestureDetector(
++                        onTap: () {
++                          context.push(
++                            ilan.tip == IlanTip.istek
++                                ? AppRoutes.ilanOlusturIstek
++                                : AppRoutes.ilanOlusturTasiyici,
++                            extra: ilan,
++                          );
++                        },
++                        child: Padding(
++                          padding: const EdgeInsets.only(top: 2),
++                          child: Text(
++                            'Tekrar Yayınla',
++                            style: GoogleFonts.manrope(
++                              fontSize: 11,
++                              fontWeight: FontWeight.w600,
++                              color: AppColors.primary,
++                              decoration: TextDecoration.underline,
++                            ),
++                          ),
++                        ),
++                      ),
+                     Text(
+                       '${ilan.nereden} → ${ilan.nereye}',
+                       style: GoogleFonts.manrope(
+@@ -273,6 +298,7 @@ class _IstekKarti extends ConsumerWidget {
+           ],
+         ),
+       ),
++    ),
+     );
+   }
+ }
+@@ -297,7 +323,9 @@ class _GelenKarti extends ConsumerWidget {
+         ? '${tarih.day}.${tarih.month}.${tarih.year}'
+         : '';
+ 
+-    return GestureDetector(
++    return Opacity(
++      opacity: ilan.aktif ? 1.0 : 0.55,
++      child: GestureDetector(
+       onTap: () => _detayaGit(context),
+       child: Container(
+         decoration: BoxDecoration(
+@@ -364,6 +392,29 @@ class _GelenKarti extends ConsumerWidget {
+                         _AktifBadge(aktif: ilan.aktif, stil: _AktifBadgeStil.light),
+                       ],
+                     ),
++                    if (!ilan.aktif)
++                      GestureDetector(
++                        onTap: () {
++                          context.push(
++                            ilan.tip == IlanTip.istek
++                                ? AppRoutes.ilanOlusturIstek
++                                : AppRoutes.ilanOlusturTasiyici,
++                            extra: ilan,
++                          );
++                        },
++                        child: Padding(
++                          padding: const EdgeInsets.only(top: 2),
++                          child: Text(
++                            'Tekrar Yayınla',
++                            style: GoogleFonts.manrope(
++                              fontSize: 11,
++                              fontWeight: FontWeight.w600,
++                              color: AppColors.primary,
++                              decoration: TextDecoration.underline,
++                            ),
++                          ),
++                        ),
++                      ),
+                     Row(
+                       children: [
+                         if (tarihYazi.isNotEmpty)
+@@ -394,6 +445,7 @@ class _GelenKarti extends ConsumerWidget {
+           ],
+         ),
+       ),
++    ),
+     );
+   }
+ }
