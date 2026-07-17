@@ -204,6 +204,7 @@ class KullaniciRepository {
     return firestore
         .collection(Collections.takipler)
         .where('takipEdilenId', isEqualTo: kullaniciId)
+        .limit(500)
         .snapshots()
         .map((snap) => snap.docs.map((d) => d.data()['takipciId'] as String).toList());
   }
@@ -212,6 +213,7 @@ class KullaniciRepository {
     return firestore
         .collection(Collections.takipler)
         .where('takipciId', isEqualTo: kullaniciId)
+        .limit(500)
         .snapshots()
         .map((snap) => snap.docs.map((d) => d.data()['takipEdilenId'] as String).toList());
   }

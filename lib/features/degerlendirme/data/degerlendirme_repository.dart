@@ -4,6 +4,7 @@ import '../../../core/firebase/app_firestore.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../shared/constants/app_constants.dart';
+import '../../../shared/utils/app_hata_yonetici.dart';
 
 part 'degerlendirme_repository.g.dart';
 
@@ -33,7 +34,8 @@ class DegerlendirmeRepository {
       final dtA = (tA as Timestamp).toDate();
       final dtB = (tB as Timestamp).toDate();
       return dtB.compareTo(dtA);
-    } catch (_) {
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'degerlendirmeRepo.tariheGoreSirala');
       return 0;
     }
   }

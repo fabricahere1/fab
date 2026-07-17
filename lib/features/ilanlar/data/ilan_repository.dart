@@ -78,7 +78,8 @@ class IlanRepository {
         if (snap.docs.isEmpty) {
           snap = await q.get(const GetOptions(source: Source.server));
         }
-      } catch (_) {
+      } catch (e, s) {
+        AppHataYonetici.logla(e, s, etiket: 'ilanRepo.istekIlanlariniGetirCache');
         snap = await q.get(const GetOptions(source: Source.server));
       }
     }
@@ -180,7 +181,8 @@ class IlanRepository {
         if (snap.docs.isEmpty) {
           snap = await q.get(const GetOptions(source: Source.server));
         }
-      } catch (_) {
+      } catch (e, s) {
+        AppHataYonetici.logla(e, s, etiket: 'ilanRepo.tasiyiciIlanlariniGetirCache');
         snap = await q.get(const GetOptions(source: Source.server));
       }
     }
