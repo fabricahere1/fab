@@ -77,11 +77,8 @@ class IslemDurumuPanel extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
                 child: Container(
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFE24B4A), Color(0xFFFF6B6B)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                    color: Colors.white,
+                    border: Border.all(color: Colors.black, width: 0.5),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -96,7 +93,7 @@ class IslemDurumuPanel extends ConsumerWidget {
                               style: GoogleFonts.dmSans(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.white,
+                                color: Colors.black,
                               ),
                             ),
                             if (ilanBaslik.isNotEmpty)
@@ -106,7 +103,7 @@ class IslemDurumuPanel extends ConsumerWidget {
                                 overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.dmSans(
                                   fontSize: 11,
-                                  color: Colors.white70,
+                                  color: Colors.black,
                                 ),
                               ),
                           ],
@@ -120,7 +117,7 @@ class IslemDurumuPanel extends ConsumerWidget {
                             style: GoogleFonts.dmSans(
                               fontSize: 22,
                               fontWeight: FontWeight.w800,
-                              color: Colors.white,
+                              color: Colors.black,
                               height: 1,
                             ),
                           ),
@@ -128,7 +125,7 @@ class IslemDurumuPanel extends ConsumerWidget {
                             'adım',
                             style: GoogleFonts.dmSans(
                               fontSize: 10,
-                              color: Colors.white70,
+                              color: Colors.black,
                             ),
                           ),
                         ],
@@ -139,11 +136,11 @@ class IslemDurumuPanel extends ConsumerWidget {
                         child: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
+                            color: Colors.black.withValues(alpha: 0.08),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.close,
-                              color: Colors.white, size: 16),
+                              color: Colors.black, size: 16),
                         ),
                       ),
                     ],
@@ -601,7 +598,8 @@ class _AnlasildiSatiriState extends State<_AnlasildiSatiri>
       child: Container(
         decoration: aktif
             ? BoxDecoration(
-                color: const Color(0xFFFFF5F5),
+                color: Colors.white,
+                border: Border.all(color: Colors.black, width: 0.5),
                 borderRadius: BorderRadius.circular(12),
               )
             : null,
@@ -648,7 +646,7 @@ class _AnlasildiSatiriState extends State<_AnlasildiSatiri>
                           color: widget.tamamlandi
                               ? const Color(0xFFBBBBBB)
                               : aktif
-                                  ? const Color(0xFFE24B4A)
+                                  ? Colors.black
                                   : const Color(0xFFCCCCCC),
                         ),
                       ),
@@ -657,7 +655,7 @@ class _AnlasildiSatiriState extends State<_AnlasildiSatiri>
                         style: GoogleFonts.dmSans(
                           fontSize: 10,
                           color: aktif
-                              ? const Color(0xFFE24B4A).withValues(alpha: 0.6)
+                              ? Colors.black
                               : const Color(0xFFCCCCCC),
                         ),
                       ),
@@ -682,10 +680,8 @@ class _AnlasildiSatiriState extends State<_AnlasildiSatiri>
                       height: 34,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                            color: const Color(0xFFE24B4A).withValues(alpha: 0.3),
-                            width: 1),
-                        color: const Color(0xFFFFF5F5),
+                        border: Border.all(color: Colors.black, width: 0.5),
+                        color: Colors.white,
                       ),
                       child: Stack(
                         children: [
@@ -693,8 +689,7 @@ class _AnlasildiSatiriState extends State<_AnlasildiSatiri>
                             widthFactor: _progress.value,
                             child: Container(
                               decoration: BoxDecoration(
-                                color: const Color(0xFFE24B4A)
-                                    .withValues(alpha: 0.15),
+                                color: Colors.black.withValues(alpha: 0.06),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                             ),
@@ -716,8 +711,8 @@ class _AnlasildiSatiriState extends State<_AnlasildiSatiri>
                                         : 'Onayla',
                                     style: GoogleFonts.dmSans(
                                       fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFFE24B4A),
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.black,
                                     ),
                                   ),
                           ),

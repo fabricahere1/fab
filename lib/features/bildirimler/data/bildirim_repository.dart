@@ -35,6 +35,7 @@ class BildirimRepository {
     return _col
         .where('kullaniciId', isEqualTo: kullaniciId)
         .where('okundu', isEqualTo: false)
+        .limit(100)
         .snapshots()
         .map((snap) => snap.docs.length);
   }
