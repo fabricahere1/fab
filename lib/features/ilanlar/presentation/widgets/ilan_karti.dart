@@ -827,6 +827,7 @@ class _IlanKartiIcerik extends StatelessWidget {
                   '${ilan.nereden} → ${ilan.nereye}',
                   style: GoogleFonts.dmSans(
                       fontSize: AppLayout.fs(context, 10),
+                      fontWeight: FontWeight.w500,
                       color: AppColors.textSecondary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

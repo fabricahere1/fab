@@ -97,7 +97,8 @@
       "PowerShell(Copy-Item *)",
       "Read(//c/Users/User/AppData/Local/Pub/Cache/hosted/pub.dev/**)",
       "Read(//c/Users/User/**)",
-      "Bash(flutter test *)"
+      "Bash(flutter test *)",
+      "Bash(echo \"EXIT:$?\")"
     ]
   }
 }
