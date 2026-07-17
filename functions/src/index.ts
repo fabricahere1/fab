@@ -179,7 +179,7 @@ function metinKontrol(metin: string): { uygun: boolean; sebep: string } {
       return { uygun: false, sebep: "İlan açıklaması uygunsuz içerik barındırıyor." };
     }
   }
-  if (metin.trim().length > 0 && metin.trim().length < 3) {
+  if (metin.trim().length < 3) {
     return { uygun: false, sebep: "İlan açıklaması çok kısa." };
   }
   return { uygun: true, sebep: "" };
@@ -621,34 +621,6 @@ export const algoliaTopluAktar = onCall(async (request) => {
   await getAlgoliaClient().saveObjects({ indexName: ALGOLIA_INDEX_NEREYE, objects: nereyeRecords });
 
   return { success: true, count: records.length };
-});
-
-// ── Anlaşma Kabul ─────────────────────────────────────────────────────────────
-
-export const anlasmaKabul = onCall(async (request) => {
-  if (!request.auth) throw new HttpsError("unauthenticated", "Giriş yapmalısın.");
-  const { sohbetId, mesajId } = request.data as { sohbetId: string; mesajId: string };
-  if (!sohbetId || !mesajId) throw new HttpsError("invalid-argument", "sohbetId ve mesajId gerekli.");
-  const mesajRef  = db.collection("sohbetler").doc(sohbetId).collection("mesajlar").doc(mesajId);
-  const mesajSnap = await mesajRef.get();
-  if (!mesajSnap.exists) throw new HttpsError("not-found", "Mesaj bulunamadı.");
-  if (mesajSnap.data()!.gondereId === request.auth.uid) throw new HttpsError("permission-denied", "Kendi anlaşmanı onaylayamazsın.");
-  await mesajRef.update({ anlasmaEvet: true });
-  return { success: true };
-});
-
-// ── Anlaşma Red ───────────────────────────────────────────────────────────────
-
-export const anlasmaRed = onCall(async (request) => {
-  if (!request.auth) throw new HttpsError("unauthenticated", "Giriş yapmalısın.");
-  const { sohbetId, mesajId } = request.data as { sohbetId: string; mesajId: string };
-  if (!sohbetId || !mesajId) throw new HttpsError("invalid-argument", "sohbetId ve mesajId gerekli.");
-  const mesajRef  = db.collection("sohbetler").doc(sohbetId).collection("mesajlar").doc(mesajId);
-  const mesajSnap = await mesajRef.get();
-  if (!mesajSnap.exists) throw new HttpsError("not-found", "Mesaj bulunamadı.");
-  if (mesajSnap.data()!.gondereId === request.auth.uid) throw new HttpsError("permission-denied", "Kendi anlaşmanı reddedemezsin.");
-  await mesajRef.update({ anlasmaRed: true });
-  return { success: true };
 });
 
 // ── Mesaj Bildirimi ───────────────────────────────────────────────────────────
