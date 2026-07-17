@@ -1,8 +1,8 @@
 // lib/features/ilanlar/presentation/widgets/ilan_karti.dart
 import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -14,7 +14,8 @@ import '../../../auth/providers/auth_provider.dart';
 import '../../../../core/cache/app_cache_manager.dart';
 import '../../../../shared/constants/app_colors.dart';
 import '../../../../shared/utils/app_layout.dart';
-import '../ilan_detay_screen.dart';
+import '../../../../router/app_router.dart';
+import '../../../home/providers/son_goruntulenenler_provider.dart';
 import '../../../../shared/constants/app_constants.dart';
 
 const kResimYukseklikleri = [176.0, 208.0, 160.0, 192.0, 224.0, 168.0];
@@ -73,12 +74,10 @@ class IlanKarti extends ConsumerWidget {
     final gosterFavori   = uid != null && uid != guncelIlan.kullaniciId;
 
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        CupertinoPageRoute(
-          builder: (_) => IlanDetayScreen(ilanId: guncelIlan.id, ilan: guncelIlan),
-        ),
-      ),
+      onTap: () {
+        ref.read(sonGoruntulenenlerProvider.notifier).kaydet(guncelIlan);
+        context.push(AppRoutes.ilanDetayPath(guncelIlan.id), extra: guncelIlan);
+      },
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xFFFFFAFA),

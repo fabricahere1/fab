@@ -98,7 +98,9 @@
       "Read(//c/Users/User/AppData/Local/Pub/Cache/hosted/pub.dev/**)",
       "Read(//c/Users/User/**)",
       "Bash(flutter test *)",
-      "Bash(echo \"EXIT:$?\")"
+      "Bash(echo \"EXIT:$?\")",
+      "Read(//c//**)",
+      "Read(//c/src/**)"
     ]
   }
 }

@@ -183,10 +183,13 @@ GoRouter router(Ref ref) {
       ),
       GoRoute(
         path: AppRoutes.ilanDetay,
-        builder: (_, state) {
+        pageBuilder: (context, state) {
           final ilanId = state.pathParameters['ilanId']!;
           final ilan = state.extra as IlanModel?;
-          return IlanDetayScreen(ilanId: ilanId, ilan: ilan);
+          return CupertinoPage(
+            key: state.pageKey,
+            child: IlanDetayScreen(ilanId: ilanId, ilan: ilan),
+          );
         },
       ), // GoRoute
       GoRoute(
