@@ -550,14 +550,8 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                       margin: const EdgeInsets.only(right: 6),
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
-                        gradient: secili
-                            ? const LinearGradient(
-                                colors: [Color(0xFFE53935), Color(0xFFEF5350)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              )
-                            : null,
-                        color: secili ? null : Colors.white,
+                        gradient: null,
+                        color: secili ? app_constants.kategoriRengi(kat.key) : Colors.white,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: secili
@@ -567,7 +561,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                         ),
                         boxShadow: secili
                             ? [BoxShadow(
-                                color: const Color(0xFFE53935).withValues(alpha: 0.3),
+                                color: app_constants.kategoriRengi(kat.key).withValues(alpha: 0.3),
                                 blurRadius: 8, offset: const Offset(0, 2),
                               )]
                             : null,

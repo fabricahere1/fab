@@ -840,14 +840,8 @@ class _IsteklerHeader extends StatelessWidget {
                     margin: const EdgeInsets.only(right: 6),
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
-                      gradient: secili
-                          ? const LinearGradient(
-                              colors: [Color(0xFFE53935), Color(0xFFEF5350)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            )
-                          : null,
-                      color: secili ? null : Colors.white,
+                      gradient: null,
+                      color: secili ? kategoriRengi(kat.key) : Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: secili
@@ -857,7 +851,7 @@ class _IsteklerHeader extends StatelessWidget {
                       ),
                       boxShadow: secili
                           ? [BoxShadow(
-                              color: const Color(0xFFE53935)
+                              color: kategoriRengi(kat.key)
                                   .withValues(alpha: 0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
