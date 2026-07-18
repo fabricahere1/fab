@@ -26,6 +26,7 @@ import 'package:iste_v3/features/home/presentation/kesfet_bolum_detay_screen.dar
 import 'package:iste_v3/features/profil/presentation/profil_duzenle_screen.dart';
 import 'package:iste_v3/features/auth/providers/auth_provider.dart';
 import 'package:iste_v3/shared/widgets/login_gerektiren_aksiyon.dart' show loginBottomSheet;
+import 'package:iste_v3/shared/widgets/giris_gerekli_widget.dart';
 import 'package:iste_v3/shared/widgets/avatar_widget.dart';
 import 'package:iste_v3/features/profil/presentation/kullanici_profil_screen.dart';
 import 'package:iste_v3/features/ilanlar/presentation/ilan_form_screen.dart';
@@ -43,6 +44,15 @@ class SanaOzelScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final uid = ref.watch(currentUserProvider)?.uid;
+    if (uid == null) {
+      return GirisGerekli(
+        icon: Icons.person_outline,
+        mesaj: 'Kişiselleştirilmiş önerileri görmek için giriş yap',
+        onGirisYap: () => context.push(AppRoutes.login),
+      );
+    }
+
     final profilAsync = ref.watch(benimKullaniciProfilProvider);
 
     ref.listen(benimKullaniciProfilProvider, (_, sonraki) {
@@ -793,6 +803,7 @@ class _SanaOzelHeroBanner extends ConsumerWidget {
         decoration: BoxDecoration(
           color: AppColors.white,
           border: Border.all(color: const Color(0xFF7C3AED), width: 1),
+          borderRadius: BorderRadius.circular(6),
         ),
         child: SizedBox(
           height: 210,
@@ -838,22 +849,26 @@ class _SanaOzelHeroBanner extends ConsumerWidget {
                                   margin: const EdgeInsets.only(right: 8),
                                   decoration: BoxDecoration(
                                     border: Border.all(color: const Color(0xFFC9A24B), width: 1),
+                                    borderRadius: BorderRadius.circular(4),
                                   ),
-                                  child: resim.isNotEmpty
-                                      ? CachedNetworkImage(
-                                          cacheManager: AppCacheManager.instance,
-                                          imageUrl: resim,
-                                          fit: BoxFit.cover,
-                                          memCacheWidth: 190,
-                                          memCacheHeight: 240,
-                                          fadeInDuration: Duration.zero,
-                                          placeholder: (_, _) => Shimmer.fromColors(
-                                              baseColor: Colors.grey[200]!,
-                                              highlightColor: Colors.grey[50]!,
-                                              child: Container(color: Colors.white)))
-                                      : Container(
-                                          color: AppColors.surface,
-                                          child: Icon(Icons.inventory_2_outlined, color: AppColors.textHint, size: 26)),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: resim.isNotEmpty
+                                        ? CachedNetworkImage(
+                                            cacheManager: AppCacheManager.instance,
+                                            imageUrl: resim,
+                                            fit: BoxFit.cover,
+                                            memCacheWidth: 190,
+                                            memCacheHeight: 240,
+                                            fadeInDuration: Duration.zero,
+                                            placeholder: (_, _) => Shimmer.fromColors(
+                                                baseColor: Colors.grey[200]!,
+                                                highlightColor: Colors.grey[50]!,
+                                                child: Container(color: Colors.white)))
+                                        : Container(
+                                            color: AppColors.surface,
+                                            child: Icon(Icons.inventory_2_outlined, color: AppColors.textHint, size: 26)),
+                                  ),
                                 ),
                               );
                             },

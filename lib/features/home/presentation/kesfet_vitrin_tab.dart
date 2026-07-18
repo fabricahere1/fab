@@ -516,6 +516,7 @@ class KesfetHeroBanner extends ConsumerWidget {
         decoration: BoxDecoration(
           color: AppColors.white,
           border: Border.all(color: const Color(0xFF7C3AED), width: 1),
+          borderRadius: BorderRadius.circular(6),
         ),
         child: SizedBox(
           height: 236,
@@ -578,46 +579,50 @@ class KesfetHeroBanner extends ConsumerWidget {
                                   margin: const EdgeInsets.only(right: 8),
                                   decoration: BoxDecoration(
                                     border: Border.all(color: const Color(0xFFC9A24B), width: 1),
+                                    borderRadius: BorderRadius.circular(4),
                                   ),
-                                  child: Stack(
-                                    fit: StackFit.expand,
-                                    children: [
-                                      resim.isNotEmpty
-                                          ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, memCacheWidth: 240, memCacheHeight: 320, fadeInDuration: Duration.zero, placeholder: (_, _) => Shimmer.fromColors(baseColor: Colors.grey[200]!, highlightColor: Colors.grey[50]!, child: Container(color: Colors.white)))
-                                          : Container(color: AppColors.surface, child: Icon(Icons.inventory_2_outlined, color: AppColors.textHint, size: 26)),
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            begin: Alignment.topCenter,
-                                            end: Alignment.bottomCenter,
-                                            colors: [Colors.transparent, Colors.black.withValues(alpha: 0.55)],
-                                            stops: const [0.5, 1.0],
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        resim.isNotEmpty
+                                            ? CachedNetworkImage(cacheManager: AppCacheManager.instance, imageUrl: resim, fit: BoxFit.cover, memCacheWidth: 240, memCacheHeight: 320, fadeInDuration: Duration.zero, placeholder: (_, _) => Shimmer.fromColors(baseColor: Colors.grey[200]!, highlightColor: Colors.grey[50]!, child: Container(color: Colors.white)))
+                                            : Container(color: AppColors.surface, child: Icon(Icons.inventory_2_outlined, color: AppColors.textHint, size: 26)),
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                              colors: [Colors.transparent, Colors.black.withValues(alpha: 0.55)],
+                                              stops: const [0.5, 1.0],
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      Positioned(
-                                        left: 8, right: 8, bottom: 8,
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: GoogleFonts.dmSans(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white),
-                                            ),
-                                            Text(
-                                              ilan.tip == IlanTip.istek
-                                                  ? '→ ${ilan.nereye}'
-                                                  : '${ilan.nereden} → ${ilan.nereye}',
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: GoogleFonts.dmSans(fontSize: 9, color: Colors.white.withValues(alpha: 0.85)),
-                                            ),
-                                          ],
+                                        Positioned(
+                                          left: 8, right: 8, bottom: 8,
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: GoogleFonts.dmSans(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white),
+                                              ),
+                                              Text(
+                                                ilan.tip == IlanTip.istek
+                                                    ? '→ ${ilan.nereye}'
+                                                    : '${ilan.nereden} → ${ilan.nereye}',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: GoogleFonts.dmSans(fontSize: 9, color: Colors.white.withValues(alpha: 0.85)),
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                               );
