@@ -890,12 +890,80 @@ abstract class _$TakipciDelta extends $Notifier<Map<String, int>> {
   }
 }
 
+@ProviderFor(takipEdiyorMuHam)
+final takipEdiyorMuHamProvider = TakipEdiyorMuHamFamily._();
+
+final class TakipEdiyorMuHamProvider
+    extends $FunctionalProvider<AsyncValue<bool>, bool, Stream<bool>>
+    with $FutureModifier<bool>, $StreamProvider<bool> {
+  TakipEdiyorMuHamProvider._({
+    required TakipEdiyorMuHamFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'takipEdiyorMuHamProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$takipEdiyorMuHamHash();
+
+  @override
+  String toString() {
+    return r'takipEdiyorMuHamProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<bool> create(Ref ref) {
+    final argument = this.argument as String;
+    return takipEdiyorMuHam(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is TakipEdiyorMuHamProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$takipEdiyorMuHamHash() => r'7eaa332dba2071806b5578f26554aeae1feaa58f';
+
+final class TakipEdiyorMuHamFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<bool>, String> {
+  TakipEdiyorMuHamFamily._()
+    : super(
+        retry: null,
+        name: r'takipEdiyorMuHamProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  TakipEdiyorMuHamProvider call(String takipEdilenId) =>
+      TakipEdiyorMuHamProvider._(argument: takipEdilenId, from: this);
+
+  @override
+  String toString() => r'takipEdiyorMuHamProvider';
+}
+
 @ProviderFor(takipEdiyorMu)
 final takipEdiyorMuProvider = TakipEdiyorMuFamily._();
 
-final class TakipEdiyorMuProvider
-    extends $FunctionalProvider<AsyncValue<bool>, bool, Stream<bool>>
-    with $FutureModifier<bool>, $StreamProvider<bool> {
+final class TakipEdiyorMuProvider extends $FunctionalProvider<bool, bool, bool>
+    with $Provider<bool> {
   TakipEdiyorMuProvider._({
     required TakipEdiyorMuFamily super.from,
     required String super.argument,
@@ -919,13 +987,21 @@ final class TakipEdiyorMuProvider
 
   @$internal
   @override
-  $StreamProviderElement<bool> $createElement($ProviderPointer pointer) =>
-      $StreamProviderElement(pointer);
+  $ProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
 
   @override
-  Stream<bool> create(Ref ref) {
+  bool create(Ref ref) {
     final argument = this.argument as String;
     return takipEdiyorMu(ref, argument);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(bool value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<bool>(value),
+    );
   }
 
   @override
@@ -939,10 +1015,10 @@ final class TakipEdiyorMuProvider
   }
 }
 
-String _$takipEdiyorMuHash() => r'5498354c59525dba0429ca710c45a018940c2c7d';
+String _$takipEdiyorMuHash() => r'e73d7af10da711a0551fac2d9e93710953d3273d';
 
 final class TakipEdiyorMuFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<bool>, String> {
+    with $FunctionalFamilyOverride<bool, String> {
   TakipEdiyorMuFamily._()
     : super(
         retry: null,

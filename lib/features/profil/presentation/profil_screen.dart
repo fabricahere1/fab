@@ -16,7 +16,6 @@ import '../../degerlendirme/providers/degerlendirme_provider.dart';
 import '../../degerlendirme/presentation/degerlendirme_screen.dart';
 import '../../ilanlar/domain/ilan_model.dart';
 import '../../ilanlar/presentation/ilan_form_screen.dart';
-import 'takip_listesi_screen.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/widgets/avatar_widget.dart';
@@ -331,23 +330,13 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                         _StatKutu(
                           sayi: profil.takipciSayisi.toString(),
                           label: 'Takipçi',
-                          onTap: () => Navigator.push(context, MaterialPageRoute(
-                            builder: (_) => TakipListesiScreen(
-                              kullaniciId: profil.id,
-                              baslangicTab: TakipListeTipi.takipcilar,
-                            ),
-                          )),
+                          onTap: () => context.push('/home/takip-listesi/${profil.id}?tab=takipcilar'),
                         ),
                         _StatAyrac(),
                         _StatKutu(
                           sayi: profil.takipSayisi.toString(),
                           label: 'Takip',
-                          onTap: () => Navigator.push(context, MaterialPageRoute(
-                            builder: (_) => TakipListesiScreen(
-                              kullaniciId: profil.id,
-                              baslangicTab: TakipListeTipi.takipEdilenler,
-                            ),
-                          )),
+                          onTap: () => context.push('/home/takip-listesi/${profil.id}?tab=takipEdilenler'),
                         ),
                         _StatAyrac(),
                         _StatKutu(sayi: profil.degerlendirmeSayisi.toString(), label: 'Değerlendirme'),

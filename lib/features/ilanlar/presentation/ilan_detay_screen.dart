@@ -1027,6 +1027,8 @@ class _IlanSahibiKarti extends ConsumerWidget {
                             ? CachedNetworkImage(
                                 imageUrl: fotoUrl,
                                 fit: BoxFit.cover,
+                                memCacheWidth: 96,
+                                memCacheHeight: 96,
                                 placeholder: (_, _) => Container(color: AppColors.surface),
                                 errorWidget: (_, _, _) => _AvatarHarf(ad: kullaniciAd),
                               )

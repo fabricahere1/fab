@@ -576,6 +576,8 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                                         width: 28,
                                         height: 28,
                                         fit: BoxFit.cover,
+                                        memCacheWidth: 56,
+                                        memCacheHeight: 56,
                                         fadeInDuration: Duration.zero,
                                         errorWidget: (_, _, _) => _IlanResimPlaceholder(),
                                       ),
@@ -1276,6 +1278,8 @@ class _ResimBalonu extends StatelessWidget {
                     width: w,
                     height: h,
                     fit: BoxFit.cover,
+                    memCacheWidth: 400,
+                    memCacheHeight: 400,
                     placeholder: (_, _) => Container(
                         color: AppColors.surface,
                         child: const Center(

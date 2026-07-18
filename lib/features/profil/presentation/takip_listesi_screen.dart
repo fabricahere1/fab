@@ -216,22 +216,53 @@ class _ProfilSatiri extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final takipAsync = ref.watch(takipEdiyorMuProvider(profil.id));
+    final optimistik = ref.watch(
+      optimistikTakipProvider.select((s) => s[profil.id]),
+    );
+    final hamAsync = ref.watch(takipEdiyorMuHamProvider(profil.id));
+    final takipEdiyor = ref.watch(takipEdiyorMuProvider(profil.id));
 
-    final Widget takipButonu = takipAsync.when(
-      loading: () => Container(
+    final Widget takipButonu;
+    if (optimistik == null && hamAsync.hasError) {
+      final err = hamAsync.error;
+      final st = hamAsync.stackTrace;
+      if (err != null && st != null) {
+        AppHataYonetici.logla(err, st, etiket: 'takipListesi.takipDurumu');
+      }
+      takipButonu = const SizedBox.shrink();
+    } else if (optimistik == null && hamAsync.isLoading) {
+      takipButonu = Container(
         width: 108,
         height: 32,
         decoration: BoxDecoration(
           color: const Color(0xFFEEEEEE),
           borderRadius: BorderRadius.circular(20),
         ),
-      ),
-      error: (e, s) { AppHataYonetici.logla(e, s, etiket: 'takipListesi.takipDurumu'); return const SizedBox.shrink(); },
-      data: (takipEdiyor) => GestureDetector(
+      );
+    } else {
+      takipButonu = GestureDetector(
         onTap: () {
           if (takipEdiyor) {
-            ref.read(takipIslemleriProvider.notifier).takipiBirak(profil.id);
+            showDialog(
+              context: context,
+              builder: (dialogContext) => AlertDialog(
+                title: const Text('Takibi Bırak'),
+                content: Text('${profil.adSoyad} takipten çıkılsın mı?'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: const Text('İptal'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(dialogContext);
+                      ref.read(takipIslemleriProvider.notifier).takipiBirak(profil.id);
+                    },
+                    child: const Text('Takibi Bırak'),
+                  ),
+                ],
+              ),
+            );
           } else {
             ref.read(takipIslemleriProvider.notifier).takipEt(profil.id);
           }
@@ -255,8 +286,8 @@ class _ProfilSatiri extends ConsumerWidget {
             ),
           ),
         ),
-      ),
-    );
+      );
+    }
 
     return GestureDetector(
       onTap: () => Navigator.push(

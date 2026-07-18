@@ -19,6 +19,7 @@ import '../features/auth/providers/auth_provider.dart';
 import '../features/profil/providers/profil_provider.dart';
 import '../core/services/surum_kapisi.dart';
 import '../shared/widgets/guncelleme_gerekli_screen.dart';
+import '../features/profil/presentation/takip_listesi_screen.dart';
 
 part 'app_router.g.dart';
 
@@ -186,6 +187,23 @@ GoRouter router(Ref ref) {
                 duzenlenecekIlan: state.extra as IlanModel?,
               ),
             ),
+          ),
+          GoRoute(
+            path: 'takip-listesi/:kullaniciId',
+            pageBuilder: (context, state) {
+              final kullaniciId = state.pathParameters['kullaniciId']!;
+              final tabParam = state.uri.queryParameters['tab'];
+              final baslangicTab = tabParam == 'takipEdilenler'
+                  ? TakipListeTipi.takipEdilenler
+                  : TakipListeTipi.takipcilar;
+              return CupertinoPage(
+                key: state.pageKey,
+                child: TakipListesiScreen(
+                  kullaniciId: kullaniciId,
+                  baslangicTab: baslangicTab,
+                ),
+              );
+            },
           ),
         ],
       ),

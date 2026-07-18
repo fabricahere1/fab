@@ -1071,6 +1071,8 @@ class _Son24SaatBolumu extends ConsumerWidget {
                                                 width: cardW,
                                                 height: 115,
                                                 fit: BoxFit.cover,
+                                                memCacheWidth: (cardW * 2).round(),
+                                                memCacheHeight: 230,
                                                 errorWidget: (ctx, url, err) =>
                                                     _PlaceholderImage(w: cardW, h: 115),
                                               )

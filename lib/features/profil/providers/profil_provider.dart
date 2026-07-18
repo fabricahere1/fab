@@ -2,6 +2,7 @@ import 'dart:io';
 import '../../../shared/utils/app_hata_yonetici.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
 import '../../ilanlar/domain/ilan_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/kullanici_repository.dart';
 import '../domain/kullanici_model.dart';
@@ -241,25 +242,41 @@ class TakipciDelta extends _$TakipciDelta {
 
 // ── Takip provider'ları ───────────────────────────────────────────────────────
 
+// Ham Firestore stream'i — optimistikTakipProvider'a HİÇ bağımlı değil.
+// Bu ayrım kasıtlı: optimistikTakipProvider her değiştiğinde bu provider'ın
+// YENİDEN İNŞA EDİLMESİNİ (ve dolayısıyla .snapshots()'a yeniden abone
+// olup geçici bir AsyncLoading anı yaratmasını) önlemek için — bu, tıklanan
+// satırın butonunun kısa süreliğine skeleton'a düşüp geri gelmesine
+// (flicker) sebep oluyordu.
 @riverpod
-Stream<bool> takipEdiyorMu(Ref ref, String takipEdilenId) {
+Stream<bool> takipEdiyorMuHam(Ref ref, String takipEdilenId) {
   final uid = ref.watch(currentUserProvider)?.uid;
   if (uid == null) return Stream.value(false);
-
-  // Eskiden, optimistik bir kayıt varsa gerçek Firestore stream'i hiç
-  // izlenmiyordu (return Stream.value(...) ile tamamen by-pass ediliyordu).
-  // Bu, başarılı bir takip/takipten çık işleminden sonra optimistik kayıt
-  // hiç temizlenmediği için (sadece hata durumunda temizleniyordu),
-  // o oturum boyunca gerçek duruma bir daha hiç bakılmamasına yol açıyordu
-  // — örn. başka bir cihazdan ilişki değişirse fark edilmiyordu. Artık
-  // favoriliIlanIdler'daki gibi: gerçek stream HER ZAMAN izlenir, optimistik
-  // kayıt sadece üzerine binen bir "yama" — kalıcı olsa bile zararsızdır.
-  final optimistik = ref.watch(optimistikTakipProvider);
-
   return ref.watch(kullaniciRepositoryProvider).takipEdiyorMu(
     takipciId: uid,
     takipEdilenId: takipEdilenId,
-  ).map((gercekDeger) => optimistik[takipEdilenId] ?? gercekDeger);
+  );
+}
+
+// Eskiden, optimistik bir kayıt varsa gerçek Firestore stream'i hiç
+// izlenmiyordu (return Stream.value(...) ile tamamen by-pass ediliyordu).
+// Bu, başarılı bir takip/takipten çık işleminden sonra optimistik kayıt
+// hiç temizlenmediği için (sadece hata durumunda temizleniyordu),
+// o oturum boyunca gerçek duruma bir daha hiç bakılmamasına yol açıyordu
+// — örn. başka bir cihazdan ilişki değişirse fark edilmiyordu. Artık
+// favoriliIlanIdler'daki gibi: gerçek stream HER ZAMAN izlenir, optimistik
+// kayıt sadece üzerine binen bir "yama" — kalıcı olsa bile zararsızdır.
+//
+// Senkron bool: optimistik değer değişince bu provider yeniden hesaplanır
+// ama bu, YALNIZCA bir map lookup — takipEdiyorMuHamProvider'ın kendi
+// stream aboneliğini yeniden kurmaz, dolayısıyla flicker'a sebep olmaz.
+@riverpod
+bool takipEdiyorMu(Ref ref, String takipEdilenId) {
+  final optimistik = ref.watch(
+    optimistikTakipProvider.select((s) => s[takipEdilenId]),
+  );
+  final hamAsync = ref.watch(takipEdiyorMuHamProvider(takipEdilenId));
+  return optimistik ?? hamAsync.value ?? false;
 }
 
 @Riverpod(keepAlive: true)
@@ -278,13 +295,15 @@ class TakipIslemleri extends _$TakipIslemleri {
     ref.read(optimistikTakipProvider.notifier).takipEt(takipEdilenId);
     try {
       await _repo.takipEt(takipciId: uid, takipEdilenId: takipEdilenId);
-      // Başarılı yazma sonrası optimistik kaydı temizle — gerçek Firestore
-      // stream'i artık güncel olduğu için devreye girebilsin. Önceden
-      // burada temizleme yapılmıyordu, bu da takipEdiyorMu()'nun bir daha
-      // hiç gerçek stream'e bakmamasına (kalıcı olarak optimistik değeri
-      // göstermesine) sebep oluyordu.
+      // Başarı durumunda optimistik kaydı KASITLI OLARAK temizlemiyoruz —
+      // temizle() burada çağrılırsa, gerçek stream (takipEdiyorMuHamProvider)
+      // henüz Firestore'un yeni değerini almamış olabilir (transaction ack'i
+      // ile realtime listener push'u ayrı, sıralaması garanti olmayan iki ağ
+      // round-trip'i) — bu da butonun kısa süreliğine yanlış değere sıçrayıp
+      // gerçek stream yetişince tekrar doğruya dönmesine (flicker) sebep
+      // oluyordu. Optimistik değer artık başarı sonrası KALICI kalıyor;
+      // yalnızca hata/rollback durumunda temizleniyor (aşağıdaki catch).
       if (!ref.mounted) return;
-      ref.read(optimistikTakipProvider.notifier).temizle(takipEdilenId);
       ref.read(takipciDeltaProvider.notifier).arttir(takipEdilenId);
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'takip.et');
@@ -299,8 +318,8 @@ class TakipIslemleri extends _$TakipIslemleri {
     ref.read(optimistikTakipProvider.notifier).takipiBirak(takipEdilenId);
     try {
       await _repo.takipiBirak(takipciId: uid, takipEdilenId: takipEdilenId);
+      // Bkz. takipEt() — aynı gerekçeyle başarı durumunda temizle() YOK.
       if (!ref.mounted) return;
-      ref.read(optimistikTakipProvider.notifier).temizle(takipEdilenId);
       ref.read(takipciDeltaProvider.notifier).azalt(takipEdilenId);
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'takip.birak');

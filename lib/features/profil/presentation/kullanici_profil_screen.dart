@@ -278,15 +278,33 @@ class _KullaniciProfilScreenState extends ConsumerState<KullaniciProfilScreen> {
                             const SizedBox(height: 16),
                             Consumer(
                               builder: (ctx, ref, _) {
-                                final takipAsync = ref.watch(takipEdiyorMuProvider(kullaniciId));
-                                final takipEdiyor = takipAsync.value ?? false;
+                                final takipEdiyor = ref.watch(takipEdiyorMuProvider(kullaniciId));
                                 return SizedBox(
                                   width: double.infinity,
                                   height: 44,
                                   child: OutlinedButton.icon(
                                     onPressed: () {
                                       if (takipEdiyor) {
-                                        ref.read(takipIslemleriProvider.notifier).takipiBirak(kullaniciId);
+                                        showDialog(
+                                          context: context,
+                                          builder: (dialogContext) => AlertDialog(
+                                            title: const Text('Takibi Bırak'),
+                                            content: Text('$kullaniciAd takipten çıkılsın mı?'),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(dialogContext),
+                                                child: const Text('İptal'),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.pop(dialogContext);
+                                                  ref.read(takipIslemleriProvider.notifier).takipiBirak(kullaniciId);
+                                                },
+                                                child: const Text('Takibi Bırak'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
                                       } else {
                                         ref.read(takipIslemleriProvider.notifier).takipEt(kullaniciId);
                                       }
