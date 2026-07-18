@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
@@ -16,14 +18,21 @@ class GirisGerekli extends StatelessWidget {
     required this.onGirisYap,
   });
 
+  static const List<String> _animasyonlar = [
+    'assets/animations/bukalemun.json',
+    'assets/animations/timsah.json',
+  ];
+
   @override
   Widget build(BuildContext context) {
+    final secilenAnimasyon =
+        _animasyonlar[Random().nextInt(_animasyonlar.length)];
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Lottie.asset(
-            'assets/animations/bukalemun.json',
+            secilenAnimasyon,
             width: 120,
             height: 120,
           ),
