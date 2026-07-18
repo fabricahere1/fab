@@ -548,18 +548,14 @@ class _DikeTabBar extends StatelessWidget {
       (GoruntulemeModeli.swipe, Icons.swipe_left_alt_rounded),
     ];
 
-    final bgRenk = isSwipe
-        ? const Color(0x73000000)
-        : const Color(0xFFEEEEEE);
+    final bgRenk = const Color(0x73000000);
 
-    final borderRenk = isSwipe
-        ? Colors.white.withValues(alpha: 0.1)
-        : const Color(0xFFDDDDDD);
+    final borderRenk = Colors.white;
 
     return ClipRRect(
       borderRadius: const BorderRadius.horizontal(left: Radius.circular(10)),
       child: Container(
-        width: 36,
+        width: 30,
         decoration: BoxDecoration(
           color: bgRenk,
           borderRadius:
@@ -585,7 +581,7 @@ class _DikeTabBar extends StatelessWidget {
               onTap: () => onModSec(m),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
-                width: 36, height: 40,
+                width: 30, height: 40,
                 decoration: BoxDecoration(
                   color: itemBg,
                   border: isLast
@@ -991,14 +987,14 @@ class _Son24SaatBolumu extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 44, 12),
                     child: Row(
                       children: [
                         Expanded(
                           child: Text(
                             "Haftanın Öne Çıkanları",
                             style: GoogleFonts.playfairDisplay(
-                              fontSize: 20,
+                              fontSize: 17,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
                             ),
@@ -1014,7 +1010,7 @@ class _Son24SaatBolumu extends ConsumerWidget {
                           child: Text(
                             'Tümünü Gör →',
                             style: GoogleFonts.dmSans(
-                              fontSize: 12,
+                              fontSize: 11,
                               fontWeight: FontWeight.w600,
                               color: Colors.white.withValues(alpha: 0.85),
                             ),
@@ -1055,59 +1051,48 @@ class _Son24SaatBolumu extends ConsumerWidget {
                                     ),
                                   ],
                                 ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: const BorderRadius.vertical(
-                                          top: Radius.circular(12)),
-                                      child: SizedBox(
-                                        width: cardW,
-                                        height: 115,
-                                        child: ilan.gridResim.isNotEmpty
-                                            ? CachedNetworkImage(
-                                                imageUrl: ilan.gridResim,
-                                                cacheManager: AppCacheManager.instance,
-                                                width: cardW,
-                                                height: 115,
-                                                fit: BoxFit.cover,
-                                                memCacheWidth: (cardW * 2).round(),
-                                                memCacheHeight: 230,
-                                                errorWidget: (ctx, url, err) =>
-                                                    _PlaceholderImage(w: cardW, h: 115),
-                                              )
-                                            : _PlaceholderImage(w: cardW, h: 115),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Padding(
-                                        padding: const EdgeInsets.fromLTRB(8, 6, 8, 4),
-                                        child: Text(
-                                          ilan.urun.isNotEmpty ? ilan.urun : ilan.nereden,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: GoogleFonts.dmSans(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.textPrimary,
-                                            height: 1.3,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      ilan.gridResim.isNotEmpty
+                                          ? CachedNetworkImage(
+                                              imageUrl: ilan.gridResim,
+                                              cacheManager: AppCacheManager.instance,
+                                              fit: BoxFit.cover,
+                                              memCacheWidth: (cardW * 2).round(),
+                                              memCacheHeight: (cardH * 2).round(),
+                                              errorWidget: (ctx, url, err) =>
+                                                  _PlaceholderImage(w: cardW, h: cardH),
+                                            )
+                                          : _PlaceholderImage(w: cardW, h: cardH),
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.topCenter,
+                                            end: Alignment.bottomCenter,
+                                            colors: [Colors.transparent, Colors.black.withValues(alpha: 0.55)],
+                                            stops: const [0.5, 1.0],
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 6),
-                                      child: Text(
-                                        '${ilan.nereden} -> ${ilan.nereye}',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: GoogleFonts.dmSans(
-                                          fontSize: 10,
-                                          color: AppColors.textSecondary,
+                                      Positioned(
+                                        left: 8, right: 8, bottom: 8,
+                                        child: Text(
+                                          ilan.tip == IlanTip.istek
+                                              ? '→ ${ilan.nereye}'
+                                              : '${ilan.nereden} → ${ilan.nereye}',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: GoogleFonts.dmSans(
+                                            fontSize: 9,
+                                            color: Colors.white.withValues(alpha: 0.85),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
                               if (ilan.yeniMi)
