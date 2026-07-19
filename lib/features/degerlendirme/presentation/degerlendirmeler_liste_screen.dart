@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/degerlendirme_provider.dart';
 import '../../profil/providers/profil_provider.dart';
+import '../../profil/presentation/kullanici_profil_screen.dart';
 import '../../../shared/constants/app_colors.dart';
 
 // ── Ekran ─────────────────────────────────────────────────
@@ -269,23 +270,34 @@ class DegerlendirmeKarti extends ConsumerWidget {
             child: Row(
               children: [
                 // Avatar
-                fotoUrl != null && fotoUrl.isNotEmpty
-                    ? CircleAvatar(
-                        radius: 16,
-                        backgroundImage: NetworkImage(fotoUrl),
-                      )
-                    : CircleAvatar(
-                        radius: 16,
-                        backgroundColor:
-                            AppColors.red.withValues(alpha: 0.12),
-                        child: Text(
-                          ad.isNotEmpty ? ad[0].toUpperCase() : '?',
-                          style: GoogleFonts.dmSans(
-                              color: AppColors.red,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 12),
-                        ),
+                GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => KullaniciProfilScreen(
+                        kullaniciId: degerlendireninId,
+                        kullaniciAd: ad,
                       ),
+                    ),
+                  ),
+                  child: fotoUrl != null && fotoUrl.isNotEmpty
+                      ? CircleAvatar(
+                          radius: 16,
+                          backgroundImage: NetworkImage(fotoUrl),
+                        )
+                      : CircleAvatar(
+                          radius: 16,
+                          backgroundColor:
+                              AppColors.red.withValues(alpha: 0.12),
+                          child: Text(
+                            ad.isNotEmpty ? ad[0].toUpperCase() : '?',
+                            style: GoogleFonts.dmSans(
+                                color: AppColors.red,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12),
+                          ),
+                        ),
+                ),
                 const SizedBox(width: 8),
                 // İsim + tarih
                 Expanded(

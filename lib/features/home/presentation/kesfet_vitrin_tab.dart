@@ -531,10 +531,17 @@ class KesfetHeroBanner extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Expanded(
-                          child: Text('Bu hafta öne çıkanlar',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.playfairDisplay(fontSize: 15, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              color: Colors.black,
+                              child: Text('Bu hafta öne çıkanlar',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.playfairDisplay(fontSize: 15, fontWeight: FontWeight.w500, color: Colors.white)),
+                            ),
+                          ),
                         ),
                         const SizedBox(width: 8),
                         GestureDetector(

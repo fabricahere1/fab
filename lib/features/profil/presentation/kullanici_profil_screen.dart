@@ -225,7 +225,7 @@ class _KullaniciProfilScreenState extends ConsumerState<KullaniciProfilScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Güven Skoru', style: ProfilStilleri.bolumBaslik),
+                                Text('Puanı', style: ProfilStilleri.bolumBaslik),
                                 Text('${profil.guvenSkoru}/100', style: ProfilStilleri.guvenSkoruDeger),
                               ],
                             ),

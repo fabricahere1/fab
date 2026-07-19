@@ -818,10 +818,14 @@ class _SanaOzelHeroBanner extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Senin için önerilen',
-                            style: GoogleFonts.playfairDisplay(
-                                fontSize: 15, fontWeight: FontWeight.w500,
-                                color: AppColors.textPrimary)),
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          color: Colors.black,
+                          child: Text('Senin için önerilen',
+                              style: GoogleFonts.playfairDisplay(
+                                  fontSize: 15, fontWeight: FontWeight.w500,
+                                  color: Colors.white)),
+                        ),
                         Text('İlgi alanlarına göre seçildi',
                             style: GoogleFonts.dmSans(
                                 fontSize: 11,

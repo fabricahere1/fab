@@ -359,7 +359,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Güven Skoru', style: ProfilStilleri.bolumBaslik),
+                              Text('Puanı', style: ProfilStilleri.bolumBaslik),
                               Text('${profil.guvenSkoru}/100', style: ProfilStilleri.guvenSkoruDeger),
                             ],
                           ),
@@ -443,7 +443,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
               _Ayrac(),
               _SatirOge(
                 icon: Icons.star_border,
-                label: 'Değerlendirmelerim',
+                label: 'Aldığım Değerlendirmeler',
                 onTap: () {
                   final uid2 = ref.read(currentUserProvider)?.uid ?? '';
                   final ad = ref.read(benimKullaniciProfilProvider).value?.adSoyad ?? '';

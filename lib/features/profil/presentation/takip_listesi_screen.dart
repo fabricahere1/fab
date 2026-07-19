@@ -269,18 +269,18 @@ class _ProfilSatiri extends ConsumerWidget {
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: takipEdiyor ? Colors.transparent : AppColors.textPrimary,
+            color: takipEdiyor ? Colors.transparent : AppColors.primary,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: takipEdiyor ? AppColors.divider : AppColors.textPrimary,
+              color: takipEdiyor ? AppColors.divider : AppColors.primary,
             ),
           ),
           child: Text(
             takipEdiyor ? 'Takip Ediliyor' : 'Takip Et',
             style: GoogleFonts.dmSans(
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: FontWeight.w600,
               color: takipEdiyor ? AppColors.textSecondary : Colors.white,
             ),
@@ -329,7 +329,7 @@ class _ProfilSatiri extends ConsumerWidget {
                     profil.adSoyad,
                     style: GoogleFonts.dmSans(
                       fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w500,
                       color: AppColors.textPrimary,
                     ),
                   ),

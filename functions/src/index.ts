@@ -1141,3 +1141,35 @@ export const ilanOtomatikPasif = onSchedule(
     console.log(`${snap.size} adet ilan otomatik pasife düşürüldü.`);
   }
 );
+
+// ── Güven Skoru Hesaplama (Scheduled) ───────────────────────────────────────
+export const guvenSkoruHesapla = onSchedule(
+  {
+    schedule: "every 24 hours",
+    region: "europe-west1",
+  },
+  async () => {
+    const kullaniciSnap = await db.collection("kullanicilar").get();
+    const batch = db.batch();
+    for (const kullaniciDoc of kullaniciSnap.docs) {
+      const kullanici = kullaniciDoc.data();
+      const ortalamaPuan = (kullanici.ortalamaPuan as number) ?? 0;
+      const degerlendirmeSayisi = (kullanici.degerlendirmeSayisi as number) ?? 0;
+      const degerlendirmePuani = Math.min(50, (ortalamaPuan / 5) * 50 * Math.min(1, degerlendirmeSayisi / 5));
+      const ilanSnap = await db.collection("ilanlar")
+        .where("kullaniciId", "==", kullaniciDoc.id)
+        .where("aktif", "==", true)
+        .get();
+      const aktivitePuani = Math.min(30, ilanSnap.size * 3);
+      let profilPuani = 0;
+      if (kullanici.adSoyad) profilPuani += 5;
+      if (kullanici.telefon) profilPuani += 5;
+      if (kullanici.bulunduguSehir || kullanici.yasadigiUlke) profilPuani += 5;
+      if (kullanici.hakkinda) profilPuani += 5;
+      const toplamSkor = Math.round(degerlendirmePuani + aktivitePuani + profilPuani);
+      batch.update(kullaniciDoc.ref, { guvenSkoru: toplamSkor });
+    }
+    await batch.commit();
+    console.log(`[guvenSkoruHesapla] ${kullaniciSnap.size} kullanıcının güven skoru güncellendi.`);
+  }
+);

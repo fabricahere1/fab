@@ -253,7 +253,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
           ),
 
           // ── Değerlendirmelerim ───────────────────────
-          _BolumBasligi('Değerlendirmelerim'),
+          _BolumBasligi('Aldığım Değerlendirmeler'),
           _Kart(
             children: [
               _SatirOge(

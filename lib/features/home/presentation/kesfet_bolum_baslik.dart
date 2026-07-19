@@ -52,9 +52,9 @@ class KesfetBolumBaslik extends StatelessWidget {
                   baslik,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.playfairDisplay(
+                  style: GoogleFonts.merriweather(
                     fontSize: 15,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w400,
                     color: AppColors.textPrimary,
                   ),
                 ),
