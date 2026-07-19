@@ -126,6 +126,8 @@ class DegerlendirmelerListeScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(
           '$kullaniciAd · Değerlendirmeler',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: GoogleFonts.dmSans(
               fontWeight: FontWeight.w700, fontSize: 16),
         ),

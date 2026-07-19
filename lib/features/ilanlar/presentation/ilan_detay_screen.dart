@@ -579,17 +579,21 @@ class _IlanDetayIcerik extends ConsumerWidget {
                       Row(
                         children: [
                           if (kategoriAdiStr.isNotEmpty)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AppColors.red.withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(6),
+                            Flexible(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.red.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(kategoriAdiStr,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.dmSans(
+                                        fontSize: AppLayout.fs(context, 12),
+                                        color: AppColors.red,
+                                        fontWeight: FontWeight.w500)),
                               ),
-                              child: Text(kategoriAdiStr,
-                                  style: GoogleFonts.dmSans(
-                                      fontSize: AppLayout.fs(context, 12),
-                                      color: AppColors.red,
-                                      fontWeight: FontWeight.w500)),
                             ),
                           const SizedBox(width: 8),
                           Container(

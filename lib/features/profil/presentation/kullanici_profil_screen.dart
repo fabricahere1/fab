@@ -115,6 +115,8 @@ class _KullaniciProfilScreenState extends ConsumerState<KullaniciProfilScreen> {
                   onPressed: () => Navigator.pop(context),
                 ),
                 title: Text(ad,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.dmSans(
                         fontWeight: FontWeight.w700, fontSize: 17)),
               ),

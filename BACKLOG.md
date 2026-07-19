@@ -90,3 +90,35 @@ sıralama, launch sonrası hangisine önce bakılacağını netleştirmek için.
 
 Bunları hepsini aynı anda halletmeye çalışmak riskli — launch sonrası,
 ayrı ve odaklı bir tur olarak planlanmalı.
+
+---
+
+## Erişilebilirlik
+Buton/tıklanabilir alan boyutları (44x44 minimum dokunma hedefi standardı)
+projede sistematik olarak hiç denetlenmedi. Launch sonrası bir taramada
+ele alınmalı — özellikle küçük ikon butonları (kapatma X'leri, küçük
+aksiyon ikonları) risk taşıyabilir.
+**Öncelik: Düşük**
+
+## Farklı ekran boyutları/yoğunlukları
+Uygulama şu ana kadar yalnızca bd'nin kendi cihazında (CPH2581/OnePlus)
+test edildi. Küçük ekranlı telefonlarda (örn. eski/düşük çözünürlüklü
+Android cihazlar) ya da tablet gibi büyük ekranlarda düzen bozulmaları
+olabilir — hiç test edilmedi.
+**Öncelik: Düşük**
+
+## Zayıf/kesintili ağ koşulları
+Uygulamanın 2G/3G gibi yavaş bağlantılarda ya da aralıklı kesintili
+internette (Firestore offline cache devreye girdiğinde) davranışı
+sistematik test edilmedi. Bazı ekranlarda "bağlantı yok" banner'ı var
+(bugün doğrulandı) ama tüm ekranlarda tutarlı davranıp davranmadığı
+bilinmiyor.
+**Öncelik: Düşük**
+
+## Firebase maliyet projeksiyonu
+Kullanıcı sayısı büyüdükçe Firestore okuma/yazma, Cloud Functions
+çağrıları, Storage bant genişliği maliyetlerinin nasıl ölçekleneceği
+hiç hesaplanmadı. Launch sonrası ilk ayın gerçek kullanım verisiyle
+bir maliyet tahmini yapılmalı, beklenmedik bir faturayla karşılaşmamak
+için.
+**Öncelik: Düşük**
