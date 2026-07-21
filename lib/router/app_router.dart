@@ -15,6 +15,7 @@ import '../features/ilanlar/presentation/ilan_detay_screen.dart';
 import '../features/ilanlar/presentation/ilan_form_screen.dart';
 import '../shared/constants/app_constants.dart' show IlanTip;
 import '../features/ilanlar/presentation/gelenler_screen.dart';
+import '../features/auth/data/auth_repository.dart' show AuthYontemi, authYontemiBelirle;
 import '../features/auth/providers/auth_provider.dart';
 import '../features/profil/providers/profil_provider.dart';
 import '../core/services/surum_kapisi.dart';
@@ -237,14 +238,7 @@ String? _hedefBelirle(Ref ref, User user, {String? returnRoute}) {
   final profilAsync = ref.read(benimKullaniciProfilProvider);
   if (profilAsync.isLoading) return null;
 
-  final emailKullanicisi =
-      user.providerData.any((p) => p.providerId == 'password');
-  final googleKullanicisi =
-      user.providerData.any((p) => p.providerId == 'google.com');
-  final telefonKullanicisi =
-      user.providerData.any((p) => p.providerId == 'phone');
-
-  if (emailKullanicisi && !googleKullanicisi && !telefonKullanicisi) {
+  if (authYontemiBelirle(user) == AuthYontemi.email) {
     return returnRoute ?? AppRoutes.home;
   }
 

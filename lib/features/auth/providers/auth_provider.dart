@@ -142,6 +142,20 @@ class AuthNotifier extends _$AuthNotifier {
     }
   }
 
+  Future<AuthSonuc> telefonIleYenidenGiris({
+    required String verificationId,
+    required String smsKodu,
+  }) async {
+    try {
+      await _repo.telefonIleYenidenGiris(verificationId: verificationId, smsKodu: smsKodu);
+      return AuthSonuc.basarili('');
+    } on FirebaseAuthException catch (e) {
+      return AuthSonuc.hata(AuthRepository.hataMesaji(e.code));
+    } catch (_) {
+      return AuthSonuc.hata('Kimlik doğrulama başarısız.');
+    }
+  }
+
   Future<AuthSonuc> googleIleYenidenGiris({VoidCallback? onHesapSecildi}) async {
     try {
       await _repo.googleIleYenidenGiris(onHesapSecildi: onHesapSecildi);

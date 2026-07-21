@@ -325,7 +325,7 @@ Future<void> sohbetiGizle({
     final sohbetSnap = await _sohbetler.doc(sohbetId).get();
     final sohbetData = sohbetSnap.data() as Map<String, dynamic>? ?? {};
     final kullanicilar = List<String>.from(sohbetData['kullanicilar'] ?? []);
-    final karsiUid = kullanicilar.firstWhere((id) => id != benimUid, orElse: () => '');
+    final karsiUid = karsiTarafiBul(kullanicilar, benimUid);
     final ilanBaslik = sohbetData['ilanBaslik'] as String? ?? 'İlan';
     final mevcutDurumlar = Map<String, dynamic>.from(sohbetData['islemDurumlari'] as Map? ?? {});
 

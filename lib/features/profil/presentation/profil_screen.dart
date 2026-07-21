@@ -216,7 +216,9 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
             child: Row(
               children: [
                 AvatarWidget(
-                  isim: user.displayName ?? user.email ?? '',
+                  isim: benimProfilAsync.value?.adSoyad.isNotEmpty == true
+                      ? benimProfilAsync.value!.adSoyad
+                      : (user.displayName ?? user.email ?? ''),
                   fotoUrl: benimProfilAsync.value?.fotoUrl ?? user.photoURL,
                   radius: 36,
                 ),
@@ -226,7 +228,9 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        user.displayName ?? 'Kullanıcı',
+                        benimProfilAsync.value?.adSoyad.isNotEmpty == true
+                            ? benimProfilAsync.value!.adSoyad
+                            : 'Kullanıcı',
                         style: ProfilStilleri.isim,
                       ),
                       const SizedBox(height: 2),

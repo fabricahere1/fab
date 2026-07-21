@@ -19,6 +19,29 @@ AuthRepository authRepository(Ref ref) {
   );
 }
 
+// ── Auth Yöntemi Sınıflandırması ──────────────────────────
+//
+// user.providerData'dan hangi giriş yöntemiyle geldiğini belirleyen TEK
+// kaynak — ayarlar_screen.dart (_hesapSilDialog) ve app_router.dart
+// (_hedefBelirle) eskiden bunu ayrı ayrı elle kopyalayıp yazıyordu; yeni
+// bir provider eklendiğinde iki yerin de senkron güncellenmesi garanti
+// değildi. Öncelik sırası (google > telefon > email) her iki eski
+// kopyanın da zımni davrandığı sırayla aynı.
+enum AuthYontemi { google, telefon, email, bilinmiyor }
+
+AuthYontemi authYontemiBelirle(User user) {
+  if (user.providerData.any((p) => p.providerId == 'google.com')) {
+    return AuthYontemi.google;
+  }
+  if (user.providerData.any((p) => p.providerId == 'phone')) {
+    return AuthYontemi.telefon;
+  }
+  if (user.providerData.any((p) => p.providerId == 'password')) {
+    return AuthYontemi.email;
+  }
+  return AuthYontemi.bilinmiyor;
+}
+
 class AuthRepository {
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
@@ -211,6 +234,19 @@ class AuthRepository {
     final credential = GoogleAuthProvider.credential(
       idToken: googleAuth.idToken,
       accessToken: googleAuth.accessToken,
+    );
+    await user.reauthenticateWithCredential(credential);
+  }
+
+  Future<void> telefonIleYenidenGiris({
+    required String verificationId,
+    required String smsKodu,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) throw FirebaseAuthException(code: 'no-current-user', message: 'Oturum bulunamadı.');
+    final credential = PhoneAuthProvider.credential(
+      verificationId: verificationId,
+      smsCode: smsKodu,
     );
     await user.reauthenticateWithCredential(credential);
   }

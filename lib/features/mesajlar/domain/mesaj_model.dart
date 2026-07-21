@@ -47,6 +47,14 @@ extension MesajModelX on MesajModel {
   bool get sistemMesaji => tip == MesajTip.sistem;
 }
 
+// Bir katılımcı listesinde (sohbetler/{id}.kullanicilar ya da benzeri)
+// "karşı taraf"ı bulan TEK kaynak — SohbetModelX, mesaj_repository.dart
+// ve bildirimler_screen.dart hepsi buradan okur. Ham List<String> alır
+// (Model'e ihtiyaç duymaz), böylece Firestore'dan henüz Model'e
+// dönüştürülmemiş veri üzerinde çalışan yerler de kullanabilir.
+String karsiTarafiBul(List<String> kullanicilar, String benimUid) =>
+    kullanicilar.firstWhere((id) => id != benimUid, orElse: () => '');
+
 @freezed
 abstract class SohbetModel with _$SohbetModel {
   const factory SohbetModel({
@@ -111,7 +119,7 @@ extension SohbetModelX on SohbetModel {
       okunmamis[kullaniciId] ?? 0;
 
   String karsiKullaniciId(String benimId) =>
-      kullanicilar.firstWhere((id) => id != benimId, orElse: () => '');
+      karsiTarafiBul(kullanicilar, benimId);
 
   String karsiKullaniciAdi(String benimId) {
     final karsiId = karsiKullaniciId(benimId);

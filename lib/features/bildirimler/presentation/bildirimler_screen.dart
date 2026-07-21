@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../domain/bildirim_model.dart';
 import '../providers/bildirim_provider.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../mesajlar/domain/mesaj_model.dart' show karsiTarafiBul;
 import '../../mesajlar/presentation/sohbet_screen.dart';
 import '../../degerlendirme/presentation/degerlendirme_screen.dart';
 import '../../degerlendirme/providers/degerlendirme_provider.dart';
@@ -250,9 +251,8 @@ class _BildirimSatiri extends ConsumerWidget {
           ? bildirim.gondereId
           : (() {
               final benimUid = ref.read(currentUserProvider)?.uid ?? '';
-              return parts
-                  .sublist(0, parts.length - 1)
-                  .firstWhere((p) => p != benimUid, orElse: () => '');
+              return karsiTarafiBul(
+                  parts.sublist(0, parts.length - 1), benimUid);
             })();
 
       if (karsiUid.isEmpty) return;
@@ -271,6 +271,33 @@ class _BildirimSatiri extends ConsumerWidget {
     }
 
     if (bildirim.tip == BildirimTip.anlasildi && bildirim.hedefId.isNotEmpty) {
+      final sohbetId = bildirim.hedefId;
+      final karsiId  = bildirim.gondereId;
+      final karsiAd  = bildirim.gondereAd;
+
+      if (karsiId.isEmpty) return;
+
+      final d = await ref.read(sohbetIslemleriProvider.notifier).getir(sohbetId);
+      if (d == null) return;
+      final ilanId     = d['ilanId']     as String? ?? '';
+
+      if (!context.mounted) return;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SohbetScreen(
+            karsiKullaniciId: karsiId,
+            karsiKullaniciAd: karsiAd,
+            ilanId:        ilanId,
+            autoOpenPanel: true,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (bildirim.tip == BildirimTip.sistem && bildirim.hedefId.isNotEmpty) {
       final sohbetId = bildirim.hedefId;
       final karsiId  = bildirim.gondereId;
       final karsiAd  = bildirim.gondereAd;

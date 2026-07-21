@@ -123,6 +123,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
   // Form state
   String? _kullaniciTipi;
   String  _bulunduguSehir = '';
+  final _adSoyadCtrl  = TextEditingController();
   final _telefonCtrl  = TextEditingController();
   final _hakkindaCtrl = TextEditingController();
   bool   _telefonGizli = false;
@@ -165,11 +166,16 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
   void initState() {
     super.initState();
     _sortedTurkiyeSehirleri = [...kTurkiyeSehirleri]..sort(turkceKarsilastir);
+    final user = ref.read(currentUserProvider);
+    if (user?.displayName != null && user!.displayName!.isNotEmpty) {
+      _adSoyadCtrl.text = user.displayName!;
+    }
   }
 
   @override
   void dispose() {
     _pageCtrl.dispose();
+    _adSoyadCtrl.dispose();
     _telefonCtrl.dispose();
     _hakkindaCtrl.dispose();
     super.dispose();
@@ -179,9 +185,15 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
 
   void _ileri() {
     setState(() => _hata = '');
-    if (_adim == 0 && _kullaniciTipi == null) {
-      setState(() => _hata = 'Lütfen bir seçenek seçin.');
-      return;
+    if (_adim == 0) {
+      if (_kullaniciTipi == null) {
+        setState(() => _hata = 'Lütfen bir seçenek seçin.');
+        return;
+      }
+      if (_adSoyadCtrl.text.trim().isEmpty) {
+        setState(() => _hata = 'Ad soyad boş bırakılamaz.');
+        return;
+      }
     }
     if (_adim == 1) {
       if (_tasiyiciMi) {
@@ -298,7 +310,7 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
         'hakkinda':            _hakkindaCtrl.text.trim(),
         'telefon':             _telefonCtrl.text.trim(),
         'telefonGizli':        _telefonGizli,
-        'adSoyad':             user?.displayName ?? '',
+        'adSoyad':             _adSoyadCtrl.text.trim(),
         'email':               user?.email ?? '',
       };
       final basarili = await ref
@@ -505,6 +517,35 @@ class _ProfilTamamlaScreenState extends ConsumerState<ProfilTamamlaScreen> {
               ikon: Icons.person_outline,
               baslik: 'Sen kimsin?',
               aciklama: 'Sana en uygun deneyimi sunmak için seçim yap.',
+            ),
+            const SizedBox(height: 8),
+            ProfilBolum(
+              baslik: 'Ad Soyad',
+              ikon: Icons.badge_outlined,
+              child: TextField(
+                controller: _adSoyadCtrl,
+                style: _sf(fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: 'Adınız ve soyadınız',
+                  hintStyle: _sf(color: AppColors.textHint, fontSize: 14),
+                  prefixIcon: const Icon(Icons.person_outline,
+                      color: AppColors.textSecondary, size: 20),
+                  filled: true,
+                  fillColor: AppColors.surface,
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: AppColors.divider)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: AppColors.divider)),
+                  focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(
+                          color: AppColors.primary, width: 1.5)),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 14),
+                ),
+              ),
             ),
             const SizedBox(height: 8),
             ProfilBolum(

@@ -98,7 +98,7 @@ class DegerlendirmeRepository {
     required String kullaniciId,
   }) async {
     await _db.collection(Collections.sohbetler).doc(sohbetId).update({
-      'degerlendirmeYapildi_$kullaniciId': true,
+      'degerlendirmeAtlandi_$kullaniciId': true,
     });
   }
 

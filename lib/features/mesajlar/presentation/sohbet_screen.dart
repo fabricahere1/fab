@@ -139,7 +139,8 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
 
         final teslimAlindi =
             (d['islemDurumlari'] as Map<String, dynamic>?)?['teslimAlindi'] == true;
-        final zatenYaptim = d['degerlendirmeYapildi_$benimUid'] == true;
+        final zatenYaptim = d['degerlendirmeYapildi_$benimUid'] == true ||
+                             d['degerlendirmeAtlandi_$benimUid'] == true;
 
         if (!teslimAlindi || zatenYaptim || _degerlendirmeAcik) return;
 

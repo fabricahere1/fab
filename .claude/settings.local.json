@@ -109,7 +109,11 @@
       "Bash(npm --version)",
       "Bash(firebase emulators:exec --only firestore --project rules-test-iste-v3 \"node rules-tests/test.mjs\")",
       "Bash(where java *)",
-      "Bash(where jabba *)"
+      "Bash(where jabba *)",
+      "Bash(adb devices *)",
+      "Bash(adb logcat *)",
+      "Bash(adb shell *)",
+      "Bash(tee /c/Users/User/AppData/Local/Temp/claude/C--src-iste-v3/6deec863-9d31-444a-bcd0-b44b4c994271/scratchpad/hesap_sil_logcat.txt)"
     ]
   }
 }
