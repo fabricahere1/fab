@@ -6,6 +6,7 @@ SohbetModel _sohbet({
   Map<String, int> okunmamis = const {},
   Map<String, dynamic> gizli = const {},
   DateTime? sonMesajZamani,
+  Map<String, dynamic> islemDurumlari = const {},
 }) {
   return SohbetModel(
     id: 'sohbet1',
@@ -14,6 +15,7 @@ SohbetModel _sohbet({
     okunmamis: okunmamis,
     gizli: gizli,
     sonMesajZamani: sonMesajZamani,
+    islemDurumlari: islemDurumlari,
   );
 }
 
@@ -101,6 +103,44 @@ void main() {
       final sohbet = _sohbet(gizli: const {'uidB': true});
 
       expect(sohbet.gizliMi('uidA'), isFalse);
+    });
+  });
+
+  group('anlasmaOnerildi', () {
+    test('karsiOnayi=true, benimOnayim=false → true (karşı taraf önerdi, '
+        'benim onayım bekleniyor)', () {
+      final sohbet = _sohbet(islemDurumlari: const {
+        'anlasildi_uidB': true,
+      });
+
+      expect(sohbet.anlasmaOnerildi('uidA'), isTrue);
+    });
+
+    test('karsiOnayi=false, benimOnayim=false → false (henüz kimse '
+        'önermedi)', () {
+      final sohbet = _sohbet(islemDurumlari: const {});
+
+      expect(sohbet.anlasmaOnerildi('uidA'), isFalse);
+    });
+
+    test('karsiOnayi=true, benimOnayim=true → false (ikisi de onayladı, '
+        'artık "önerildi" değil "tamamlandı")', () {
+      final sohbet = _sohbet(islemDurumlari: const {
+        'anlasildi_uidA': true,
+        'anlasildi_uidB': true,
+      });
+
+      expect(sohbet.anlasmaOnerildi('uidA'), isFalse);
+    });
+
+    test('karsiOnayi=false, benimOnayim=true → false (ben önerdim, karşı '
+        'tarafın onayı bekleniyor — etiket bende değil karşı tarafta '
+        'gösterilmeli)', () {
+      final sohbet = _sohbet(islemDurumlari: const {
+        'anlasildi_uidA': true,
+      });
+
+      expect(sohbet.anlasmaOnerildi('uidA'), isFalse);
     });
   });
 }

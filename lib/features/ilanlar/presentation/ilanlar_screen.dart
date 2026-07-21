@@ -1259,9 +1259,9 @@ class _HaftaninEnleriEkrani extends ConsumerWidget {
 // Kategori ikon mapping — Material Symbols w100
 IconData kategoriIkon(String key) {
   switch (key) {
-    case 'kadin':       return Symbols.face_4;
-    case 'erkek':       return Symbols.face;
-    case 'cocuk':       return Symbols.face_retouching_natural;
+    case 'kadin':       return Symbols.checkroom;
+    case 'erkek':       return Symbols.dry_cleaning;
+    case 'cocuk':       return Symbols.stroller;
     case 'ev':          return Symbols.cottage;
     case 'elektronik':  return Symbols.headphones;
     case 'supplement':  return Symbols.vaccines;

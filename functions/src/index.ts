@@ -11,6 +11,8 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import { algoliasearch } from "algoliasearch";
 import * as vision from "@google-cloud/vision";
 import * as nodemailer from "nodemailer";
+import { hesaplaGuvenSkoru } from "./guvenSkoru";
+import { yenidenDenenmeliMiHesapla } from "./ilanModerasyon";
 
 admin.initializeApp();
 
@@ -419,9 +421,7 @@ export const ilanGuncellemeModerasyon = onDocumentUpdated(
       once.nereden !== sonra.nereden ||
       once.nereye  !== sonra.nereye  ||
       JSON.stringify(once.resimUrller ?? []) !== JSON.stringify(sonra.resimUrller ?? []);
-    const yenidenDenenmeliMi =
-      (once.durum === "reddedildi" && sonra.durum === "onayBekliyor") ||
-      (once.aktif === false && sonra.durum === "onayBekliyor");
+    const yenidenDenenmeliMi = yenidenDenenmeliMiHesapla(once, sonra);
     if (!icerikDegisti && !yenidenDenenmeliMi) return;
 
     const ilanRef            = db.collection("ilanlar").doc(ilanId);
@@ -1155,18 +1155,19 @@ export const guvenSkoruHesapla = onSchedule(
       const kullanici = kullaniciDoc.data();
       const ortalamaPuan = (kullanici.ortalamaPuan as number) ?? 0;
       const degerlendirmeSayisi = (kullanici.degerlendirmeSayisi as number) ?? 0;
-      const degerlendirmePuani = Math.min(50, (ortalamaPuan / 5) * 50 * Math.min(1, degerlendirmeSayisi / 5));
       const ilanSnap = await db.collection("ilanlar")
         .where("kullaniciId", "==", kullaniciDoc.id)
         .where("aktif", "==", true)
         .get();
-      const aktivitePuani = Math.min(30, ilanSnap.size * 3);
-      let profilPuani = 0;
-      if (kullanici.adSoyad) profilPuani += 5;
-      if (kullanici.telefon) profilPuani += 5;
-      if (kullanici.bulunduguSehir || kullanici.yasadigiUlke) profilPuani += 5;
-      if (kullanici.hakkinda) profilPuani += 5;
-      const toplamSkor = Math.round(degerlendirmePuani + aktivitePuani + profilPuani);
+      const toplamSkor = hesaplaGuvenSkoru({
+        ortalamaPuan,
+        degerlendirmeSayisi,
+        aktifIlanSayisi: ilanSnap.size,
+        adSoyadVar: !!kullanici.adSoyad,
+        telefonVar: !!kullanici.telefon,
+        sehirVar: !!(kullanici.bulunduguSehir || kullanici.yasadigiUlke),
+        hakkindaVar: !!kullanici.hakkinda,
+      });
       batch.update(kullaniciDoc.ref, { guvenSkoru: toplamSkor });
     }
     await batch.commit();
