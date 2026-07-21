@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../domain/islem_durumu.dart';
+import '../domain/mesaj_model.dart' show anlasildiAlani;
 import '../providers/mesaj_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../shared/constants/app_colors.dart';
@@ -176,9 +177,9 @@ class IslemDurumuPanel extends ConsumerWidget {
 
                     if (durum.ikiTarafliMi) {
                       final benimOnayim =
-                          durumlari['anlasildi_$benimUid'] == true;
+                          durumlari[anlasildiAlani(benimUid)] == true;
                       final karsiOnayi = karsiUid.isNotEmpty &&
-                          durumlari['anlasildi_$karsiUid'] == true;
+                          durumlari[anlasildiAlani(karsiUid)] == true;
                       final tamTamamlandi = benimOnayim && karsiOnayi;
 
                       return _AnlasildiSatiri(

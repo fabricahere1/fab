@@ -134,7 +134,7 @@ class MesajRepository {
       'sonAktiviteZamani':    FieldValue.serverTimestamp(),
       'sonGondereId':         gondereId,
       'ilanTip':              ilanTip,
-      'islemDurumlari':       {'iletisimBasladi': true},
+      'islemDurumlari':       {IslemDurumu.iletisimBasladi.firestoreKey: true},
       'olusturmaTarihi':      FieldValue.serverTimestamp(),
       'okunmamis':            {karsiId: FieldValue.increment(1)},
       if (gondereAd.isNotEmpty)   'kullaniciAdlari.$gondereId': gondereAd,
@@ -397,7 +397,7 @@ Future<void> sohbetiGizle({
   }) async {
     await islemDurumuGuncelle(
       sohbetId: sohbetId,
-      durum: 'teslimAlindi',
+      durum: IslemDurumu.teslimAlindi.firestoreKey,
       yapanUid: yapanUid,
     );
     await _sohbetler.doc(sohbetId).update({
@@ -416,7 +416,7 @@ Future<void> sohbetiGizle({
     required String benimUid,
   }) async {
     await _sohbetler.doc(sohbetId).update({
-      'islemDurumlari.anlasildi_$benimUid': true,
+      'islemDurumlari.${anlasildiAlani(benimUid)}': true,
       'sonAktiviteZamani': FieldValue.serverTimestamp(),
     });
 

@@ -36,7 +36,7 @@ class AramaSonucu {
         urun:        json['urun']        as String? ?? '',
         nereden:     json['nereden']     as String? ?? '',
         nereye:      json['nereye']      as String? ?? '',
-        kategori:    json['kategori']    as String? ?? '',
+        kategori:    json['kategori']    as String? ?? 'diger',
         tip:         json['tip']         as String? ?? '',
         resimUrl:    json['resimUrl']    as String?,
         kullaniciId: json['kullaniciId'] as String? ?? '',

@@ -404,11 +404,11 @@ class IlanOlustur extends _$IlanOlustur {
         // 'onayBekliyor' = moderasyon henüz sonuçlanmadı, bekle.
         // Hem create (ilk snapshot zaten onayBekliyor olur) hem edit (guncelle()
         // durum'u onayBekliyor'a çekiyor) akışında doğru çalışır.
-        if (durum == 'onayBekliyor') return;
-        if (durum == 'yayinda' || durum == 'reddedildi') {
+        if (durum == IlanDurum.onayBekliyor) return;
+        if (durum == IlanDurum.yayinda || durum == IlanDurum.reddedildi) {
           timer?.cancel();
           sub?.cancel();
-          if (!completer.isCompleted) completer.complete(durum == 'yayinda');
+          if (!completer.isCompleted) completer.complete(durum == IlanDurum.yayinda);
         }
       },
       onError: (_) {
@@ -436,7 +436,7 @@ class IlanOlustur extends _$IlanOlustur {
         ilanId: ilanId,
         data: {
           ...data,
-          'durum': 'onayBekliyor',
+          'durum': IlanDurum.onayBekliyor,
           'redSebebi': '',
         },
         yeniResimler: yeniResimler,

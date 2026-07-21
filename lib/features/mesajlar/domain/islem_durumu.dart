@@ -48,8 +48,6 @@ extension IslemDurumuX on IslemDurumu {
     }
   }
 
-  String anlasildiKey(String uid) => 'anlasildi_$uid';
-
   bool get ikiTarafliMi => this == IslemDurumu.anlasildi;
 
   IconData get ikon {

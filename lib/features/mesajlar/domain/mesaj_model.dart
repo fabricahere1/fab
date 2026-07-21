@@ -55,6 +55,11 @@ extension MesajModelX on MesajModel {
 String karsiTarafiBul(List<String> kullanicilar, String benimUid) =>
     kullanicilar.firstWhere((id) => id != benimUid, orElse: () => '');
 
+// İki taraflı "anlaşıldı" onayının islemDurumlari alanı adı deseni —
+// TEK kaynak burası. islem_durumu_panel.dart, SohbetModel.anlasmaOnerildi()
+// ve mesaj_repository.dart'taki anlasildiIsaretle() hepsi buradan okur.
+String anlasildiAlani(String uid) => 'anlasildi_$uid';
+
 @freezed
 abstract class SohbetModel with _$SohbetModel {
   const factory SohbetModel({
@@ -144,9 +149,9 @@ extension SohbetModelX on SohbetModel {
   // satırı da buradan okur.
   bool anlasmaOnerildi(String benimUid) {
     final karsiUid = karsiKullaniciId(benimUid);
-    final benimOnayim = islemDurumlari['anlasildi_$benimUid'] == true;
+    final benimOnayim = islemDurumlari[anlasildiAlani(benimUid)] == true;
     final karsiOnayi = karsiUid.isNotEmpty &&
-        islemDurumlari['anlasildi_$karsiUid'] == true;
+        islemDurumlari[anlasildiAlani(karsiUid)] == true;
     return karsiOnayi && !benimOnayim;
   }
 }

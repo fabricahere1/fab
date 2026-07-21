@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../providers/mesaj_provider.dart';
 import '../providers/sohbet_meta_provider.dart';
 import '../domain/mesaj_model.dart';
+import '../domain/islem_durumu.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
@@ -84,7 +85,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
   Future<void> _iletisimBasladiIsaretle() async {
     try {
       await ref.read(islemDurumuIslemleriProvider(_sohbetId).notifier)
-          .guncelle('iletisimBasladi');
+          .guncelle(IslemDurumu.iletisimBasladi.firestoreKey);
     } catch (e, s) { AppHataYonetici.logla(e, s, etiket: 'sohbetScreen'); }
   }
 
@@ -138,7 +139,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
         if (benimUid.isEmpty) return;
 
         final teslimAlindi =
-            (d['islemDurumlari'] as Map<String, dynamic>?)?['teslimAlindi'] == true;
+            (d['islemDurumlari'] as Map<String, dynamic>?)?[IslemDurumu.teslimAlindi.firestoreKey] == true;
         final zatenYaptim = d['degerlendirmeYapildi_$benimUid'] == true ||
                              d['degerlendirmeAtlandi_$benimUid'] == true;
 
