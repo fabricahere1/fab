@@ -47,6 +47,9 @@ _SohbetModel _$SohbetModelFromJson(Map<String, dynamic> json) => _SohbetModel(
   ilanTip: json['ilanTip'] as String? ?? 'istek',
   sonMesaj: json['sonMesaj'] as String?,
   sonMesajZamani: const TimestampConverter().fromJson(json['sonMesajZamani']),
+  sonAktiviteZamani: const TimestampConverter().fromJson(
+    json['sonAktiviteZamani'],
+  ),
   sonGondereId: json['sonGondereId'] as String? ?? '',
   okunmamis:
       (json['okunmamis'] as Map<String, dynamic>?)?.map(
@@ -64,6 +67,7 @@ _SohbetModel _$SohbetModelFromJson(Map<String, dynamic> json) => _SohbetModel(
         (k, e) => MapEntry(k, e as String),
       ) ??
       const {},
+  islemDurumlari: json['islemDurumlari'] as Map<String, dynamic>? ?? const {},
 );
 
 Map<String, dynamic> _$SohbetModelToJson(
@@ -78,9 +82,13 @@ Map<String, dynamic> _$SohbetModelToJson(
   'ilanTip': instance.ilanTip,
   'sonMesaj': instance.sonMesaj,
   'sonMesajZamani': const TimestampConverter().toJson(instance.sonMesajZamani),
+  'sonAktiviteZamani': const TimestampConverter().toJson(
+    instance.sonAktiviteZamani,
+  ),
   'sonGondereId': instance.sonGondereId,
   'okunmamis': instance.okunmamis,
   'gizli': instance.gizli,
   'sabitlenmis': instance.sabitlenmis,
   'kullaniciAdlari': instance.kullaniciAdlari,
+  'islemDurumlari': instance.islemDurumlari,
 };

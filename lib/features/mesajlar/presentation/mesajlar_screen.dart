@@ -225,6 +225,7 @@ class _SohbetKarti extends ConsumerWidget {
         ? _zamanFormat(sohbet.sonMesajZamani!)
         : '';
     final sabitlenmis = sohbet.sabitMi(benimUid);
+    final anlasmaOnerildi = sohbet.anlasmaOnerildi(benimUid);
 
     return GestureDetector(
       onLongPress: () => _silDialog(context, ref),
@@ -236,6 +237,7 @@ class _SohbetKarti extends ConsumerWidget {
             karsiKullaniciAd: karsiAd,
             ilanId: sohbet.ilanId,
             sohbetId: sohbet.id,
+            autoOpenPanel: anlasmaOnerildi,
           ),
         ),
       ),
@@ -323,6 +325,25 @@ class _SohbetKarti extends ConsumerWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  if (anlasmaOnerildi) ...[
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8F5E9),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        'Anlaşma önerildi',
+                        style: GoogleFonts.dmSans(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF4CAF50),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

@@ -50,3 +50,4 @@ app.*.map.json
 yuk_testi/serviceAccountKey.json
 yuk_testi/node_modules/
 yuk_testi/
+node_modules/

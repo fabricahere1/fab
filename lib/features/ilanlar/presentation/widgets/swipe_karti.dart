@@ -11,6 +11,7 @@ import '../../../../core/cache/app_cache_manager.dart';
 import '../../domain/ilan_model.dart';
 import '../../providers/ilan_provider.dart';
 import '../../../auth/providers/auth_provider.dart';
+import '../../../../shared/widgets/login_gerektiren_aksiyon.dart';
 import '../ilan_detay_screen.dart';
 
 class SwipeGorunumu extends ConsumerStatefulWidget {
@@ -297,7 +298,10 @@ class _SwipeGorunumuState extends ConsumerState<SwipeGorunumu>
   // ── Favori ───────────────────────────────────────────────────────────────
 
   Future<void> _favToggle(IlanModel ilan) async {
-    if (ref.read(currentUserProvider) == null) return;
+    if (ref.read(currentUserProvider) == null) {
+      loginBottomSheet(context);
+      return;
+    }
     final isFav = ref.read(favoriliIlanIdlerProvider).contains(ilan.id);
     if (isFav) {
       await ref.read(favoriProvider.notifier).cikar(ilan.id);

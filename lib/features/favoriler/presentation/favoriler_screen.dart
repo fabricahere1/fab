@@ -35,9 +35,18 @@ class FavorilerScreen extends ConsumerWidget {
       ),
       body: uid == null
           ? Center(
-              child: Text('Favorileri görmek için giriş yap',
+              child: GestureDetector(
+                onTap: () => context.go(AppRoutes.login),
+                child: Text(
+                  'Favorileri görmek için giriş yap',
                   style: GoogleFonts.dmSans(
-                      fontSize: 15, color: AppColors.textSecondary)),
+                    fontSize: 15,
+                    color: AppColors.red,
+                    decoration: TextDecoration.underline,
+                    decorationColor: AppColors.red,
+                  ),
+                ),
+              ),
             )
           : favorilerAsync.when(
               loading: () => const Center(

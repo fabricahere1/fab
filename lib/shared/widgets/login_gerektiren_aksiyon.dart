@@ -1,7 +1,10 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lottie/lottie.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../router/app_router.dart' show AppRoutes;
 import '../constants/app_colors.dart';
@@ -74,6 +77,14 @@ class _LoginSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
+
+          const SizedBox(height: 16),
+          Lottie.asset(
+            ['assets/animations/bukalemun.json', 'assets/animations/timsah.json']
+                [Random().nextInt(2)],
+            width: 100,
+            height: 100,
+          ),
 
           // Başlık
           Text(

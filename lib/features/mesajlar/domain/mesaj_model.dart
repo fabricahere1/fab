@@ -59,11 +59,13 @@ abstract class SohbetModel with _$SohbetModel {
     @Default('istek') String ilanTip,
     String? sonMesaj,
     @TimestampConverter() DateTime? sonMesajZamani,
+    @TimestampConverter() DateTime? sonAktiviteZamani,
     @Default('') String sonGondereId,
     @Default({}) Map<String, int> okunmamis,
     @Default({}) Map<String, dynamic> gizli,
     @Default({}) Map<String, bool> sabitlenmis,
     @Default({}) Map<String, String> kullaniciAdlari,
+    @Default({}) Map<String, dynamic> islemDurumlari,
   }) = _SohbetModel;
 
   factory SohbetModel.fromFirestore(DocumentSnapshot doc) {
@@ -78,6 +80,7 @@ abstract class SohbetModel with _$SohbetModel {
       ilanTip:       d['ilanTip']       as String? ?? 'istek',
       sonMesaj:      d['sonMesaj']     as String?,
       sonMesajZamani: (d['sonMesajZamani'] as Timestamp?)?.toDate(),
+      sonAktiviteZamani: (d['sonAktiviteZamani'] as Timestamp?)?.toDate(),
       sonGondereId:  d['sonGondereId'] as String? ?? '',
       okunmamis: Map<String, int>.from(
         (d['okunmamis'] as Map?)?.map(
@@ -95,6 +98,7 @@ abstract class SohbetModel with _$SohbetModel {
           (k, v) => MapEntry(k.toString(), v.toString()),
         ) ?? {},
       ),
+      islemDurumlari: Map<String, dynamic>.from(d['islemDurumlari'] ?? {}),
     );
   }
 
@@ -125,5 +129,16 @@ extension SohbetModelX on SohbetModel {
       return !sonMesajZamani!.isAfter(gizliDeger.toDate());
     }
     return false;
+  }
+
+  // islem_durumu_panel.dart'taki _baslik getter'ının kullandığı aynı
+  // benimOnayim/karsiOnayi mantığı — tek kaynak burası, panel de liste
+  // satırı da buradan okur.
+  bool anlasmaOnerildi(String benimUid) {
+    final karsiUid = karsiKullaniciId(benimUid);
+    final benimOnayim = islemDurumlari['anlasildi_$benimUid'] == true;
+    final karsiOnayi = karsiUid.isNotEmpty &&
+        islemDurumlari['anlasildi_$karsiUid'] == true;
+    return karsiOnayi && !benimOnayim;
   }
 }

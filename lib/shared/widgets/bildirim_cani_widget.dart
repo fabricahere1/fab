@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../../features/auth/providers/auth_provider.dart';
 import '../../features/bildirimler/presentation/bildirimler_screen.dart';
 import '../../features/bildirimler/providers/bildirim_provider.dart';
 import '../constants/app_colors.dart';
+import 'login_gerektiren_aksiyon.dart';
 
 class BildirimCaniWidget extends ConsumerWidget {
   final Color? renk;
@@ -26,23 +28,30 @@ class BildirimCaniWidget extends ConsumerWidget {
     );
 
     return IconButton(
-      onPressed: () => Navigator.push(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (_, _, _) => const BildirimlerScreen(),
-          transitionsBuilder: (_, anim, _, child) => SlideTransition(
-            position: Tween(
-              begin: const Offset(1, 0),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: anim,
-              curve: Curves.easeOutCubic,
-            )),
-            child: child,
+      onPressed: () {
+        final uid = ref.read(currentUserProvider)?.uid;
+        if (uid == null) {
+          loginBottomSheet(context);
+          return;
+        }
+        Navigator.push(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (_, _, _) => const BildirimlerScreen(),
+            transitionsBuilder: (_, anim, _, child) => SlideTransition(
+              position: Tween(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: anim,
+                curve: Curves.easeOutCubic,
+              )),
+              child: child,
+            ),
+            transitionDuration: const Duration(milliseconds: 280),
           ),
-          transitionDuration: const Duration(milliseconds: 280),
-        ),
-      ),
+        );
+      },
       icon: okunmamisBildirim == 0
           ? ikon
           : Badge(

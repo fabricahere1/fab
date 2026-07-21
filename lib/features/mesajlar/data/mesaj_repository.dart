@@ -131,6 +131,7 @@ class MesajRepository {
       'kullanicilar':         [gondereId, karsiId],
       'sonMesaj':             tip == 'resim' ? '📷 Fotoğraf' : metin,
       'sonMesajZamani':       FieldValue.serverTimestamp(),
+      'sonAktiviteZamani':    FieldValue.serverTimestamp(),
       'sonGondereId':         gondereId,
       'ilanTip':              ilanTip,
       'islemDurumlari':       {'iletisimBasladi': true},
@@ -162,7 +163,7 @@ class MesajRepository {
   Stream<List<SohbetModel>> sohbetlerStream(String kullaniciId) {
     return _sohbetler
         .where('kullanicilar', arrayContains: kullaniciId)
-        .orderBy('sonMesajZamani', descending: true)
+        .orderBy('sonAktiviteZamani', descending: true)
         .snapshots()
         .map((snap) => snap.docs
             .map((doc) => SohbetModel.fromFirestore(doc))
@@ -416,6 +417,7 @@ Future<void> sohbetiGizle({
   }) async {
     await _sohbetler.doc(sohbetId).update({
       'islemDurumlari.anlasildi_$benimUid': true,
+      'sonAktiviteZamani': FieldValue.serverTimestamp(),
     });
 
     // bildirimler yazma + push Cloud Function tarafından yapılıyor
