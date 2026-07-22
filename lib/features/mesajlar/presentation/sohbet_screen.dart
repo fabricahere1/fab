@@ -12,6 +12,7 @@ import '../domain/mesaj_model.dart';
 import '../domain/islem_durumu.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
+import '../../../core/cache/app_cache_manager.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/utils/app_snackbar.dart';
 import '../../ilanlar/presentation/ilan_detay_screen.dart';
@@ -575,6 +576,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                                       borderRadius: BorderRadius.circular(5),
                                       child: CachedNetworkImage(
                                         imageUrl: meta.ilanResimUrl,
+                                        cacheManager: AppCacheManager.instance,
                                         width: 28,
                                         height: 28,
                                         fit: BoxFit.cover,
@@ -1277,6 +1279,7 @@ class _ResimBalonu extends StatelessWidget {
                 children: [
                   CachedNetworkImage(
                     imageUrl: resimUrl,
+                    cacheManager: AppCacheManager.instance,
                     width: w,
                     height: h,
                     fit: BoxFit.cover,
@@ -1353,6 +1356,7 @@ class _FullscreenResim extends StatelessWidget {
             maxScale: 4.0,
             child: CachedNetworkImage(
               imageUrl: resimUrl,
+              cacheManager: AppCacheManager.instance,
               fit: BoxFit.contain,
               placeholder: (_, _) => const CircularProgressIndicator(
                   color: Colors.white, strokeWidth: 2),

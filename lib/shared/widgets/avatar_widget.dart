@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../core/cache/app_cache_manager.dart';
 import '../constants/app_colors.dart';
  
 /// Kullanıcı avatarı.
@@ -28,6 +29,7 @@ class AvatarWidget extends StatelessWidget {
         child: ClipOval(
           child: CachedNetworkImage(
             imageUrl: fotoUrl!,
+            cacheManager: AppCacheManager.instance,
             width: radius * 2,
             height: radius * 2,
             fit: BoxFit.cover,

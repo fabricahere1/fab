@@ -1030,6 +1030,7 @@ class _IlanSahibiKarti extends ConsumerWidget {
                         child: fotoUrl != null && fotoUrl.isNotEmpty
                             ? CachedNetworkImage(
                                 imageUrl: fotoUrl,
+                                cacheManager: AppCacheManager.instance,
                                 fit: BoxFit.cover,
                                 memCacheWidth: 96,
                                 memCacheHeight: 96,

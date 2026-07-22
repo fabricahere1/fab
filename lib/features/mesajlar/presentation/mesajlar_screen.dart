@@ -8,6 +8,7 @@ import '../../mesajlar/providers/mesaj_provider.dart';
 import '../../mesajlar/domain/mesaj_model.dart';
 import '../../mesajlar/presentation/sohbet_screen.dart';
 import '../../profil/providers/profil_provider.dart';
+import '../../../core/cache/app_cache_manager.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
 import 'package:flutter/rendering.dart';
@@ -255,6 +256,7 @@ class _SohbetKarti extends ConsumerWidget {
                           child: CachedNetworkImage(
                             imageUrl: sohbet.ilanResimUrl,
                             cacheKey: sohbet.ilanResimUrl,
+                            cacheManager: AppCacheManager.instance,
                             width: 48,
                             height: 48,
                             fit: BoxFit.cover,

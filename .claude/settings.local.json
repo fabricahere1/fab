@@ -116,7 +116,8 @@
       "Bash(tee /c/Users/User/AppData/Local/Temp/claude/C--src-iste-v3/6deec863-9d31-444a-bcd0-b44b4c994271/scratchpad/hesap_sil_logcat.txt)",
       "Bash(echo \"exit code: $?\")",
       "Bash(npm test *)",
-      "Bash(flutter --version)"
+      "Bash(flutter --version)",
+      "Bash(awk '/CachedNetworkImage\\\\\\(/{print NR\": \"$0; c=15} c>0{print NR\": \"$0; c--}' lib/features/ilanlar/presentation/ilan_detay_screen.dart)"
     ]
   }
 }
