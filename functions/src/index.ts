@@ -14,6 +14,7 @@ import * as nodemailer from "nodemailer";
 import { hesaplaGuvenSkoru } from "./guvenSkoru";
 import { yenidenDenenmeliMiHesapla } from "./ilanModerasyon";
 import { onerilenPuanHesapla } from "./onerilenPuan";
+import { hesaplaYeniOrtalamaPuan } from "./degerlendirme";
 
 admin.initializeApp();
 
@@ -764,9 +765,12 @@ export const degerlendirmePuanGuncelle = onDocumentCreated(
       const d = snap.data()!;
       const eskiSayi: number = (d.degerlendirmeSayisi as number) || 0;
       const eskiOrtalama: number = (d.ortalamaPuan as number) || 0;
-      const yeniSayi = eskiSayi + 1;
-      const yeniOrtalama = (eskiOrtalama * eskiSayi + puan) / yeniSayi;
-      guncelPuan = Math.round(yeniOrtalama * 10) / 10;
+      const { yeniSayi, guncelPuan: hesaplanan } = hesaplaYeniOrtalamaPuan({
+        eskiSayi,
+        eskiOrtalama,
+        puan,
+      });
+      guncelPuan = hesaplanan;
       tx.update(kullaniciRef, {
         degerlendirmeSayisi: yeniSayi,
         ortalamaPuan: guncelPuan,
