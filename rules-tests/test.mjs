@@ -287,8 +287,7 @@ async function main() {
   // En kritik senaryo: A1 ile AYNI kod yolunu (sohbet+mesaj tek batch'te,
   // getAfter() gerektiren taze sohbet) kullanıyor — bu yüzden A1'in
   // (engelsiz) hâlâ PASS, B9'un (engelli) FAIL vermesi,
-  // aliciTarafindanEngellenmemis()'in getAfter() kullandığının en net
-  // kanıtı.
+  // birbiriniEngellememis()'in getAfter() kullandığının en net kanıtı.
   await check('B9', 'TAZE sohbette (ilk temas) önceden engellenmiş kullanıcının mesaj göndermesi', async () => {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
       await ctx.firestore().doc(`kullanicilar/${UID_B}`).set(
@@ -305,6 +304,48 @@ async function main() {
     batch.set(asA.doc(`sohbetler/${yeniSohbetId}/mesajlar/m1`), {
       gondereId: UID_A,
       metin: 'merhaba (engelliyim)',
+    });
+    await assertFails(batch.commit());
+  });
+
+  // B10 — Var olan bir sohbette, GÖNDEREN (A) alıcıyı (B) engellemiş
+  // (B8'in tersi yönü) — A'nın mesaj göndermesi yine reddedilmeli.
+  await check('B10', 'Var olan sohbette GÖNDERENİN alıcıyı engellemiş olması (B8\'in tersi)', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      // B8/B9'dan kalan durumu sıfırla — yalnızca "A, B'yi engellemiş"
+      // yönünü izole ediyoruz, B'nin A'yı engellemesi bu testte YOK.
+      const db = ctx.firestore();
+      await db.doc(`kullanicilar/${UID_B}`).set({ engellenenler: [] }, { merge: true });
+      await db.doc(`kullanicilar/${UID_A}`).set({ engellenenler: [UID_B] }, { merge: true });
+    });
+    await assertFails(
+      asA.doc(`sohbetler/${sohbetId}/mesajlar/mEngelli2`).set({
+        gondereId: UID_A,
+        metin: 'ben seni engelledim ama mesaj atmayi deniyorum',
+      })
+    );
+  });
+
+  // B11 — TAZE bir sohbette (ilk temas), GÖNDEREN alıcıyı ÖNCEDEN
+  // engellemişse İLK mesaj da reddedilmeli (B9'un tersi yönü). Yine A1
+  // ile AYNI kod yolu (sohbet+mesaj tek batch'te) — bu karşılaştırma
+  // birbiriniEngellememis()'in gönderen tarafı için de getAfter()'a
+  // (alıcıyı bulmak için) doğru bağlandığının kanıtı.
+  await check('B11', 'TAZE sohbette GÖNDERENİN alıcıyı ÖNCEDEN engellemiş olması (B9\'un tersi)', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await db.doc(`kullanicilar/${UID_A}`).set({ engellenenler: [UID_B] }, { merge: true });
+      await db.doc(`kullanicilar/${UID_B}`).set({ engellenenler: [] }, { merge: true });
+    });
+    const yeniSohbetId = 'sohbet_yeni_B11';
+    const batch = asA.batch();
+    batch.set(asA.doc(`sohbetler/${yeniSohbetId}`), {
+      kullanicilar: [UID_A, UID_B],
+      islemDurumlari: {},
+    });
+    batch.set(asA.doc(`sohbetler/${yeniSohbetId}/mesajlar/m1`), {
+      gondereId: UID_A,
+      metin: 'merhaba (ben seni engellemistim)',
     });
     await assertFails(batch.commit());
   });

@@ -427,13 +427,21 @@ class _IlanDetayIcerik extends ConsumerWidget {
     final uid = ref.watch(currentUserProvider)?.uid;
     final benimIlan = uid != null && uid.isNotEmpty && ilan.kullaniciId.isNotEmpty && uid == ilan.kullaniciId;
 
-    // İlan sahibi beni engellemişse mesaj/iletişim akışını kapatıyoruz.
-    // Favorileme kasıtlı olarak buna dahil değil — ayrı bir ürün kararı.
-    final benimEngellenmisMi = uid != null && !benimIlan
+    // İki yönlü engel kontrolü — ya ilan sahibi beni engellemiş, ya da
+    // ben ilan sahibini engellemişim; ikisinden biri yeterli mesaj/
+    // iletişim akışını kapatmak için. Favorileme kasıtlı olarak buna
+    // dahil değil — ayrı bir ürün kararı.
+    final ilanSahibiBeniEngellemis = uid != null && !benimIlan
         ? (ref.watch(kullaniciBilgiProvider(ilan.kullaniciId)).value
                 ?.engellenenler.contains(uid) ??
             false)
         : false;
+    final benOnuEngellemisim = uid != null && !benimIlan
+        ? (ref.watch(benimKullaniciProfilProvider).value
+                ?.engellenenler.contains(ilan.kullaniciId) ??
+            false)
+        : false;
+    final benimEngellenmisMi = ilanSahibiBeniEngellemis || benOnuEngellemisim;
 
     final favorideMi = uid != null && !benimIlan
         ? ref.watch(favoriliIlanIdlerProvider.select((ids) => ids.contains(ilan.id)))
