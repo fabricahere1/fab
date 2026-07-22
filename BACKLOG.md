@@ -46,6 +46,20 @@ sıralama, launch sonrası hangisine önce bakılacağını netleştirmek için.
   ~22 ekranın (bkz. `SON_TARAMA.md` C7) navigasyon tutarlılığı da buraya
   dahil edilebilir.
 
+- **`oneriSkoru`/`onerilenPuanHesapla` parity notu (bilinçli fark, bug
+  DEĞİL)** — `lib/shared/utils/oneri_skoru.dart` (client, sıralama için)
+  ile `functions/src/onerilenPuan.ts` (sunucu, Algolia `onerilenPuan`
+  alanı için) TAM olarak aynı formülü uygulamıyor: client'ta bir
+  "tazelik" bileşeni (0.3 ağırlıklı, 14 günde sıfıra iner) var, sunucuda
+  YOK (Algolia'nın `olusturmaTarihi` ikincil sıralama kriteri bu işi
+  görüyor); sunucunun dönüşü ayrıca ×20 kovalanmış bir tamsayı (client
+  float döndürüyor). Yalnızca "ilgi" bileşeni (favori/görüntülenme/resim
+  payları) ve Bayesian düzeltme birebir aynı olmalı — bu, golden-value
+  testleriyle doğrulandı (`test/shared/utils/oneri_skoru_test.dart` +
+  `functions/test/oneriSkoru.test.ts`, 10 ortak girdide eşleşiyor).
+  Kod değişikliği gerekmiyor, yalnızca gelecekte biri "neden ikisi aynı
+  değil" diye şaşırmasın diye not düşülüyor.
+
 ---
 
 ## Düşük öncelik — isteğe bağlı cila
