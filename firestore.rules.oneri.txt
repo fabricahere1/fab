@@ -30,6 +30,23 @@ service cloud.firestore {
         getAfter(/databases/$(database)/documents/sohbetler/$(sohbetId)).data.kullanicilar;
     }
 
+    // YENİ: alıcı (sohbetteki karşı taraf) gönderen kişiyi engellemişse
+    // mesaj create'i reddedilir. sohbetKatilimcisiMiCreateSirasinda() ile
+    // AYNI gerekçe/aynı teknik: yeni bir sohbetin İLK mesajında sohbet
+    // dokümanı commit ÖNCESİ yok, bu yüzden alıcıyı bulmak için de
+    // getAfter() kullanılıyor (düz get() kullanılsaydı, taze bir sohbette
+    // ilk mesaj HER ZAMAN bu kontrolde patlardı — kullanicilar alanı henüz
+    // "var" görünmezdi). Alıcının kendi profil dokümanı (kullanicilar/{uid})
+    // ise bu batch'in bir parçası DEĞİL, önceden var olan bir doküman —
+    // o yüzden düz get() (getAfter değil) doğru ve yeterli.
+    function aliciTarafindanEngellenmemis(sohbetId) {
+      let katilimcilar = getAfter(/databases/$(database)/documents/sohbetler/$(sohbetId)).data.kullanicilar;
+      let aliciUid = katilimcilar[0] == request.auth.uid ? katilimcilar[1] : katilimcilar[0];
+      let aliciRef = /databases/$(database)/documents/kullanicilar/$(aliciUid);
+      return !exists(aliciRef)
+        || !(request.auth.uid in get(aliciRef).data.get('engellenenler', []));
+    }
+
     // DEĞİŞTİ: artık gerçek bir favoriler/goruntulenmeler dokümanının aynı
     // transaction'da oluşup silindiğini de doğruluyor — takipSayaciGecerliMi()
     // ile birebir aynı desen.
@@ -255,9 +272,13 @@ service cloud.firestore {
         // DEĞİŞTİ: gönderenin gerçekten bu sohbetin tarafı olduğu doğrulanıyor.
         // getAfter() kullanıyor (bkz. yukarıdaki fonksiyon yorumu) — düz get()
         // kullansaydı, yeni bir sohbetin ilk mesajı HER ZAMAN reddedilirdi.
+        // YENİ: alıcı gönderen kişiyi engellemişse (kullanicilar/{alici}.
+        // engellenenler) mesaj create'i de reddedilir — client tarafındaki
+        // (mesaj_repository.dart) kontrolün rules seviyesindeki karşılığı.
         allow create: if girisYapilmis()
           && request.resource.data.gondereId == request.auth.uid
-          && sohbetKatilimcisiMiCreateSirasinda(sohbetId);
+          && sohbetKatilimcisiMiCreateSirasinda(sohbetId)
+          && aliciTarafindanEngellenmemis(sohbetId);
 
         // DEĞİŞTİ: okundu işaretleyenin de gerçekten sohbetin tarafı olduğu
         // doğrulanıyor.

@@ -88,6 +88,20 @@ class MesajRepository {
     String ilanSahibiId = '',
     String ilanTip = 'istek',
   }) async {
+    // Son savunma katmanı — istemci UI'ı (ilan_detay_screen.dart'taki
+    // "İletişime Geç" butonunun devre dışı bırakılması) bir şekilde
+    // atlanırsa (değiştirilmiş bir client, doğrudan SDK çağrısı), alıcı
+    // gönderen kişiyi engellemişse mesaj burada da durdurulur. Asıl
+    // güvenlik sınırı firestore.rules'ta olmalı (ayrı görev) — bu yalnızca
+    // ek bir katman.
+    final karsiDoc = await firestore.collection(Collections.kullanicilar).doc(karsiId).get();
+    final karsiEngellenenler = List<String>.from(
+      karsiDoc.data()?['engellenenler'] ?? [],
+    );
+    if (karsiEngellenenler.contains(gondereId)) {
+      throw Exception('Bu kullanıcıyla iletişim kuramıyorsunuz.');
+    }
+
     final sohbetRef = _sohbetler.doc(sohbetId);
     final mesajRef  = _mesajlar(sohbetId).doc();
     final batch     = firestore.batch();

@@ -265,6 +265,50 @@ async function main() {
     );
   });
 
+  // B8 — Var olan bir sohbette, alıcı (B) gönderen (A) kişiyi zaten
+  // engellemiş — A'nın mesaj göndermesi reddedilmeli.
+  await check('B8', 'Var olan sohbette engellenen kullanıcının mesaj göndermesi', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await ctx.firestore().doc(`kullanicilar/${UID_B}`).set(
+        { engellenenler: [UID_A] },
+        { merge: true }
+      );
+    });
+    await assertFails(
+      asA.doc(`sohbetler/${sohbetId}/mesajlar/mEngelli1`).set({
+        gondereId: UID_A,
+        metin: 'engelliyken mesaj',
+      })
+    );
+  });
+
+  // B9 — TAZE bir sohbette (henüz hiç mesaj yok, ilk temas), alıcı
+  // gönderen kişiyi ÖNCEDEN engellemişse İLK mesaj da reddedilmeli.
+  // En kritik senaryo: A1 ile AYNI kod yolunu (sohbet+mesaj tek batch'te,
+  // getAfter() gerektiren taze sohbet) kullanıyor — bu yüzden A1'in
+  // (engelsiz) hâlâ PASS, B9'un (engelli) FAIL vermesi,
+  // aliciTarafindanEngellenmemis()'in getAfter() kullandığının en net
+  // kanıtı.
+  await check('B9', 'TAZE sohbette (ilk temas) önceden engellenmiş kullanıcının mesaj göndermesi', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await ctx.firestore().doc(`kullanicilar/${UID_B}`).set(
+        { engellenenler: [UID_A] },
+        { merge: true }
+      );
+    });
+    const yeniSohbetId = 'sohbet_yeni_B9';
+    const batch = asA.batch();
+    batch.set(asA.doc(`sohbetler/${yeniSohbetId}`), {
+      kullanicilar: [UID_A, UID_B],
+      islemDurumlari: {},
+    });
+    batch.set(asA.doc(`sohbetler/${yeniSohbetId}/mesajlar/m1`), {
+      gondereId: UID_A,
+      metin: 'merhaba (engelliyim)',
+    });
+    await assertFails(batch.commit());
+  });
+
   await testEnv.cleanup();
 }
 
@@ -277,7 +321,7 @@ main()
     }
     const anyFail = results.some((r) => r.status === 'FAIL');
     const ranCount = results.length;
-    console.log(`\n${ranCount}/11 test çalıştı.`);
+    console.log(`\n${ranCount} test çalıştı.`);
     process.exit(anyFail ? 1 : 0);
   })
   .catch((e) => {

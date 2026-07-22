@@ -427,6 +427,14 @@ class _IlanDetayIcerik extends ConsumerWidget {
     final uid = ref.watch(currentUserProvider)?.uid;
     final benimIlan = uid != null && uid.isNotEmpty && ilan.kullaniciId.isNotEmpty && uid == ilan.kullaniciId;
 
+    // İlan sahibi beni engellemişse mesaj/iletişim akışını kapatıyoruz.
+    // Favorileme kasıtlı olarak buna dahil değil — ayrı bir ürün kararı.
+    final benimEngellenmisMi = uid != null && !benimIlan
+        ? (ref.watch(kullaniciBilgiProvider(ilan.kullaniciId)).value
+                ?.engellenenler.contains(uid) ??
+            false)
+        : false;
+
     final favorideMi = uid != null && !benimIlan
         ? ref.watch(favoriliIlanIdlerProvider.select((ids) => ids.contains(ilan.id)))
         : false;
@@ -777,51 +785,76 @@ class _IlanDetayIcerik extends ConsumerWidget {
                   ),
                 ],
               ),
-              child: Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  GestureDetector(
-                    onTap: () => onFavorToggle(favorideMi),
-                    child: Container(
-                      width: 48, height: 48,
-                      decoration: BoxDecoration(
-                        color: favorideMi
-                            ? AppColors.red.withValues(alpha: 0.08)
-                            : AppColors.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: favorideMi
-                              ? AppColors.red.withValues(alpha: 0.3)
-                              : AppColors.divider,
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => onFavorToggle(favorideMi),
+                        child: Container(
+                          width: 48, height: 48,
+                          decoration: BoxDecoration(
+                            color: favorideMi
+                                ? AppColors.red.withValues(alpha: 0.08)
+                                : AppColors.surface,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: favorideMi
+                                  ? AppColors.red.withValues(alpha: 0.3)
+                                  : AppColors.divider,
+                            ),
+                          ),
+                          child: Icon(
+                            favorideMi ? Icons.favorite : Icons.favorite_border,
+                            color: favorideMi ? AppColors.red : AppColors.textSecondary,
+                            size: 22,
+                          ),
                         ),
                       ),
-                      child: Icon(
-                        favorideMi ? Icons.favorite : Icons.favorite_border,
-                        color: favorideMi ? AppColors.red : AppColors.textSecondary,
-                        size: 22,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: SizedBox(
-                      height: 48,
-                      child: ElevatedButton.icon(
-                        onPressed: onMesajGonder,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFE0E0E0),
-                          foregroundColor: Colors.black87,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: SizedBox(
+                          height: 48,
+                          child: ElevatedButton.icon(
+                            onPressed: benimEngellenmisMi ? null : onMesajGonder,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: benimEngellenmisMi
+                                  ? AppColors.divider
+                                  : const Color(0xFFE0E0E0),
+                              foregroundColor: benimEngellenmisMi
+                                  ? AppColors.textHint
+                                  : Colors.black87,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                            ),
+                            icon: Icon(
+                                benimEngellenmisMi
+                                    ? Icons.block_outlined
+                                    : Icons.message_outlined,
+                                size: 18),
+                            label: Text(
+                                benimEngellenmisMi
+                                    ? 'İletişim Kapalı'
+                                    : 'İletişime Geç',
+                                style: GoogleFonts.dmSans(
+                                    fontSize: AppLayout.fs(context, 14),
+                                    fontWeight: FontWeight.w600)),
+                          ),
                         ),
-                        icon: const Icon(Icons.message_outlined, size: 18),
-                        label: Text('İletişime Geç',
-                            style: GoogleFonts.dmSans(
-                                fontSize: AppLayout.fs(context, 14),
-                                fontWeight: FontWeight.w600)),
                       ),
-                    ),
+                    ],
                   ),
+                  if (benimEngellenmisMi) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      'Bu kullanıcıyla iletişim kuramıyorsunuz.',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 11, color: AppColors.textHint),
+                    ),
+                  ],
                 ],
               ),
             )
