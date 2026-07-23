@@ -227,8 +227,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                         fontWeight: FontWeight.w600),
                   ),
                 ),
-                onTap: () => _engellenenlerSayfasi(
-                    engellenenlerAsync.value ?? []),
+                onTap: () => _engellenenlerSayfasi(),
               ),
               _Ayrac(),
               _SatirOge(
@@ -448,12 +447,11 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     ctrl.dispose();
   }
 
-  void _engellenenlerSayfasi(List<String> engellenenUidler) {
+  void _engellenenlerSayfasi() {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            _EngellenenlerScreen(engellenenUidler: engellenenUidler),
+        builder: (_) => const _EngellenenlerScreen(),
       ),
     );
   }
@@ -879,7 +877,7 @@ class _GeriSayimDialogState extends State<_GeriSayimDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'Hesabın $_kalan saniye içinde kalıcı olarak silinecek.',
+            'Hesap doğrulama için yönlendiriliyorsun, bu işlemi $_kalan saniye içinde iptal edebilirsin',
             style: GoogleFonts.manrope(fontSize: 13, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 16),
@@ -928,12 +926,12 @@ class _GeriSayimDialogState extends State<_GeriSayimDialog> {
 // ── Engellenenler Sayfası ─────────────────────────────────
 
 class _EngellenenlerScreen extends ConsumerWidget {
-  final List<String> engellenenUidler;
-  const _EngellenenlerScreen({required this.engellenenUidler});
+  const _EngellenenlerScreen();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final benimUid = ref.watch(currentUserProvider)?.uid ?? '';
+    final engellenenlerAsync = ref.watch(engellenenlerProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -948,8 +946,17 @@ class _EngellenenlerScreen extends ConsumerWidget {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: engellenenUidler.isEmpty
-          ? Center(
+      body: engellenenlerAsync.when(
+        loading: () => const Center(
+            child: CircularProgressIndicator(
+                color: AppColors.red, strokeWidth: 2)),
+        error: (_, _) => Center(
+          child: Text('Bir hata oluştu.',
+              style: GoogleFonts.manrope(color: AppColors.textSecondary)),
+        ),
+        data: (engellenenUidler) {
+          if (engellenenUidler.isEmpty) {
+            return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -962,8 +969,9 @@ class _EngellenenlerScreen extends ConsumerWidget {
                           color: AppColors.textSecondary)),
                 ],
               ),
-            )
-          : ListView.separated(
+            );
+          }
+          return ListView.separated(
               padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: engellenenUidler.length,
               separatorBuilder: (_, _) =>
@@ -1048,7 +1056,9 @@ class _EngellenenlerScreen extends ConsumerWidget {
                   },
                 );
               },
-            ),
+            );
+        },
+      ),
     );
   }
 }

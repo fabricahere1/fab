@@ -117,7 +117,16 @@
       "Bash(echo \"exit code: $?\")",
       "Bash(npm test *)",
       "Bash(flutter --version)",
-      "Bash(awk '/CachedNetworkImage\\\\\\(/{print NR\": \"$0; c=15} c>0{print NR\": \"$0; c--}' lib/features/ilanlar/presentation/ilan_detay_screen.dart)"
+      "Bash(awk '/CachedNetworkImage\\\\\\(/{print NR\": \"$0; c=15} c>0{print NR\": \"$0; c--}' lib/features/ilanlar/presentation/ilan_detay_screen.dart)",
+      "Bash(echo \"tsc exit: $?\")",
+      "Bash(firebase projects:list)",
+      "Bash(firebase use *)",
+      "Bash(tee /tmp/deploy_debug.log)",
+      "Bash(grep -v *)",
+      "Bash(tee /tmp/deploy_debug2.log)",
+      "Bash(nslookup firebaserules.googleapis.com)",
+      "Bash(ping -n 2 firebaserules.googleapis.com)",
+      "Bash(ping -n 2 firestore.googleapis.com)"
     ]
   }
 }

@@ -20,6 +20,7 @@ import '../../../features/home/providers/son_goruntulenenler_provider.dart';
 import '../../../core/cache/app_cache_manager.dart';
 import '../../../shared/widgets/login_gerektiren_aksiyon.dart';
 import '../../../shared/utils/app_hata_yonetici.dart';
+import '../../../shared/utils/app_snackbar.dart';
 
 class IlanDetayScreen extends ConsumerStatefulWidget {
   final String ilanId;
@@ -196,21 +197,14 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
       onayMetin: 'Sil',
     );
     if (onay == true && mounted) {
-      final messenger = ScaffoldMessenger.of(context);
       try {
         await ref.read(ilanIslemleriProvider.notifier).sil(ilanId);
         if (mounted) context.pop();
-        messenger.showSnackBar(SnackBar(
-          content: Text('İlan silindi.', style: GoogleFonts.dmSans()),
-          behavior: SnackBarBehavior.floating,
-        ));
+        if (mounted) AppSnackBar.basari(context, 'İlan silindi.');
       } catch (e) {
-        messenger.showSnackBar(SnackBar(
-          content: Text('İlan silinemedi. Tekrar deneyin.',
-              style: GoogleFonts.dmSans()),
-          backgroundColor: AppColors.red,
-          behavior: SnackBarBehavior.floating,
-        ));
+        if (mounted) {
+          AppSnackBar.hata(context, 'İlan silinemedi. Tekrar deneyin.');
+        }
       }
     }
   }
@@ -313,7 +307,6 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
               onPressed: seciliSebep == null
                   ? null
                   : () async {
-                      final messenger = ScaffoldMessenger.of(context);
                       Navigator.pop(ctx);
                       final basarili = await ref
                           .read(sikayetProvider.notifier)
@@ -324,13 +317,8 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                             sebep: seciliSebep!,
                             ilanId: ilan.id,
                           );
-                      if (basarili) {
-                        messenger.showSnackBar(SnackBar(
-                          content: Text('Şikayetiniz iletildi.',
-                              style: GoogleFonts.dmSans()),
-                          backgroundColor: AppColors.primary,
-                          behavior: SnackBarBehavior.floating,
-                        ));
+                      if (basarili && mounted) {
+                        AppSnackBar.basari(context, 'Şikayetiniz iletildi.');
                       }
                     },
               child: Text('Gönder',

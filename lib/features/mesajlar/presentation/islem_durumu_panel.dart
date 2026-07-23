@@ -6,6 +6,7 @@ import '../domain/mesaj_model.dart' show anlasildiAlani;
 import '../providers/mesaj_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../shared/constants/app_colors.dart';
+import '../../../shared/utils/app_snackbar.dart';
 
 // ── Panel ─────────────────────────────────────────────────
 
@@ -331,12 +332,7 @@ class _AdimSatiriState extends State<_AdimSatiri> {
       await widget.onTap!();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('İşaretlenemedi. Lütfen tekrar dene.'),
-            backgroundColor: Color(0xFFE24B4A),
-          ),
-        );
+        AppSnackBar.hata(context, 'İşaretlenemedi. Lütfen tekrar dene.');
       }
     } finally {
       // Başarılı olduğunda zaten stream üzerinden 'tamamlandi' true
@@ -557,12 +553,7 @@ class _AnlasildiSatiriState extends State<_AnlasildiSatiri>
     } catch (e) {
       if (mounted) {
         setState(() => _gonderiliyor = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Onaylanamadı. Lütfen tekrar dene.'),
-            backgroundColor: Color(0xFFE24B4A),
-          ),
-        );
+        AppSnackBar.hata(context, 'Onaylanamadı. Lütfen tekrar dene.');
       }
     }
   }

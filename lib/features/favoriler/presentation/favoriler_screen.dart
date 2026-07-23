@@ -10,6 +10,7 @@ import '../../ilanlar/providers/ilan_provider.dart';
 import '../../../core/cache/app_cache_manager.dart';
 import '../../../router/app_router.dart';
 import '../../../shared/constants/app_colors.dart';
+import '../../../shared/utils/app_snackbar.dart';
 import '../../../shared/constants/app_constants.dart';
 
 class FavorilerScreen extends ConsumerWidget {
@@ -166,12 +167,7 @@ class _FavoriKarti extends ConsumerWidget {
     if (onay != true) return;
     await ref.read(favoriProvider.notifier).cikar(ilan.id);
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Favorilerden çıkarıldı.',
-            style: GoogleFonts.dmSans()),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ));
+      AppSnackBar.bilgi(context, 'Favorilerden çıkarıldı.');
     }
   }
 

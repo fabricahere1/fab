@@ -108,7 +108,14 @@ const _bolumler = [
         '• E-posta adresi veya telefon numarası\n'
         '• Kullanıcının oluşturduğu ilanlar ve mesajlar\n'
         '• Uygulama kullanım istatistikleri (anonim)\n'
-        '• Cihaz bilgileri (işletim sistemi, uygulama sürümü)',
+        '• Cihaz bilgileri (işletim sistemi, uygulama sürümü)\n\n'
+        'Ayrıca, size daha uygun bir deneyim sunabilmek için:\n\n'
+        '• Bulunduğunuz/yaşadığınız şehir ve ülke bilgisi ile seyahat ettiğiniz şehirler\n'
+        '• Giyim/beden tercihleri ve ilgi alanı kategorileriniz\n'
+        '• Duty-free alışveriş tercihiniz\n'
+        '• Uygulama içi takip ettiğiniz ve sizi takip eden kullanıcı bilgileri\n'
+        '• Platform içi güvenilirlik skorunuz (diğer kullanıcılarla etkileşimlerinize dayalı)\n\n'
+        'toplanmaktadır. Bu bilgiler yalnızca hizmet kalitesini artırmak ve size uygun eşleşmeler sunmak amacıyla kullanılır, üçüncü taraflarla paylaşılmaz.',
   ),
   (
     baslik: '2. Verilerin Kullanım Amacı',

@@ -38,7 +38,7 @@ class KullanimKosullariScreen extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'Son güncelleme: Haziran 2025',
+              'Son güncelleme: Temmuz 2026',
               style: GoogleFonts.inter(
                 fontSize: 11.5,
                 color: AppColors.textSecondary,
@@ -97,42 +97,51 @@ const _bolumler = [
         'Bu kullanım koşulları, İste mobil uygulamasını ("Uygulama") kullanan kişiler ("Kullanıcı") ile uygulama geliştiricisi arasındaki ilişkiyi düzenler. Uygulamayı kullanmaya başlayarak bu koşullar okunmuş ve kabul edilmiş sayılır.',
   ),
   (
-    baslik: '2. Hizmetin Kapsamı',
+    baslik: '2. Yaş Sınırı',
+    icerik:
+        'Uygulamayı kullanabilmek için 18 yaşını doldurmuş olmanız '
+        'gerekmektedir. 18 yaşından küçük kullanıcıların uygulamayı '
+        'kullanması yasaktır. İste, kullanıcıların beyan ettiği yaş '
+        'bilgisine güvenir; yanlış beyan durumunda oluşabilecek '
+        'sonuçlardan kullanıcı sorumludur.',
+  ),
+  (
+    baslik: '3. Hizmetin Kapsamı',
     icerik:
         'İste, uluslararası seyahat eden kişiler (taşıyıcılar) ile yurt dışından ürün taşıtmak isteyen kişileri (istek sahipleri) bir araya getiren bir platformdur. İste; taraflar arasındaki iletişimi kolaylaştırır ancak taraflar arasında gerçekleşen hiçbir anlaşmanın, ödemenin veya teslimatın tarafı değildir.',
   ),
   (
-    baslik: '3. Kullanıcı Sorumlulukları',
+    baslik: '4. Kullanıcı Sorumlulukları',
     icerik:
         'Kullanıcıların aşağıdaki kurallara uyması zorunludur:\n\n• Gerçek ve doğru bilgi vermek\n• Başkasına ait kimlik veya iletişim bilgisi kullanmamak\n• Yasadışı, tehlikeli veya gümrük kurallarını ihlal eden ürünlerin taşınmasını talep etmemek veya kabul etmemek\n• Diğer kullanıcılara karşı saygılı davranmak\n• Uygulamayı yalnızca meşru amaçlar için kullanmak',
   ),
   (
-    baslik: '4. İste\'nin Sorumluluk Sınırları',
+    baslik: '5. İste\'nin Sorumluluk Sınırları',
     icerik:
         '• İste, kullanıcılar arasında gerçekleşen anlaşmaların, ödemelerin veya teslimatların sorumluluğunu üstlenmez.\n• Taraflar arasında yaşanan anlaşmazlıklarda İste\'nin müdahale yetkisi sınırlıdır. Anlaşmazlık durumunda ekran görüntüleriyle birlikte destek ekibine ulaşılabilir.\n• Kullanıcıların birbirlerine verdikleri zararlardan İste sorumlu tutulamaz.\n• Uygulama kesintisiz veya hatasız çalışacağının garantisi verilmez.',
   ),
   (
-    baslik: '5. Yasaklanan Kullanımlar',
+    baslik: '6. Yasaklanan Kullanımlar',
     icerik:
         'Aşağıdaki kullanımlar kesinlikle yasaktır:\n\n• Uyuşturucu, silah veya yasadışı madde taşınmasının talep edilmesi veya kabul edilmesi\n• Sahte ilan oluşturmak veya başkalarını yanıltmak\n• Başka kullanıcıları taciz etmek veya tehdit etmek\n• Uygulamayı otomatik araçlarla (bot vb.) kullanmak\n• Güvenlik sistemlerini aşmaya çalışmak\n\nBu kurallara aykırı davranan hesaplar önceden bildirilmeksizin askıya alınabilir veya silinebilir.',
   ),
   (
-    baslik: '6. Hesap Askıya Alma ve Silme',
+    baslik: '7. Hesap Askıya Alma ve Silme',
     icerik:
         'İste, kurallara aykırı davranan kullanıcıların hesabını önceden bildirmeksizin askıya alma veya silme hakkını saklı tutar. Kullanıcılar, Profil > Ayarlar > Hesabı Sil bölümünden hesaplarını istedikleri zaman kalıcı olarak silebilir.',
   ),
   (
-    baslik: '7. Fikri Mülkiyet',
+    baslik: '8. Fikri Mülkiyet',
     icerik:
         'Uygulamaya ait logo, tasarım, kod ve içerikler İste\'ye aittir. İzinsiz kopyalanamaz, dağıtılamaz veya değiştirilemez.',
   ),
   (
-    baslik: '8. Değişiklikler',
+    baslik: '9. Değişiklikler',
     icerik:
         'İste, bu kullanım koşullarını önceden haber vermeksizin güncelleme hakkını saklı tutar. Önemli değişikliklerde kullanıcılar bilgilendirilmeye çalışılır. Güncel koşullar uygulama içinden her zaman erişilebilir olacaktır. Uygulamayı kullanmaya devam etmek, güncel koşulların kabul edildiği anlamına gelir.',
   ),
   (
-    baslik: '9. İletişim',
+    baslik: '10. İletişim',
     icerik:
         'Soru ve şikayetler için Ayarlar > Bize Ulaşın bölümünden destek ekibine ulaşılabilir.',
   ),

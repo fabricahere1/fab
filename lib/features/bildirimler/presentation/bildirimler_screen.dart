@@ -10,6 +10,7 @@ import '../../degerlendirme/presentation/degerlendirme_screen.dart';
 import '../../degerlendirme/providers/degerlendirme_provider.dart';
 import '../../mesajlar/providers/mesaj_provider.dart';
 import '../../../shared/constants/app_colors.dart';
+import '../../../shared/utils/app_snackbar.dart';
 
 class BildirimlerScreen extends ConsumerStatefulWidget {
   const BildirimlerScreen({super.key});
@@ -340,11 +341,7 @@ class _BildirimSatiri extends ConsumerWidget {
       );
       if (zaten) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Bu ilanı zaten değerlendirdin.',
-                style: GoogleFonts.dmSans()),
-            behavior: SnackBarBehavior.floating,
-          ));
+          AppSnackBar.bilgi(context, 'Bu ilanı zaten değerlendirdin.');
         }
         return;
       }

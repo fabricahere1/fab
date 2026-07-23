@@ -259,14 +259,9 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
             kullaniciId: benimUid,
           );
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(
-                "Değerlendirme Ayarlar > Değerlendirmelerim'de bekliyor.",
-                style: GoogleFonts.dmSans(),
-              ),
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 3),
-            ));
+            AppSnackBar.bilgi(
+                context,
+                "Değerlendirme Ayarlar > Değerlendirmelerim'de bekliyor.");
           }
         }
         _degerlendirmeAcik = false;
@@ -421,13 +416,8 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                       benimUid: benimUid,
                       hedefUid: widget.karsiKullaniciId);
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text(
-                          '${widget.karsiKullaniciAd} engellendi.',
-                          style: GoogleFonts.dmSans()),
-                      backgroundColor: AppColors.textSecondary,
-                      behavior: SnackBarBehavior.floating,
-                    ));
+                    AppSnackBar.bilgi(
+                        context, '${widget.karsiKullaniciAd} engellendi.');
                     Navigator.pop(context);
                   }
                 }

@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../features/auth/providers/auth_provider.dart';
 import '../../../../shared/constants/app_colors.dart';
+import '../../../../shared/utils/app_snackbar.dart';
 
 /// Kaynak: 'destek' → konu "[Destek] …", 'iletisim' → "[İletişim] …"
 void iletisimFormAc({
@@ -114,10 +115,7 @@ class _IletisimFormSheetState extends ConsumerState<_IletisimFormSheet> {
     } catch (e) {
       if (mounted) {
         setState(() => _gonderiyor = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Gönderilemedi, tekrar dene.', style: GoogleFonts.manrope()),
-          behavior: SnackBarBehavior.floating,
-        ));
+        AppSnackBar.hata(context, 'Gönderilemedi, tekrar dene.');
       }
     }
   }

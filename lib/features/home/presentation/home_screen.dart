@@ -23,6 +23,7 @@ import '../../profil/presentation/profil_screen.dart';
 import 'kesfet_screen.dart';
 import '../../bildirimler/providers/bekleyen_bildirim_provider.dart';
 import '../../../shared/widgets/login_gerektiren_aksiyon.dart';
+import '../../../shared/utils/app_snackbar.dart';
 import '../../../router/app_router.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -88,12 +89,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         if (_sonGeriTusu == null ||
             simdi.difference(_sonGeriTusu!) > const Duration(seconds: 2)) {
           _sonGeriTusu = simdi;
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Çıkmak için tekrar basın',
-                style: GoogleFonts.dmSans()),
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-          ));
+          AppSnackBar.bilgi(context, 'Çıkmak için tekrar basın');
         } else {
           SystemNavigator.pop();
         }
