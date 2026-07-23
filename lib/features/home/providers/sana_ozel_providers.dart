@@ -50,32 +50,43 @@ List<IlanModel> bedenGoreIlanlar(Ref ref) {
   return ref
       .watch(tasiyiciIlanlarProvider)
       .filtrelenmis
-      .where((i) => _bedenEslesiyor(i, profil))
+      .where((i) => bedenEslesiyor(i, profil))
       .toList();
 }
 
-bool _bedenEslesiyor(IlanModel ilan, KullaniciModel profil) {
+bool bedenEslesiyor(IlanModel ilan, KullaniciModel profil) {
   final b = ilan.beden.trim();
   if (b.isEmpty) return false;
-  switch (ilan.cinsiyet.toLowerCase()) {
-    case 'kadin':
+
+  // Çocuk ürünleri 'cinsiyet' alanıyla değil, anaKategori == 'cocuk' ile ayırt
+  // edilir — çocuk ilanlarında cinsiyet 'Kız'/'Erkek'/'Unisex' olabiliyor,
+  // tek başına "çocuk mu yetişkin mi" ayrımını yapmıyor.
+  if (ilan.anaKategori == 'cocuk') {
+    return profil.cocukAyakkabi.contains(b);
+  }
+
+  // toLowerCase() kullanılmıyor: Türkçe 'ı' (noktasız) ile kod içindeki 'i'
+  // (noktalı) farklı Unicode karakterlerdir, toLowerCase() bunu eşitlemez
+  // ('Kadın'.toLowerCase() == 'kadın' ≠ 'kadin'). Orijinal string'lerle
+  // (ilan_form_screen.dart'taki _cinsiyetler listesindeki tam haliyle) karşılaştır.
+  switch (ilan.cinsiyet) {
+    case 'Kadın':
       return profil.kadinUstBeden.contains(b) ||
           profil.kadinAltBeden.contains(b) ||
           profil.kadinAyakkabi.contains(b);
-    case 'erkek':
+    case 'Erkek':
       return profil.erkekUstBeden.contains(b) ||
           profil.erkekAltBeden.contains(b) ||
           profil.erkekAyakkabi.contains(b);
-    case 'cocuk':
-      return profil.cocukAyakkabi.contains(b);
     default:
+      // 'Unisex' ya da beklenmeyen bir değer — yetişkin bedenlerinin
+      // tamamına bak (çocuk zaten yukarıda ayrıca ele alındı).
       return profil.kadinUstBeden.contains(b) ||
           profil.kadinAltBeden.contains(b) ||
           profil.kadinAyakkabi.contains(b) ||
           profil.erkekUstBeden.contains(b) ||
           profil.erkekAltBeden.contains(b) ||
-          profil.erkekAyakkabi.contains(b) ||
-          profil.cocukAyakkabi.contains(b);
+          profil.erkekAyakkabi.contains(b);
   }
 }
 
