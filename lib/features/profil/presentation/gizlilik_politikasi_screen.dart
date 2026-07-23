@@ -157,7 +157,7 @@ const _bolumler = [
   (
     baslik: '7. Çocukların Gizliliği',
     icerik:
-        'İste, 13 yaşın altındaki bireylere yönelik değildir ve bu yaş grubuna ait kişisel veri bilinçli olarak toplanmaz. Böyle bir durumun fark edilmesi halinde ilgili veriler derhal silinir.',
+        'İste, Kullanım Koşulları\'nda belirtildiği üzere yalnızca 18 yaşını doldurmuş bireylere yöneliktir. 18 yaşından küçük bireylere ait kişisel veri bilinçli olarak toplanmaz. Böyle bir durumun fark edilmesi halinde ilgili veriler derhal silinir.',
   ),
   (
     baslik: '8. Güvenlik',

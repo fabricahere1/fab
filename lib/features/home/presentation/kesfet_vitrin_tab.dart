@@ -514,19 +514,40 @@ class KesfetHeroBanner extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.white,
-          border: Border.all(color: const Color(0xFF7C3AED), width: 1),
+          gradient: const LinearGradient(
+            colors: [Color(0xFFE65100), Colors.white],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           borderRadius: BorderRadius.circular(6),
         ),
         child: SizedBox(
           height: 236,
           child: Stack(
             children: [
+              Positioned(top: -8, right: 20,
+                child: Icon(Icons.flight_takeoff_rounded, size: 80, color: AppColors.primary.withValues(alpha: 0.45))),
+              Positioned(top: 25, right: 115,
+                child: Icon(Icons.shopping_bag_outlined, size: 52, color: AppColors.primary.withValues(alpha: 0.40))),
+              Positioned(bottom: 8, right: 55,
+                child: Icon(Icons.local_shipping_outlined, size: 58, color: AppColors.primary.withValues(alpha: 0.38))),
+              Positioned(top: 10, left: 25,
+                child: Icon(Icons.location_on_outlined, size: 44, color: AppColors.primary.withValues(alpha: 0.40))),
+              Positioned(bottom: 6, left: 75,
+                child: Icon(Icons.star_outline_rounded, size: 40, color: AppColors.primary.withValues(alpha: 0.42))),
+              Positioned(top: 45, left: 145,
+                child: Icon(Icons.card_travel_outlined, size: 36, color: AppColors.primary.withValues(alpha: 0.38))),
+              Positioned(top: 5, right: 195,
+                child: Icon(Icons.redeem_outlined, size: 34, color: AppColors.primary.withValues(alpha: 0.35))),
+              Positioned(bottom: 12, right: 190,
+                child: Icon(Icons.airplane_ticket_outlined, size: 38, color: AppColors.primary.withValues(alpha: 0.37))),
+              Positioned(top: 60, right: 20,
+                child: Icon(Icons.card_giftcard_outlined, size: 30, color: AppColors.primary.withValues(alpha: 0.33))),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(14, 12, 12, 6),
+                    padding: const EdgeInsets.fromLTRB(14, 12, 12, 2),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
@@ -535,11 +556,14 @@ class KesfetHeroBanner extends ConsumerWidget {
                             alignment: Alignment.centerLeft,
                             child: Container(
                               padding: const EdgeInsets.all(6),
-                              color: Colors.black,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2E7D32),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                               child: Text('Bu hafta öne çıkanlar',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.playfairDisplay(fontSize: 15, fontWeight: FontWeight.w500, color: Colors.white)),
+                                  style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
                             ),
                           ),
                         ),
@@ -561,16 +585,16 @@ class KesfetHeroBanner extends ConsumerWidget {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(14, 0, 12, 6),
+                    padding: const EdgeInsets.fromLTRB(14, 0, 12, 2),
                     child: Text('Öne çıkanlar',
-                        style: GoogleFonts.dmSans(fontSize: 11, color: AppColors.textSecondary)),
+                        style: GoogleFonts.dmSans(fontSize: 11, color: Colors.white)),
                   ),
                   Expanded(
                     child: heroIlanlar.isEmpty
                         ? const SizedBox.shrink()
                         : ListView.builder(
                             scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.fromLTRB(14, 4, 14, 14),
+                            padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
                             itemCount: heroIlanlar.length,
                             itemBuilder: (_, index) {
                               final ilan  = heroIlanlar[index];

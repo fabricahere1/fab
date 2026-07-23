@@ -126,7 +126,8 @@
       "Bash(tee /tmp/deploy_debug2.log)",
       "Bash(nslookup firebaserules.googleapis.com)",
       "Bash(ping -n 2 firebaserules.googleapis.com)",
-      "Bash(ping -n 2 firestore.googleapis.com)"
+      "Bash(ping -n 2 firestore.googleapis.com)",
+      "Bash(timeout 30 firebase functions:list)"
     ]
   }
 }

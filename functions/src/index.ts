@@ -870,10 +870,22 @@ export const hesapSilSunucu = onCall(async (request) => {
     const ilanlarSnap = await db.collection("ilanlar")
       .where("kullaniciId", "==", uid).get();
     for (const doc of ilanlarSnap.docs) batch.delete(doc.ref);
+    const kendiIlanIdleri = new Set(ilanlarSnap.docs.map((doc) => doc.id));
 
     const favorilerSnap = await db.collection("favoriler")
       .where("kullaniciId", "==", uid).get();
-    for (const doc of favorilerSnap.docs) batch.delete(doc.ref);
+    for (const doc of favorilerSnap.docs) {
+      batch.delete(doc.ref);
+      // Favorilenen ilan bu hesap silme işleminin bir parçası olarak (kullanıcının
+      // kendi ilanı olduğu için) zaten siliniyorsa, favoriSayisi'ni güncellemeye
+      // çalışma — o doküman zaten kalkacak, increment yazmak hataya neden olur.
+      const ilanId = doc.data().ilanId as string | undefined;
+      if (ilanId && !kendiIlanIdleri.has(ilanId)) {
+        batch.update(db.collection("ilanlar").doc(ilanId), {
+          favoriSayisi: admin.firestore.FieldValue.increment(-1),
+        });
+      }
+    }
 
     const bildirimlerSnap = await db.collection("bildirimler")
       .where("kullaniciId", "==", uid).get();
