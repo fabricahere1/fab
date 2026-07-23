@@ -16,6 +16,7 @@ import '../../../shared/constants/app_constants.dart';
 import '../../../shared/widgets/avatar_widget.dart';
 import '../../../router/app_router.dart';
 import '../domain/kullanici_model.dart';
+import '../../../shared/utils/app_snackbar.dart';
 
 class KullaniciProfilScreen extends ConsumerStatefulWidget {
   final String kullaniciId;
@@ -60,6 +61,11 @@ class _KullaniciProfilScreenState extends ConsumerState<KullaniciProfilScreen> {
   Widget build(BuildContext context) {
     final benimUid      = ref.watch(currentUserProvider)?.uid;
     final benimKisi     = benimUid != null && benimUid != kullaniciId;
+    final benOnuEngellemisim = benimKisi
+        ? (ref.watch(benimKullaniciProfilProvider).value
+                ?.engellenenler.contains(kullaniciId) ??
+            false)
+        : false;
     final profilAsync   = ref.watch(kullaniciBilgiProvider(kullaniciId));
     final ilanlarAsync  = ref.watch(kullaniciIlanlarStreamProvider(kullaniciId));
     final takipciDelta  = ref.watch(
@@ -360,6 +366,58 @@ class _KullaniciProfilScreenState extends ConsumerState<KullaniciProfilScreen> {
                                 ),
                                 icon: const Icon(Icons.chat_bubble_outline, size: 18),
                                 label: Text('Mesaj Gönder',
+                                    style: GoogleFonts.dmSans(
+                                        fontSize: 15, fontWeight: FontWeight.w600)),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 48,
+                              child: OutlinedButton.icon(
+                                onPressed: () async {
+                                  if (benOnuEngellemisim) {
+                                    await ref
+                                        .read(engellemeProvider.notifier)
+                                        .engelKaldir(
+                                          benimUid: benimUid,
+                                          hedefUid: kullaniciId,
+                                        );
+                                    if (context.mounted) {
+                                      AppSnackBar.bilgi(
+                                          context, '$kullaniciAd engeli kaldırıldı.');
+                                    }
+                                  } else {
+                                    await ref
+                                        .read(engellemeProvider.notifier)
+                                        .engelle(
+                                          benimUid: benimUid,
+                                          hedefUid: kullaniciId,
+                                        );
+                                    if (context.mounted) {
+                                      AppSnackBar.bilgi(
+                                          context, '$kullaniciAd engellendi.');
+                                    }
+                                  }
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: benOnuEngellemisim
+                                      ? AppColors.primary
+                                      : AppColors.red,
+                                  side: BorderSide(
+                                      color: benOnuEngellemisim
+                                          ? AppColors.primary
+                                          : AppColors.red),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                ),
+                                icon: Icon(
+                                    benOnuEngellemisim
+                                        ? Icons.lock_open_outlined
+                                        : Icons.block_outlined,
+                                    size: 18),
+                                label: Text(
+                                    benOnuEngellemisim ? 'Engeli Kaldır' : 'Engelle',
                                     style: GoogleFonts.dmSans(
                                         fontSize: 15, fontWeight: FontWeight.w600)),
                               ),

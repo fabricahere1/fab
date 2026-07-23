@@ -238,7 +238,9 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
     }
   }
 
-  void _snack(String m) => AppSnackBar.hata(context, m);
+  // altBosluk: alt "Devam et"/"Yayınla" butonu (48 yükseklik + 20 alt padding)
+  // ile çakışmaması için SnackBar'ı yeterince yukarı it.
+  void _snack(String m) => AppSnackBar.hata(context, m, altBosluk: 80);
 
   // ── Resim seçimi ─────────────────────────────────────────────────────────────
 

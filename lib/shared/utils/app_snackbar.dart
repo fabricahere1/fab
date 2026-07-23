@@ -57,6 +57,7 @@ class AppSnackBar {
     BuildContext context,
     String mesaj, {
     Duration sure = const Duration(seconds: 3),
+    double altBosluk = 0,
   }) {
     _goster(
       context,
@@ -69,6 +70,7 @@ class AppSnackBar {
       altRenk:   _hataMetin,
       ikon:      Icons.error_outline_rounded,
       sure:      sure,
+      altBosluk: altBosluk,
     );
   }
 
@@ -105,6 +107,7 @@ class AppSnackBar {
     required Color altRenk,
     required IconData ikon,
     required Duration sure,
+    double altBosluk = 0,
   }) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -114,7 +117,7 @@ class AppSnackBar {
           backgroundColor: Colors.transparent,
           elevation:       0,
           duration:        sure,
-          margin:          const EdgeInsets.fromLTRB(12, 0, 12, 16),
+          margin:          EdgeInsets.fromLTRB(12, 0, 12, 16 + altBosluk),
           padding:         EdgeInsets.zero,
           content: Container(
             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),

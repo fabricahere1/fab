@@ -127,7 +127,8 @@
       "Bash(nslookup firebaserules.googleapis.com)",
       "Bash(ping -n 2 firebaserules.googleapis.com)",
       "Bash(ping -n 2 firestore.googleapis.com)",
-      "Bash(timeout 30 firebase functions:list)"
+      "Bash(timeout 30 firebase functions:list)",
+      "Bash(JAVA_HOME='/c/Program Files/Android/Android Studio/jbr' PATH='/c/Program Files/Android/Android Studio/jbr/bin:__TRACKED_VAR__' firebase emulators:exec --only firestore,auth --project demo-hesapsil-test 'node functions/test-emulator/hesapSil.emulator.test.mjs')"
     ]
   }
 }

@@ -843,12 +843,46 @@ class _IlanDetayIcerik extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  if (benimEngellenmisMi) ...[
+                  if (ilanSahibiBeniEngellemis) ...[
                     const SizedBox(height: 6),
                     Text(
                       'Bu kullanıcıyla iletişim kuramıyorsunuz.',
                       style: GoogleFonts.dmSans(
                           fontSize: 11, color: AppColors.textHint),
+                    ),
+                  ] else if (benOnuEngellemisim) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      'Bu kişiyi engellediniz.',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 11, color: AppColors.textHint),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 40,
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          await ref.read(engellemeProvider.notifier).engelKaldir(
+                                benimUid: uid,
+                                hedefUid: ilan.kullaniciId,
+                              );
+                          if (context.mounted) {
+                            AppSnackBar.bilgi(context, 'Engel kaldırıldı.');
+                          }
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: const BorderSide(color: AppColors.primary),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        icon: const Icon(Icons.lock_open_outlined, size: 18),
+                        label: Text('Engeli Kaldır',
+                            style: GoogleFonts.dmSans(
+                                fontSize: AppLayout.fs(context, 13),
+                                fontWeight: FontWeight.w600)),
+                      ),
                     ),
                   ],
                 ],

@@ -11,6 +11,7 @@ import '../../../../shared/constants/app_colors.dart';
 import '../../../../shared/constants/app_constants.dart' as app_constants;
 import '../../../../shared/widgets/turkiye_disi_arama_ekrani.dart';
 import '../../../../shared/widgets/sehir_secim_widget.dart';
+import '../../../../shared/widgets/autocomplete_alan.dart';
 
 // ── Filtre sonuç veri sınıfı ──────────────────────────────────────────────────
 
@@ -20,6 +21,7 @@ class GelenlerFiltreSecimi {
   final app_constants.SiralamaTipi siralama;
   final List<String> sehirler;
   final String ulkeSehir;
+  final String neredenUlke;
 
   const GelenlerFiltreSecimi({
     required this.kategoriYolu,
@@ -27,6 +29,7 @@ class GelenlerFiltreSecimi {
     required this.siralama,
     required this.sehirler,
     required this.ulkeSehir,
+    required this.neredenUlke,
   });
 }
 
@@ -39,6 +42,7 @@ void gelenlerFiltreAc({
   required app_constants.SiralamaTipi seciliSiralama,
   required List<String> seciliSehirler,
   required String seciliUlkeSehir,
+  required String seciliNeredenUlke,
   required Map<String, int> kategoriFacets,
   required void Function(GelenlerFiltreSecimi secim) onUygula,
   required VoidCallback onTemizle,
@@ -64,6 +68,7 @@ void gelenlerFiltreAc({
             seciliSiralama: seciliSiralama,
             seciliSehirler: seciliSehirler,
             seciliUlkeSehir: seciliUlkeSehir,
+            seciliNeredenUlke: seciliNeredenUlke,
             kategoriFacets: kategoriFacets,
             onUygula: onUygula,
             onTemizle: onTemizle,
@@ -82,6 +87,7 @@ class GelenlerFiltreEkrani extends StatefulWidget {
   final app_constants.SiralamaTipi seciliSiralama;
   final List<String> seciliSehirler;
   final String seciliUlkeSehir;
+  final String seciliNeredenUlke;
   final Map<String, int> kategoriFacets;
   final void Function(GelenlerFiltreSecimi secim) onUygula;
   final VoidCallback onTemizle;
@@ -93,6 +99,7 @@ class GelenlerFiltreEkrani extends StatefulWidget {
     required this.seciliSiralama,
     required this.seciliSehirler,
     required this.seciliUlkeSehir,
+    required this.seciliNeredenUlke,
     required this.kategoriFacets,
     required this.onUygula,
     required this.onTemizle,
@@ -108,6 +115,7 @@ class _GelenlerFiltreEkraniState extends State<GelenlerFiltreEkrani> {
   late app_constants.SiralamaTipi _modalSiralama;
   late List<String> _modalSehirler;
   late String _modalUlkeSehir;
+  late final TextEditingController _neredenUlkeCtrl;
 
   @override
   void initState() {
@@ -117,6 +125,13 @@ class _GelenlerFiltreEkraniState extends State<GelenlerFiltreEkrani> {
     _modalSiralama     = widget.seciliSiralama;
     _modalSehirler     = List<String>.from(widget.seciliSehirler);
     _modalUlkeSehir    = widget.seciliUlkeSehir;
+    _neredenUlkeCtrl   = TextEditingController(text: widget.seciliNeredenUlke);
+  }
+
+  @override
+  void dispose() {
+    _neredenUlkeCtrl.dispose();
+    super.dispose();
   }
 
   bool get _herhangiSecildi =>
@@ -124,6 +139,7 @@ class _GelenlerFiltreEkraniState extends State<GelenlerFiltreEkrani> {
       _modalAltKeyler.isNotEmpty ||
       _modalSehirler.isNotEmpty ||
       _modalUlkeSehir.isNotEmpty ||
+      _neredenUlkeCtrl.text.isNotEmpty ||
       _modalSiralama != app_constants.SiralamaTipi.enYeni;
 
   void _temizle() {
@@ -139,6 +155,7 @@ class _GelenlerFiltreEkraniState extends State<GelenlerFiltreEkrani> {
       siralama:     _modalSiralama,
       sehirler:     _modalSehirler,
       ulkeSehir:    _modalUlkeSehir,
+      neredenUlke:  _neredenUlkeCtrl.text.trim(),
     ));
   }
 
@@ -292,6 +309,26 @@ class _GelenlerFiltreEkraniState extends State<GelenlerFiltreEkrani> {
                         child: _GSiralamaSegmented(
                           secili: _modalSiralama,
                           onSecim: (tip) => setState(() => _modalSiralama = tip),
+                        ),
+                      ),
+
+                      const Divider(height: 24),
+
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Text('Nereden Geliyor',
+                            style: GoogleFonts.dmSans(
+                                fontSize: 14, fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary)),
+                      ),
+                      const SizedBox(height: 10),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: AutocompleteAlan(
+                          controller: _neredenUlkeCtrl,
+                          hint: 'Ülke ara...',
+                          icon: Icons.flight_takeoff_outlined,
+                          secenekler: app_constants.kDunyaUlkeleri,
                         ),
                       ),
 

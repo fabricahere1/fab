@@ -119,6 +119,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
   app_constants.SiralamaTipi    _siralama          = app_constants.SiralamaTipi.onerilen;
   List<String>        _seciliSehirler    = [];
   String              _nerdenUlkeSehir   = '';  // nereden filtresi (şehirden geliyor)
+  String              _neredenUlke       = '';  // "Nereden Geliyor" — kDunyaUlkeleri'nden seçilen ülke, Türkiye dışı filtresinden bağımsız
   _GAlgoliaState      _algoliaState      = const _GAlgoliaState();
 
   @override
@@ -171,6 +172,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
         sehirler:        _seciliSehirler,
         ulkeSehir:       _seciliUlkeSehir,
         nerdenUlkeSehir: _nerdenUlkeSehir,
+        neredenUlke:     _neredenUlke,
         siralama:        _siralama.algoliaKey,
         ilanTipi:        'tasiyici',
         sayfa:           sayfa,
@@ -239,7 +241,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
     }
   }
 
-  bool get _filtrAktif => _seciliSehirler.isNotEmpty || _seciliKategoriYolu.isNotEmpty || _seciliAltKeyler.isNotEmpty || _siralama != app_constants.SiralamaTipi.onerilen || _seciliUlkeSehir.isNotEmpty;
+  bool get _filtrAktif => _seciliSehirler.isNotEmpty || _seciliKategoriYolu.isNotEmpty || _seciliAltKeyler.isNotEmpty || _siralama != app_constants.SiralamaTipi.onerilen || _seciliUlkeSehir.isNotEmpty || _neredenUlke.isNotEmpty;
 
   String _seciliUlkeSehir = '';
 
@@ -269,6 +271,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
       seciliSiralama: _siralama,
       seciliSehirler: _seciliSehirler,
       seciliUlkeSehir: _seciliUlkeSehir,
+      seciliNeredenUlke: _neredenUlke,
       kategoriFacets: _algoliaState.kategoriFacets,
       onUygula: (secim) {
         _filtreUygula(() {
@@ -277,6 +280,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
           _siralama           = secim.siralama;
           _seciliSehirler     = secim.sehirler;
           _seciliUlkeSehir    = secim.ulkeSehir;
+          _neredenUlke        = secim.neredenUlke;
         });
       },
       onTemizle: () {
@@ -286,6 +290,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
           _siralama           = app_constants.SiralamaTipi.onerilen;
           _seciliSehirler     = [];
           _seciliUlkeSehir    = '';
+          _neredenUlke        = '';
         });
       },
     );
@@ -503,6 +508,7 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                         _seciliAltKeyler    = [];
                         _seciliSehirler     = [];
                         _seciliUlkeSehir    = '';
+                        _neredenUlke        = '';
                       }),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 180),
@@ -594,7 +600,8 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
 
         // ── Aktif filtre badge'leri ──
         if (_seciliKategoriYolu.isNotEmpty || _seciliAltKeyler.isNotEmpty ||
-            _seciliSehirler.isNotEmpty || _seciliUlkeSehir.isNotEmpty)
+            _seciliSehirler.isNotEmpty || _seciliUlkeSehir.isNotEmpty ||
+            _neredenUlke.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
             child: Wrap(
@@ -690,6 +697,37 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                         onTap: () => _filtreUygula(() => _seciliUlkeSehir = ''),
                         child: const Icon(Icons.close_rounded,
                             size: 13, color: Color(0xFF1565C0)),
+                      ),
+                    ]),
+                  ),
+                if (_neredenUlke.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      const Icon(Icons.flight_takeoff_outlined,
+                          size: 12, color: AppColors.primary),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          _neredenUlke,
+                          style: GoogleFonts.dmSans(
+                              fontSize: 12,
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w500),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      GestureDetector(
+                        onTap: () => _filtreUygula(() => _neredenUlke = ''),
+                        child: const Icon(Icons.close_rounded,
+                            size: 13, color: AppColors.primary),
                       ),
                     ]),
                   ),

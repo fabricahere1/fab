@@ -81,6 +81,13 @@ sıralama, launch sonrası hangisine önce bakılacağını netleştirmek için.
   Height'sız. Ana ekranlar (Keşfet, Sana Özel, İlanlar, Gelenler, İlanlarım,
   Favoriler, Sohbet, İlan Detayı'nın çoğu) zaten düzeltildi.
 
+- **`kullaniciPuan` alanı Algolia senkronizasyonunda eksik** (`ilanModerasyonu`,
+  `ilanGuncellendi`, `algoliaTopluAktar` — üçünde de yok). Sıralamayı
+  etkilemiyor (`onerilenPuan` zaten bu veriyi içeriyor), yalnızca gelecekte
+  Algolia-kaynaklı bir listede ham satıcı puanı gösterilmek istenirse eksik
+  kalır. Düzeltme: üç `saveObject`/`saveObjects` çağrısına
+  `kullaniciPuan: data.kullaniciPuan ?? 0` eklemek.
+
 ---
 
 ## Hiç bakılmamış — ayrı bir "ikinci tur ekstrem tarama" gerektirir

@@ -223,6 +223,10 @@ Future<AlgoliaFiltreSonucu> algoliaFiltrele({
   List<String> sehirler        = const [],
   String ulkeSehir       = '',   // Türkiye dışı - nereye filtresi (istekler için)
   String nerdenUlkeSehir = '',   // Türkiye dışı - nereden filtresi (gelenler için)
+  String neredenUlke     = '',   // "Nereden Geliyor" - kDunyaUlkeleri'nden seçilen
+                                  // kanonik ülke adıyla nereden filtresi (gelenler
+                                  // için, Türkiye dışı serbest metin filtresinden
+                                  // AYRI, bağımsız bir AND koşulu).
   String siralama  = 'enYeni',
   String ilanTipi  = 'istek',
   int sayfa        = 0,
@@ -272,6 +276,11 @@ Future<AlgoliaFiltreSonucu> algoliaFiltrele({
   // Gelenler: nereden filtresi (taşıyıcının geldiği yer)
   if (nerdenUlkeSehir.isNotEmpty) {
     filterParcalar.add('nereden:"$nerdenUlkeSehir"');
+  }
+  // "Nereden Geliyor" — kDunyaUlkeleri'nden seçilen kanonik ülke adı, nereden
+  // alanına karşı ayrı bir AND koşulu. nerdenUlkeSehir'den bağımsız çalışır.
+  if (neredenUlke.isNotEmpty) {
+    filterParcalar.add('nereden:"$neredenUlke"');
   }
 
   final filtreler = filterParcalar.join(' AND ');

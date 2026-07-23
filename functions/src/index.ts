@@ -634,7 +634,9 @@ export const mesajBildirimiGonder = onCall(async (request) => {
   const kullaniciData  = kullaniciSnap.data() ?? {};
   const engellenenler  = (kullaniciData.engellenenler ?? []) as string[];
   if (engellenenler.includes(gondereId)) return { success: true };
-  const bildirimMetin  = metin && metin.trim().length > 0 ? metin.trim() : ilanBaslik;
+  const mesajIcerik    = metin && metin.trim().length > 0 ? metin.trim() : "";
+  const bildirimBaslik = `${gondereAd} ${ilanBaslik} ilanınız için mesaj gönderdi`;
+  const bildirimMetin  = mesajIcerik ? mesajIcerik : ilanBaslik;
 
   await db.collection("bildirimler").add({
     kullaniciId: aliciId,
@@ -655,12 +657,12 @@ export const mesajBildirimiGonder = onCall(async (request) => {
   try {
     await admin.messaging().send({
       token: fcmToken,
-      notification: { title: gondereAd, body: bildirimMetin },
+      notification: { title: bildirimBaslik, body: bildirimMetin },
       data: { tip: "mesaj", sohbetId, ilanBaslik, ilanId: ilanId ?? "", ilanSahibiId: ilanSahibiId ?? "", ilanResimUrl: ilanResimUrl ?? "", karsiKullaniciId: gondereId, karsiKullaniciAd: gondereAd, mesajId: mesajId ?? "", mesajMetin: metin ?? "", mesajZaman: mesajZaman ?? "" },
       android: {
         priority: "high",
         collapseKey: sohbetId,
-        notification: { tag: sohbetId, channelId: "mesajlar", ticker: `${gondereAd}: ${bildirimMetin}`, notificationCount: 1 },
+        notification: { tag: sohbetId, channelId: "mesajlar", ticker: `${bildirimBaslik}: ${bildirimMetin}`, notificationCount: 1 },
       },
       apns: {
         headers: { "apns-collapse-id": sohbetId.substring(0, 64) },
