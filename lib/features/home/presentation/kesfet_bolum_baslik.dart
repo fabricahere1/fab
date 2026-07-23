@@ -54,7 +54,7 @@ class KesfetBolumBaslik extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.merriweather(
                     fontSize: 15,
-                    fontWeight: FontWeight.w400,
+                    fontWeight: FontWeight.w500,
                     color: AppColors.textPrimary,
                   ),
                 ),
