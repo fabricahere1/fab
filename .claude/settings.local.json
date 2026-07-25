@@ -134,7 +134,8 @@
       "Bash(timeout 30 firebase firestore:indexes --database=\"\\(default\\)\")",
       "Bash(firebase firestore *)",
       "Bash(firebase help *)",
-      "Bash(firebase firestore:databases:get *)"
+      "Bash(firebase firestore:databases:get *)",
+      "WebFetch(domain:pub.dev)"
     ]
   }
 }

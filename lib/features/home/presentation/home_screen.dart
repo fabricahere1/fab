@@ -25,6 +25,8 @@ import '../../bildirimler/providers/bekleyen_bildirim_provider.dart';
 import '../../../shared/widgets/login_gerektiren_aksiyon.dart';
 import '../../../shared/utils/app_snackbar.dart';
 import '../../../router/app_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -38,6 +40,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final Set<int> _ziyaretEdilenSekmeler = {0};
   DateTime? _sonGeriTusu;
   bool _fabAcik = false;
+
+  final _istekTabKey = GlobalKey();
+  final _gelenTabKey = GlobalKey();
+  final _kesfetTabKey = GlobalKey();
+  final _filtreKey = GlobalKey();
+  final _ilanVerKey = GlobalKey();
+  final _gorunumKey = GlobalKey();
 
   void _sekmeSec(int index) {
     setState(() {
@@ -70,6 +79,134 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     setState(() => _fabAcik = !_fabAcik);
   }
 
+  Future<void> _turBaslat() async {
+    final prefs = await SharedPreferences.getInstance();
+    const key = 'tur_gosterildi';
+    if (prefs.getBool(key) == true) return;
+    if (!mounted) return;
+    TutorialCoachMark(
+      targets: _turHedefleri(),
+      skipWidget: const Text(
+        'Geç',
+        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+      ),
+      onFinish: () => prefs.setBool(key, true),
+      onSkip: () {
+        prefs.setBool(key, true);
+        return true;
+      },
+    ).show(context: context);
+  }
+
+  TargetContent _turIcerik(
+    String metin, {
+    ContentAlign align = ContentAlign.bottom,
+    bool sonAdim = false,
+  }) =>
+      TargetContent(
+        align: align,
+        builder: (context, controller) => Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              metin,
+              style: GoogleFonts.dmSans(
+                fontSize: 19,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Material(
+              color: Colors.white,
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () => controller.next(),
+                child: SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: Center(
+                    child: Icon(
+                      sonAdim ? Icons.check_rounded : Icons.arrow_forward_rounded,
+                      size: 20,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+
+  List<TargetFocus> _turHedefleri() => [
+        TargetFocus(
+          identify: 'istek_tab',
+          keyTarget: _istekTabKey,
+          shape: ShapeLightFocus.Circle,
+          contents: [
+            _turIcerik(
+              'Yurt dışından istediğin ürünü buradan paylaş',
+              align: ContentAlign.top,
+            ),
+          ],
+        ),
+        TargetFocus(
+          identify: 'gelen_tab',
+          keyTarget: _gelenTabKey,
+          shape: ShapeLightFocus.Circle,
+          contents: [
+            _turIcerik(
+              'Seyahat eden taşıyıcıları buradan bul',
+              align: ContentAlign.top,
+            ),
+          ],
+        ),
+        TargetFocus(
+          identify: 'kesfet_tab',
+          keyTarget: _kesfetTabKey,
+          shape: ShapeLightFocus.Circle,
+          contents: [
+            _turIcerik(
+              'Tüm ilanları buradan keşfet ve Sana özel önerileri buradan gör',
+              align: ContentAlign.top,
+            ),
+          ],
+        ),
+        TargetFocus(
+          identify: 'filtre',
+          keyTarget: _filtreKey,
+          shape: ShapeLightFocus.Circle,
+          contents: [
+            _turIcerik('Kategoriye, şehre göre hızlıca filtrele'),
+          ],
+        ),
+        TargetFocus(
+          identify: 'ilan_ver',
+          keyTarget: _ilanVerKey,
+          shape: ShapeLightFocus.Circle,
+          contents: [
+            _turIcerik(
+              'Buradan istek ya da Gelen ilanı ver',
+              align: ContentAlign.top,
+            ),
+          ],
+        ),
+        TargetFocus(
+          identify: 'gorunum',
+          keyTarget: _gorunumKey,
+          shape: ShapeLightFocus.Circle,
+          contents: [
+            _turIcerik(
+              'Görünümü değiştir — kart listesi ya da kaydırmalı keşif',
+              sonAdim: true,
+            ),
+          ],
+        ),
+      ];
+
   @override
   Widget build(BuildContext context) {
     final uid             = ref.watch(currentUserProvider)?.uid;
@@ -100,7 +237,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             IndexedStack(
               index: _selectedIndex,
               children: [
-                _ziyaretEdilenSekmeler.contains(0) ? const _IsteklerSayfa() : const SizedBox.shrink(),
+                _ziyaretEdilenSekmeler.contains(0)
+                    ? _IsteklerSayfa(
+                        filtreKey: _filtreKey,
+                        gorunumKey: _gorunumKey,
+                        onHosGeldinKapandi: _turBaslat,
+                      )
+                    : const SizedBox.shrink(),
                 _ziyaretEdilenSekmeler.contains(1) ? const GelenlerScreen(embedded: true) : const SizedBox.shrink(),
                 _ziyaretEdilenSekmeler.contains(2) ? const MesajlarScreen() : const SizedBox.shrink(),
                 _ziyaretEdilenSekmeler.contains(3) ? const ProfilScreen() : const SizedBox.shrink(),
@@ -188,15 +331,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
             ),
-            FloatingActionButton(
-              heroTag: 'main',
-              onPressed: _ilanVer,
-              backgroundColor: const Color(0xFF66BB6A),
-              elevation: 4,
-              child: AnimatedRotation(
-                turns: _fabAcik ? 0.125 : 0,
-                duration: const Duration(milliseconds: 200),
-                child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+            KeyedSubtree(
+              key: _ilanVerKey,
+              child: FloatingActionButton(
+                heroTag: 'main',
+                onPressed: _ilanVer,
+                backgroundColor: const Color(0xFF66BB6A),
+                elevation: 4,
+                child: AnimatedRotation(
+                  turns: _fabAcik ? 0.125 : 0,
+                  duration: const Duration(milliseconds: 200),
+                  child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+                ),
               ),
             ),
           ],
@@ -226,19 +372,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 height: 62,
                 child: Row(
                   children: [
-                    _NavItem(
-                      secili: _selectedIndex == 0,
-                      onTap: () { _sekmeSec(0); ref.read(navBarGizliProvider.notifier).goster(); },
-                      label: 'İstekler',
-                      child: Icon(Symbols.home, size: 24, fill: _selectedIndex == 0 ? 1 : 0, weight: 300,
-                          color: _selectedIndex == 0 ? AppColors.red : Colors.black),
+                    KeyedSubtree(
+                      key: _istekTabKey,
+                      child: _NavItem(
+                        secili: _selectedIndex == 0,
+                        onTap: () { _sekmeSec(0); ref.read(navBarGizliProvider.notifier).goster(); },
+                        label: 'İstekler',
+                        child: Icon(Symbols.home, size: 24, fill: _selectedIndex == 0 ? 1 : 0, weight: 300,
+                            color: _selectedIndex == 0 ? AppColors.red : Colors.black),
+                      ),
                     ),
-                    _NavItem(
-                      secili: _selectedIndex == 1,
-                      onTap: () { _sekmeSec(1); ref.read(navBarGizliProvider.notifier).goster(); },
-                      label: 'Gelenler',
-                      child: Icon(Symbols.flight_land, size: 24, fill: _selectedIndex == 1 ? 1 : 0, weight: 300,
-                          color: _selectedIndex == 1 ? AppColors.red : Colors.black),
+                    KeyedSubtree(
+                      key: _gelenTabKey,
+                      child: _NavItem(
+                        secili: _selectedIndex == 1,
+                        onTap: () { _sekmeSec(1); ref.read(navBarGizliProvider.notifier).goster(); },
+                        label: 'Gelenler',
+                        child: Icon(Symbols.flight_land, size: 24, fill: _selectedIndex == 1 ? 1 : 0, weight: 300,
+                            color: _selectedIndex == 1 ? AppColors.red : Colors.black),
+                      ),
                     ),
                     _NavItem(
                       secili: _selectedIndex == 2,
@@ -270,12 +422,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       child: Icon(Symbols.person, size: 24, fill: _selectedIndex == 3 ? 1 : 0, weight: 300,
                           color: _selectedIndex == 3 ? AppColors.red : Colors.black),
                     ),
-                    _NavItem(
-                      secili: _selectedIndex == 4,
-                      onTap: () { _sekmeSec(4); ref.read(navBarGizliProvider.notifier).goster(); },
-                      label: 'Keşfet',
-                      child: Icon(Symbols.explore, size: 24, fill: _selectedIndex == 4 ? 1 : 0, weight: 300,
-                          color: _selectedIndex == 4 ? AppColors.red : Colors.black),
+                    KeyedSubtree(
+                      key: _kesfetTabKey,
+                      child: _NavItem(
+                        secili: _selectedIndex == 4,
+                        onTap: () { _sekmeSec(4); ref.read(navBarGizliProvider.notifier).goster(); },
+                        label: 'Keşfet',
+                        child: Icon(Symbols.explore, size: 24, fill: _selectedIndex == 4 ? 1 : 0, weight: 300,
+                            color: _selectedIndex == 4 ? AppColors.red : Colors.black),
+                      ),
                     ),
                   ],
                 ),
@@ -291,10 +446,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 // ── İstekler sayfası wrapper ──────────────────────────────────────────────────
 
 class _IsteklerSayfa extends StatelessWidget {
-  const _IsteklerSayfa();
+  final GlobalKey? filtreKey;
+  final GlobalKey? gorunumKey;
+  final VoidCallback? onHosGeldinKapandi;
+
+  const _IsteklerSayfa({
+    this.filtreKey,
+    this.gorunumKey,
+    this.onHosGeldinKapandi,
+  });
 
   @override
-  Widget build(BuildContext context) => const IsteklerIcEkran();
+  Widget build(BuildContext context) => IsteklerIcEkran(
+        filtreKey: filtreKey,
+        gorunumKey: gorunumKey,
+        onHosGeldinKapandi: onHosGeldinKapandi,
+      );
 }
 
 // ── Nav Item ──────────────────────────────────────────────────────────────────

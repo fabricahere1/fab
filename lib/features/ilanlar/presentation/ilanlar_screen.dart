@@ -27,6 +27,8 @@ import 'ilan_detay_screen.dart';
 import '../../../shared/utils/app_hata_yonetici.dart';
 import '../../../shared/utils/oneri_skoru.dart';
 import '../../../shared/widgets/hata_durum_widget.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../home/presentation/hos_geldin_dialog.dart';
 
 
 
@@ -100,7 +102,16 @@ IlanModel _hittenIlan(Map<String, dynamic> hit) {
 }
 
 class IsteklerIcEkran extends ConsumerStatefulWidget {
-  const IsteklerIcEkran({super.key});
+  final GlobalKey? filtreKey;
+  final GlobalKey? gorunumKey;
+  final VoidCallback? onHosGeldinKapandi;
+
+  const IsteklerIcEkran({
+    super.key,
+    this.filtreKey,
+    this.gorunumKey,
+    this.onHosGeldinKapandi,
+  });
 
   @override
   ConsumerState<IsteklerIcEkran> createState() => _IsteklerIcEkranState();
@@ -130,6 +141,23 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
     super.initState();
     _scrollController.addListener(_onScroll);
     _algoliaYukle(sifirla: true);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _hosGeldinKontrolEt());
+  }
+
+  Future<void> _hosGeldinKontrolEt() async {
+    final prefs = await SharedPreferences.getInstance();
+    const key = 'hosgeldin_gosterildi';
+    if (prefs.getBool(key) != true) {
+      if (!mounted) return;
+      await showDialog(
+        context: context,
+        barrierColor: Colors.black54,
+        builder: (_) => const HosGeldinDialog(),
+      );
+      await prefs.setBool(key, true);
+    }
+    if (!mounted) return;
+    widget.onHosGeldinKapandi?.call();
   }
 
   double _sonScrollPixel = 0;
@@ -449,6 +477,7 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
                 }),
 
                 kategoriScrollCtrl: _kategoriScrollCtrl,
+                filtreKey: widget.filtreKey,
               ),
 
               Container(height: 0.5, color: AppColors.divider),
@@ -513,11 +542,14 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
           Positioned(
             right: 0, top: 0, bottom: 0,
             child: Center(
-              child: _DikeTabBar(
-                mod: mod,
-                isSwipe: isSwipe,
-                onModSec: (m) =>
-                    ref.read(gridTercihiProvider.notifier).modSec(m),
+              child: KeyedSubtree(
+                key: widget.gorunumKey,
+                child: _DikeTabBar(
+                  mod: mod,
+                  isSwipe: isSwipe,
+                  onModSec: (m) =>
+                      ref.read(gridTercihiProvider.notifier).modSec(m),
+                ),
               ),
             ),
           ),
@@ -615,6 +647,7 @@ class _IsteklerHeader extends StatelessWidget {
   final VoidCallback onFiltreAc;
   final ValueChanged<String> onKategoriSec;
   final VoidCallback onFiltreSifirla;
+  final GlobalKey? filtreKey;
 
   const _IsteklerHeader({
     required this.aramaCtrl,
@@ -630,6 +663,7 @@ class _IsteklerHeader extends StatelessWidget {
     required this.onFiltreAc,
     required this.onKategoriSec,
     required this.onFiltreSifirla,
+    this.filtreKey,
   });
 
   @override
@@ -736,6 +770,7 @@ class _IsteklerHeader extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     GestureDetector(
+                      key: filtreKey,
                       onTap: onFiltreAc,
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
