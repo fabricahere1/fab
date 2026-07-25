@@ -135,7 +135,10 @@
       "Bash(firebase firestore *)",
       "Bash(firebase help *)",
       "Bash(firebase firestore:databases:get *)",
-      "WebFetch(domain:pub.dev)"
+      "WebFetch(domain:pub.dev)",
+      "Bash(git mv *)",
+      "Bash(awk '/^commit /{c=$2} /allow read: if girisYapilmis\\\\\\(\\\\\\);$/{print c\": \"$0; getline; print c\": \"$0}')",
+      "Bash(npm ci *)"
     ]
   }
 }

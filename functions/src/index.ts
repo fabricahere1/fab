@@ -12,7 +12,7 @@ import { algoliasearch } from "algoliasearch";
 import * as vision from "@google-cloud/vision";
 import * as nodemailer from "nodemailer";
 import { hesaplaGuvenSkoru } from "./guvenSkoru";
-import { yenidenDenenmeliMiHesapla } from "./ilanModerasyon";
+import { yenidenDenenmeliMiHesapla, ikiliBildirimGonder } from "./ilanModerasyon";
 import { onerilenPuanHesapla } from "./onerilenPuan";
 import { hesaplaYeniOrtalamaPuan } from "./degerlendirme";
 
@@ -314,16 +314,14 @@ export const ilanModerasyonu = onDocumentCreated(
       await ilanRef.update({ aktif: true, durum: "yayinda", onerilenPuan });
 
       const ilanAdi = data.urun || `${data.nereden} → ${data.nereye}`;
-      try {
-        await Promise.all([
-          bildirimGonder(kullaniciId, "İlanın yayınlandı", `"${ilanAdi}" ilanın aktif.`, "ilan_onayla", ilanId),
-          db.collection("bildirimler").add({
-            kullaniciId, tip: "ilan_onayla",
-            baslik: "İlanın yayınlandı", icerik: `"${ilanAdi}" ilanın aktif.`,
-            okundu: false, tarih: admin.firestore.FieldValue.serverTimestamp(), hedefId: ilanId,
-          }),
-        ]);
-      } catch (e) { console.warn("Bildirim gönderilemedi:", e); }
+      await ikiliBildirimGonder(
+        () => bildirimGonder(kullaniciId, "İlanın yayınlandı", `"${ilanAdi}" ilanın aktif.`, "ilan_onayla", ilanId),
+        () => db.collection("bildirimler").add({
+          kullaniciId, tip: "ilan_onayla",
+          baslik: "İlanın yayınlandı", icerik: `"${ilanAdi}" ilanın aktif.`,
+          okundu: false, tarih: admin.firestore.FieldValue.serverTimestamp(), hedefId: ilanId,
+        })
+      );
 
       try {
         await getAlgoliaClient().saveObject({

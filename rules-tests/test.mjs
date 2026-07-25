@@ -350,6 +350,31 @@ async function main() {
     await assertFails(batch.commit());
   });
 
+  // B12 — Regresyon (3dde4f6, 2026-07-05): HENÜZ hiç görüntülenmemiş bir
+  // ilanı ilk kez görüntüleme. goruntulenmeler/{UID_A}_{ilanId} dokümanı
+  // henüz yok — transaction get() sırasında resource null olur. read
+  // kuralı bunu reddetmemeli (goruntulenmeyiKaydet()'in gerçek client
+  // kod yoluyla birebir aynı: get → set + goruntulenmeSayisi++ tek
+  // transaction'da).
+  await check('B12', 'İlk kez görüntüleme — henüz var olmayan goruntulenmeler dokümanının transaction get() ile okunabilmesi', async () => {
+    const goruntulenmeId = `${UID_A}_${ilanId}`;
+    await assertSucceeds(
+      asA.runTransaction(async (txn) => {
+        const kayitRef = asA.doc(`goruntulenmeler/${goruntulenmeId}`);
+        const snap = await txn.get(kayitRef);
+        if (snap.exists) return;
+        txn.set(kayitRef, {
+          kullaniciId: UID_A,
+          ilanId,
+          sonTarih: new Date(),
+        });
+        txn.update(asA.doc(`ilanlar/${ilanId}`), {
+          goruntulenmeSayisi: 1,
+        });
+      })
+    );
+  });
+
   await testEnv.cleanup();
 }
 

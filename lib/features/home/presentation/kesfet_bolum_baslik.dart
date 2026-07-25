@@ -15,6 +15,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../shared/constants/app_colors.dart';
 
+// Dart'ın toUpperCase()'i Türkçe'ye özel değil: küçük 'i' (noktalı) yanlışlıkla
+// noktasız 'I'ya dönüşür (doğrusu 'İ'). Diğer Türkçe karakterler (ı, ş, ğ, ü,
+// ö, ç) standart toUpperCase() ile zaten doğru büyüyor, yalnızca 'i' önceden
+// elle 'İ'ye çevrilmeli.
+String _turkceBuyuk(String s) => s.replaceAll('i', 'İ').toUpperCase();
+
 class KesfetBolumBaslik extends StatelessWidget {
   final String baslik;
   final IconData ikon;
@@ -49,12 +55,11 @@ class KesfetBolumBaslik extends StatelessWidget {
               const SizedBox(width: 9),
               Expanded(
                 child: Text(
-                  baslik,
+                  _turkceBuyuk(baslik),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.merriweather(
+                  style: GoogleFonts.bebasNeue(
                     fontSize: 15,
-                    fontWeight: FontWeight.w500,
                     color: AppColors.textPrimary,
                   ),
                 ),

@@ -16,3 +16,34 @@ export function yenidenDenenmeliMiHesapla(
     (once.aktif === false && sonra.durum === "onayBekliyor")
   );
 }
+
+// ── İkili bildirim gönderimi (push + Firestore) ─────────────────────────
+//
+// index.ts'teki ilanModerasyonu (onay bildirimi) bloğundan taşındı.
+// push ve Firestore yazımı Promise.allSettled ile birbirinden BAĞIMSIZ
+// çalışır — biri reddedilse bile diğeri sonuna kadar tamamlanır. Firebase
+// Admin SDK'ya (admin.messaging()/db) doğrudan bağımlı değil, push/yazma
+// işlemlerini thunk (parametre) olarak alır — bu sayede emulator/mock
+// kurmadan node:test ile doğrudan test edilebiliyor.
+export async function ikiliBildirimGonder(
+  pushGonder: () => Promise<unknown>,
+  firestoreYaz: () => Promise<unknown>,
+  logla: (mesaj: string, hata: unknown) => void = console.warn
+): Promise<{ pushBasarili: boolean; firestoreBasarili: boolean }> {
+  const [pushSonucu, firestoreSonucu] = await Promise.allSettled([
+    pushGonder(),
+    firestoreYaz(),
+  ]);
+
+  if (pushSonucu.status === "rejected") {
+    logla("Bildirim gönderilemedi (push):", pushSonucu.reason);
+  }
+  if (firestoreSonucu.status === "rejected") {
+    logla("Bildirim gönderilemedi (firestore):", firestoreSonucu.reason);
+  }
+
+  return {
+    pushBasarili: pushSonucu.status === "fulfilled",
+    firestoreBasarili: firestoreSonucu.status === "fulfilled",
+  };
+}

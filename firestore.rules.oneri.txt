@@ -315,8 +315,13 @@ service cloud.firestore {
     }
 
     match /goruntulenmeler/{kayitId} {
-      allow read: if girisYapilmis()
-        && resource.data.kullaniciId == request.auth.uid;
+      // Transaction read: doküman henüz yoksa resource null olur, bu
+      // yüzden authenticated her kullanıcı kendi kaydını okuyabilmeli —
+      // gerçek güvenlik create/update/delete kurallarındaki kullaniciId
+      // eşleşmesiyle zaten sağlanıyor, read'de resource null olabileceği
+      // için ekstra eşleşme kontrolü BURADA yapılamaz (regresyon: 3dde4f6,
+      // 2026-07-05, bkz. GENEL_SAGLIK_TARAMASI ekleri).
+      allow read: if girisYapilmis();
       // DÜZELTME (2. teyit turu): eskiden tek bir 'allow write' create/
       // update/delete'i birlikte kapsıyordu — ama delete'te request.resource
       // diye bir şey YOK (null), request.resource.data.ilanId erişimi

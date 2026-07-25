@@ -111,6 +111,8 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
         ),
       ],
       skipWidget: turSkipWidget,
+      focusAnimationDuration: const Duration(milliseconds: 250),
+      unFocusAnimationDuration: const Duration(milliseconds: 250),
       onFinish: () => prefs.setBool(key, true),
       onSkip: () {
         prefs.setBool(key, true);

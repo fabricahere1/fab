@@ -88,6 +88,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     TutorialCoachMark(
       targets: _turHedefleri(),
       skipWidget: turSkipWidget,
+      focusAnimationDuration: const Duration(milliseconds: 250),
+      unFocusAnimationDuration: const Duration(milliseconds: 250),
       onFinish: () => prefs.setBool(key, true),
       onSkip: () {
         prefs.setBool(key, true);
