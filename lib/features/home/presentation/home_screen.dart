@@ -27,6 +27,7 @@ import '../../../shared/utils/app_snackbar.dart';
 import '../../../router/app_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
+import '../../../shared/widgets/tur_icerik.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -86,10 +87,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (!mounted) return;
     TutorialCoachMark(
       targets: _turHedefleri(),
-      skipWidget: const Text(
-        'Geç',
-        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-      ),
+      skipWidget: turSkipWidget,
       onFinish: () => prefs.setBool(key, true),
       onSkip: () {
         prefs.setBool(key, true);
@@ -98,56 +96,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ).show(context: context);
   }
 
-  TargetContent _turIcerik(
-    String metin, {
-    ContentAlign align = ContentAlign.bottom,
-    bool sonAdim = false,
-  }) =>
-      TargetContent(
-        align: align,
-        builder: (context, controller) => Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              metin,
-              style: GoogleFonts.dmSans(
-                fontSize: 19,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Material(
-              color: Colors.white,
-              shape: const CircleBorder(),
-              child: InkWell(
-                customBorder: const CircleBorder(),
-                onTap: () => controller.next(),
-                child: SizedBox(
-                  width: 44,
-                  height: 44,
-                  child: Center(
-                    child: Icon(
-                      sonAdim ? Icons.check_rounded : Icons.arrow_forward_rounded,
-                      size: 20,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-
   List<TargetFocus> _turHedefleri() => [
         TargetFocus(
           identify: 'istek_tab',
           keyTarget: _istekTabKey,
           shape: ShapeLightFocus.Circle,
           contents: [
-            _turIcerik(
+            turIcerik(
               'Yurt dışından istediğin ürünü buradan paylaş',
               align: ContentAlign.top,
             ),
@@ -158,7 +113,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           keyTarget: _gelenTabKey,
           shape: ShapeLightFocus.Circle,
           contents: [
-            _turIcerik(
+            turIcerik(
               'Seyahat eden taşıyıcıları buradan bul',
               align: ContentAlign.top,
             ),
@@ -169,7 +124,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           keyTarget: _kesfetTabKey,
           shape: ShapeLightFocus.Circle,
           contents: [
-            _turIcerik(
+            turIcerik(
               'Tüm ilanları buradan keşfet ve Sana özel önerileri buradan gör',
               align: ContentAlign.top,
             ),
@@ -180,7 +135,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           keyTarget: _filtreKey,
           shape: ShapeLightFocus.Circle,
           contents: [
-            _turIcerik('Kategoriye, şehre göre hızlıca filtrele'),
+            turIcerik('Kategoriye, şehre göre hızlıca filtrele'),
           ],
         ),
         TargetFocus(
@@ -188,7 +143,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           keyTarget: _ilanVerKey,
           shape: ShapeLightFocus.Circle,
           contents: [
-            _turIcerik(
+            turIcerik(
               'Buradan istek ya da Gelen ilanı ver',
               align: ContentAlign.top,
             ),
@@ -199,7 +154,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           keyTarget: _gorunumKey,
           shape: ShapeLightFocus.Circle,
           contents: [
-            _turIcerik(
+            turIcerik(
               'Görünümü değiştir — kart listesi ya da kaydırmalı keşif',
               sonAdim: true,
             ),

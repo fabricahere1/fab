@@ -568,7 +568,7 @@ class KesfetHeroBanner extends ConsumerWidget {
                               child: Text('Bu hafta öne çıkanlar',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+                                  style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white)),
                             ),
                           ),
                         ),

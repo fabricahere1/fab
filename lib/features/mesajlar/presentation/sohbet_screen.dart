@@ -21,6 +21,9 @@ import '../../profil/presentation/kullanici_profil_screen.dart';
 import 'islem_durumu_panel.dart';
 import '../../degerlendirme/presentation/degerlendirme_screen.dart';
 import '../../degerlendirme/providers/degerlendirme_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
+import '../../../shared/widgets/tur_icerik.dart';
 
 class SohbetScreen extends ConsumerStatefulWidget {
   final String karsiKullaniciId;
@@ -50,6 +53,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
   final _mesajCtrl  = TextEditingController();
   final _scrollCtrl = ScrollController();
   bool _degerlendirmeAcik = false;
+  final _islemPaneliKey = GlobalKey();
 
   /// widget.karsiKullaniciAd boş gelirse (eski sohbet, ilk açılış)
   /// provider'dan çeker. Provider keepAlive olduğu için ikinci açılışta anında gelir.
@@ -67,6 +71,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _iletisimBasladiIsaretle();
       _degerlendirmeyiDinle();
+      _islemPaneliTurKontrolEt();
       if (widget.autoOpenPanel) _panelAc();
       if (widget.bildirimMesaji != null) {
         final bm = widget.bildirimMesaji!;
@@ -81,6 +86,37 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
         );
       }
     });
+  }
+
+  Future<void> _islemPaneliTurKontrolEt() async {
+    final prefs = await SharedPreferences.getInstance();
+    const key = 'islem_paneli_tur_gosterildi';
+    if (prefs.getBool(key) == true) return;
+    if (!mounted) return;
+    TutorialCoachMark(
+      targets: [
+        TargetFocus(
+          identify: 'islem_paneli',
+          keyTarget: _islemPaneliKey,
+          shape: ShapeLightFocus.RRect,
+          radius: 10,
+          paddingFocus: 20,
+          contents: [
+            turIcerik(
+              'Burada anlaşma teklif edebilir, işlemin durumunu buradan takip edebilirsin',
+              align: ContentAlign.left,
+              sonAdim: true,
+            ),
+          ],
+        ),
+      ],
+      skipWidget: turSkipWidget,
+      onFinish: () => prefs.setBool(key, true),
+      onSkip: () {
+        prefs.setBool(key, true);
+        return true;
+      },
+    ).show(context: context, rootOverlay: true);
   }
 
   Future<void> _iletisimBasladiIsaretle() async {
@@ -654,10 +690,13 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
             top: 0,
             bottom: 0,
             child: Center(
-              child: IslemDurumuTetikleyici(
-                sohbetId: _sohbetId,
-                karsiKullaniciAd: widget.karsiKullaniciAd,
-                ilanTip: meta.ilanTip,
+              child: KeyedSubtree(
+                key: _islemPaneliKey,
+                child: IslemDurumuTetikleyici(
+                  sohbetId: _sohbetId,
+                  karsiKullaniciAd: widget.karsiKullaniciAd,
+                  ilanTip: meta.ilanTip,
+                ),
               ),
             ),
           ),

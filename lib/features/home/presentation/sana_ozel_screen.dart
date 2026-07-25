@@ -852,7 +852,7 @@ class _SanaOzelHeroBanner extends ConsumerWidget {
                           ),
                           child: Text('Senin için önerilen',
                               style: GoogleFonts.poppins(
-                                  fontSize: 15, fontWeight: FontWeight.w700,
+                                  fontSize: 15, fontWeight: FontWeight.w800,
                                   color: Colors.white)),
                         ),
                         Text('İlgi alanlarına göre seçildi',
