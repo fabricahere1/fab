@@ -35,12 +35,14 @@ class KategoriNode {
   final String key;
   final String ad;
   final String emoji;
+  final String? ikonYolu;
   final List<KategoriNode> altlar;
 
   const KategoriNode({
     required this.key,
     required this.ad,
     this.emoji = '',
+    this.ikonYolu,
     this.altlar = const [],
   });
 
@@ -76,6 +78,7 @@ const List<KategoriNode> kKategoriAgaci = [
   // ── 1. KADIN ──────────────────────────────────────────────────────────────
   KategoriNode(
     key: 'kadin', ad: 'Kadın', emoji: '👗',
+    ikonYolu: 'assets/images/kategoriler/kadin.png',
     altlar: [
       KategoriNode(key: 'kadin_giyim',    ad: 'Giyim'),
       KategoriNode(key: 'kadin_ayakkabi', ad: 'Ayakkabı'),
@@ -86,6 +89,7 @@ const List<KategoriNode> kKategoriAgaci = [
   // ── 2. ERKEK ──────────────────────────────────────────────────────────────
   KategoriNode(
     key: 'erkek', ad: 'Erkek', emoji: '👔',
+    ikonYolu: 'assets/images/kategoriler/erkek.png',
     altlar: [
       KategoriNode(key: 'erkek_giyim',    ad: 'Giyim'),
       KategoriNode(key: 'erkek_ayakkabi', ad: 'Ayakkabı'),
@@ -96,6 +100,7 @@ const List<KategoriNode> kKategoriAgaci = [
   // ── 3. ÇOCUK ──────────────────────────────────────────────────────────────
   KategoriNode(
     key: 'cocuk', ad: 'Çocuk', emoji: '🧸',
+    ikonYolu: 'assets/images/kategoriler/cocuk.png',
     altlar: [
       KategoriNode(key: 'cocuk_giyim',    ad: 'Giyim'),
       KategoriNode(key: 'cocuk_ayakkabi', ad: 'Ayakkabı'),
@@ -106,6 +111,7 @@ const List<KategoriNode> kKategoriAgaci = [
   // ── 4. EV ─────────────────────────────────────────────────────────────────
   KategoriNode(
     key: 'ev', ad: 'Ev', emoji: '🏠',
+    ikonYolu: 'assets/images/kategoriler/ev.png',
     altlar: [
       KategoriNode(key: 'ev_dekorasyon', ad: 'Dekorasyon'),
       KategoriNode(key: 'ev_hatira',     ad: 'Hatıra'),
@@ -116,6 +122,7 @@ const List<KategoriNode> kKategoriAgaci = [
   // ── 5. ELEKTRONİK ─────────────────────────────────────────────────────────
   KategoriNode(
     key: 'elektronik', ad: 'Elektronik', emoji: '📱',
+    ikonYolu: 'assets/images/kategoriler/elektronik.png',
     altlar: [
       KategoriNode(key: 'elektronik_telefon',     ad: 'Cep Telefonu'),
       KategoriNode(key: 'elektronik_playstation', ad: 'Playstation'),
@@ -127,6 +134,7 @@ const List<KategoriNode> kKategoriAgaci = [
   // ── 6. SUPPLEMENT & MEDİKAL ───────────────────────────────────────────────
   KategoriNode(
     key: 'supplement', ad: 'Supplement & Medikal', emoji: '💊',
+    ikonYolu: 'assets/images/kategoriler/supplement.png',
     altlar: [
       KategoriNode(key: 'supplement_medikal', ad: 'Medikal'),
       KategoriNode(key: 'supplement_besin',   ad: 'Supplement / Besin'),
@@ -134,7 +142,13 @@ const List<KategoriNode> kKategoriAgaci = [
   ),
 
   // ── 7. DİĞER ──────────────────────────────────────────────────────────────
-  KategoriNode(key: 'diger', ad: 'Diğer', emoji: '📦'),
+  KategoriNode(
+    key: 'diger', ad: 'Diğer', emoji: '📦',
+    // Dosya adı GERÇEKTEN büyük D ile: Diger.png (diğer 6 dosya küçük
+    // harfle) — Android dosya sistemi case-sensitive, yanlış yazarsan
+    // asset bulunamaz.
+    ikonYolu: 'assets/images/kategoriler/Diger.png',
+  ),
 ];
 
 // ── Yardımcı Fonksiyonlar ─────────────────────────────────────────────────────

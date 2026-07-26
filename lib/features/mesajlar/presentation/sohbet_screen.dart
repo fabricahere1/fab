@@ -93,18 +93,15 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
     const key = 'islem_paneli_tur_gosterildi';
     if (prefs.getBool(key) == true) return;
     if (!mounted) return;
-    TutorialCoachMark(
+    final tur = TutorialCoachMark(
       targets: [
         TargetFocus(
           identify: 'islem_paneli',
           keyTarget: _islemPaneliKey,
-          shape: ShapeLightFocus.RRect,
-          radius: 10,
-          paddingFocus: 20,
+          shape: ShapeLightFocus.Circle,
           contents: [
             turIcerik(
               'Burada anlaşma teklif edebilir, işlemin durumunu buradan takip edebilirsin',
-              align: ContentAlign.left,
               sonAdim: true,
             ),
           ],
@@ -118,7 +115,26 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
         prefs.setBool(key, true);
         return true;
       },
-    ).show(context: context, rootOverlay: true);
+    );
+
+    // Soğuk başlangıçta edge-to-edge sistem inset'leri/layout birkaç
+    // frame içinde kesinleşebiliyor — addPostFrameCallback'in yakaladığı
+    // "ilk frame" henüz yerleşmemiş olabilir. Zaman bazlı bir bekleme
+    // yerine (cihaz hızından bağımsız olsun diye) iki frame'in
+    // tamamlanmasını bekliyoruz.
+    await WidgetsBinding.instance.endOfFrame;
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+
+    final renderBox = _islemPaneliKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox != null) {
+      final position = renderBox.localToGlobal(Offset.zero);
+      debugPrint('[COACH_MARK_DEBUG] islem_paneli konum: $position, boyut: ${renderBox.size}');
+    } else {
+      debugPrint('[COACH_MARK_DEBUG] islem_paneli: RenderBox bulunamadı (henüz mount olmamış olabilir)');
+    }
+
+    tur.show(context: context);
   }
 
   Future<void> _iletisimBasladiIsaretle() async {

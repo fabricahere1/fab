@@ -282,6 +282,7 @@ class _GelenlerFiltreEkraniState extends State<GelenlerFiltreEkrani> {
                           return _FiltreKategoriSatiri(
                             ad: node.ad,
                             ikon: gelenlerKategoriIkon(node.key),
+                            ikonYolu: node.ikonYolu,
                             kategoriKey: node.key,
                             secili: secili,
                             derinlikOku: !node.yaprakMi,
@@ -402,6 +403,7 @@ class _FiltreKategoriSatiri extends StatelessWidget {
   final String? altBilgi;
   final IconData? ikon;
   final String? kategoriKey;
+  final String? ikonYolu;
 
   const _FiltreKategoriSatiri({
     required this.ad,
@@ -413,6 +415,7 @@ class _FiltreKategoriSatiri extends StatelessWidget {
     this.altBilgi,
     this.ikon,
     this.kategoriKey,
+    this.ikonYolu,
   });
 
   @override
@@ -433,7 +436,10 @@ class _FiltreKategoriSatiri extends StatelessWidget {
         ),
         child: Row(
           children: [
-            if (ikon != null) ...[
+            if (ikonYolu != null) ...[
+              Image.asset(ikonYolu!, width: 22, height: 22),
+              const SizedBox(width: 12),
+            ] else if (ikon != null) ...[
               Icon(ikon, size: 18, color: renk),
               const SizedBox(width: 12),
             ],

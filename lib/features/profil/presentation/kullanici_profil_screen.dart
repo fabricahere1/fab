@@ -447,7 +447,7 @@ class _KullaniciProfilScreenState extends ConsumerState<KullaniciProfilScreen> {
                           const SizedBox(width: 8),
                           Text(
                             ilanlarAsync.value != null
-                                ? 'İlanları (${ilanlarAsync.value!.length})'
+                                ? 'İlanları (${ilanlarAsync.value!.where((i) => i.aktif).length})'
                                 : 'İlanları',
                             style: GoogleFonts.dmSans(
                                 fontSize: 15,
@@ -480,7 +480,12 @@ class _KullaniciProfilScreenState extends ConsumerState<KullaniciProfilScreen> {
                                 color: AppColors.textSecondary))),
                   ),
                 ),
-                data: (ilanlar) {
+                data: (tumIlanlar) {
+                  // Başkasının profilinde yalnızca aktif ilanlar gösterilir —
+                  // pasif/reddedilmiş ilanlar kendi profilinde (ilanlarim_screen.dart)
+                  // "Tekrar Yayınla" ile yönetilebilsin diye filtresiz kalıyor,
+                  // ama üçüncü kişilere gösterilmemeli.
+                  final ilanlar = tumIlanlar.where((i) => i.aktif).toList();
                   if (ilanlar.isEmpty) {
                     return SliverToBoxAdapter(
                       child: Padding(

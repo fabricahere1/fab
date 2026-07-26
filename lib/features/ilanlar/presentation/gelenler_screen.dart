@@ -576,11 +576,13 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            gelenlerKategoriIkon(kat.key),
-                            size: 15,
-                            color: secili ? Colors.white : AppColors.textSecondary,
-                          ),
+                          kat.ikonYolu != null
+                              ? Image.asset(kat.ikonYolu!, width: 22, height: 22)
+                              : Icon(
+                                  gelenlerKategoriIkon(kat.key),
+                                  size: 15,
+                                  color: secili ? Colors.white : AppColors.textSecondary,
+                                ),
                           const SizedBox(width: 4),
                           Text(kat.ad,
                               style: GoogleFonts.dmSans(

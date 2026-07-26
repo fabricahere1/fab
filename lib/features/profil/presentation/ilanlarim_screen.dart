@@ -249,24 +249,32 @@ class _IstekKarti extends ConsumerWidget {
                       ],
                     ),
                     if (!ilan.aktif)
-                      GestureDetector(
-                        onTap: () {
-                          context.push(
-                            ilan.tip == IlanTip.istek
-                                ? AppRoutes.ilanOlusturIstek
-                                : AppRoutes.ilanOlusturTasiyici,
-                            extra: ilan,
-                          );
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 2),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            context.push(
+                              ilan.tip == IlanTip.istek
+                                  ? AppRoutes.ilanOlusturIstek
+                                  : AppRoutes.ilanOlusturTasiyici,
+                              extra: ilan,
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20)),
+                            elevation: 0,
+                          ),
                           child: Text(
                             'Tekrar Yayınla',
                             style: GoogleFonts.manrope(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.primary,
-                              decoration: TextDecoration.underline,
                             ),
                           ),
                         ),
@@ -393,24 +401,32 @@ class _GelenKarti extends ConsumerWidget {
                       ],
                     ),
                     if (!ilan.aktif)
-                      GestureDetector(
-                        onTap: () {
-                          context.push(
-                            ilan.tip == IlanTip.istek
-                                ? AppRoutes.ilanOlusturIstek
-                                : AppRoutes.ilanOlusturTasiyici,
-                            extra: ilan,
-                          );
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 2),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            context.push(
+                              ilan.tip == IlanTip.istek
+                                  ? AppRoutes.ilanOlusturIstek
+                                  : AppRoutes.ilanOlusturTasiyici,
+                              extra: ilan,
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20)),
+                            elevation: 0,
+                          ),
                           child: Text(
                             'Tekrar Yayınla',
                             style: GoogleFonts.manrope(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.primary,
-                              decoration: TextDecoration.underline,
                             ),
                           ),
                         ),

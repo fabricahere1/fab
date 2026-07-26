@@ -72,7 +72,9 @@ class KategoriVitriniBolum extends ConsumerWidget {
                           border: Border.all(color: const Color(0xFFEEEEEE)),
                         ),
                         child: Center(
-                          child: Text(node.emoji, style: const TextStyle(fontSize: 26)),
+                          child: node.ikonYolu != null
+                              ? Image.asset(node.ikonYolu!, width: 40, height: 40)
+                              : Text(node.emoji, style: const TextStyle(fontSize: 26)),
                         ),
                       ),
                       const SizedBox(height: 6),

@@ -571,11 +571,13 @@ class _FiltreEkraniState extends State<FiltreEkrani> {
               children: [
                 Row(
                   children: [
-                    Icon(
-                      kategoriIkon(node.key),
-                      size: 32,
-                      color: kategoriRengi(node.key),
-                    ),
+                    node.ikonYolu != null
+                        ? Image.asset(node.ikonYolu!, width: 40, height: 40)
+                        : Icon(
+                            kategoriIkon(node.key),
+                            size: 32,
+                            color: kategoriRengi(node.key),
+                          ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(

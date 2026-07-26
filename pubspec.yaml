@@ -86,6 +86,7 @@ flutter:
     - assets/splash/
     - assets/images/
     - assets/images/rehber/
+    - assets/images/kategoriler/
     - assets/google_fonts/
     - assets/animations/
 
