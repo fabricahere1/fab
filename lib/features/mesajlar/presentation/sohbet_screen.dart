@@ -884,13 +884,24 @@ class _MesajListesi extends ConsumerWidget {
               color: AppColors.red, strokeWidth: 2));
     }
     if (sohbetState.siraliMesajlar.isEmpty) {
-      return Column(
-        children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(8, 12, 8, 8),
-            child: _KurallarBanner(),
+      // DÜZELTME: sabit Column, klavye açılıp dikey alan daraldığında
+      // (özellikle _KurallarBanner + altındaki içerik toplamı mevcut
+      // alanı aştığında) "RenderFlex overflowed" hatası veriyordu. Mesaj
+      // gelince kullanılan ListView.builder taşmaya bağışıktı (kaydırıp
+      // gösteriyordu) — burada CustomScrollView + SliverFillRemaining ile
+      // aynı bağışıklığı sağlıyoruz: yeterli alan varsa placeholder eskisi
+      // gibi tam ortada görünür (SliverFillRemaining kalan alanı doldurur),
+      // alan yetmezse (klavye açıkken) taşma yerine kaydırma devreye girer.
+      return CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: const Padding(
+              padding: EdgeInsets.fromLTRB(8, 12, 8, 8),
+              child: _KurallarBanner(),
+            ),
           ),
-          Expanded(
+          SliverFillRemaining(
+            hasScrollBody: false,
             child: Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,

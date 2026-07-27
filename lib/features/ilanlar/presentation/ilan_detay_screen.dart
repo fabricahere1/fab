@@ -819,11 +819,14 @@ class _IlanDetayIcerik extends ConsumerWidget {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: benimEngellenmisMi
                                   ? AppColors.divider
-                                  : const Color(0xFFE0E0E0),
+                                  : Colors.white,
                               foregroundColor: benimEngellenmisMi
                                   ? AppColors.textHint
                                   : Colors.black87,
                               elevation: 0,
+                              side: benimEngellenmisMi
+                                  ? null
+                                  : const BorderSide(color: Colors.black),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12)),
                             ),
@@ -837,8 +840,8 @@ class _IlanDetayIcerik extends ConsumerWidget {
                                     ? 'İletişim Kapalı'
                                     : 'İletişime Geç',
                                 style: GoogleFonts.dmSans(
-                                    fontSize: AppLayout.fs(context, 14),
-                                    fontWeight: FontWeight.w600)),
+                                    fontSize: AppLayout.fs(context, 16),
+                                    fontWeight: FontWeight.w400)),
                           ),
                         ),
                       ),
