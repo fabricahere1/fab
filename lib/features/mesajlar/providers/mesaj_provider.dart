@@ -275,7 +275,7 @@ class SohbetNotifier extends _$SohbetNotifier {
     required String ilanBaslik,
     String ilanResimUrl = '',
     String ilanSahibiId = '',
-    String ilanTip = 'istek',
+    String ilanTip = '',
     String tip = 'mesaj',
   }) async {
     if (metin.trim().isEmpty) return;
@@ -329,7 +329,7 @@ class SohbetNotifier extends _$SohbetNotifier {
     required String ilanBaslik,
     String ilanResimUrl = '',
     String ilanSahibiId = '',
-    String ilanTip = 'istek',
+    String ilanTip = '',
   }) async {
     if (state.gonderiyor) return;
     final benimAd = await _getBenimAd();

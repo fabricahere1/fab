@@ -104,6 +104,7 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
           karsiKullaniciId: ilan.kullaniciId,
           karsiKullaniciAd: ilan.kullaniciAd,
           ilanId: ilan.id,
+          bilinenIlan: ilan,
         ),
         transitionsBuilder: (ctx, anim, secAnim, child) => SlideTransition(
           position: Tween(

@@ -86,7 +86,11 @@ class MesajRepository {
     String tip = 'mesaj',
     String? resimUrl,
     String ilanSahibiId = '',
-    String ilanTip = 'istek',
+    // "Sanki 'istek'miş gibi" sessiz bir varsayılan YOK — bilinmiyorsa
+    // boş geçilir, aşağıdaki isNotEmpty koruması sayesinde yanlış veri
+    // asla yazılmaz, yalnızca eksik kalır (regresyon: bugün defalarca
+    // görülen, veriyi 'istek' varsayımıyla kalıcı olarak bozan hata).
+    String ilanTip = '',
   }) async {
     // Son savunma katmanı — istemci UI'ı (ilan_detay_screen.dart'taki
     // "İletişime Geç" butonunun devre dışı bırakılması) bir şekilde
@@ -147,7 +151,6 @@ class MesajRepository {
       'sonMesajZamani':       FieldValue.serverTimestamp(),
       'sonAktiviteZamani':    FieldValue.serverTimestamp(),
       'sonGondereId':         gondereId,
-      'ilanTip':              ilanTip,
       'islemDurumlari':       {IslemDurumu.iletisimBasladi.firestoreKey: true},
       'olusturmaTarihi':      FieldValue.serverTimestamp(),
       'okunmamis':            {karsiId: FieldValue.increment(1)},
@@ -155,6 +158,7 @@ class MesajRepository {
       if (karsiAd.isNotEmpty)     'kullaniciAdlari.$karsiId':   karsiAd,
       // İlan meta: boş geçilirse mevcut değeri ezme
       if (ilanId.isNotEmpty)             'ilanId':       ilanId,
+      if (ilanTip.isNotEmpty)             'ilanTip':      ilanTip,
       if (efektifIlanBaslik.isNotEmpty)   'ilanBaslik':   efektifIlanBaslik,
       if (efektifIlanResimUrl.isNotEmpty) 'ilanResimUrl': efektifIlanResimUrl,
       if (efektifIlanSahibiId.isNotEmpty) 'ilanSahibiId': efektifIlanSahibiId,

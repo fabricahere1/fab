@@ -17,6 +17,7 @@ import '../../../shared/constants/app_colors.dart';
 import '../../../shared/utils/app_snackbar.dart';
 import '../../ilanlar/presentation/ilan_detay_screen.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
+import '../../ilanlar/domain/ilan_model.dart';
 import '../../profil/presentation/kullanici_profil_screen.dart';
 import 'islem_durumu_panel.dart';
 import '../../degerlendirme/presentation/degerlendirme_screen.dart';
@@ -33,6 +34,11 @@ class SohbetScreen extends ConsumerStatefulWidget {
   final String? ilgileniyorumMesaji;
   final bool autoOpenPanel;
   final ({String id, String metin, DateTime? zaman})? bildirimMesaji;
+  // Çağıran ekranın elinde zaten senkron/tam bir IlanModel varsa (örn.
+  // ilan detay ekranı), buradan geçirilir — sohbetMetaProvider'ın async
+  // çözümünü beklemeden ilk karede doğru ilanTip/ilanBaslik/vb. ile
+  // yazma işlemleri yapılabilir. null ise eski async yedek yola düşülür.
+  final IlanModel? bilinenIlan;
 
   const SohbetScreen({
     super.key,
@@ -43,6 +49,7 @@ class SohbetScreen extends ConsumerStatefulWidget {
     this.ilgileniyorumMesaji,
     this.autoOpenPanel = false,
     this.bildirimMesaji,
+    this.bilinenIlan,
   });
 
   @override
@@ -55,6 +62,42 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
   bool _degerlendirmeAcik = false;
   final _islemPaneliKey = GlobalKey();
 
+  // İlan meta bilgisi (ilanTip/ilanBaslik/ilanResimUrl/ilanSahibiId) —
+  // ekran açılır açılmaz BİR KEZ, güvenilir şekilde (await) yüklenip
+  // buraya yazılır. Sohbet dokümanını OLUŞTURAN/GÜNCELLEYEN yazma
+  // işlemleri (mesaj gönderme) bunu kullanır — null ise (henüz
+  // yüklenmedi/hata oldu) "sanki 'istek'miş gibi" sessizce yanlış
+  // varsaymak yerine boş geçilir (repository'nin isNotEmpty koruması
+  // sayesinde hiçbir alan yanlış veriyle yazılmaz, yalnızca eksik kalır).
+  SohbetMeta? _yuklenenMeta;
+
+  Future<void> _metaYukle() async {
+    // Çağıran ekran (örn. ilan detay) elindeki IlanModel'i doğrudan
+    // geçirdiyse, async provider'ı hiç beklemeden anında/senkron
+    // SohbetMeta oluştur — race condition'ın kaynağı olan bekleme
+    // penceresi bu giriş yolu için tamamen ortadan kalkar.
+    final ilan = widget.bilinenIlan;
+    if (ilan != null) {
+      _yuklenenMeta = SohbetMeta(
+        ilanBaslik: ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
+        ilanResimUrl: ilan.resimThumbUrl.isNotEmpty ? ilan.resimThumbUrl : ilan.resimUrl,
+        ilanSahibiId: ilan.kullaniciId,
+        ilanTip: ilan.tip,
+      );
+      return;
+    }
+    try {
+      final meta = await ref.read(
+        sohbetMetaProvider(sohbetId: _sohbetId, ilanId: widget.ilanId).future,
+      );
+      if (!mounted) return;
+      setState(() => _yuklenenMeta = meta);
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'sohbetScreen.metaYukle');
+      // _yuklenenMeta null kalır — yazma yolları boş değerlerle devam eder.
+    }
+  }
+
   /// widget.karsiKullaniciAd boş gelirse (eski sohbet, ilk açılış)
   /// provider'dan çeker. Provider keepAlive olduğu için ikinci açılışta anında gelir.
   String _karsiAd(WidgetRef ref) {
@@ -65,6 +108,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
   @override
   void initState() {
     super.initState();
+    _metaYukle();
     if (widget.ilgileniyorumMesaji != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _gonderIlgileniyorum());
     }
@@ -334,10 +378,10 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
       karsiKullaniciId: widget.karsiKullaniciId,
       karsiKullaniciAd: widget.karsiKullaniciAd,
       ilanId: widget.ilanId,
-      ilanBaslik: _meta.ilanBaslik,
-      ilanResimUrl: _meta.ilanResimUrl,
-      ilanSahibiId: _meta.ilanSahibiId,
-      ilanTip: _meta.ilanTip,
+      ilanBaslik: _yuklenenMeta?.ilanBaslik ?? '',
+      ilanResimUrl: _yuklenenMeta?.ilanResimUrl ?? '',
+      ilanSahibiId: _yuklenenMeta?.ilanSahibiId ?? '',
+      ilanTip: _yuklenenMeta?.ilanTip ?? '',
     );
   }
 
@@ -355,14 +399,6 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
     ]..sort();
     return '${ids[0]}_${ids[1]}_${widget.ilanId}';
   }
-
-  // İlan meta bilgisi (başlık/resim/sahip/tip) artık widget parametreleri
-  // yerine sohbetMetaProvider'dan gelir — tek kaynak, F2. Buton/gönderim
-  // metodları build() dışında olduğu için burada ref.read kullanılır;
-  // build()'daki banner ref.watch ile aynı provider'ı reaktif izler.
-  SohbetMeta get _meta =>
-      ref.read(sohbetMetaProvider(sohbetId: _sohbetId, ilanId: widget.ilanId)).value ??
-      const SohbetMeta();
 
   Future<void> _ucNoktaMenu(String benimUid) async {
     final sid = _sohbetId;
@@ -741,10 +777,10 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
           karsiKullaniciId: widget.karsiKullaniciId,
           karsiKullaniciAd: widget.karsiKullaniciAd,
           ilanId: widget.ilanId,
-          ilanBaslik: _meta.ilanBaslik,
-          ilanResimUrl: _meta.ilanResimUrl,
-          ilanSahibiId: _meta.ilanSahibiId,
-          ilanTip: _meta.ilanTip,
+          ilanBaslik: _yuklenenMeta?.ilanBaslik ?? '',
+          ilanResimUrl: _yuklenenMeta?.ilanResimUrl ?? '',
+          ilanSahibiId: _yuklenenMeta?.ilanSahibiId ?? '',
+          ilanTip: _yuklenenMeta?.ilanTip ?? '',
         );
   }
 
@@ -762,10 +798,10 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
           karsiKullaniciId: widget.karsiKullaniciId,
           karsiKullaniciAd: widget.karsiKullaniciAd,
           ilanId: widget.ilanId,
-          ilanBaslik: _meta.ilanBaslik,
-          ilanResimUrl: _meta.ilanResimUrl,
-          ilanSahibiId: _meta.ilanSahibiId,
-          ilanTip: _meta.ilanTip,
+          ilanBaslik: _yuklenenMeta?.ilanBaslik ?? '',
+          ilanResimUrl: _yuklenenMeta?.ilanResimUrl ?? '',
+          ilanSahibiId: _yuklenenMeta?.ilanSahibiId ?? '',
+          ilanTip: _yuklenenMeta?.ilanTip ?? '',
         );
   }
 }
