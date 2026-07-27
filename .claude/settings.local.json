@@ -139,7 +139,11 @@
       "Bash(git mv *)",
       "Bash(awk '/^commit /{c=$2} /allow read: if girisYapilmis\\\\\\(\\\\\\);$/{print c\": \"$0; getline; print c\": \"$0}')",
       "Bash(npm ci *)",
-      "Bash(echo \"exit:$?\")"
+      "Bash(echo \"exit:$?\")",
+      "Bash(grep -rn \"ad soyad\\\\|Ad Soyad boş\\\\|isim.*boş olamaz\\\\|telefon.*regex\\\\|RegExp\\(r'\\\\^\\\\\\\\+\\\\?90\" lib --include=*.dart)",
+      "Bash(wc -l /tmp_analyze.txt)",
+      "Bash(tail -100 /tmp_analyze.txt)",
+      "Bash(git check-ignore *)"
     ]
   }
 }

@@ -126,6 +126,13 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
     final uid = ref.read(currentUserProvider)?.uid;
     if (uid == null) return;
 
+    // Profil verisi henüz yüklenmediyse (controller'lar hâlâ boş) kaydetme —
+    // aksi halde kullanıcının mevcut bilgileri boş değerlerle ezilebilir.
+    if (!_veriYuklendi) {
+      AppSnackBar.hata(context, 'Veriler yükleniyor, lütfen bekle.');
+      return;
+    }
+
     if (_adSoyadCtrl.text.trim().isEmpty) {
       AppSnackBar.hata(context, 'Ad soyad boş bırakılamaz.');
       return;

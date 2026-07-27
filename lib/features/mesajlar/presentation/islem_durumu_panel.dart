@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -13,11 +14,17 @@ import '../../../shared/utils/app_snackbar.dart';
 class IslemDurumuPanel extends ConsumerWidget {
   final String sohbetId;
   final String karsiKullaniciAd;
+  // Çağıran ekranın elinde zaten senkron/doğru bir ilanTip varsa (örn.
+  // sohbet_screen.dart'ın bilinenIlan'dan türettiği meta), buradan
+  // geçirilir — null ise sohbetIlanTipProvider'ın (sohbet dokümanının
+  // henüz yazılmamış olabilecek ham alanı) eski/yedek yoluna düşülür.
+  final String? ilanTip;
 
   const IslemDurumuPanel({
     super.key,
     required this.sohbetId,
     required this.karsiKullaniciAd,
+    this.ilanTip,
   });
 
   @override
@@ -26,7 +33,8 @@ class IslemDurumuPanel extends ConsumerWidget {
     final durumlari    = ref.watch(islemDurumuProvider(sohbetId)).value ?? {};
     final ilanSahibiId = ref.watch(sohbetIlanSahibiIdProvider(sohbetId)).value ?? '';
     final kullanicilar = ref.watch(sohbetKullanicilarProvider(sohbetId)).value ?? [];
-    final ilanTip      = ref.watch(sohbetIlanTipProvider(sohbetId)).value ?? 'istek';
+    final ilanTip      = this.ilanTip ??
+        (ref.watch(sohbetIlanTipProvider(sohbetId)).value ?? 'istek');
     final ilanBaslik   = ref.watch(sohbetIlanBaslikProvider(sohbetId)).value ?? '';
 
     // iletisimBasladi otomatik tamamlanıyor — listeden ve sayaçtan çıkar
@@ -553,7 +561,15 @@ class _AnlasildiSatiriState extends State<_AnlasildiSatiri>
     } catch (e) {
       if (mounted) {
         setState(() => _gonderiliyor = false);
-        AppSnackBar.hata(context, 'Onaylanamadı. Lütfen tekrar dene.');
+        // Sohbet dokümanı hiç yoksa (henüz mesaj atılmadan "anlaşma öner"e
+        // basılırsa) Firestore .update() 'not-found' ile patlar — bu
+        // durumda net bir mesaj gösteriyoruz. Başka bir hata (ör. ağ
+        // kesintisi) sohbet zaten var olsa bile oluşabileceğinden, o
+        // durumlarda yanlış bilgi vermemek için genel mesaj korunuyor.
+        final mesaj = (e is FirebaseException && e.code == 'not-found')
+            ? 'Sohbet başlatmadan anlaşma önerilemez'
+            : 'Onaylanamadı. Lütfen tekrar dene.';
+        AppSnackBar.hata(context, mesaj);
       }
     }
   }
@@ -818,6 +834,7 @@ class _IslemDurumuTetikleyiciState
           child: IslemDurumuPanel(
             sohbetId: widget.sohbetId,
             karsiKullaniciAd: widget.karsiKullaniciAd,
+            ilanTip: widget.ilanTip,
           ),
         ),
         transitionsBuilder: (ctx, anim, _, child) => SlideTransition(

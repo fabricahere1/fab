@@ -200,6 +200,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
           child: IslemDurumuPanel(
             sohbetId: _sohbetId,
             karsiKullaniciAd: widget.karsiKullaniciAd,
+            ilanTip: _yuklenenMeta?.ilanTip,
           ),
         ),
         transitionsBuilder: (ctx, anim, _, child) => SlideTransition(
@@ -546,8 +547,25 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
     final guzergah = ilanAsync?.value != null
         ? '${ilanAsync!.value!.nereden} → ${ilanAsync.value!.nereye}'
         : '';
-    final meta = ref.watch(sohbetMetaProvider(sohbetId: _sohbetId, ilanId: widget.ilanId)).value
-        ?? const SohbetMeta();
+    // Provider henüz resolve olmadıysa (ilk kare), 'istek' gibi kör bir
+    // varsayılana düşmek yerine — elimizde zaten bilinenIlan varsa ondan
+    // türetilen doğru meta'yı kullanıyoruz. Provider resolve olduktan
+    // sonra ref.watch'ın canlı değeri devreye girer, reaktiflik korunur.
+    final meta = ref.watch(
+          sohbetMetaProvider(sohbetId: _sohbetId, ilanId: widget.ilanId),
+        ).value ??
+        (widget.bilinenIlan != null
+            ? SohbetMeta(
+                ilanBaslik: widget.bilinenIlan!.urun.isNotEmpty
+                    ? widget.bilinenIlan!.urun
+                    : 'İlan',
+                ilanResimUrl: widget.bilinenIlan!.resimThumbUrl.isNotEmpty
+                    ? widget.bilinenIlan!.resimThumbUrl
+                    : widget.bilinenIlan!.resimUrl,
+                ilanSahibiId: widget.bilinenIlan!.kullaniciId,
+                ilanTip: widget.bilinenIlan!.tip,
+              )
+            : const SohbetMeta());
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
