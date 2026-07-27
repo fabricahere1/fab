@@ -244,8 +244,17 @@ service cloud.firestore {
     // ═══════════════════════════════════════════════════════════════════
 
     match /sohbetler/{sohbetId} {
+      // DÜZELTME: get() henüz var olmayan bir sohbet için çağrılırsa
+      // (ör. "bu ilan için zaten sohbet var mı" kontrolü) resource null
+      // olur — resource.data'ya erişim hata fırlatırdı (bkz. TAM_SAGLIK_
+      // TARAMASI.md, goruntulenmeler'deki aynı desenin regresyonu).
+      // goruntulenmeler'in aksine burada 'allow: if girisYapilmis()'e
+      // sadeleştirilemez: sohbetler kimin kiminle konuştuğunu (kullanicilar
+      // listesi) taşıyor, list sorgusuyla herkese açılması gizlilik açığı
+      // olur. Bu yüzden yalnızca resource==null durumu ek olarak izin
+      // veriliyor, doküman VARSA katılımcı kontrolü aynen korunuyor.
       allow get, list: if girisYapilmis()
-        && request.auth.uid in resource.data.kullanicilar;
+        && (resource == null || request.auth.uid in resource.data.kullanicilar);
       allow create: if girisYapilmis()
         && request.auth.uid in request.resource.data.kullanicilar;
 

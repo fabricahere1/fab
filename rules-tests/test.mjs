@@ -375,6 +375,28 @@ async function main() {
     );
   });
 
+  // B13 — Regresyon (bkz. TAM_SAGLIK_TARAMASI.md, firestore.rules.oneri.txt
+  // düzeltmesi): HENÜZ hiç oluşturulmamış bir sohbeti get() ile sorgulama
+  // (ör. "bu ilan için A ile B arasında zaten sohbet var mı" kontrolü).
+  // resource null olur — read kuralı bunu reddetmemeli. Ardından, doküman
+  // GERÇEKTEN var olduğunda katılımcı olmayan (C) kullanıcının HÂLÂ
+  // erişemediğini doğrulayarak asıl güvenliğin bozulmadığını teyit ediyoruz.
+  await check('B13', 'Henüz var olmayan bir sohbeti get() ile sorgulama PERMISSION_DENIED fırlatmamalı', async () => {
+    const yokSohbetId = 'sohbet_hic_olusmadi_B13';
+    await assertSucceeds(asA.doc(`sohbetler/${yokSohbetId}`).get());
+  });
+
+  await check('B13b', 'Sohbet gerçekten oluşunca, katılımcı olmayan (C) kullanıcı HÂLÂ okuyamamalı', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await db.doc(`sohbetler/sohbet_b13_var`).set({
+        kullanicilar: [UID_A, UID_B],
+        islemDurumlari: {},
+      });
+    });
+    await assertFails(asC.doc(`sohbetler/sohbet_b13_var`).get());
+  });
+
   await testEnv.cleanup();
 }
 
