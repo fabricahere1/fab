@@ -147,7 +147,8 @@
       "Bash(firebase emulators:exec --only firestore \"node rules-tests/test.mjs\")",
       "Bash(winget install *)",
       "Bash(firebase --help)",
-      "Bash(gcloud config *)"
+      "Bash(gcloud config *)",
+      "Bash(git *)"
     ]
   }
 }

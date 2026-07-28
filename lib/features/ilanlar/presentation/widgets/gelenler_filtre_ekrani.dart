@@ -117,6 +117,11 @@ class _GelenlerFiltreEkraniState extends State<GelenlerFiltreEkrani> {
   late String _modalUlkeSehir;
   late final TextEditingController _neredenUlkeCtrl;
 
+  // Alt kategori gezinme — filtre_ekrani.dart ile aynı mimari: ayrı route/slide
+  // yerine aynı widget içinde state ile anlık geçiş.
+  List<String> _gezinmeYolu = [];
+  List<String> _geciciAltKeyler = [];
+
   @override
   void initState() {
     super.initState();
@@ -159,7 +164,7 @@ class _GelenlerFiltreEkraniState extends State<GelenlerFiltreEkrani> {
     ));
   }
 
-  Future<void> _anaKategoriTiklandi(app_constants.KategoriNode node) async {
+  void _anaKategoriTiklandi(app_constants.KategoriNode node) {
     if (node.yaprakMi) {
       setState(() {
         _modalKategoriYolu = [node.key];
@@ -167,40 +172,55 @@ class _GelenlerFiltreEkraniState extends State<GelenlerFiltreEkrani> {
       });
       return;
     }
+    setState(() {
+      _gezinmeYolu = [node.key];
+      _geciciAltKeyler = _modalKategoriYolu.isNotEmpty &&
+              _modalKategoriYolu.first == node.key
+          ? List<String>.from(_modalAltKeyler)
+          : [];
+    });
+  }
 
-    final altSecim = await showGeneralDialog<List<String>>(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: '',
-      barrierColor: Colors.black54,
-      transitionDuration: const Duration(milliseconds: 250),
-      pageBuilder: (_, _, _) => const SizedBox.shrink(),
-      transitionBuilder: (_, anim, _, _) {
-        final slide = Tween<Offset>(
-          begin: const Offset(1, 0), end: Offset.zero,
-        ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic));
-        return SlideTransition(
-          position: slide,
-          child: Material(
-            color: Colors.transparent,
-            child: _AltKategoriSayfasi(
-              anaNode: node,
-              mevcutSecim: _modalKategoriYolu.isNotEmpty &&
-                      _modalKategoriYolu.first == node.key
-                  ? _modalAltKeyler
-                  : const [],
-            ),
-          ),
-        );
-      },
-    );
-
-    if (altSecim != null) {
-      setState(() {
-        _modalKategoriYolu = [node.key];
-        _modalAltKeyler    = altSecim;
-      });
+  List<app_constants.KategoriNode> _altMevcutNodes() {
+    List<app_constants.KategoriNode> liste = app_constants.kKategoriAgaci;
+    for (final key in _gezinmeYolu) {
+      final node = liste.firstWhere(
+        (n) => n.key == key,
+        orElse: () => app_constants.KategoriNode(key: '', ad: ''),
+      );
+      if (node.key.isEmpty || node.altlar.isEmpty) break;
+      liste = node.altlar;
     }
+    return liste;
+  }
+
+  String _altBaslik() =>
+      app_constants.kategoriNodeBul(_gezinmeYolu.last)?.ad ?? '';
+
+  void _altGeriGit() {
+    if (_gezinmeYolu.length > 1) {
+      setState(
+        () => _gezinmeYolu = _gezinmeYolu.sublist(0, _gezinmeYolu.length - 1),
+      );
+    } else {
+      setState(() => _gezinmeYolu = []);
+    }
+  }
+
+  void _altSecimOnayla() {
+    setState(() {
+      _modalKategoriYolu = List<String>.from(_gezinmeYolu);
+      _modalAltKeyler    = List<String>.from(_geciciAltKeyler);
+      _gezinmeYolu = [];
+    });
+  }
+
+  void _altTumunuGoster() {
+    setState(() {
+      _modalKategoriYolu = [_gezinmeYolu.first];
+      _modalAltKeyler = [];
+      _gezinmeYolu = [];
+    });
   }
 
   Future<void> _ulkeSehirSec() async {
@@ -223,8 +243,14 @@ class _GelenlerFiltreEkraniState extends State<GelenlerFiltreEkrani> {
   @override
   Widget build(BuildContext context) {
     final ilanSayilari = widget.kategoriFacets;
+    final altSayfada = _gezinmeYolu.isNotEmpty;
 
-    return Scaffold(
+    return PopScope(
+      canPop: _gezinmeYolu.isEmpty,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _altGeriGit();
+      },
+      child: Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
@@ -235,19 +261,19 @@ class _GelenlerFiltreEkraniState extends State<GelenlerFiltreEkrani> {
               child: Row(
                 children: [
                   GestureDetector(
-                    onTap: () => Navigator.pop(context),
+                    onTap: altSayfada ? _altGeriGit : () => Navigator.pop(context),
                     child: const Padding(
                       padding: EdgeInsets.only(right: 12),
                       child: Icon(Icons.arrow_back_ios_new,
                           size: 18, color: AppColors.textPrimary),
                     ),
                   ),
-                  Text('Kategoriler',
+                  Text(altSayfada ? _altBaslik() : 'Kategoriler',
                       style: GoogleFonts.dmSans(
                           fontSize: 20, fontWeight: FontWeight.w700,
                           color: AppColors.textPrimary)),
                   const Spacer(),
-                  if (_herhangiSecildi)
+                  if (!altSayfada && _herhangiSecildi)
                     GestureDetector(
                       onTap: _temizle,
                       child: Text('Temizle',
@@ -260,6 +286,40 @@ class _GelenlerFiltreEkraniState extends State<GelenlerFiltreEkrani> {
             ),
             const Divider(height: 1, color: AppColors.divider),
 
+            if (altSayfada)
+              Expanded(
+                child: ListView(
+                  children: [
+                    _FiltreKategoriSatiri(
+                      ad: 'Tüm "${_altBaslik()}" Ürünleri',
+                      secili: _geciciAltKeyler.isEmpty,
+                      vurgulu: true,
+                      onTap: _altTumunuGoster,
+                    ),
+                    ..._altMevcutNodes().map((node) => _FiltreKategoriSatiri(
+                      ad: node.ad,
+                      secili: _geciciAltKeyler.contains(node.key),
+                      derinlikOku: !node.yaprakMi,
+                      onTap: () {
+                        if (node.yaprakMi) {
+                          setState(() {
+                            if (_geciciAltKeyler.contains(node.key)) {
+                              _geciciAltKeyler.remove(node.key);
+                            } else {
+                              _geciciAltKeyler.add(node.key);
+                            }
+                          });
+                        } else {
+                          setState(
+                            () => _gezinmeYolu = [..._gezinmeYolu, node.key],
+                          );
+                        }
+                      },
+                    )),
+                  ],
+                ),
+              )
+            else
             // ── Scrollable içerik ───────────────────────────────────────────
             Expanded(
               child: SingleChildScrollView(
@@ -387,6 +447,31 @@ class _GelenlerFiltreEkraniState extends State<GelenlerFiltreEkrani> {
           ],
         ),
       ),
+      bottomNavigationBar: altSayfada
+          ? SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                child: ElevatedButton(
+                  onPressed: _altSecimOnayla,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.red,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text(
+                    _geciciAltKeyler.isEmpty
+                        ? 'Tümünü Göster'
+                        : '${_geciciAltKeyler.length} kategori seçildi',
+                    style: GoogleFonts.dmSans(
+                        fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            )
+          : null,
+      ),
     );
   }
 }
@@ -490,156 +575,6 @@ class _FiltreKategoriSatiri extends StatelessWidget {
             else if (derinlikOku)
               const Icon(Icons.chevron_right, size: 20, color: AppColors.textSecondary),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Alt Kategori Tam Sayfa ────────────────────────────────────────────────────
-
-class _AltKategoriSayfasi extends StatefulWidget {
-  final app_constants.KategoriNode anaNode;
-  final List<String> mevcutSecim;
-
-  const _AltKategoriSayfasi({
-    required this.anaNode,
-    required this.mevcutSecim,
-  });
-
-  @override
-  State<_AltKategoriSayfasi> createState() => _AltKategoriSayfasiState();
-}
-
-class _AltKategoriSayfasiState extends State<_AltKategoriSayfasi> {
-  late List<String> _gezinmeYolu;
-  late List<String> _seciliKeyler;
-
-  @override
-  void initState() {
-    super.initState();
-    _gezinmeYolu  = [widget.anaNode.key];
-    _seciliKeyler = List<String>.from(widget.mevcutSecim);
-  }
-
-  List<app_constants.KategoriNode> _mevcutNodes() {
-    List<app_constants.KategoriNode> liste = app_constants.kKategoriAgaci;
-    for (final key in _gezinmeYolu) {
-      final node = liste.firstWhere(
-        (n) => n.key == key,
-        orElse: () => app_constants.KategoriNode(key: '', ad: ''),
-      );
-      if (node.key.isEmpty || node.altlar.isEmpty) break;
-      liste = node.altlar;
-    }
-    return liste;
-  }
-
-  String _baslik() =>
-      app_constants.kategoriNodeBul(_gezinmeYolu.last)?.ad ?? '';
-
-  void _geriGit() {
-    if (_gezinmeYolu.length > 1) {
-      setState(() => _gezinmeYolu = _gezinmeYolu.sublist(0, _gezinmeYolu.length - 1));
-    } else {
-      Navigator.pop(context);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final nodes = _mevcutNodes();
-
-    return PopScope(
-      canPop: _gezinmeYolu.length <= 1,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _geriGit();
-      },
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_rounded,
-                size: 18, color: AppColors.textPrimary),
-            onPressed: _geriGit,
-          ),
-          title: Text(
-            _baslik(),
-            style: GoogleFonts.dmSans(
-                fontSize: 16, fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary),
-          ),
-          actions: [
-            if (_seciliKeyler.isNotEmpty)
-              TextButton(
-                onPressed: () => setState(() => _seciliKeyler.clear()),
-                child: Text('Temizle',
-                    style: GoogleFonts.dmSans(
-                        fontSize: 12, color: AppColors.red,
-                        fontWeight: FontWeight.w500)),
-              ),
-          ],
-        ),
-        body: SafeArea(
-          child: Column(
-            children: [
-              const Divider(height: 1, color: AppColors.divider),
-              Expanded(
-                child: ListView(
-                  children: [
-                    _FiltreKategoriSatiri(
-                      ad: 'Tüm "${_baslik()}" Ürünleri',
-                      secili: _seciliKeyler.isEmpty,
-                      vurgulu: true,
-                      onTap: () => Navigator.pop(context, <String>[]),
-                    ),
-                    ...nodes.map((node) => _FiltreKategoriSatiri(
-                      ad: node.ad,
-                      secili: _seciliKeyler.contains(node.key),
-                      derinlikOku: !node.yaprakMi,
-                      onTap: () {
-                        if (node.yaprakMi) {
-                          setState(() {
-                            if (_seciliKeyler.contains(node.key)) {
-                              _seciliKeyler.remove(node.key);
-                            } else {
-                              _seciliKeyler.add(node.key);
-                            }
-                          });
-                        } else {
-                          setState(() => _gezinmeYolu = [..._gezinmeYolu, node.key]);
-                        }
-                      },
-                    )),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        bottomNavigationBar: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-            child: ElevatedButton(
-              onPressed: () => Navigator.pop(context, _seciliKeyler),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.red,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              child: Text(
-                _seciliKeyler.isEmpty
-                    ? 'Tümünü Göster'
-                    : '${_seciliKeyler.length} kategori seçildi',
-                style: GoogleFonts.dmSans(
-                    fontSize: 15, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
         ),
       ),
     );
