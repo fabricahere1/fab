@@ -842,18 +842,20 @@ class _SanaOzelHeroBanner extends ConsumerWidget {
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFE65100), Colors.black],
-                              stops: [0.0, 0.7],
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                            ),
+                            color: Colors.white,
                             borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.25),
+                                blurRadius: 6,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
                           ),
                           child: Text('Senin için önerilen',
                               style: GoogleFonts.poppins(
                                   fontSize: 15, fontWeight: FontWeight.w800,
-                                  color: Colors.white)),
+                                  color: Colors.black)),
                         ),
                         Text('İlgi alanlarına göre seçildi',
                             style: GoogleFonts.dmSans(

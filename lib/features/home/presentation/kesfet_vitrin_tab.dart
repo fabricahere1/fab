@@ -557,18 +557,20 @@ class KesfetHeroBanner extends ConsumerWidget {
                             child: Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF1565C0), Color(0xFF0D1B4C)],
-                                  stops: [0.0, 0.7],
-                                  begin: Alignment.centerLeft,
-                                  end: Alignment.centerRight,
-                                ),
+                                color: Colors.white,
                                 borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.25),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
                               ),
                               child: Text('Bu hafta öne çıkanlar',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white)),
+                                  style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.black)),
                             ),
                           ),
                         ),

@@ -32,6 +32,11 @@ void main() async {
   GoogleFonts.config.allowRuntimeFetching = false;
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
