@@ -33,17 +33,17 @@ class KesfetBolumBaslik extends StatelessWidget {
     this.onTumunuGor,
   });
 
-  // Hero banner'daki uçak/bavul deseninin küçültülmüş, nötr renkli ve çok
-  // daha soluk hâli — başlık şeridinin arkasına hafif bir doku katıyor,
-  // metnin okunurluğunu bozmayacak kadar transparan (bkz. KesfetHeroBanner).
-  static const _desenRengi = Color(0xFF455A64); // blue-grey — sayfadaki
-  // turuncu/kırmızı vurgularla çakışmasın diye bilinçli olarak nötr seçildi.
-
+  // Hero banner'daki uçak/bavul deseninin küçültülmüş hâli — başlık
+  // şeridinin arkasına hafif bir doku katıyor. Her ikon kendi rengiyle,
+  // %90 transparan (alpha 0.10) — metnin okunurluğunu bozmayacak kadar soluk.
   static const _desenIkonlari = <_DesenIkonu>[
-    _DesenIkonu(Icons.flight_takeoff_rounded, top: -6, right: 8, size: 34, alpha: 0.08),
-    _DesenIkonu(Icons.card_travel_outlined, bottom: -4, right: 60, size: 26, alpha: 0.07),
-    _DesenIkonu(Icons.local_shipping_outlined, top: 6, right: 110, size: 22, alpha: 0.06),
-    _DesenIkonu(Icons.shopping_bag_outlined, bottom: 2, right: 150, size: 20, alpha: 0.06),
+    _DesenIkonu(Icons.flight_takeoff_rounded, top: -6, right: 8, size: 34, alpha: 0.10, renk: Colors.green),
+    _DesenIkonu(Icons.card_travel_outlined, bottom: -4, right: 60, size: 26, alpha: 0.10, renk: Colors.blue),
+    _DesenIkonu(Icons.local_shipping_outlined, top: 6, right: 110, size: 22, alpha: 0.10, renk: Colors.yellow),
+    _DesenIkonu(Icons.shopping_bag_outlined, bottom: 2, right: 150, size: 20, alpha: 0.10, renk: Colors.red),
+    _DesenIkonu(Icons.location_on_outlined, top: 2, right: 190, size: 24, alpha: 0.10, renk: Colors.pink),
+    _DesenIkonu(Icons.star_outline_rounded, bottom: -6, right: 220, size: 22, alpha: 0.10, renk: Colors.brown),
+    _DesenIkonu(Icons.redeem_outlined, top: -4, right: 250, size: 20, alpha: 0.10, renk: Colors.purple),
   ];
 
   @override
@@ -61,7 +61,7 @@ class KesfetBolumBaslik extends StatelessWidget {
                     top: d.top,
                     bottom: d.bottom,
                     right: d.right,
-                    child: Icon(d.ikon, size: d.size, color: _desenRengi.withValues(alpha: d.alpha)),
+                    child: Icon(d.ikon, size: d.size, color: d.renk.withValues(alpha: d.alpha)),
                   ),
               ],
             ),
@@ -83,13 +83,30 @@ class KesfetBolumBaslik extends StatelessWidget {
               ),
               const SizedBox(width: 9),
               Expanded(
-                child: Text(
-                  _turkceBuyuk(baslik),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.bebasNeue(
-                    fontSize: 15,
-                    color: AppColors.textPrimary,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.25),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      _turkceBuyuk(baslik),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.bebasNeue(
+                        fontSize: 15,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -132,6 +149,7 @@ class _DesenIkonu {
   final double? right;
   final double size;
   final double alpha;
+  final Color renk;
 
   const _DesenIkonu(
     this.ikon, {
@@ -140,5 +158,6 @@ class _DesenIkonu {
     this.right,
     required this.size,
     required this.alpha,
+    required this.renk,
   });
 }

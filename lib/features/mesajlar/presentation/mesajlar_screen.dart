@@ -257,12 +257,12 @@ class _SohbetKarti extends ConsumerWidget {
                             imageUrl: sohbet.ilanResimUrl,
                             cacheKey: sohbet.ilanResimUrl,
                             cacheManager: AppCacheManager.instance,
-                            width: 48,
-                            height: 48,
+                            width: 58,
+                            height: 58,
                             fit: BoxFit.cover,
                             fadeInDuration: Duration.zero,
-                            memCacheWidth: 96,
-                            memCacheHeight: 96,
+                            memCacheWidth: 116,
+                            memCacheHeight: 116,
                             errorWidget: (_, _, _) =>
                                 const _IlanResimYokKutusu(),
                           ),
@@ -382,8 +382,8 @@ class _IlanResimYokKutusu extends StatelessWidget {
   const _IlanResimYokKutusu();
   @override
   Widget build(BuildContext context) => Container(
-        width: 48,
-        height: 48,
+        width: 58,
+        height: 58,
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(8),
