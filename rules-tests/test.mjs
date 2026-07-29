@@ -39,6 +39,8 @@ async function main() {
   const asA = testEnv.authenticatedContext(UID_A).firestore();
   const asB = testEnv.authenticatedContext(UID_B).firestore();
   const asC = testEnv.authenticatedContext('kullaniciC').firestore();
+  const UID_E = 'kullaniciE';
+  const asE = testEnv.authenticatedContext(UID_E).firestore();
 
   // ── Ortak seed verisi (kural motorunu atlayarak) ──
   const sohbetId = 'sohbet_AB';
@@ -48,6 +50,7 @@ async function main() {
     const db = ctx.firestore();
     await db.doc(`kullanicilar/${UID_A}`).set({ ad: 'A' });
     await db.doc(`kullanicilar/${UID_B}`).set({ ad: 'B' });
+    await db.doc(`kullanicilar/${UID_E}`).set({ ad: 'E', ortalamaPuan: 2 });
     await db.doc(`ilanlar/${ilanId}`).set({
       kullaniciId: UID_A,
       durum: 'reddedildi',
@@ -395,6 +398,265 @@ async function main() {
       });
     });
     await assertFails(asC.doc(`sohbetler/sohbet_b13_var`).get());
+  });
+
+  // ══════════ C) İLAN OLUŞTURMA HIZ SINIRLAMASI (COOLDOWN) ══════════
+  // kullaniciId=UID_B kullanılıyor — seed verisinde B'nin henüz hiç ilanı
+  // ve sonIlanOlusturmaZamani alanı yok, bu yüzden temiz bir başlangıç.
+
+  const ilanCreateVerisi = (ekstra = {}) => ({
+    kullaniciId: UID_B,
+    durum: 'onayBekliyor',
+    aktif: false,
+    ...ekstra,
+  });
+
+  const ilanVeCooldownYaz = (ilanKey) => {
+    const batch = asB.batch();
+    batch.set(asB.doc(`ilanlar/${ilanKey}`), ilanCreateVerisi());
+    batch.set(
+      asB.doc(`kullanicilar/${UID_B}`),
+      { sonIlanOlusturmaZamani: new Date() },
+      { merge: true }
+    );
+    return batch.commit();
+  };
+
+  // C1 — Kullanıcının hiç sonIlanOlusturmaZamani'ı yokken ilk ilanı
+  // oluşturması engellenmemeli (yeni kullanıcı kilitlenmesin).
+  await check('C1', 'Hiç cooldown damgası yokken ilk ilan oluşturma başarılı olmalı', async () => {
+    await assertSucceeds(ilanVeCooldownYaz('ilan_ratelimit_1'));
+  });
+
+  // C2 — C1'in hemen ardından (30sn dolmadan) ikinci bir ilan denemesi
+  // REDDEDİLMELİ — asıl hız sınırlaması testi.
+  await check('C2', '30 saniye dolmadan ikinci ilan denemesi reddedilmeli', async () => {
+    await assertFails(ilanVeCooldownYaz('ilan_ratelimit_2'));
+  });
+
+  // C3 — Kullanıcının son ilanı 30 saniyeden ESKİYSE (burada test ortamında
+  // gerçek zamanı 30sn beklemek yerine damgayı geriye alıyoruz), yeni ilan
+  // oluşturma yine başarılı olmalı — normal hızda kullanım kırılmamalı.
+  await check('C3', '30 saniyeden eski cooldown damgasıyla normal hızda ilan oluşturma başarılı olmalı', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await ctx.firestore().doc(`kullanicilar/${UID_B}`).set(
+        { sonIlanOlusturmaZamani: new Date(Date.now() - 40_000) },
+        { merge: true }
+      );
+    });
+    await assertSucceeds(ilanVeCooldownYaz('ilan_ratelimit_3'));
+  });
+
+  // ══════════ D) İLAN CREATE'TE İTİBAR/SAYAÇ ALANI ENJEKSİYONU ══════════
+  // kullaniciId=UID_E kullanılıyor — profilinde gerçek ortalamaPuan=2 var,
+  // C-serisindeki cooldown'dan bağımsız temiz bir kullanıcı.
+
+  // D1 — Yeni ilanı doğrudan favoriSayisi:50 ile doğurmaya çalışma.
+  await check('D1', 'CREATE sırasında favoriSayisi enjekte etme reddedilmeli', async () => {
+    await assertFails(
+      asE.doc(`ilanlar/ilan_inject_1`).set(
+        { kullaniciId: UID_E, durum: 'onayBekliyor', aktif: false, favoriSayisi: 50 }
+      )
+    );
+  });
+
+  // D2 — Yeni ilanı doğrudan onerilenPuan ile doğurmaya çalışma (yalnızca
+  // Admin SDK/Cloud Function yazabilmeli).
+  await check('D2', 'CREATE sırasında onerilenPuan enjekte etme reddedilmeli', async () => {
+    await assertFails(
+      asE.doc(`ilanlar/ilan_inject_2`).set(
+        { kullaniciId: UID_E, durum: 'onayBekliyor', aktif: false, onerilenPuan: 99 }
+      )
+    );
+  });
+
+  // D3 — Gerçek profil puanı (2) yerine sahte yüksek bir kullaniciPuan (5)
+  // ile ilan oluşturma — itibar sahteciliği reddedilmeli.
+  await check('D3', 'CREATE sırasında gerçek profil puanından farklı kullaniciPuan reddedilmeli', async () => {
+    await assertFails(
+      asE.doc(`ilanlar/ilan_inject_3`).set(
+        { kullaniciId: UID_E, durum: 'onayBekliyor', aktif: false, kullaniciPuan: 5 }
+      )
+    );
+  });
+
+  // D4 — Gerçek profil puanıyla (2) eşleşen kullaniciPuan ile normal ilan
+  // oluşturma başarılı olmalı — meşru akış kırılmamalı.
+  await check('D4', 'CREATE sırasında gerçek profil puanıyla eşleşen kullaniciPuan başarılı olmalı', async () => {
+    await assertSucceeds(
+      asE.doc(`ilanlar/ilan_inject_4`).set(
+        { kullaniciId: UID_E, durum: 'onayBekliyor', aktif: false, kullaniciPuan: 2 }
+      )
+    );
+  });
+
+  // ══════════ E) ŞİKAYET (RAPOR) HIZ SINIRLAMASI ══════════
+  // asA kullanılıyor — A'nın henüz sonSikayetZamani'ı yok, temiz başlangıç.
+
+  const sikayetVeCooldownYaz = (sikayetKey) => {
+    const batch = asA.batch();
+    batch.set(asA.doc(`sikayetler/${sikayetKey}`), {
+      sikayetEdenId: UID_A,
+      hedefId: UID_B,
+      hedefAd: 'B',
+      sebep: 'spam',
+      ilanId,
+    });
+    batch.set(
+      asA.doc(`kullanicilar/${UID_A}`),
+      { sonSikayetZamani: new Date() },
+      { merge: true }
+    );
+    return batch.commit();
+  };
+
+  // E1 — Hiç sonSikayetZamani'ı yokken ilk şikayeti gönderme başarılı olmalı.
+  await check('E1', 'Hiç cooldown damgası yokken ilk şikayet gönderme başarılı olmalı', async () => {
+    await assertSucceeds(sikayetVeCooldownYaz('sikayet_ratelimit_1'));
+  });
+
+  // E2 — E1'in hemen ardından (15sn dolmadan) ikinci bir şikayet denemesi
+  // REDDEDİLMELİ — kitlesel/taciz amaçlı şikayet spam'ini önleyen asıl test.
+  await check('E2', '15 saniye dolmadan ikinci şikayet denemesi reddedilmeli', async () => {
+    await assertFails(sikayetVeCooldownYaz('sikayet_ratelimit_2'));
+  });
+
+  // E3 — 15 saniyeden eski cooldown damgasıyla normal hızda şikayet
+  // gönderme yine başarılı olmalı — meşru akış kırılmamalı.
+  await check('E3', '15 saniyeden eski cooldown damgasıyla normal hızda şikayet gönderme başarılı olmalı', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await ctx.firestore().doc(`kullanicilar/${UID_A}`).set(
+        { sonSikayetZamani: new Date(Date.now() - 20_000) },
+        { merge: true }
+      );
+    });
+    await assertSucceeds(sikayetVeCooldownYaz('sikayet_ratelimit_3'));
+  });
+
+  // ══════════ F) MESAJ HIZ SINIRLAMASI (FLOOD/SPAM) ══════════
+  // Taze bir sohbet (sohbet_hiz_F) kullanılıyor — A ve B arasında, diğer
+  // testlerin sonGondereId/sonMesajZamani alanlarını hiç dokunmadığı temiz
+  // bir başlangıç. NOT: B11 testi kullanicilar/A.engellenenler=[B] bırakıyor
+  // ve sıfırlamıyor — burada temizlemezsek birbiriniEngellememis() bu
+  // seride A/B arası HER mesajı (benim yeni kodumla ilgisiz bir sebeple)
+  // reddeder.
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    const db = ctx.firestore();
+    await db.doc(`kullanicilar/${UID_A}`).set({ engellenenler: [] }, { merge: true });
+    await db.doc(`kullanicilar/${UID_B}`).set({ engellenenler: [] }, { merge: true });
+  });
+
+  const sohbetIdF = 'sohbet_hiz_F';
+  const mesajGonderF = (asKim, mesajKey, gondereId) => {
+    const batch = asKim.batch();
+    batch.set(
+      asKim.doc(`sohbetler/${sohbetIdF}`),
+      {
+        kullanicilar: [UID_A, UID_B],
+        sonGondereId: gondereId,
+        sonMesajZamani: new Date(),
+      },
+      { merge: true }
+    );
+    batch.set(asKim.doc(`sohbetler/${sohbetIdF}/mesajlar/${mesajKey}`), {
+      gondereId,
+      metin: 'test',
+    });
+    return batch.commit();
+  };
+
+  // F1 — Taze sohbette (ilk temas) A'nın ilk mesajı başarılı olmalı.
+  await check('F1', 'Taze sohbette A\'nın ilk mesajı başarılı olmalı', async () => {
+    await assertSucceeds(mesajGonderF(asA, 'mF1', UID_A));
+  });
+
+  // F2 — F1'in hemen ardından (1sn dolmadan) AYNI gönderenin (A) ikinci
+  // mesajı REDDEDİLMELİ — asıl flood/spam koruması testi.
+  await check('F2', '1 saniye dolmadan AYNI göndereninin ikinci mesajı reddedilmeli', async () => {
+    await assertFails(mesajGonderF(asA, 'mF2', UID_A));
+  });
+
+  // F3 — Karşı tarafın (B) hemen cevap yazması, timing'den BAĞIMSIZ olarak
+  // başarılı olmalı — cooldown yalnızca AYNI göndereni sınırlıyor.
+  await check('F3', 'Karşı tarafın (B) hemen cevap yazması timing\'den bağımsız başarılı olmalı', async () => {
+    await assertSucceeds(mesajGonderF(asB, 'mF3', UID_B));
+  });
+
+  // F4 — 1 saniyeden eski bir sonMesajZamani ile AYNI göndereninin (A) tekrar
+  // mesaj göndermesi yine başarılı olmalı — meşru akış kırılmamalı.
+  await check('F4', '1 saniyeden eski damgayla AYNI göndereninin tekrar mesajı başarılı olmalı', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await ctx.firestore().doc(`sohbetler/${sohbetIdF}`).set(
+        { sonGondereId: UID_A, sonMesajZamani: new Date(Date.now() - 2_000) },
+        { merge: true }
+      );
+    });
+    await assertSucceeds(mesajGonderF(asA, 'mF4', UID_A));
+  });
+
+  // ══════════ G) SCRAPING/TOPLU-DÖKME KORUMASI (list limit tavanı) ══════════
+
+  // G1 — Normal sayfalama boyutuyla (uygulamanın kendi sayfa boyutu 20'nin
+  // altında bir örnek) ilanlar listesi sorgulama başarılı olmalı.
+  await check('G1', 'ilanlar: limit(10) ile normal liste sorgusu başarılı olmalı', async () => {
+    await assertSucceeds(asA.collection('ilanlar').limit(10).get());
+  });
+
+  // G2 — Tek seferde tüm koleksiyonu dökmeye çalışan aşırı büyük bir limit
+  // REDDEDİLMELİ — asıl scraping koruması testi.
+  await check('G2', 'ilanlar: limit(5000) ile toplu-dökme denemesi reddedilmeli', async () => {
+    await assertFails(asA.collection('ilanlar').limit(5000).get());
+  });
+
+  // G3 — degerlendirmeler için de aynı tavan geçerli olmalı.
+  await check('G3', 'degerlendirmeler: limit(5000) ile toplu-dökme denemesi reddedilmeli', async () => {
+    await assertFails(asA.collection('degerlendirmeler').limit(5000).get());
+  });
+
+  // ══════════ H) FAVORİ EKLE/SİL TOGGLE-SPAM HIZ SINIRLAMASI ══════════
+  // asC kullanılıyor — henüz hiç favorisi ve sonFavoriZamani'ı olmayan
+  // temiz bir kullanıcı (diğer serilerden bağımsız).
+
+  const favoriVeCooldownYaz = (uid, asKim, favoriIlanId) => {
+    const favoriId = `${uid}_${favoriIlanId}`;
+    const batch = asKim.batch();
+    batch.set(asKim.doc(`favoriler/${favoriId}`), {
+      kullaniciId: uid,
+      ilanId: favoriIlanId,
+    });
+    batch.set(
+      asKim.doc(`kullanicilar/${uid}`),
+      { sonFavoriZamani: new Date() },
+      { merge: true }
+    );
+    return batch.commit();
+  };
+
+  // H1 — Hiç sonFavoriZamani'ı yokken ilk favori ekleme başarılı olmalı.
+  await check('H1', 'Hiç cooldown damgası yokken ilk favori ekleme başarılı olmalı', async () => {
+    await assertSucceeds(favoriVeCooldownYaz('kullaniciC', asC, 'ilan_h1'));
+  });
+
+  // H2 — H1'in hemen ardından (2sn dolmadan), aynı favoriyi sil(rules
+  // bypass ile simüle)-tekrar-ekle denemesi REDDEDİLMELİ — asıl toggle-spam
+  // koruması testi (ekle/sil/ekle döngüsü).
+  await check('H2', '2 saniye dolmadan ikinci favori ekleme denemesi reddedilmeli', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await ctx.firestore().doc(`favoriler/kullaniciC_ilan_h1`).delete();
+    });
+    await assertFails(favoriVeCooldownYaz('kullaniciC', asC, 'ilan_h1'));
+  });
+
+  // H3 — 2 saniyeden eski cooldown damgasıyla normal hızda favori ekleme
+  // yine başarılı olmalı — meşru akış kırılmamalı.
+  await check('H3', '2 saniyeden eski cooldown damgasıyla normal hızda favori ekleme başarılı olmalı', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await ctx.firestore().doc(`kullanicilar/kullaniciC`).set(
+        { sonFavoriZamani: new Date(Date.now() - 3_000) },
+        { merge: true }
+      );
+    });
+    await assertSucceeds(favoriVeCooldownYaz('kullaniciC', asC, 'ilan_h1'));
   });
 
   await testEnv.cleanup();

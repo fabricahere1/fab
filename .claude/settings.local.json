@@ -148,7 +148,27 @@
       "Bash(winget install *)",
       "Bash(firebase --help)",
       "Bash(gcloud config *)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(grep -n \"ilanlar/.*\\\\`\\\\\\).set\\(\\\\|ilan_yeni\\\\|yeni ilan\\\\|ilan olustur\" rules-tests/test.mjs)",
+      "Bash(firebase emulators:exec --only firestore --project rules-test-iste-v3 \"node rules-tests/debug_f1.mjs\")",
+      "Bash(flutter devices *)",
+      "Bash(flutter build *)",
+      "Bash(adb -s 95e6a66b install -r build/app/outputs/flutter-apk/app-debug.apk)",
+      "Bash(adb -s 95e6a66b shell am start -n com.bringin.iste/com.bringin.iste.MainActivity)",
+      "Bash(adb -s 95e6a66b shell \"monkey -p com.bringin.iste -c android.intent.category.LAUNCHER 1\")",
+      "Bash(adb -s 95e6a66b shell monkey -p com.fabricahere.iste_v3 -c android.intent.category.LAUNCHER 1)",
+      "Bash(adb -s 95e6a66b logcat -c)",
+      "Bash(adb -s 95e6a66b shell screencap -p /sdcard/ss1.png)",
+      "Bash(adb -s 95e6a66b pull /sdcard/ss1.png \"C:/Users/User/AppData/Local/Temp/claude/C--src-iste-v3/e2f33594-e530-4b03-83b7-55a05d51cfe6/scratchpad/ss1.png\")",
+      "Bash(export MSYS_NO_PATHCONV=1)",
+      "Bash(adb -s 95e6a66b shell input tap 535 1392)",
+      "Bash(adb -s 95e6a66b shell input text \"hizli1\")",
+      "Bash(adb -s 95e6a66b shell input tap 988 1400)",
+      "Bash(adb -s 95e6a66b shell input text \"hizli2\")",
+      "Bash(adb -s 95e6a66b logcat -d)",
+      "Bash(adb -s 95e6a66b shell screencap -p /sdcard/ss2.png)",
+      "Bash(adb -s 95e6a66b pull /sdcard/ss2.png \"C:/Users/User/AppData/Local/Temp/claude/C--src-iste-v3/e2f33594-e530-4b03-83b7-55a05d51cfe6/scratchpad/ss2.png\")",
+      "Bash(adb -s 95e6a66b logcat -d -v time)"
     ]
   }
 }

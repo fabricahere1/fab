@@ -371,7 +371,19 @@ class IlanRepository {
         if (thumbUrl.isNotEmpty) ilanData['resimThumbUrl'] = thumbUrl;
       }
 
-      final ref = await _col.add(ilanData);
+      // İlan yazımı + kullanıcının "son ilan oluşturma zamanı" damgası TEK
+      // atomik batch içinde birlikte yazılır — firestore.rules.oneri.txt'teki
+      // create cooldown kuralı bu alanı okuyor; ayrı yazılırsa iki işlem
+      // arasında tutarsızlık/atlatma penceresi doğar.
+      final ref = _col.doc();
+      final batch = firestore.batch();
+      batch.set(ref, ilanData);
+      batch.set(
+        firestore.collection(Collections.kullanicilar).doc(user.uid),
+        {'sonIlanOlusturmaZamani': FieldValue.serverTimestamp()},
+        SetOptions(merge: true),
+      );
+      await batch.commit();
       return ref.id;
     } catch (e) {
       // Upload yarıda kestiyse yüklenmiş dosyaları temizle
@@ -549,6 +561,14 @@ class IlanRepository {
       txn.update(_col.doc(ilan.id), {
         'favoriSayisi': FieldValue.increment(1),
       });
+      // Hız sınırlaması: hızlı ekle/sil/ekle döngüsüyle favoriSayisi'ni
+      // spam'lemeyi önlemek için — bkz. firestore.rules.oneri.txt'teki
+      // favoriler/create cooldown kuralı (AYNI transaction'da yazılıyor).
+      txn.set(
+        firestore.collection(Collections.kullanicilar).doc(kullaniciId),
+        {'sonFavoriZamani': FieldValue.serverTimestamp()},
+        SetOptions(merge: true),
+      );
       return true;
     });
     return yazdi;

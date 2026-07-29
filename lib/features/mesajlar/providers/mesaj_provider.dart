@@ -111,6 +111,24 @@ class SohbetNotifier extends _$SohbetNotifier {
   String? _sonOkunduMesajId;
   final _geciciIdler = <String>{};
 
+  // firestore.rules.oneri.txt'teki mesajHizSiniriGecerliMi() (aynı gönderenin
+  // 1sn'den kısa aralıklı ardışık mesajını reddeden hız sınırı) ile AYNI
+  // pencere — burada kullanıcıya "gönderilemedi" hatası göstermek yerine,
+  // gönderimi cooldown dolana kadar sessizce erteliyoruz. 1sn'lik rules
+  // penceresinden biraz fazla (1100ms) tutuluyor ki ağ gecikmesi payı olsun.
+  DateTime? _sonGonderimZamani;
+
+  Future<void> _mesajHizSiniriBekle() async {
+    final onceki = _sonGonderimZamani;
+    _sonGonderimZamani = DateTime.now();
+    if (onceki == null) return;
+    const minAralik = Duration(milliseconds: 1100);
+    final gecen = _sonGonderimZamani!.difference(onceki);
+    if (gecen < minAralik) {
+      await Future.delayed(minAralik - gecen);
+    }
+  }
+
   @override
   SohbetEkraniState build({
     required String karsiKullaniciId,
@@ -283,6 +301,7 @@ class SohbetNotifier extends _$SohbetNotifier {
     if (!ref.mounted) return;
     final String mesajId;
     final gonderimZamani = DateTime.now();
+    await _mesajHizSiniriBekle();
     try {
       mesajId = await _repo.mesajGonder(
         sohbetId: _sohbetId,
@@ -344,6 +363,7 @@ class SohbetNotifier extends _$SohbetNotifier {
     try {
       final url = await _repo.resimYukle(dosya: dosya, gondereId: _benimId);
       if (!ref.mounted) return;
+      await _mesajHizSiniriBekle();
       await _repo.mesajGonder(
         sohbetId: _sohbetId,
         gondereId: _benimId,

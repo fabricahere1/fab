@@ -154,7 +154,13 @@ class KullaniciRepository {
     required String sebep,
     String ilanId = '',
   }) async {
-    await firestore.collection(Collections.sikayetler).add({
+    // Şikayet yazımı + şikayet edenin "son şikayet zamanı" damgası TEK
+    // atomik batch içinde birlikte yazılır — firestore.rules.oneri.txt'teki
+    // create cooldown kuralı bu alanı okuyor (kitlesel/taciz amaçlı şikayet
+    // spam'ini önlemek için — bkz. sonIlanOlusturmaZamani ile aynı desen).
+    final sikayetRef = firestore.collection(Collections.sikayetler).doc();
+    final batch = firestore.batch();
+    batch.set(sikayetRef, {
       'sikayetEdenId': sikayetEdenId,
       'hedefId':       hedefId,
       'hedefAd':       hedefAd,
@@ -162,6 +168,12 @@ class KullaniciRepository {
       'ilanId':        ilanId,
       'tarih':         FieldValue.serverTimestamp(),
     });
+    batch.set(
+      firestore.collection(Collections.kullanicilar).doc(sikayetEdenId),
+      {'sonSikayetZamani': FieldValue.serverTimestamp()},
+      SetOptions(merge: true),
+    );
+    await batch.commit();
   }
 
   // ── Takip sistemi ──────────────────────────────────────────────────────────

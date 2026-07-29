@@ -40,6 +40,21 @@ service cloud.firestore {
     // Alıcının VE gönderenin kendi profil dokümanları (kullanicilar/{uid})
     // ise bu batch'in bir parçası DEĞİL, önceden var olan dokümanlar —
     // o yüzden ikisi için de düz get() (getAfter değil) doğru ve yeterli.
+    // Hız sınırlaması: AYNI kullanıcının bir sohbette art arda, çok kısa
+    // aralıklarla mesaj göndermesini (flood/spam) sınırlar — YENİ bir alan
+    // gerekmiyor, mesajGonder()'ın zaten HER göndermede aynı batch'te
+    // yazdığı sohbetler/{sohbetId}.sonGondereId + sonMesajZamani'ı kullanıyor.
+    // Karşı tarafın hemen cevap yazması (sonGondereId farklı) ETKİLENMEZ —
+    // yalnızca AYNI gönderenin peş peşe, 1 saniyeden kısa aralıklı mesajları
+    // engellenir. Sohbet henüz hiç yoksa (ilk temas) engellenmez.
+    function mesajHizSiniriGecerliMi(sohbetId) {
+      let sohbetYolu = /databases/$(database)/documents/sohbetler/$(sohbetId);
+      return !exists(sohbetYolu)
+        || get(sohbetYolu).data.get('sonGondereId', '') != request.auth.uid
+        || request.time > get(sohbetYolu).data.get('sonMesajZamani', timestamp.value(0))
+             + duration.value(1, 's');
+    }
+
     function birbiriniEngellememis(sohbetId) {
       let katilimcilar = getAfter(/databases/$(database)/documents/sohbetler/$(sohbetId)).data.kullanicilar;
       let aliciUid = katilimcilar[0] == request.auth.uid ? katilimcilar[1] : katilimcilar[0];
@@ -76,6 +91,26 @@ service cloud.firestore {
         && (!degisenAlanlar.hasAny(['goruntulenmeSayisi']) ||
               (yeniGoruntulenme == eskiGoruntulenme + 1
                  && existsAfter(/databases/$(database)/documents/goruntulenmeler/$(goruntulenmeId))));
+    }
+
+    // İlan CREATE sırasında sunucu-otoritesi alanların (itibar/sayaç)
+    // saldırgan tarafından baştan enjekte edilmesini engeller:
+    // - favoriSayisi/goruntulenmeSayisi yeni ilanda 0'dan farklı olamaz
+    //   (UPDATE tarafında zaten gecerliSayacGuncellemesi() ile korunuyorlardı,
+    //   ama CREATE'te hiç kontrol edilmiyordu — belge doğrudan
+    //   favoriSayisi:99999 ile doğabiliyordu).
+    // - onerilenPuan/algoliaHata client'tan hiç yazılamaz (yalnızca Admin SDK).
+    // - kullaniciPuan, kullanıcının kullanicilar/{uid}.ortalamaPuan alanındaki
+    //   GERÇEK değere eşit olmalı — aksi halde bir kullanıcı itibarını
+    //   (güven puanını) kendi ilanında sahte yüksek bir sayıyla gösterebilirdi.
+    function ilanOlusturmaVerisiGecerliMi() {
+      let profilYolu = /databases/$(database)/documents/kullanicilar/$(request.auth.uid);
+      let gercekPuan = !exists(profilYolu) ? 0 : get(profilYolu).data.get('ortalamaPuan', 0);
+      return request.resource.data.get('favoriSayisi', 0) == 0
+        && request.resource.data.get('goruntulenmeSayisi', 0) == 0
+        && !('onerilenPuan' in request.resource.data)
+        && !('algoliaHata' in request.resource.data)
+        && request.resource.data.get('kullaniciPuan', 0) == gercekPuan;
     }
 
     function takipSayaciGecerliMi(uid) {
@@ -192,16 +227,35 @@ service cloud.firestore {
     // ═══════════════════════════════════════════════════════════════════
 
     match /ilanlar/{ilanId} {
-      allow get, list: if true;
+      allow get: if true;
+      // Scraping/toplu-dökme koruması: herkese açık liste sorgusu tek
+      // seferde en fazla 100 belge çekebilir (uygulamanın kendi sayfa
+      // boyutu 20 — burası bilinçli olarak daha geniş bir tavan, gelecekte
+      // sayfa boyutu değişirse kırılmasın diye). Bu olmadan, kimliksiz/
+      // client dışı biri limit(100000) gibi tek bir sorguyla TÜM ilanlar
+      // koleksiyonunu bir defada indirebilirdi.
+      allow list: if request.query.limit <= 100;
 
       // Yeni ilan her zaman moderasyon bekler durumda doğar — client
       // kendini doğrudan 'yayinda' olarak açamaz. (ilanModerasyonu trigger'ı
       // zaten bunu koşulsuz eziyor; bu, tetiklenene kadarki anlık pencereyi
       // de kapatan ekstra bir savunma katmanı.)
+      // Hız sınırlaması: kullanıcı, kendi profil dokümanındaki
+      // sonIlanOlusturmaZamani üzerinden son 30 saniye içinde ilan
+      // oluşturduysa yeni create reddedilir (bkz. ilanOlustur() — bu alan,
+      // ilan yazımıyla AYNI atomik batch'te güncelleniyor). Profil dokümanı
+      // yoksa veya alan hiç yazılmamışsa engellenmez (yeni kullanıcı kilitlenmesin).
       allow create: if girisYapilmis()
         && request.resource.data.kullaniciId == request.auth.uid
         && request.resource.data.get('durum', 'onayBekliyor') == 'onayBekliyor'
-        && request.resource.data.get('aktif', false) == false;
+        && request.resource.data.get('aktif', false) == false
+        && (
+          !exists(/databases/$(database)/documents/kullanicilar/$(request.auth.uid))
+          || request.time > get(/databases/$(database)/documents/kullanicilar/$(request.auth.uid))
+               .data.get('sonIlanOlusturmaZamani', timestamp.value(0))
+               + duration.value(30, 's')
+        )
+        && ilanOlusturmaVerisiGecerliMi();
 
       // Sahip; durum/onerilenPuan/algoliaHata/kullaniciPuan HARİÇ her alanı
       // düzenleyebilir — bu alanlar yalnızca Admin SDK (Cloud Functions)
@@ -294,7 +348,8 @@ service cloud.firestore {
         allow create: if girisYapilmis()
           && request.resource.data.gondereId == request.auth.uid
           && sohbetKatilimcisiMiCreateSirasinda(sohbetId)
-          && birbiriniEngellememis(sohbetId);
+          && birbiriniEngellememis(sohbetId)
+          && mesajHizSiniriGecerliMi(sohbetId);
 
         // DEĞİŞTİ: okundu işaretleyenin de gerçekten sohbetin tarafı olduğu
         // doğrulanıyor.
@@ -316,9 +371,20 @@ service cloud.firestore {
     match /favoriler/{favoriId} {
       allow get, list: if girisYapilmis()
         && (resource == null || resource.data.kullaniciId == request.auth.uid);
+      // Hız sınırlaması: hızlı ekle/sil/ekle döngüsüyle favoriSayisi'ni
+      // (ve favoriler koleksiyonunu) spam'lemeyi önlemek için — kullanıcının
+      // sonFavoriZamani'ı üzerinden 2 saniyelik cooldown. favoriyeEkle()
+      // bu alanı AYNI transaction'da güncelliyor. Silme (delete) etkilenmiyor
+      // — yalnızca YENİ bir favori kaydı oluşturmak sınırlanıyor.
       allow create: if girisYapilmis()
         && request.resource.data.kullaniciId == request.auth.uid
-        && favoriId == request.auth.uid + '_' + request.resource.data.ilanId;
+        && favoriId == request.auth.uid + '_' + request.resource.data.ilanId
+        && (
+          !exists(/databases/$(database)/documents/kullanicilar/$(request.auth.uid))
+          || request.time > get(/databases/$(database)/documents/kullanicilar/$(request.auth.uid))
+               .data.get('sonFavoriZamani', timestamp.value(0))
+               + duration.value(2, 's')
+        );
       allow delete: if girisYapilmis()
         && resource.data.kullaniciId == request.auth.uid;
     }
@@ -352,7 +418,9 @@ service cloud.firestore {
     // ═══════════════════════════════════════════════════════════════════
 
     match /degerlendirmeler/{degId} {
-      allow get, list: if true;
+      allow get: if true;
+      // ilanlar'daki aynı scraping/toplu-dökme koruması (bkz. yukarıdaki yorum).
+      allow list: if request.query.limit <= 100;
       allow create: if girisYapilmis()
         && request.resource.data.degerlendireninId == request.auth.uid
         && request.resource.data.hedefKullaniciId != request.auth.uid
@@ -394,8 +462,19 @@ service cloud.firestore {
 
     match /sikayetler/{sikayetId} {
       allow get, list: if false;
+      // Hız sınırlaması: kitlesel/taciz amaçlı şikayet spam'ini (ör. bir
+      // rakibin tüm ilanlarını art arda şikayet ederek moderasyon kuyruğunu
+      // doldurma) önlemek için kullaniciId'nin sonSikayetZamani üzerinden
+      // 15 saniyelik cooldown'u var — bkz. ilanlar/create'teki aynı desen
+      // (sikayetGonder() bu alanı AYNI atomik batch'te güncelliyor).
       allow create: if girisYapilmis()
-        && request.resource.data.sikayetEdenId == request.auth.uid;
+        && request.resource.data.sikayetEdenId == request.auth.uid
+        && (
+          !exists(/databases/$(database)/documents/kullanicilar/$(request.auth.uid))
+          || request.time > get(/databases/$(database)/documents/kullanicilar/$(request.auth.uid))
+               .data.get('sonSikayetZamani', timestamp.value(0))
+               + duration.value(15, 's')
+        );
     }
 
     // ═══════════════════════════════════════════════════════════════════
