@@ -436,18 +436,21 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
               _SatirOge(
                 icon: Icons.list_alt_outlined,
                 label: 'İlanlarım',
+                iconColor: const Color(0xFFD2691E),
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const IlanlarimScreen())),
               ),
               _Ayrac(),
               _SatirOge(
                 icon: Icons.favorite_border,
                 label: 'Favorilerim',
+                iconColor: const Color(0xFFD2691E).withValues(alpha: 0.9),
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FavorilerScreen())),
               ),
               _Ayrac(),
               _SatirOge(
                 icon: Icons.star_border,
                 label: 'Aldığım Değerlendirmeler',
+                iconColor: const Color(0xFFD2691E).withValues(alpha: 0.8),
                 onTap: () {
                   final uid2 = ref.read(currentUserProvider)?.uid ?? '';
                   final ad = ref.read(benimKullaniciProfilProvider).value?.adSoyad ?? '';
@@ -461,6 +464,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
               _SatirOge(
                 icon: Icons.hourglass_empty_rounded,
                 label: 'Bekleyen Değerlendirmeler',
+                iconColor: const Color(0xFFD2691E).withValues(alpha: 0.7),
                 onTap: () {
                   if (uid.isEmpty) return;
                   Navigator.push(context, MaterialPageRoute(
@@ -493,12 +497,14 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
               _SatirOge(
                 icon: Icons.settings_outlined,
                 label: 'Ayarlar',
+                iconColor: const Color(0xFFD2691E).withValues(alpha: 0.6),
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AyarlarScreen())),
               ),
               _Ayrac(),
               _SatirOge(
                 icon: Icons.mail_outline,
                 label: 'İletişim',
+                iconColor: const Color(0xFFD2691E).withValues(alpha: 0.5),
                 onTap: () => iletisimFormAc(
                   context: context,
                   kaynak: 'iletisim',
@@ -510,12 +516,14 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
               _SatirOge(
                 icon: Icons.privacy_tip_outlined,
                 label: 'Gizlilik Politikası',
+                iconColor: const Color(0xFFD2691E).withValues(alpha: 0.4),
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GizlilikPolitikasiScreen())),
               ),
               _Ayrac(),
               _SatirOge(
                 icon: Icons.description_outlined,
                 label: 'Kullanım Koşulları',
+                iconColor: const Color(0xFFD2691E).withValues(alpha: 0.3),
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const KullanimKosullariScreen())),
               ),
             ],
@@ -805,6 +813,7 @@ class _SatirOge extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color labelColor;
+  final Color? iconColor;
   final VoidCallback onTap;
   final bool showArrow;
   final int badge;
@@ -814,6 +823,7 @@ class _SatirOge extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.labelColor = AppColors.textPrimary,
+    this.iconColor,
     this.showArrow = true,
     this.badge = 0,
   });
@@ -830,7 +840,10 @@ class _SatirOge extends StatelessWidget {
             Container(
               width: 36, height: 36,
               decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
-              child: Icon(icon, color: labelColor == AppColors.textPrimary ? const Color(0xFF7C3AED) : labelColor, size: 20),
+              child: Icon(icon,
+                  color: iconColor ??
+                      (labelColor == AppColors.textPrimary ? const Color(0xFF7C3AED) : labelColor),
+                  size: 20),
             ),
             const SizedBox(width: 14),
             Expanded(

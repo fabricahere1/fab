@@ -33,11 +33,40 @@ class KesfetBolumBaslik extends StatelessWidget {
     this.onTumunuGor,
   });
 
+  // Hero banner'daki uçak/bavul deseninin küçültülmüş, nötr renkli ve çok
+  // daha soluk hâli — başlık şeridinin arkasına hafif bir doku katıyor,
+  // metnin okunurluğunu bozmayacak kadar transparan (bkz. KesfetHeroBanner).
+  static const _desenRengi = Color(0xFF455A64); // blue-grey — sayfadaki
+  // turuncu/kırmızı vurgularla çakışmasın diye bilinçli olarak nötr seçildi.
+
+  static const _desenIkonlari = <_DesenIkonu>[
+    _DesenIkonu(Icons.flight_takeoff_rounded, top: -6, right: 8, size: 34, alpha: 0.08),
+    _DesenIkonu(Icons.card_travel_outlined, bottom: -4, right: 60, size: 26, alpha: 0.07),
+    _DesenIkonu(Icons.local_shipping_outlined, top: 6, right: 110, size: 22, alpha: 0.06),
+    _DesenIkonu(Icons.shopping_bag_outlined, bottom: 2, right: 150, size: 20, alpha: 0.06),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 12, 10),
-      child: Column(
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: Stack(
+              children: [
+                for (final d in _desenIkonlari)
+                  Positioned(
+                    top: d.top,
+                    bottom: d.bottom,
+                    right: d.right,
+                    child: Icon(d.ikon, size: d.size, color: _desenRengi.withValues(alpha: d.alpha)),
+                  ),
+              ],
+            ),
+          ),
+          Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -88,8 +117,28 @@ class KesfetBolumBaslik extends StatelessWidget {
               ),
             ),
           ),
+            ],
+          ),
         ],
       ),
     );
   }
+}
+
+class _DesenIkonu {
+  final IconData ikon;
+  final double? top;
+  final double? bottom;
+  final double? right;
+  final double size;
+  final double alpha;
+
+  const _DesenIkonu(
+    this.ikon, {
+    this.top,
+    this.bottom,
+    this.right,
+    required this.size,
+    required this.alpha,
+  });
 }
