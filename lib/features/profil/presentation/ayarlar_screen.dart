@@ -747,6 +747,14 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
 
     if (onay != true || !mounted) return;
 
+    // DÜZELTME: native Google hesap seçici (SignInHubActivity) açılırken/
+    // kapanırken Activity geçişi bazı cihazlarda (OEM'e göre) kısa bir
+    // siyah ekran flaşı gösterebiliyor — bunu, seçici AÇILMADAN ÖNCE
+    // (googleIleYenidenGiris/_googleSignIn.signIn() çağrılmadan önce)
+    // kendi loading dialog'umuzu göstererek kapatıyoruz; eskiden bu dialog
+    // yalnızca hesap SEÇİLDİKTEN SONRA (onHesapSecildi) açılıyordu, geçişin
+    // kendisi hiç kapatılmıyordu.
+    _silmeProgressGoster('Google hesabı açılıyor...');
     try {
       final yenidenGiris = await ref.read(authProvider.notifier)
           .googleIleYenidenGiris(
