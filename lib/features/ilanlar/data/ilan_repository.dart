@@ -144,15 +144,15 @@ class IlanRepository {
         .orderBy('olusturmaTarihi', descending: true)
         .limit(50); // fazla çek, sonra puana göre sırala
     try {
+      final snap = await q.get(const GetOptions(source: Source.server));
+      final ilanlar = snap.docs.map(IlanModel.fromFirestore).toList();
+      return _puanaGoreSirala(ilanlar, limit);
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'ilanRepo.haftaninEnleriServer'); /* çevrimdışı olabilir — cache'e düş */
       final cache = await q.get(const GetOptions(source: Source.cache));
-      if (cache.docs.isNotEmpty) {
-        final ilanlar = cache.docs.map(IlanModel.fromFirestore).toList();
-        return _puanaGoreSirala(ilanlar, limit);
-      }
-    } catch (e, s) { AppHataYonetici.logla(e, s, etiket: 'ilanRepo.haftaninEnleriCache'); /* bilinçli sessiz: sunucudan çekilmeye devam eder */ }
-    final snap = await q.get(const GetOptions(source: Source.server));
-    final ilanlar = snap.docs.map(IlanModel.fromFirestore).toList();
-    return _puanaGoreSirala(ilanlar, limit);
+      final ilanlar = cache.docs.map(IlanModel.fromFirestore).toList();
+      return _puanaGoreSirala(ilanlar, limit);
+    }
   }
 
   List<IlanModel> _puanaGoreSirala(List<IlanModel> ilanlar, int limit) {
@@ -226,10 +226,14 @@ class IlanRepository {
     );
   }
 
+  // limit(100): firestore.rules'taki "allow list: if request.query.limit
+  // <= 100" scraping korumasıyla uyumlu üst sınır — limitsiz sorgu bu
+  // kural tarafından reddediliyordu (bkz. İlanlarım ekranı regresyonu).
   Stream<List<IlanModel>> kullaniciIlanlarStream(String kullaniciId) {
     return _col
         .where('kullaniciId', isEqualTo: kullaniciId)
         .orderBy('olusturmaTarihi', descending: true)
+        .limit(100)
         .snapshots()
         .map((snap) => snap.docs.map(IlanModel.fromFirestore).toList());
   }

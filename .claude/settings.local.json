@@ -168,7 +168,12 @@
       "Bash(adb -s 95e6a66b logcat -d)",
       "Bash(adb -s 95e6a66b shell screencap -p /sdcard/ss2.png)",
       "Bash(adb -s 95e6a66b pull /sdcard/ss2.png \"C:/Users/User/AppData/Local/Temp/claude/C--src-iste-v3/e2f33594-e530-4b03-83b7-55a05d51cfe6/scratchpad/ss2.png\")",
-      "Bash(adb -s 95e6a66b logcat -d -v time)"
+      "Bash(adb -s 95e6a66b logcat -d -v time)",
+      "WebFetch(domain:firebase.google.com)",
+      "Bash(firebase functions:list)",
+      "Bash(firebase firestore:query)",
+      "Bash(gcloud --version)",
+      "Bash(firebase firestore:indexes *)"
     ]
   }
 }

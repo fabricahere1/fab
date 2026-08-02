@@ -83,6 +83,7 @@ const List<KategoriNode> kKategoriAgaci = [
       KategoriNode(key: 'kadin_giyim',    ad: 'Giyim'),
       KategoriNode(key: 'kadin_ayakkabi', ad: 'Ayakkabı'),
       KategoriNode(key: 'kadin_guzellik', ad: 'Güzellik & Makyaj & Bakım'),
+      KategoriNode(key: 'kadin_aksesuar', ad: 'Aksesuar&Parfüm'),
     ],
   ),
 
@@ -93,7 +94,7 @@ const List<KategoriNode> kKategoriAgaci = [
     altlar: [
       KategoriNode(key: 'erkek_giyim',    ad: 'Giyim'),
       KategoriNode(key: 'erkek_ayakkabi', ad: 'Ayakkabı'),
-      KategoriNode(key: 'erkek_aksesuar', ad: 'Aksesuar'),
+      KategoriNode(key: 'erkek_aksesuar', ad: 'Aksesuar&Parfüm'),
     ],
   ),
 
@@ -105,6 +106,7 @@ const List<KategoriNode> kKategoriAgaci = [
       KategoriNode(key: 'cocuk_giyim',    ad: 'Giyim'),
       KategoriNode(key: 'cocuk_ayakkabi', ad: 'Ayakkabı'),
       KategoriNode(key: 'cocuk_oyuncak',  ad: 'Oyuncak'),
+      KategoriNode(key: 'cocuk_egitim_kirtasiye', ad: 'Eğitim-Kırtasiye'),
     ],
   ),
 
@@ -124,10 +126,10 @@ const List<KategoriNode> kKategoriAgaci = [
     key: 'elektronik', ad: 'Elektronik', emoji: '📱',
     ikonYolu: 'assets/images/kategoriler/elektronik.png',
     altlar: [
-      KategoriNode(key: 'elektronik_telefon',     ad: 'Cep Telefonu'),
+      KategoriNode(key: 'elektronik_telefon',     ad: 'Cep Telefonu&Aksesuar'),
       KategoriNode(key: 'elektronik_playstation', ad: 'Playstation'),
       KategoriNode(key: 'elektronik_bilgisayar',  ad: 'Bilgisayar'),
-      KategoriNode(key: 'elektronik_vape',        ad: 'Vape'),
+      KategoriNode(key: 'elektronik_giyilebilir', ad: 'Giyilebilir Teknolojiler'),
     ],
   ),
 
@@ -339,7 +341,7 @@ const List<String> kDunyaUlkeleri = [
   'Azerbaycan',
   'Belçika',
   'Birleşik Arap Emirlikleri',
-  'Birleşik Krallık',
+  'İngiltere',
   'Brezilya',
   'Çin',
   'Danimarka',

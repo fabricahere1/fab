@@ -79,6 +79,11 @@ class _IlanlarimScreenState extends ConsumerState<IlanlarimScreen>
       ),
       body: ilanlarimAsync.when(
         skipLoadingOnReload: true,
+        // NOT: skipError:true, benzeri sorguya-kalıcı-şekilde-erişememe
+        // hatalarını (örn. rules/index uyuşmazlığı) sessizce gizleyip stale
+        // veri göstermeye devam edebilir — bu, kalıcı kaldırma kararı ayrı
+        // bir UX tartışması gerektirdiği için burada bilinçli olarak
+        // dokunulmadan bırakıldı.
         skipError: true,
         loading: () => const Center(
           child: CircularProgressIndicator(
@@ -225,7 +230,10 @@ class _IstekKarti extends ConsumerWidget {
             // ── Sağ: ürün adı, güzergah, ücret, badge ─────────────
             Expanded(
               child: SizedBox(
-                height: _kResimBoyutu,
+                // Pasif kartlarda "Tekrar Yayınla" butonu ekstra bir satır
+                // olarak eklendiği için sabit yükseklik biraz artırılıyor —
+                // aktif kartlar orijinal 88px'te kalır.
+                height: ilan.aktif ? _kResimBoyutu : _kResimBoyutu + 20,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -377,7 +385,10 @@ class _GelenKarti extends ConsumerWidget {
             const SizedBox(width: 12),
             Expanded(
               child: SizedBox(
-                height: _kResimBoyutu,
+                // Pasif kartlarda "Tekrar Yayınla" butonu ekstra bir satır
+                // olarak eklendiği için sabit yükseklik biraz artırılıyor —
+                // aktif kartlar orijinal 88px'te kalır.
+                height: ilan.aktif ? _kResimBoyutu : _kResimBoyutu + 20,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
