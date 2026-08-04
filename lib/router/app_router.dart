@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -26,6 +27,22 @@ part 'app_router.g.dart';
 
 // ── Global navigator key — in-app banner için ─────────────
 final navigatorKey = GlobalKey<NavigatorState>();
+
+// Hesap silme/yeniden kimlik doğrulama akışı sürerken, go_router'ın
+// authStateProvider değişimine tepkiyle kendiliğinden tetiklediği redirect,
+// _silmeDialogKapat()'ın aynı navigatorKey'e yaptığı pop ile çakışıp
+// '!_debugLocked' assertion'ına yol açabiliyor (yavaş cihazlarda App Check
+// gecikmesiyle bu pencere uzuyor) — bu akış zaten kendi navigasyonunu
+// yönettiği için, sürdüğü süre boyunca router'ın araya girmesine gerek yok.
+final yenidenKimlikDogrulamaSuruyorProvider = StateProvider<bool>((ref) => false);
+
+// Telefonla giriş başarılı olduğunda authStateProvider değişip router'ın
+// kendi redirect'i otomatik tetikleniyor — bu, _girisYap()'taki manuel
+// Navigator.pop + onBasari() navigasyonuyla AYNI navigatorKey üzerinde
+// çakışıp kısa süreli siyah ekrana yol açabiliyor. Yukarıdaki flag ile
+// aynı desen: manuel navigasyon sürerken router'ın araya girmesini
+// engeller.
+final girisYapiliyorProvider = StateProvider<bool>((ref) => false);
 
 
 abstract class AppRoutes {
@@ -81,6 +98,11 @@ GoRouter router(Ref ref) {
     initialLocation: AppRoutes.splash,
     refreshListenable: notifier,
     redirect: (context, state) {
+      if (ref.read(yenidenKimlikDogrulamaSuruyorProvider) ||
+          ref.read(girisYapiliyorProvider)) {
+        return null;
+      }
+
       final authAsync = ref.read(authStateProvider);
       final loc = state.matchedLocation;
       final returnRoute = state.uri.queryParameters['returnRoute'];

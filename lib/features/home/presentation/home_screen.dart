@@ -3,7 +3,6 @@
 import 'dart:io' show Platform;
 
 import 'package:flutter/cupertino.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -335,7 +334,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         secili: _selectedIndex == 0,
                         onTap: () { _sekmeSec(0); ref.read(navBarGizliProvider.notifier).goster(); },
                         label: 'İstekler',
-                        child: Icon(Symbols.home, size: 24, fill: _selectedIndex == 0 ? 1 : 0, weight: 300,
+                        child: Icon(_selectedIndex == 0 ? Icons.home : Icons.home_outlined, size: 24,
                             color: _selectedIndex == 0 ? AppColors.red : Colors.black),
                       ),
                     ),
@@ -345,7 +344,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         secili: _selectedIndex == 1,
                         onTap: () { _sekmeSec(1); ref.read(navBarGizliProvider.notifier).goster(); },
                         label: 'Gelenler',
-                        child: Icon(Symbols.flight_land, size: 24, fill: _selectedIndex == 1 ? 1 : 0, weight: 300,
+                        child: Icon(Icons.flight_land, size: 24,
                             color: _selectedIndex == 1 ? AppColors.red : Colors.black),
                       ),
                     ),
@@ -358,13 +357,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       },
                       label: 'Mesajlar',
                       child: uid == null || toplamOkunmamis == 0
-                          ? Icon(Symbols.chat_bubble, size: 24, fill: _selectedIndex == 2 ? 1 : 0, weight: 300,
+                          ? Icon(_selectedIndex == 2 ? Icons.chat_bubble : Icons.chat_bubble_outline, size: 24,
                               color: _selectedIndex == 2 ? AppColors.red : Colors.black)
                           : Badge(
                               label: Text(toplamOkunmamis > 99 ? '99+' : '$toplamOkunmamis',
                                   style: GoogleFonts.dmSans(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w600)),
                               backgroundColor: AppColors.red,
-                              child: Icon(Symbols.chat_bubble, size: 24, fill: _selectedIndex == 2 ? 1 : 0, weight: 300,
+                              child: Icon(_selectedIndex == 2 ? Icons.chat_bubble : Icons.chat_bubble_outline, size: 24,
                                   color: _selectedIndex == 2 ? AppColors.red : Colors.black),
                             ),
                     ),
@@ -376,7 +375,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ref.read(navBarGizliProvider.notifier).goster();
                       },
                       label: 'Profil',
-                      child: Icon(Symbols.person, size: 24, fill: _selectedIndex == 3 ? 1 : 0, weight: 300,
+                      child: Icon(_selectedIndex == 3 ? Icons.person : Icons.person_outline, size: 24,
                           color: _selectedIndex == 3 ? AppColors.red : Colors.black),
                     ),
                     KeyedSubtree(
@@ -385,7 +384,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         secili: _selectedIndex == 4,
                         onTap: () { _sekmeSec(4); ref.read(navBarGizliProvider.notifier).goster(); },
                         label: 'Keşfet',
-                        child: Icon(Symbols.explore, size: 24, fill: _selectedIndex == 4 ? 1 : 0, weight: 300,
+                        child: Icon(_selectedIndex == 4 ? Icons.explore : Icons.explore_outlined, size: 24,
                             color: _selectedIndex == 4 ? AppColors.red : Colors.black),
                       ),
                     ),

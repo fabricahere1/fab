@@ -14,7 +14,8 @@ import '../../../shared/utils/app_snackbar.dart';
 import '../../../shared/widgets/avatar_widget.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:go_router/go_router.dart';
-import '../../../router/app_router.dart' show AppRoutes, navigatorKey;
+import '../../../router/app_router.dart'
+    show AppRoutes, navigatorKey, yenidenKimlikDogrulamaSuruyorProvider;
 import 'sss_screen.dart';
 import 'kullanim_kosullari_screen.dart';
 import 'gizlilik_politikasi_screen.dart';
@@ -125,7 +126,9 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                   style: GoogleFonts.manrope(
                       fontSize: 13, color: AppColors.textSecondary),
                 ),
-                onTap: () {},
+                showArrow: false,
+                onTap: () => AppSnackBar.bilgi(
+                    context, 'E-posta adresiniz hesabınızdan alınır, değiştirilemez.'),
               ),
               _Ayrac(),
               _SatirOge(
@@ -370,7 +373,6 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       uid: uid,
       data: {'telefonGizli': yeniDeger},
     );
-    ref.invalidate(benimKullaniciProfilProvider);
   }
 
   Future<void> _telefonGuncelleDialog(String mevcutTelefon) async {
@@ -425,14 +427,13 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
             ),
             TextButton(
               onPressed: () async {
-                Navigator.pop(ctx);
                 final uid = ref.read(currentUserProvider)?.uid;
                 if (uid == null) return;
                 await ref.read(profilDuzenleProvider.notifier).profilGuncelle(
                   uid: uid,
                   data: {'telefon': ctrl.text.trim()},
                 );
-                ref.invalidate(benimKullaniciProfilProvider);
+                if (ctx.mounted) Navigator.pop(ctx);
                 if (mounted) {
                   AppSnackBar.basari(context, 'Telefon numarası güncellendi.');
                 }
@@ -755,6 +756,13 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     // yalnızca hesap SEÇİLDİKTEN SONRA (onHesapSecildi) açılıyordu, geçişin
     // kendisi hiç kapatılmıyordu.
     _silmeProgressGoster('Google hesabı açılıyor...');
+    // reauthenticateWithCredential sürerken (yavaş cihazda App Check
+    // gecikmesiyle uzayabiliyor) go_router'ın authStateProvider değişimine
+    // tepkiyle kendiliğinden tetiklediği redirect, _silmeDialogKapat()'ın
+    // aynı navigatorKey'e yaptığı pop ile çakışıp '!_debugLocked'
+    // assertion'ına yol açabiliyor — bu akış zaten kendi navigasyonunu
+    // yönettiği için, sürdüğü süre boyunca router'a dokunmuyoruz.
+    ref.read(yenidenKimlikDogrulamaSuruyorProvider.notifier).state = true;
     try {
       final yenidenGiris = await ref.read(authProvider.notifier)
           .googleIleYenidenGiris(
@@ -770,6 +778,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       // hiç açılmamış olabilir (seçici iptali) — guard sayesinde ikisi de güvenli.
       _silmeDialogKapat();
       if (mounted) AppSnackBar.hata(context, 'Hata oluştu. Tekrar dene.');
+    } finally {
+      ref.read(yenidenKimlikDogrulamaSuruyorProvider.notifier).state = false;
     }
   }
 
@@ -1042,15 +1052,19 @@ class _EngellenenlerScreen extends ConsumerWidget {
                             ),
                           );
                           if (onay == true) {
-                            await ref
+                            final basarili = await ref
                                 .read(engellemeProvider.notifier)
                                 .engelKaldir(
                                   benimUid: benimUid,
                                   hedefUid: hedefUid,
                                 );
-                            if (context.mounted) {
+                            if (!context.mounted) return;
+                            if (basarili) {
                               AppSnackBar.bilgi(
                                   context, '$ad engeli kaldırıldı.');
+                            } else {
+                              AppSnackBar.hata(context,
+                                  'Engel kaldırılamadı. Tekrar deneyin.');
                             }
                           }
                         },

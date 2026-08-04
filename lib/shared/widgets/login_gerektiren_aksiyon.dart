@@ -113,9 +113,10 @@ class _LoginSheet extends StatelessWidget {
             height: 50,
             child: ElevatedButton(
               onPressed: () {
+                final router = GoRouter.of(context);
                 Navigator.pop(context);
                 final q = returnRoute != null ? '?returnRoute=${Uri.encodeComponent(returnRoute!)}' : '';
-                context.go('${AppRoutes.login}$q');
+                router.go('${AppRoutes.login}$q');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.red,
@@ -142,9 +143,10 @@ class _LoginSheet extends StatelessWidget {
             height: 50,
             child: OutlinedButton(
               onPressed: () {
+                final router = GoRouter.of(context);
                 Navigator.pop(context);
                 final q = returnRoute != null ? '?returnRoute=${Uri.encodeComponent(returnRoute!)}' : '';
-                context.go('${AppRoutes.register}$q');
+                router.go('${AppRoutes.register}$q');
               },
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.textPrimary,

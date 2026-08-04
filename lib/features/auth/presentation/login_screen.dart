@@ -6,7 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
-import '../../../router/app_router.dart' show AppRoutes, navigatorKey;
+import '../../../router/app_router.dart' show AppRoutes, navigatorKey, girisYapiliyorProvider;
 import '../../profil/presentation/kullanim_kosullari_screen.dart';
 import '../../profil/presentation/gizlilik_politikasi_screen.dart';
 
@@ -298,6 +298,7 @@ class _TelefonGirisSheetState extends ConsumerState<_TelefonGirisSheet> {
   bool   _yukleniyor  = false;
   String _hata        = '';
   String _verificationId = '';
+  bool   _otpDialogAcik  = false;
 
   @override
   void dispose() {
@@ -308,10 +309,14 @@ class _TelefonGirisSheetState extends ConsumerState<_TelefonGirisSheet> {
 
   // Android otomatik SMS okuyunca kodu alana yapıştırma sorusu
   Future<void> _otomatikGirisDialog(String smsKodu) async {
-    if (!mounted) return;
+    if (!mounted || _otpDialogAcik) return;
+    _otpDialogAcik = true;
 
     await Future.delayed(const Duration(milliseconds: 400));
-    if (!mounted) return;
+    if (!mounted) {
+      _otpDialogAcik = false;
+      return;
+    }
 
     final yapistir = await showDialog<bool>(
       context: context,
@@ -394,6 +399,7 @@ class _TelefonGirisSheetState extends ConsumerState<_TelefonGirisSheet> {
         ],
       ),
     );
+    _otpDialogAcik = false;
 
     if (yapistir == true && mounted) {
       setState(() {
@@ -413,6 +419,13 @@ class _TelefonGirisSheetState extends ConsumerState<_TelefonGirisSheet> {
       _yukleniyor = true;
       _hata = '';
     });
+    // Android, verifyPhoneNumber'ın tetiklediği native CAPTCHA/reCAPTCHA
+    // Activity'sine bazen o kadar hızlı geçiyor ki, Flutter'ın az önce
+    // kuyruğa aldığı "_yukleniyor" frame'i ekrana hiç basılamadan pencere
+    // odağı native tarafa geçiyor — kullanıcı hiçbir ara kare görmüyor.
+    // Bu kısa bekleme, frame'in gerçekten ekrana sunulmasını garantiliyor.
+    await Future.delayed(const Duration(milliseconds: 150));
+    if (!mounted) return;
 
     try {
       await ref.read(authProvider.notifier).telefonKoduGonder(
@@ -438,9 +451,25 @@ class _TelefonGirisSheetState extends ConsumerState<_TelefonGirisSheet> {
           }
         },
       );
-    } finally {
-      if (mounted && _yukleniyor) setState(() => _yukleniyor = false);
+    } catch (e) {
+      // verifyPhoneNumber, verificationFailed callback'i yerine doğrudan
+      // bir exception fırlatabiliyor (ör. geçersiz numara formatı) — bu,
+      // onHata'yı hiç tetiklemediği için _hata boş kalıp kullanıcıya
+      // hiçbir geri bildirim verilmeden formun sessizce sıfırlanmasına
+      // yol açıyordu.
+      if (mounted) {
+        setState(() {
+          _hata       = 'Hata oluştu. Tekrar dene.';
+          _yukleniyor = false;
+        });
+      }
     }
+    // finally YOK: verifyPhoneNumber'ın Future'ı yalnızca native tarafa
+    // callback kaydı tamamlandığında biter — CAPTCHA/SMS süreci hâlâ
+    // arka planda sürüyor olabilir. _yukleniyor artık yalnızca gerçek
+    // sonuç callback'lerinde (onKodGonderildi, onHata) veya yukarıdaki
+    // catch'te kapatılıyor; erken kapatmak formun CAPTCHA bitmeden geri
+    // gelmesine (kısa süreli flicker) yol açıyordu.
   }
 
   Future<void> _girisYap() async {
@@ -453,19 +482,31 @@ class _TelefonGirisSheetState extends ConsumerState<_TelefonGirisSheet> {
       _hata       = '';
     });
 
-    final sonuc = await ref.read(authProvider.notifier).telefonIleGiris(
-      verificationId: _verificationId,
-      smsKodu:        _kodCtrl.text.trim(),
-    );
+    // Başarılı girişte authStateProvider değişip GoRouter'ın kendi
+    // redirect'i otomatik tetikleniyor — bu, aşağıdaki manuel
+    // Navigator.pop + onBasari() navigasyonuyla AYNI navigatorKey
+    // üzerinde çakışıp kısa süreli siyah ekrana yol açabiliyordu.
+    // Bu flag, manuel navigasyon tamamlanana kadar router'ın araya
+    // girmesini engelliyor (hesap silme akışındaki
+    // yenidenKimlikDogrulamaSuruyorProvider ile aynı desen).
+    ref.read(girisYapiliyorProvider.notifier).state = true;
+    try {
+      final sonuc = await ref.read(authProvider.notifier).telefonIleGiris(
+        verificationId: _verificationId,
+        smsKodu:        _kodCtrl.text.trim(),
+      );
 
-    if (!mounted) return;
-    setState(() => _yukleniyor = false);
+      if (!mounted) return;
+      setState(() => _yukleniyor = false);
 
-    if (!sonuc.basarili) {
-      setState(() => _hata = sonuc.hata ?? 'Doğrulama başarısız.');
-    } else {
-      Navigator.pop(context);
-      widget.onBasari();
+      if (!sonuc.basarili) {
+        setState(() => _hata = sonuc.hata ?? 'Doğrulama başarısız.');
+      } else {
+        Navigator.pop(context);
+        widget.onBasari();
+      }
+    } finally {
+      ref.read(girisYapiliyorProvider.notifier).state = false;
     }
   }
 
@@ -482,10 +523,32 @@ class _TelefonGirisSheetState extends ConsumerState<_TelefonGirisSheet> {
         ),
       ),
       padding: EdgeInsets.fromLTRB(28, 20, 28, 28 + bottomInset),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: _yukleniyor
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 40),
+                const CircularProgressIndicator(
+                    color: AppColors.red, strokeWidth: 2.5),
+                const SizedBox(height: 16),
+                Text(
+                  _kodAsamasi
+                      ? 'Doğrulanıyor...'
+                      : 'Doğrulanıyor, bu birkaç saniye sürebilir...',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.dmSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 40),
+              ],
+            )
+          : Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           // Handle
           Center(
             child: Container(
@@ -667,8 +730,8 @@ class _TelefonGirisSheetState extends ConsumerState<_TelefonGirisSheet> {
               ),
             ),
           ],
-        ],
-      ),
+            ],
+          ),
     );
   }
 }

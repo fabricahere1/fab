@@ -503,13 +503,19 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                   ),
                 );
                 if (onay == true && mounted) {
-                  await ref.read(engellemeProvider.notifier).engelle(
-                      benimUid: benimUid,
-                      hedefUid: widget.karsiKullaniciId);
-                  if (mounted) {
+                  final basarili = await ref
+                      .read(engellemeProvider.notifier)
+                      .engelle(
+                          benimUid: benimUid,
+                          hedefUid: widget.karsiKullaniciId);
+                  if (!mounted) return;
+                  if (basarili) {
                     AppSnackBar.bilgi(
                         context, '${widget.karsiKullaniciAd} engellendi.');
                     Navigator.pop(context);
+                  } else {
+                    AppSnackBar.hata(
+                        context, 'Kullanıcı engellenemedi. Tekrar deneyin.');
                   }
                 }
               },

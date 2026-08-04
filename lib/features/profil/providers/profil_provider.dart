@@ -84,7 +84,7 @@ class Engelleme extends _$Engelleme {
 
   KullaniciRepository get _repo => ref.read(kullaniciRepositoryProvider);
 
-  Future<void> engelle({
+  Future<bool> engelle({
     required String benimUid,
     required String hedefUid,
   }) async {
@@ -92,12 +92,14 @@ class Engelleme extends _$Engelleme {
     try {
       await _repo.engelle(benimUid: benimUid, hedefUid: hedefUid);
       if (ref.mounted) state = const AsyncData(null);
+      return true;
     } catch (e) {
       if (ref.mounted) state = AsyncError(e, StackTrace.current);
+      return false;
     }
   }
 
-  Future<void> engelKaldir({
+  Future<bool> engelKaldir({
     required String benimUid,
     required String hedefUid,
   }) async {
@@ -105,8 +107,10 @@ class Engelleme extends _$Engelleme {
     try {
       await _repo.engelKaldir(benimUid: benimUid, hedefUid: hedefUid);
       if (ref.mounted) state = const AsyncData(null);
+      return true;
     } catch (e) {
       if (ref.mounted) state = AsyncError(e, StackTrace.current);
+      return false;
     }
   }
 }
@@ -289,9 +293,9 @@ class TakipIslemleri extends _$TakipIslemleri {
     return const AsyncData(null);
   }
 
-  Future<void> takipEt(String takipEdilenId) async {
+  Future<bool> takipEt(String takipEdilenId) async {
     final uid = ref.read(currentUserProvider)?.uid;
-    if (uid == null) return;
+    if (uid == null) return false;
     ref.read(optimistikTakipProvider.notifier).takipEt(takipEdilenId);
     try {
       await _repo.takipEt(takipciId: uid, takipEdilenId: takipEdilenId);
@@ -303,28 +307,32 @@ class TakipIslemleri extends _$TakipIslemleri {
       // gerçek stream yetişince tekrar doğruya dönmesine (flicker) sebep
       // oluyordu. Optimistik değer artık başarı sonrası KALICI kalıyor;
       // yalnızca hata/rollback durumunda temizleniyor (aşağıdaki catch).
-      if (!ref.mounted) return;
+      if (!ref.mounted) return false;
       ref.read(takipciDeltaProvider.notifier).arttir(takipEdilenId);
+      return true;
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'takip.et');
-      if (!ref.mounted) return;
+      if (!ref.mounted) return false;
       ref.read(optimistikTakipProvider.notifier).temizle(takipEdilenId);
+      return false;
     }
   }
 
-  Future<void> takipiBirak(String takipEdilenId) async {
+  Future<bool> takipiBirak(String takipEdilenId) async {
     final uid = ref.read(currentUserProvider)?.uid;
-    if (uid == null) return;
+    if (uid == null) return false;
     ref.read(optimistikTakipProvider.notifier).takipiBirak(takipEdilenId);
     try {
       await _repo.takipiBirak(takipciId: uid, takipEdilenId: takipEdilenId);
       // Bkz. takipEt() — aynı gerekçeyle başarı durumunda temizle() YOK.
-      if (!ref.mounted) return;
+      if (!ref.mounted) return false;
       ref.read(takipciDeltaProvider.notifier).azalt(takipEdilenId);
+      return true;
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'takip.birak');
-      if (!ref.mounted) return;
+      if (!ref.mounted) return false;
       ref.read(optimistikTakipProvider.notifier).temizle(takipEdilenId);
+      return false;
     }
   }
 }

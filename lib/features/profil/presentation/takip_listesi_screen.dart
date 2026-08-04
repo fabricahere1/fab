@@ -7,6 +7,7 @@ import '../../../shared/constants/app_colors.dart';
 import '../../../shared/widgets/avatar_widget.dart';
 import 'kullanici_profil_screen.dart';
 import '../../../shared/utils/app_hata_yonetici.dart';
+import '../../../shared/utils/app_snackbar.dart';
 
 enum TakipListeTipi { takipcilar, takipEdilenler }
 
@@ -241,7 +242,7 @@ class _ProfilSatiri extends ConsumerWidget {
       );
     } else {
       takipButonu = GestureDetector(
-        onTap: () {
+        onTap: () async {
           if (takipEdiyor) {
             showDialog(
               context: context,
@@ -254,9 +255,14 @@ class _ProfilSatiri extends ConsumerWidget {
                     child: const Text('İptal'),
                   ),
                   TextButton(
-                    onPressed: () {
+                    onPressed: () async {
                       Navigator.pop(dialogContext);
-                      ref.read(takipIslemleriProvider.notifier).takipiBirak(profil.id);
+                      final basarili = await ref
+                          .read(takipIslemleriProvider.notifier)
+                          .takipiBirak(profil.id);
+                      if (!context.mounted || basarili) return;
+                      AppSnackBar.hata(
+                          context, 'Takipten çıkılamadı. Tekrar deneyin.');
                     },
                     child: const Text('Takibi Bırak'),
                   ),
@@ -264,7 +270,11 @@ class _ProfilSatiri extends ConsumerWidget {
               ),
             );
           } else {
-            ref.read(takipIslemleriProvider.notifier).takipEt(profil.id);
+            final basarili = await ref
+                .read(takipIslemleriProvider.notifier)
+                .takipEt(profil.id);
+            if (!context.mounted || basarili) return;
+            AppSnackBar.hata(context, 'Takip edilemedi. Tekrar deneyin.');
           }
         },
         child: AnimatedContainer(

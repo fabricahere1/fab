@@ -291,7 +291,7 @@ class _KullaniciProfilScreenState extends ConsumerState<KullaniciProfilScreen> {
                                   width: double.infinity,
                                   height: 44,
                                   child: OutlinedButton.icon(
-                                    onPressed: () {
+                                    onPressed: () async {
                                       if (takipEdiyor) {
                                         showDialog(
                                           context: context,
@@ -304,9 +304,14 @@ class _KullaniciProfilScreenState extends ConsumerState<KullaniciProfilScreen> {
                                                 child: const Text('İptal'),
                                               ),
                                               TextButton(
-                                                onPressed: () {
+                                                onPressed: () async {
                                                   Navigator.pop(dialogContext);
-                                                  ref.read(takipIslemleriProvider.notifier).takipiBirak(kullaniciId);
+                                                  final basarili = await ref
+                                                      .read(takipIslemleriProvider.notifier)
+                                                      .takipiBirak(kullaniciId);
+                                                  if (!context.mounted || basarili) return;
+                                                  AppSnackBar.hata(context,
+                                                      'Takipten çıkılamadı. Tekrar deneyin.');
                                                 },
                                                 child: const Text('Takibi Bırak'),
                                               ),
@@ -314,7 +319,12 @@ class _KullaniciProfilScreenState extends ConsumerState<KullaniciProfilScreen> {
                                           ),
                                         );
                                       } else {
-                                        ref.read(takipIslemleriProvider.notifier).takipEt(kullaniciId);
+                                        final basarili = await ref
+                                            .read(takipIslemleriProvider.notifier)
+                                            .takipEt(kullaniciId);
+                                        if (!context.mounted || basarili) return;
+                                        AppSnackBar.hata(context,
+                                            'Takip edilemedi. Tekrar deneyin.');
                                       }
                                     },
                                     style: OutlinedButton.styleFrom(
@@ -377,26 +387,34 @@ class _KullaniciProfilScreenState extends ConsumerState<KullaniciProfilScreen> {
                               child: OutlinedButton.icon(
                                 onPressed: () async {
                                   if (benOnuEngellemisim) {
-                                    await ref
+                                    final basarili = await ref
                                         .read(engellemeProvider.notifier)
                                         .engelKaldir(
                                           benimUid: benimUid,
                                           hedefUid: kullaniciId,
                                         );
-                                    if (context.mounted) {
+                                    if (!context.mounted) return;
+                                    if (basarili) {
                                       AppSnackBar.bilgi(
                                           context, '$kullaniciAd engeli kaldırıldı.');
+                                    } else {
+                                      AppSnackBar.hata(context,
+                                          'Engel kaldırılamadı. Tekrar deneyin.');
                                     }
                                   } else {
-                                    await ref
+                                    final basarili = await ref
                                         .read(engellemeProvider.notifier)
                                         .engelle(
                                           benimUid: benimUid,
                                           hedefUid: kullaniciId,
                                         );
-                                    if (context.mounted) {
+                                    if (!context.mounted) return;
+                                    if (basarili) {
                                       AppSnackBar.bilgi(
                                           context, '$kullaniciAd engellendi.');
+                                    } else {
+                                      AppSnackBar.hata(context,
+                                          'Kullanıcı engellenemedi. Tekrar deneyin.');
                                     }
                                   }
                                 },

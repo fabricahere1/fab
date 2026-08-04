@@ -217,11 +217,16 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
       onayMetin: 'Engelle',
     );
     if (onay == true && mounted) {
-      await ref.read(engellemeProvider.notifier).engelle(
+      final basarili = await ref.read(engellemeProvider.notifier).engelle(
             benimUid: _benimUid,
             hedefUid: ilan.kullaniciId,
           );
-      if (mounted) context.pop();
+      if (!mounted) return;
+      if (basarili) {
+        context.pop();
+      } else {
+        AppSnackBar.hata(context, 'Kullanıcı engellenemedi. Tekrar deneyin.');
+      }
     }
   }
 
@@ -318,8 +323,12 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
                             sebep: seciliSebep!,
                             ilanId: ilan.id,
                           );
-                      if (basarili && mounted) {
+                      if (!mounted) return;
+                      if (basarili) {
                         AppSnackBar.basari(context, 'Şikayetiniz iletildi.');
+                      } else {
+                        AppSnackBar.hata(context,
+                            'Şikayet gönderilemedi. Tekrar deneyin.');
                       }
                     },
               child: Text('Gönder',
@@ -867,12 +876,18 @@ class _IlanDetayIcerik extends ConsumerWidget {
                       height: 40,
                       child: OutlinedButton.icon(
                         onPressed: () async {
-                          await ref.read(engellemeProvider.notifier).engelKaldir(
+                          final basarili = await ref
+                              .read(engellemeProvider.notifier)
+                              .engelKaldir(
                                 benimUid: uid,
                                 hedefUid: ilan.kullaniciId,
                               );
-                          if (context.mounted) {
+                          if (!context.mounted) return;
+                          if (basarili) {
                             AppSnackBar.bilgi(context, 'Engel kaldırıldı.');
+                          } else {
+                            AppSnackBar.hata(context,
+                                'Engel kaldırılamadı. Tekrar deneyin.');
                           }
                         },
                         style: OutlinedButton.styleFrom(
