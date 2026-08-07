@@ -216,7 +216,15 @@
       "Bash(export CLOUDSDK_PYTHON_SITEPACKAGES=1)",
       "Bash(export CLOUDSDK_CORE_CUSTOM_CA_CERTS_FILE=\"C:\\\\Users\\\\User\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python312\\\\Lib\\\\site-packages\\\\certifi\\\\cacert.pem\")",
       "Bash(export CLOUDSDK_PYTHON=\"/c/Users/User/AppData/Local/Programs/Python/Python312/python.exe\")",
-      "Bash(gcloud services *)"
+      "Bash(gcloud services *)",
+      "Bash(gcloud alpha *)",
+      "Bash(firebase appcheck:apps:list --project bring-in-3a17c)",
+      "Bash(curl -s -H 'Authorization: Bearer __TRACKED_VAR__' https://firebaseappcheck.googleapis.com/v1/projects/bring-in-3a17c/apps/1:783365190841:android:6a6d87a303b3e9a4059768/playIntegrityConfig)",
+      "Bash(curl -s -H 'Authorization: Bearer __TRACKED_VAR__' -H 'x-goog-user-project: bring-in-3a17c' https://firebaseappcheck.googleapis.com/v1/projects/bring-in-3a17c/apps/1:783365190841:android:6a6d87a303b3e9a4059768/playIntegrityConfig)",
+      "Bash(firebase apps:android:sha:delete *)",
+      "Bash(keytool *)",
+      "Bash(/c/Users/User/AppData/Local/Android/Sdk/build-tools/36.1.0/apksigner.bat verify *)",
+      "Bash(grep -n \"^          \\)$\\\\|^    \\);$\\\\|^  }$\" lib/features/auth/presentation/login_screen.dart)"
     ]
   }
 }

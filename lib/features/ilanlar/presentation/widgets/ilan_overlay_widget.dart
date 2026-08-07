@@ -253,9 +253,9 @@ class _YuklemeIcerik extends StatelessWidget {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  _Halka(ctrl: halkaCtr, renk: const Color(0xFFE24B4A), boyut: 100, hiz: 1.0, tersine: false),
-                  _Halka(ctrl: halkaCtr, renk: const Color(0xFFFAC775), boyut: 78,  hiz: 0.7, tersine: true),
-                  _Halka(ctrl: halkaCtr, renk: const Color(0xFF5DCAA5), boyut: 56,  hiz: 0.5, tersine: false),
+                  _Halka(ctrl: halkaCtr, renk: const Color(0xFF4A4A4A), boyut: 100, hiz: 1.0, tersine: false),
+                  _Halka(ctrl: halkaCtr, renk: const Color(0xFF9E9E9E), boyut: 78,  hiz: 0.7, tersine: true),
+                  _Halka(ctrl: halkaCtr, renk: const Color(0xFFBDBDBD), boyut: 56,  hiz: 0.5, tersine: false),
                   Image.asset('assets/images/logo.png', width: 36, height: 36, fit: BoxFit.contain),
                 ],
               ),

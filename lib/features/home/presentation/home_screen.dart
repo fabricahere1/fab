@@ -84,6 +84,72 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     const key = 'tur_gosterildi';
     if (prefs.getBool(key) == true) return;
     if (!mounted) return;
+
+    final devamEt = await showGeneralDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      barrierLabel: 'Tanıtım turu onayı',
+      barrierColor: Colors.black.withValues(alpha: 0.75),
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (ctx, _, _) => Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Kısa bir tanıtım turu yapmak ister misiniz?',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.dmSans(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 28),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: Text(
+                        'Geç',
+                        style: GoogleFonts.dmSans(
+                          color: Colors.white70,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 24),
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: Text(
+                        'Evet',
+                        style: GoogleFonts.dmSans(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (devamEt != true) {
+      await prefs.setBool(key, true);
+      return;
+    }
+    if (!mounted) return;
+
     TutorialCoachMark(
       targets: _turHedefleri(),
       skipWidget: turSkipWidget,
@@ -334,7 +400,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         secili: _selectedIndex == 0,
                         onTap: () { _sekmeSec(0); ref.read(navBarGizliProvider.notifier).goster(); },
                         label: 'İstekler',
-                        child: Icon(_selectedIndex == 0 ? Icons.home : Icons.home_outlined, size: 24,
+                        child: Icon(Icons.home_outlined, size: 24,
                             color: _selectedIndex == 0 ? AppColors.red : Colors.black),
                       ),
                     ),
@@ -344,7 +410,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         secili: _selectedIndex == 1,
                         onTap: () { _sekmeSec(1); ref.read(navBarGizliProvider.notifier).goster(); },
                         label: 'Gelenler',
-                        child: Icon(Icons.flight_land, size: 24,
+                        child: Icon(Icons.flight_land_outlined, size: 24,
                             color: _selectedIndex == 1 ? AppColors.red : Colors.black),
                       ),
                     ),
@@ -357,13 +423,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       },
                       label: 'Mesajlar',
                       child: uid == null || toplamOkunmamis == 0
-                          ? Icon(_selectedIndex == 2 ? Icons.chat_bubble : Icons.chat_bubble_outline, size: 24,
+                          ? Icon(Icons.chat_bubble_outline, size: 24,
                               color: _selectedIndex == 2 ? AppColors.red : Colors.black)
                           : Badge(
                               label: Text(toplamOkunmamis > 99 ? '99+' : '$toplamOkunmamis',
                                   style: GoogleFonts.dmSans(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w600)),
                               backgroundColor: AppColors.red,
-                              child: Icon(_selectedIndex == 2 ? Icons.chat_bubble : Icons.chat_bubble_outline, size: 24,
+                              child: Icon(Icons.chat_bubble_outline, size: 24,
                                   color: _selectedIndex == 2 ? AppColors.red : Colors.black),
                             ),
                     ),
@@ -375,7 +441,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ref.read(navBarGizliProvider.notifier).goster();
                       },
                       label: 'Profil',
-                      child: Icon(_selectedIndex == 3 ? Icons.person : Icons.person_outline, size: 24,
+                      child: Icon(Icons.person_outline, size: 24,
                           color: _selectedIndex == 3 ? AppColors.red : Colors.black),
                     ),
                     KeyedSubtree(
@@ -384,7 +450,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         secili: _selectedIndex == 4,
                         onTap: () { _sekmeSec(4); ref.read(navBarGizliProvider.notifier).goster(); },
                         label: 'Keşfet',
-                        child: Icon(_selectedIndex == 4 ? Icons.explore : Icons.explore_outlined, size: 24,
+                        child: Icon(Icons.explore_outlined, size: 24,
                             color: _selectedIndex == 4 ? AppColors.red : Colors.black),
                       ),
                     ),

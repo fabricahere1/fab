@@ -27,6 +27,17 @@ sıralama, launch sonrası hangisine önce bakılacağını netleştirmek için.
   `playIntegrity` geçişinin gerçek cihazda/prod'da düzgün çalıştığını
   doğrulama).
 
+- **hesapSilSunucu / Firebase Storage dosyaları temizlenmiyor**
+  Hesap silindiğinde Firestore (`kullanicilar`, ilanlar, favoriler,
+  bildirimler, takipler, sohbetler/mesajlar) ve Auth kaydı düzgün
+  siliniyor (doğrulandı), ama Storage'daki dosyalar (profil fotoğrafı,
+  ilan görselleri, sohbet resimleri) silinmiyor — "öksüz" dosya olarak
+  kalıcı kalıyor. Kullanıcı sayısı arttıkça Storage'da birikip gereksiz
+  depolama maliyetine yol açar. Düzeltme: `hesapSilSunucu`'ya, silinen
+  ilan/sohbet/kullanıcı kayıtlarına karşılık gelen Storage path'lerini
+  (`admin.storage()`) silen bir adım eklenmeli.
+  Kaynak: `functions/src/index.ts:855-930` (hesapSilSunucu).
+
 ---
 
 ## Orta vadede — birikimli teknik borç, aceleye gerek yok

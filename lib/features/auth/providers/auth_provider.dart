@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/auth_repository.dart';
+import '../../../shared/utils/app_hata_yonetici.dart';
 
 part 'auth_provider.g.dart';
 
@@ -83,7 +84,13 @@ class AuthNotifier extends _$AuthNotifier {
     } on FirebaseAuthException catch (e) {
       if (ref.mounted) state = const AsyncData(null);
       return AuthSonuc.hata(AuthRepository.hataMesaji(e.code));
-    } catch (e) {
+    } catch (e, s) {
+      // GoogleSignIn'in fırlattığı gerçek hata (genelde PlatformException/
+      // ApiException) buraya kadar geliyordu ama hiçbir yere loglanmadan
+      // sabit bir mesajla yutuluyordu — test kullanıcılarında yaşanan
+      // "Google ile giriş yapılamıyor" sorununun gerçek nedenini görmek
+      // için Crashlytics'e kaydediyoruz.
+      AppHataYonetici.logla(e, s, etiket: 'auth.googleIleGiris');
       if (ref.mounted) state = const AsyncData(null);
       return AuthSonuc.hata('Google ile giriş yapılamadı.');
     }

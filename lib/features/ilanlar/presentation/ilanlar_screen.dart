@@ -241,10 +241,11 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
 
       var yeniIlanlar = sonuc.ilanlar.map(_hittenIlan).toList();
 
-      // enCokFavorilenen icin siralama
-      if (_siralama == SiralamaTipi.enCokFavorilenen) {
-        yeniIlanlar.sort((a, b) => b.favoriSayisi.compareTo(a.favoriSayisi));
-      }
+      // enCokFavorilenen: Algolia'nın ilanlar_favori replikası
+      // (arama_service.dart) zaten kendi customRanking'iyle favoriSayisi'ye
+      // göre sıralı dönüyor — client-taraflı yeniden sıralama gereksizdi ve
+      // yalnızca o anki 24'lük sayfa içinde yapıldığı için sayfalar arası
+      // global sıralamayı bozuyordu (gelenler_screen.dart'ta zaten yoktu).
       // onerilen icin siralama
       if (_siralama == SiralamaTipi.onerilen) {
         oneriSkoruylasirala(yeniIlanlar);
@@ -698,11 +699,9 @@ class _IsteklerHeader extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(6),
                         child: const Icon(
-                          Symbols.favorite,
+                          Icons.favorite_outline,
                           color: AppColors.textPrimary,
                           size: 22,
-                          weight: 200,
-                          fill: 0,
                         ),
                       ),
                     ),

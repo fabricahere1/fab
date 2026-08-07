@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/bildirimler/presentation/bildirimler_screen.dart';
 import '../../features/bildirimler/providers/bildirim_provider.dart';
@@ -19,12 +18,9 @@ class BildirimCaniWidget extends ConsumerWidget {
     final ikonRenk = renk ?? Colors.black;
 
     final ikon = Icon(
-      Symbols.notifications,
+      Icons.notifications_outlined,
       color: ikonRenk,
       size: 22,
-      weight: 200,
-      opticalSize: 24,
-      fill: 0,
     );
 
     return IconButton(

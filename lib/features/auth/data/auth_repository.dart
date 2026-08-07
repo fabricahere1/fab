@@ -47,7 +47,13 @@ class AuthRepository {
   final FirebaseFirestore firestore;
   final _googleSignIn = GoogleSignIn();
 
-  AuthRepository({required this.auth, required this.firestore});
+  AuthRepository({required this.auth, required this.firestore}) {
+    // Firebase Console'daki "Template language" ayarı tek başına yeterli
+    // olmuyor — SMS dili gerçekte SDK'ya açıkça bildirilmezse İngilizce'ye
+    // düşebiliyor. Bir kez ayarlanması yeterli, her istekte tekrar
+    // çağırmaya gerek yok.
+    auth.setLanguageCode('tr');
+  }
 
   Stream<User?> authStateChanges() => auth.authStateChanges();
   User? get currentUser => auth.currentUser;

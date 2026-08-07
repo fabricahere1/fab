@@ -9,6 +9,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 
 import '../features/auth/presentation/login_screen.dart';
+import '../features/auth/presentation/karsilama_screen.dart';
 import '../features/auth/presentation/profil_tamamla_screen.dart';
 import '../features/home/presentation/home_screen.dart';
 import '../features/ilanlar/domain/ilan_model.dart';
@@ -44,10 +45,19 @@ final yenidenKimlikDogrulamaSuruyorProvider = StateProvider<bool>((ref) => false
 // engeller.
 final girisYapiliyorProvider = StateProvider<bool>((ref) => false);
 
+// Karşılama ekranı ("İSTE'ye Katıl / Giriş Yap / Atla"), misafir
+// kullanıcıya HER uygulama açılışında gösterilir — ama "Atla" o anki
+// oturum için ekranı geçer. Bilerek SharedPreferences DEĞİL, in-memory
+// bir provider: uygulama her soğuk başlatıldığında yeni bir Riverpod
+// container'la false'a döner, bu yüzden "her açılışta göster" davranışı
+// kalıcı bir flag yönetmeden kendiliğinden sağlanıyor.
+final karsilamaAtlandiProvider = StateProvider<bool>((ref) => false);
+
 
 abstract class AppRoutes {
   static const splash              = '/';
   static const guncellemeGerekli   = '/guncelleme-gerekli';
+  static const karsilama           = '/karsilama';
   static const login               = '/login';
   static const register            = '/register';
   static const profilTamamla       = '/profil-tamamla';
@@ -133,6 +143,7 @@ GoRouter router(Ref ref) {
       if (!girisYapildi) {
         if (loc == AppRoutes.login ||
             loc == AppRoutes.register ||
+            loc == AppRoutes.karsilama ||
             loc == AppRoutes.home ||
             loc.startsWith('/ilan/') ||
             loc == AppRoutes.gelenler) { return null; }
@@ -140,13 +151,18 @@ GoRouter router(Ref ref) {
             loc == AppRoutes.ilanOlusturTasiyici) {
           return '${AppRoutes.login}?returnRoute=${Uri.encodeComponent(loc)}';
         }
+        if (!ref.read(karsilamaAtlandiProvider)) {
+          return AppRoutes.karsilama;
+        }
         return AppRoutes.home;
       }
 
-      // Giriş yapılmışsa splash/login/register → home veya profil tamamlama
+      // Giriş yapılmışsa splash/login/register/karşılama → home veya profil
+      // tamamlama
       if (loc == AppRoutes.splash ||
           loc == AppRoutes.login  ||
-          loc == AppRoutes.register) {
+          loc == AppRoutes.register ||
+          loc == AppRoutes.karsilama) {
         return _hedefBelirle(ref, user, returnRoute: returnRoute);
       }
 
@@ -171,6 +187,10 @@ GoRouter router(Ref ref) {
           final link = ref.read(surumDurumuProvider).value?.link;
           return GuncellemeGerekliScreen(guncellemeLinki: link);
         },
+      ),
+      GoRoute(
+        path: AppRoutes.karsilama,
+        builder: (_, _) => const KarsilamaScreen(),
       ),
       GoRoute(
         path: AppRoutes.login,

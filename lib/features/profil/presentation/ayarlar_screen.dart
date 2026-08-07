@@ -518,7 +518,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Kimliğini Doğrula',
+        title: Text('Hesabını silmek için Kimliğini Doğrula',
             style: GoogleFonts.manrope(
                 fontSize: 16, fontWeight: FontWeight.w600)),
         content: Column(
@@ -638,7 +638,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Kimliğini Doğrula',
+        title: Text('Hesabını silmek için Kimliğini Doğrula',
             style: GoogleFonts.manrope(
                 fontSize: 16, fontWeight: FontWeight.w600)),
         content: Column(
@@ -722,11 +722,11 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Kimliğini Doğrula',
+        title: Text('Hesabını silmek için Kimliğini Doğrula',
             style: GoogleFonts.manrope(
                 fontSize: 16, fontWeight: FontWeight.w600)),
         content: Text(
-          'Hesabını silmek için Google ile tekrar giriş yapman gerekiyor.',
+          'Google ile tekrar giriş yapman gerekiyor.',
           style: GoogleFonts.manrope(
               fontSize: 13, color: AppColors.textSecondary),
         ),

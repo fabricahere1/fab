@@ -1,7 +1,6 @@
 // lib/features/ilanlar/presentation/gelenler_screen.dart
 
 import 'package:flutter/cupertino.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -372,11 +371,9 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       child: const Icon(
-                        Symbols.favorite,
+                        Icons.favorite_outline,
                         color: AppColors.textPrimary,
                         size: 22,
-                        weight: 200,
-                        fill: 0,
                       ),
                     ),
                   ),
