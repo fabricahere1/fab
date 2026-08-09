@@ -556,6 +556,17 @@ export const ilanSilindi = onDocumentDeleted(
   }
 );
 
+// Büyük ünlü uyumuna göre "-dan/-den" ayrılma eki üretir (kesme işaretiyle):
+// Karaman → "Karaman'dan", İzmir → "İzmir'den".
+function danEki(kelime: string): string {
+  const kalinUnluler = ["a", "ı", "o", "u"];
+  const sonUnlu = [...kelime.toLocaleLowerCase("tr-TR")]
+    .reverse()
+    .find((h) => "aeıioöuü".includes(h));
+  const ekTipi = sonUnlu && kalinUnluler.includes(sonUnlu) ? "dan" : "den";
+  return `${kelime}'${ekTipi}`;
+}
+
 // ── Eşleşme Bildirimi: Yeni Taşıyıcı İlanı → Aynı Güzergahtaki (nereden+nereye) İstek Sahipleri ──
 //
 // ÖNEMLİ: Bu trigger onDocumentCreated DEĞİL, onDocumentUpdated. Sebep:
@@ -604,7 +615,7 @@ export const ilanEslesmeBildirimi = onDocumentUpdated(
         .get();
       if (istekSnap.empty) return;
 
-      const baslik = `${nereden}'dan gelen biri var`;
+      const baslik = `${danEki(nereden)} gelen biri var`;
       const icerik = "İstediğin ürün için hemen iletişime geç";
 
       for (const doc of istekSnap.docs) {
@@ -670,8 +681,8 @@ export const istekEslesmeBildirimi = onDocumentUpdated(
         .get();
       if (tasiyiciSnap.empty) return;
 
-      const baslik = `Biri ${nereye}'den yeni bir istek ilanı girdi`;
-      const icerik = `${nereye}'den girilen bu ilanı hemen kontrol et`;
+      const baslik = `Biri ${danEki(nereye)} yeni bir istek ilanı girdi`;
+      const icerik = `${danEki(nereye)} girilen bu ilanı hemen kontrol et`;
 
       for (const doc of tasiyiciSnap.docs) {
         const tasiyiciData        = doc.data();

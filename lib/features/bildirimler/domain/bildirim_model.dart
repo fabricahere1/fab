@@ -4,7 +4,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'bildirim_model.freezed.dart';
 part 'bildirim_model.g.dart';
 
-enum BildirimTip { mesaj, ilan, sistem, degerlendirme, anlasildi }
+enum BildirimTip { mesaj, ilan, sistem, degerlendirme, anlasildi, eslesme }
 
 @freezed
 abstract class BildirimModel with _$BildirimModel {
@@ -47,6 +47,7 @@ BildirimTip _tipFromString(String tip) {
     case 'ilan':          return BildirimTip.ilan;
     case 'degerlendirme': return BildirimTip.degerlendirme;
     case 'anlasildi':     return BildirimTip.anlasildi;
+    case 'eslesme':       return BildirimTip.eslesme;
     default:              return BildirimTip.sistem;
   }
 }

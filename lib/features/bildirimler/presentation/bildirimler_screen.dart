@@ -6,6 +6,7 @@ import '../providers/bildirim_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../mesajlar/domain/mesaj_model.dart' show karsiTarafiBul;
 import '../../mesajlar/presentation/sohbet_screen.dart';
+import '../../ilanlar/presentation/ilan_detay_screen.dart';
 import '../../degerlendirme/presentation/degerlendirme_screen.dart';
 import '../../degerlendirme/providers/degerlendirme_provider.dart';
 import '../../mesajlar/providers/mesaj_provider.dart';
@@ -325,6 +326,16 @@ class _BildirimSatiri extends ConsumerWidget {
       return;
     }
 
+    if (bildirim.tip == BildirimTip.eslesme && bildirim.hedefId.isNotEmpty) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => IlanDetayScreen(ilanId: bildirim.hedefId),
+        ),
+      );
+      return;
+    }
+
     if (bildirim.tip == BildirimTip.degerlendirme && bildirim.hedefId.isNotEmpty) {
       final sohbetId = bildirim.hedefId;
       final karsiId  = bildirim.gondereId;
@@ -370,6 +381,7 @@ class _BildirimSatiri extends ConsumerWidget {
     BildirimTip.sistem        => Icons.notifications_outlined,
     BildirimTip.degerlendirme => Icons.star_outline_rounded,
     BildirimTip.anlasildi     => Icons.handshake_outlined,
+    BildirimTip.eslesme       => Icons.route_outlined,
   };
 
   Color get _ikonArkaRenk => switch (bildirim.tip) {

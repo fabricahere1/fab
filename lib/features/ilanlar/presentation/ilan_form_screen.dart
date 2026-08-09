@@ -414,6 +414,7 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
           'kategoriYolu': _kategoriYolu,
           'urun':         urunDeger,
           'sadeceGeliyorum': _sadeceGeliyorum,
+          if (!_istekMi) 'tasimaTercihi': _tasimaTercihi,
           if (_seciliTarih != null) 'tarih': _seciliTarih,
           'cinsiyet': _cinsiyet,
           'beden':    bedenDeger,
@@ -483,6 +484,7 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
           _istekMi ? profilSnapshot?.istekTeslimatTercihi : null,
       sahipDutyFree: _istekMi ? false : (profilSnapshot?.dutyFreeIlgileniyor ?? false),
       sadeceGeliyorum: _sadeceGeliyorum,
+      tasimaTercihi: _istekMi ? 'hepsi' : _tasimaTercihi,
     );
     try {
       final id = await ref.read(ilanOlusturProvider.notifier).olustur(
