@@ -198,14 +198,13 @@ class _IlanDetayScreenState extends ConsumerState<IlanDetayScreen> {
       onayMetin: 'Sil',
     );
     if (onay == true && mounted) {
-      try {
-        await ref.read(ilanIslemleriProvider.notifier).sil(ilanId);
-        if (mounted) context.pop();
-        if (mounted) AppSnackBar.basari(context, 'İlan silindi.');
-      } catch (e) {
-        if (mounted) {
-          AppSnackBar.hata(context, 'İlan silinemedi. Tekrar deneyin.');
-        }
+      final basarili = await ref.read(ilanIslemleriProvider.notifier).sil(ilanId);
+      if (!mounted) return;
+      if (basarili) {
+        context.pop();
+        AppSnackBar.basari(context, 'İlan silindi.');
+      } else {
+        AppSnackBar.hata(context, 'İlan silinemedi. Tekrar deneyin.');
       }
     }
   }

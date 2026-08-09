@@ -224,7 +224,8 @@
       "Bash(firebase apps:android:sha:delete *)",
       "Bash(keytool *)",
       "Bash(/c/Users/User/AppData/Local/Android/Sdk/build-tools/36.1.0/apksigner.bat verify *)",
-      "Bash(grep -n \"^          \\)$\\\\|^    \\);$\\\\|^  }$\" lib/features/auth/presentation/login_screen.dart)"
+      "Bash(grep -n \"^          \\)$\\\\|^    \\);$\\\\|^  }$\" lib/features/auth/presentation/login_screen.dart)",
+      "PowerShell(adb *)"
     ]
   }
 }

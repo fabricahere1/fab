@@ -811,16 +811,34 @@ export const degerlendirmePuanGuncelle = onDocumentCreated(
 
 // ── Bize Ulaşın — Email Gönder ────────────────────────────────────────────────
 
+const escapeHtml = (str: string): string =>
+  str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
 export const iletisimGonder = onCall(async (request) => {
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "Giriş yapmalısın.");
   }
+  const uid = request.auth.uid;
   const { konu, mesaj, gonderenAd, gonderenEmail } = request.data as {
     konu: string; mesaj: string; gonderenAd: string; gonderenEmail: string;
   };
   if (!konu || !mesaj) {
     throw new HttpsError("invalid-argument", "Konu ve mesaj zorunlu.");
   }
+
+  const rateLimitRef = db.collection("iletisimRateLimit").doc(uid);
+  const rateLimitDoc = await rateLimitRef.get();
+  const simdi = Date.now();
+  const sonIstekMs = rateLimitDoc.data()?.sonIstekMs ?? 0;
+  if (simdi - sonIstekMs < 60_000) {
+    throw new HttpsError("resource-exhausted", "Çok sık istek gönderiyorsun. Lütfen biraz bekle.");
+  }
+  await rateLimitRef.set({ sonIstekMs: simdi }, { merge: true });
+
   const gmailKullanici = process.env.GMAIL_KULLANICI;
   const gmailSifre     = process.env.GMAIL_SIFRE;
   if (!gmailKullanici || !gmailSifre) {
@@ -833,13 +851,13 @@ export const iletisimGonder = onCall(async (request) => {
   await transporter.sendMail({
     from:    `"İste App" <${gmailKullanici}>`,
     to:      gmailKullanici,
-    subject: `[İste Destek] ${konu}`,
+    subject: `[İste Destek] ${escapeHtml(konu)}`,
     html: `
-      <h3>${konu}</h3>
-      <p><b>Gönderen:</b> ${gonderenAd} (${gonderenEmail})</p>
-      <p><b>Kullanıcı ID:</b> ${request.auth.uid}</p>
+      <h3>${escapeHtml(konu)}</h3>
+      <p><b>Gönderen:</b> ${escapeHtml(gonderenAd)} (${escapeHtml(gonderenEmail)})</p>
+      <p><b>Kullanıcı ID:</b> ${uid}</p>
       <hr/>
-      <p>${mesaj.replace(/\n/g, "<br/>")}</p>
+      <p>${escapeHtml(mesaj).replace(/\n/g, "<br/>")}</p>
     `,
   });
   return { success: true };

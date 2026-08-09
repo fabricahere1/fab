@@ -718,7 +718,9 @@ class _ReddedilenSatir extends ConsumerWidget {
       ),
     );
     if (onay == true) {
-      await ref.read(ilanIslemleriProvider.notifier).sil(ilan.id);
+      final basarili = await ref.read(ilanIslemleriProvider.notifier).sil(ilan.id);
+      if (!context.mounted || basarili) return;
+      AppSnackBar.hata(context, 'İlan silinemedi, tekrar deneyin.');
     }
   }
 

@@ -688,11 +688,16 @@ class IlanIslemleri extends _$IlanIslemleri {
     await _repo.ilanPasifYap(ilanId);
   }
 
-  Future<void> sil(String ilanId) async {
-    await _repo.ilanSil(ilanId);
-    if (!ref.mounted) return;
+  Future<bool> sil(String ilanId) async {
+    try {
+      await _repo.ilanSil(ilanId);
+    } catch (_) {
+      return false;
+    }
+    if (!ref.mounted) return true;
     ref.read(istekIlanlarProvider.notifier).ilanKaldir(ilanId);
     ref.read(tasiyiciIlanlarProvider.notifier).ilanKaldir(ilanId);
+    return true;
   }
 
   Future<void> goruntulemeKaydet({
