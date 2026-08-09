@@ -225,7 +225,11 @@
       "Bash(keytool *)",
       "Bash(/c/Users/User/AppData/Local/Android/Sdk/build-tools/36.1.0/apksigner.bat verify *)",
       "Bash(grep -n \"^          \\)$\\\\|^    \\);$\\\\|^  }$\" lib/features/auth/presentation/login_screen.dart)",
-      "PowerShell(adb *)"
+      "PowerShell(adb *)",
+      "Bash(echo \"EXIT_CODE=$?\")",
+      "Bash(firebase functions:log --only ilanEslesmeBildirimi -n 200)",
+      "Bash(firebase functions:log --only ilanEslesmeBildirimi -n 500)",
+      "Bash(firebase functions:log -n 500)"
     ]
   }
 }

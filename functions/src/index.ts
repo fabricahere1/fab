@@ -556,6 +556,152 @@ export const ilanSilindi = onDocumentDeleted(
   }
 );
 
+// ── Eşleşme Bildirimi: Yeni Taşıyıcı İlanı → Aynı Güzergahtaki (nereden+nereye) İstek Sahipleri ──
+//
+// ÖNEMLİ: Bu trigger onDocumentCreated DEĞİL, onDocumentUpdated. Sebep:
+// ilan_model.dart:144'te "aktif: false, // Cloud Function onaylayana kadar
+// false" — yeni bir ilan HER ZAMAN aktif=false olarak yaratılır, aktif=true'ya
+// yalnızca ilanModerasyonu/ilanGuncellemeModerasyon onayladıktan SONRA bir
+// UPDATE ile geçer (bkz. satır ~314, ~446). onDocumentCreated kullansaydık
+// "aktif==true" koşulu onCreate anında asla sağlanmayacağı için bildirim hiç
+// tetiklenmezdi. ilanGuncellendi'deki (satır 465) aynı "oncedenAktifti/
+// simdiAktif" geçiş deseni burada da kullanılıyor.
+export const ilanEslesmeBildirimi = onDocumentUpdated(
+  { document: "ilanlar/{ilanId}", database: DATABASE_ID },
+  async (event) => {
+    try {
+      const once  = event.data?.before.data();
+      const sonra = event.data?.after.data();
+      if (!sonra) return;
+
+      const oncedenAktifti = once ? (once.aktif === true && once.durum === "yayinda") : false;
+      const simdiAktif     = sonra.aktif === true && sonra.durum === "yayinda";
+      if (oncedenAktifti || !simdiAktif) return; // yalnızca pasif→aktif GEÇİŞİNDE tetiklen
+
+      if (sonra.tip !== "tasiyici") return;
+
+      const tasimaTercihi = sonra.tasimaTercihi as string | undefined;
+      // 'istekler' = "İsteklere açığım", 'hepsi' = "Her ikisi de" (bkz. ilan_form_screen.dart:895-898)
+      // 'getirebilirim' = "Bunları getirebilirim" TEK BAŞINA → özel istek kabul etmiyor, atla.
+      if (tasimaTercihi !== "istekler" && tasimaTercihi !== "hepsi") return;
+
+      const nereden = (sonra.nereden as string) ?? "";
+      const nereye  = (sonra.nereye as string) ?? "";
+      if (!nereden || !nereye) return;
+
+      const ilanId              = event.params.ilanId;
+      const tasiyiciKullaniciId = sonra.kullaniciId as string;
+
+      // "nereden" (köken ülke) sorguya alınmıyor çünkü istekçi 'Farketmez'
+      // seçebiliyor (bkz. ilan_form_screen.dart:396-397) — bu yüzden Firestore
+      // sorgusu yalnızca "nereye" (varış/teslim şehri, her iki ilan tipinde de
+      // zorunlu) ile daraltılıyor, "nereden" eşleşmesi kod içinde kontrol edilir.
+      const istekSnap = await db.collection("ilanlar")
+        .where("tip", "==", "istek")
+        .where("aktif", "==", true)
+        .where("nereye", "==", nereye)
+        .limit(50)
+        .get();
+      if (istekSnap.empty) return;
+
+      const baslik = `${nereden}'dan gelen biri var`;
+      const icerik = "İstediğin ürün için hemen iletişime geç";
+
+      for (const doc of istekSnap.docs) {
+        const istekData     = doc.data();
+        const istekSahibiId = istekData.kullaniciId as string | undefined;
+        const istekNereden  = (istekData.nereden as string) ?? "";
+        if (istekNereden !== "Farketmez" && istekNereden !== nereden) continue;
+        if (!istekSahibiId || istekSahibiId === tasiyiciKullaniciId) continue;
+
+        await ikiliBildirimGonder(
+          () => bildirimGonder(istekSahibiId, baslik, icerik, "eslesme", ilanId),
+          () => db.collection("bildirimler").add({
+            kullaniciId: istekSahibiId,
+            tip:         "eslesme",
+            baslik,
+            icerik,
+            okundu:      false,
+            tarih:       admin.firestore.FieldValue.serverTimestamp(),
+            hedefId:     ilanId,
+          }),
+          (mesaj, hata) => console.warn(`Eşleşme bildirimi (${istekSahibiId}):`, mesaj, hata)
+        );
+      }
+    } catch (e) {
+      console.error("Eşleşme bildirimi hatası:", e);
+    }
+  }
+);
+
+// ── Eşleşme Bildirimi (ters yön): Yeni İstek İlanı → Aynı Güzergahtaki Taşıyıcılar ──
+//
+// ilanEslesmeBildirimi (satır 569) ile birebir aynı desen (onDocumentUpdated +
+// oncedenAktifti/simdiAktif pasif→aktif geçişi), yön tersine çevrilmiş.
+export const istekEslesmeBildirimi = onDocumentUpdated(
+  { document: "ilanlar/{ilanId}", database: DATABASE_ID },
+  async (event) => {
+    try {
+      const once  = event.data?.before.data();
+      const sonra = event.data?.after.data();
+      if (!sonra) return;
+
+      const oncedenAktifti = once ? (once.aktif === true && once.durum === "yayinda") : false;
+      const simdiAktif     = sonra.aktif === true && sonra.durum === "yayinda";
+      if (oncedenAktifti || !simdiAktif) return; // yalnızca pasif→aktif GEÇİŞİNDE tetiklen
+
+      if (sonra.tip !== "istek") return;
+
+      const nereden = (sonra.nereden as string) ?? ""; // 'Farketmez' olabilir — bu da geçerli
+      const nereye  = (sonra.nereye as string) ?? "";
+      if (!nereye) return;
+
+      const ilanId            = event.params.ilanId;
+      const istekKullaniciId  = sonra.kullaniciId as string;
+
+      // "nereden" sorguya alınmıyor: istek 'Farketmez' olabilir, bu durumda
+      // ülke kısıtı olmaksızın nereye'si eşleşen TÜM taşıyıcılara gitmeli —
+      // bu yüzden nereden eşleşmesi (istek 'Farketmez' DEĞİLSE) döngüde kontrol edilir.
+      const tasiyiciSnap = await db.collection("ilanlar")
+        .where("tip", "==", "tasiyici")
+        .where("aktif", "==", true)
+        .where("nereye", "==", nereye)
+        .limit(50)
+        .get();
+      if (tasiyiciSnap.empty) return;
+
+      const baslik = `Biri ${nereye}'den yeni bir istek ilanı girdi`;
+      const icerik = `${nereye}'den girilen bu ilanı hemen kontrol et`;
+
+      for (const doc of tasiyiciSnap.docs) {
+        const tasiyiciData        = doc.data();
+        const tasiyiciSahibiId    = tasiyiciData.kullaniciId as string | undefined;
+        const tasiyiciTercih      = tasiyiciData.tasimaTercihi as string | undefined;
+        const tasiyiciNereden     = (tasiyiciData.nereden as string) ?? "";
+        if (tasiyiciTercih !== "istekler" && tasiyiciTercih !== "hepsi") continue;
+        if (nereden !== "Farketmez" && tasiyiciNereden !== nereden) continue;
+        if (!tasiyiciSahibiId || tasiyiciSahibiId === istekKullaniciId) continue;
+
+        await ikiliBildirimGonder(
+          () => bildirimGonder(tasiyiciSahibiId, baslik, icerik, "eslesme", ilanId),
+          () => db.collection("bildirimler").add({
+            kullaniciId: tasiyiciSahibiId,
+            tip:         "eslesme",
+            baslik,
+            icerik,
+            okundu:      false,
+            tarih:       admin.firestore.FieldValue.serverTimestamp(),
+            hedefId:     ilanId,
+          }),
+          (mesaj, hata) => console.warn(`İstek eşleşme bildirimi (${tasiyiciSahibiId}):`, mesaj, hata)
+        );
+      }
+    } catch (e) {
+      console.error("İstek eşleşme bildirimi hatası:", e);
+    }
+  }
+);
+
 export const algoliaTopluAktar = onCall(async (request) => {
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "Giriş yapmalısın.");
