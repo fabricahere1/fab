@@ -11,6 +11,7 @@ import '../../profil/providers/profil_provider.dart';
 import '../../../core/cache/app_cache_manager.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
+import '../../../shared/widgets/avatar_widget.dart';
 import 'package:flutter/rendering.dart';
 import '../../../router/app_router.dart';
 import 'package:go_router/go_router.dart';
@@ -228,6 +229,11 @@ class _SohbetKarti extends ConsumerWidget {
     final sabitlenmis = sohbet.sabitMi(benimUid);
     final anlasmaOnerildi = sohbet.anlasmaOnerildi(benimUid);
 
+    final ilansiz = sohbet.ilanBaslik.isEmpty && sohbet.ilanResimUrl.isEmpty;
+    final karsiFoto = ilansiz
+        ? ref.watch(karsiKullaniciFotoProvider(karsiUid)).value
+        : null;
+
     return GestureDetector(
       onLongPress: () => _silDialog(context, ref),
       onTap: () => Navigator.push(
@@ -268,7 +274,9 @@ class _SohbetKarti extends ConsumerWidget {
                           ),
                         ),
                       )
-                    : const _IlanResimYokKutusu(),
+                    : (ilansiz
+                        ? AvatarWidget(isim: karsiAd, fotoUrl: karsiFoto, radius: 29)
+                        : const _IlanResimYokKutusu()),
                 if (okunmamisSayi > 0)
                   Positioned(
                     right: 0,
@@ -296,7 +304,9 @@ class _SohbetKarti extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    sohbet.ilanBaslik.isNotEmpty ? sohbet.ilanBaslik : 'İlan',
+                    sohbet.ilanBaslik.isNotEmpty
+                        ? sohbet.ilanBaslik
+                        : (ilansiz ? 'Kişisel Mesaj' : 'İlan'),
                     style: GoogleFonts.dmSans(
                         fontWeight: FontWeight.w700,
                         fontSize: 14,

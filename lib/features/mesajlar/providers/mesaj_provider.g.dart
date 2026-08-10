@@ -159,6 +159,76 @@ final class KarsiKullaniciAdFamily extends $Family
   String toString() => r'karsiKullaniciAdProvider';
 }
 
+@ProviderFor(karsiKullaniciFoto)
+final karsiKullaniciFotoProvider = KarsiKullaniciFotoFamily._();
+
+final class KarsiKullaniciFotoProvider
+    extends $FunctionalProvider<AsyncValue<String?>, String?, FutureOr<String?>>
+    with $FutureModifier<String?>, $FutureProvider<String?> {
+  KarsiKullaniciFotoProvider._({
+    required KarsiKullaniciFotoFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'karsiKullaniciFotoProvider',
+         isAutoDispose: false,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$karsiKullaniciFotoHash();
+
+  @override
+  String toString() {
+    return r'karsiKullaniciFotoProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<String?> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<String?> create(Ref ref) {
+    final argument = this.argument as String;
+    return karsiKullaniciFoto(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is KarsiKullaniciFotoProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$karsiKullaniciFotoHash() =>
+    r'b7a81b208be3d7b4865c0637fba1537fcd52ece7';
+
+final class KarsiKullaniciFotoFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<String?>, String> {
+  KarsiKullaniciFotoFamily._()
+    : super(
+        retry: null,
+        name: r'karsiKullaniciFotoProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: false,
+      );
+
+  KarsiKullaniciFotoProvider call(String uid) =>
+      KarsiKullaniciFotoProvider._(argument: uid, from: this);
+
+  @override
+  String toString() => r'karsiKullaniciFotoProvider';
+}
+
 @ProviderFor(SohbetNotifier)
 final sohbetProvider = SohbetNotifierFamily._();
 
@@ -208,7 +278,7 @@ final class SohbetNotifierProvider
   }
 }
 
-String _$sohbetNotifierHash() => r'b775ef1e3117612f14d39948cd68e90da8088391';
+String _$sohbetNotifierHash() => r'74b185c43b12cbb96703b14e4dd6aec5b2247eab';
 
 final class SohbetNotifierFamily extends $Family
     with

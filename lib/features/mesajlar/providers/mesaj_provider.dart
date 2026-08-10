@@ -55,6 +55,17 @@ Future<String> karsiKullaniciAd(Ref ref, String uid) async {
   return displayName.isNotEmpty ? displayName : 'Kullanıcı';
 }
 
+// ── Karşı kullanıcı foto provider ────────────────────────────────────────────
+
+@Riverpod(keepAlive: true)
+Future<String?> karsiKullaniciFoto(Ref ref, String uid) async {
+  if (uid.isEmpty) return null;
+  final data = await ref
+      .read(kullaniciRepositoryProvider)
+      .kullaniciDataGetir(uid);
+  return data?['fotoUrl'] as String?;
+}
+
 // ── Sohbet ekranı state ───────────────────────────────────────────────────────
 // ✅ raw Map<String, dynamic> yerine typed MesajModel kullanıyor
 

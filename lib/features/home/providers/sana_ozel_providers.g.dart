@@ -149,7 +149,7 @@ final class BedenGoreIlanlarProvider
   }
 }
 
-String _$bedenGoreIlanlarHash() => r'26fb25b93cad710d379ec18b909e41a90c7e6abe';
+String _$bedenGoreIlanlarHash() => r'e30d0a4dea75801a6621490ef9336d1041636670';
 
 /// Diğer kullanıcıların aynı kategorilerde en çok istediği ürünler
 

@@ -567,6 +567,28 @@ function danEki(kelime: string): string {
   return `${kelime}'${ekTipi}`;
 }
 
+// Cloud Functions "at-least-once" teslimat garantisi verir — aynı Firestore
+// event'i (nadiren) birden fazla kez tetiklenebilir, bu da aynı eşleşme için
+// tekrarlanan push/Firestore bildirimlerine yol açar. `eslesmeBildirimKilidi`
+// koleksiyonunda (ilanId + hedefKullaniciId) çiftine deterministik bir
+// doküman ID'si atanır; transaction içindeki get+set, iki instance aynı anda
+// çalışsa bile yalnızca BİRİNİN "ilk kez" dönmesini garanti eder (Firestore
+// transaction serializability).
+async function eslesmeIlkKezMi(ilanId: string, hedefKullaniciId: string): Promise<boolean> {
+  const kilitRef = db.collection("eslesmeBildirimKilidi").doc(`${ilanId}_${hedefKullaniciId}`);
+  try {
+    return await db.runTransaction(async (tx) => {
+      const snap = await tx.get(kilitRef);
+      if (snap.exists) return false;
+      tx.set(kilitRef, { tarih: admin.firestore.FieldValue.serverTimestamp() });
+      return true;
+    });
+  } catch (e) {
+    console.warn(`Eşleşme kilidi transaction hatası (${ilanId}_${hedefKullaniciId}):`, e);
+    return false; // hata durumunda tekrar gönderme riskini almaktansa atla
+  }
+}
+
 // ── Eşleşme Bildirimi: Yeni Taşıyıcı İlanı → Aynı Güzergahtaki (nereden+nereye) İstek Sahipleri ──
 //
 // ÖNEMLİ: Bu trigger onDocumentCreated DEĞİL, onDocumentUpdated. Sebep:
@@ -624,6 +646,7 @@ export const ilanEslesmeBildirimi = onDocumentUpdated(
         const istekNereden  = (istekData.nereden as string) ?? "";
         if (istekNereden !== "Farketmez" && istekNereden !== nereden) continue;
         if (!istekSahibiId || istekSahibiId === tasiyiciKullaniciId) continue;
+        if (!(await eslesmeIlkKezMi(ilanId, istekSahibiId))) continue;
 
         await ikiliBildirimGonder(
           () => bildirimGonder(istekSahibiId, baslik, icerik, "eslesme", ilanId),
@@ -692,6 +715,7 @@ export const istekEslesmeBildirimi = onDocumentUpdated(
         if (tasiyiciTercih !== "istekler" && tasiyiciTercih !== "hepsi") continue;
         if (nereden !== "Farketmez" && tasiyiciNereden !== nereden) continue;
         if (!tasiyiciSahibiId || tasiyiciSahibiId === istekKullaniciId) continue;
+        if (!(await eslesmeIlkKezMi(ilanId, tasiyiciSahibiId))) continue;
 
         await ikiliBildirimGonder(
           () => bildirimGonder(tasiyiciSahibiId, baslik, icerik, "eslesme", ilanId),

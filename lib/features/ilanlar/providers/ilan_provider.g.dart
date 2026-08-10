@@ -145,7 +145,7 @@ final class IlanOlusturProvider
   }
 }
 
-String _$ilanOlusturHash() => r'11463927a58f268a5c6a8d7d8d86c3a07310918a';
+String _$ilanOlusturHash() => r'1b73efe4bb208abacf30fd2f7b8631a85cf26d2f';
 
 abstract class _$IlanOlustur extends $Notifier<IlanOlusturState> {
   IlanOlusturState build();
@@ -909,7 +909,7 @@ final class IlanIslemleriProvider
   }
 }
 
-String _$ilanIslemleriHash() => r'28eeee49d8f24bf5bc9b349f71aebca7c080e8af';
+String _$ilanIslemleriHash() => r'2ea3ac149aa0db8ff0b5b45e0a4c92eb793572bb';
 
 abstract class _$IlanIslemleri extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();

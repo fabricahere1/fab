@@ -208,7 +208,7 @@ final class EngellemeProvider
   }
 }
 
-String _$engellemeHash() => r'e471bc895a03b072d0b1fa3ec0fa56648f1c9141';
+String _$engellemeHash() => r'3d815b1ed471ad9df653b13ae8199547a01bbc93';
 
 abstract class _$Engelleme extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();
@@ -1067,7 +1067,7 @@ final class TakipIslemleriProvider
   }
 }
 
-String _$takipIslemleriHash() => r'c3590563c1458c2c8d4a79a9ed7754e7cd18f6ae';
+String _$takipIslemleriHash() => r'54b0dffd0e3a5c7ecf494578761dddf13fd8a034';
 
 abstract class _$TakipIslemleri extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();
