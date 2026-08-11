@@ -388,6 +388,8 @@ class _BildirimSatiri extends ConsumerWidget {
     BildirimTip.mesaj         => const Color(0xFFFFF0F0),
     BildirimTip.degerlendirme => const Color(0xFFFFF8E1),
     BildirimTip.anlasildi     => const Color(0xFFE8F5E9),
+    BildirimTip.ilan          => const Color(0xFFE3F2FD),
+    BildirimTip.eslesme       => const Color(0xFFF3E5F5),
     _                         => const Color(0xFFF5F5F5),
   };
 
@@ -395,6 +397,8 @@ class _BildirimSatiri extends ConsumerWidget {
     BildirimTip.mesaj         => AppColors.red,
     BildirimTip.degerlendirme => const Color(0xFFF59E0B),
     BildirimTip.anlasildi     => const Color(0xFF4CAF50),
+    BildirimTip.ilan          => const Color(0xFF2196F3),
+    BildirimTip.eslesme       => const Color(0xFF9C27B0),
     _                         => const Color(0xFF999999),
   };
 
