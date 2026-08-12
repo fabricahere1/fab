@@ -90,6 +90,15 @@ class _AppStateNotifier extends ChangeNotifier {
   late final ProviderSubscription _profilSub;
   late final ProviderSubscription _surumSub;
 
+  // benimKullaniciProfilProvider her yeni snapshot verdiğinde (cache +
+  // sunucu = en az 2 kez) notifyListeners() tetikleniyor, bu da GoRouter'ın
+  // async redirect'i üst üste/eşzamanlı çağırmasına yol açabiliyor. İki
+  // çağrı farklı sürede tamamlanınca "hangisi son biterse o kazanır" yarışı
+  // oluşuyor — bazen home'a bazen profil-tamamla'ya gitme sorununun kökü
+  // buydu. Bu sayaç, yalnızca EN SON başlatılan çağrının sonucunun
+  // uygulanmasını garanti eder.
+  int redirectGen = 0;
+
   @override
   void dispose() {
     _authSub.close();
@@ -164,7 +173,13 @@ GoRouter router(Ref ref) {
           loc == AppRoutes.login  ||
           loc == AppRoutes.register ||
           loc == AppRoutes.karsilama) {
-        return await _hedefBelirle(ref, user, returnRoute: returnRoute);
+        final gen = ++notifier.redirectGen;
+        final hedef = await _hedefBelirle(ref, user, returnRoute: returnRoute);
+        // Biz beklerken daha yeni bir redirect başladıysa, bizimki artık
+        // bayat (stale) — sonucumuzu uygulamadan vazgeçiyoruz; yeni çağrı
+        // zaten kendi (güncel) kararını verecek.
+        if (gen != notifier.redirectGen) return null;
+        return hedef;
       }
 
       if (loc == AppRoutes.profilTamamla) {
@@ -277,15 +292,17 @@ GoRouter router(Ref ref) {
   );
 }
 
-// ÖNEMLİ: isLoading kontrolüne güvenmiyoruz — AsyncValue.isLoading, provider
-// henüz İLK değerini vermeden false'a dönebileceği durumlara karşı kırılgan
-// (ör. splash→home geçişinde bir kare içinde loading/data arasında geçiş
-// yaşanabiliyor). Bunun yerine benimKullaniciProfilProvider'ın GERÇEKTEN
-// ilk emisyonunu (.future) bekliyoruz — bu, provider zaten veri vermişse
-// anında, vermemişse ilk Firestore snapshot'ı gelene kadar bekleyerek
-// çözülüyor. Bu süre boyunca redirect Future'ı tamamlanmadığı için GoRouter
-// mevcut (splash) sayfada kalır — "0,5 saniye kayıt formu görünüp kaybolma"
-// sorununun kökü buydu.
+// ÖNEMLİ: ne isLoading kontrolüne ne de stream'in "ilk emisyonuna" güveniyoruz.
+// AsyncValue.isLoading, provider henüz İLK değerini vermeden false'a
+// dönebilen durumlara karşı kırılgan. Stream'in ilk emisyonu da (.future ile
+// beklense bile) yanıltıcı olabiliyor: cihazda Firestore local persistence
+// açık olduğundan, temiz kurulumda ilk .snapshots() olayı boş cache'den
+// "doküman yok" diye gelip hemen ardından sunucudan gerçek veri geliyor —
+// "0,2-0,3 saniye kayıt formu görünüp kaybolma" sorununun asıl kökü buydu.
+// Bu yüzden burada stream yerine tek seferlik kullaniciGetir() (.get(),
+// Firestore'un varsayılan serverAndCache kaynağıyla önce sunucuyu dener)
+// kullanıyoruz — ama genel kullaniciStream'i (profil ekranı, favoriler vb.
+// offline-first çalışan diğer tüketiciler) bilerek değiştirmiyoruz.
 Future<String?> _hedefBelirle(Ref ref, User user, {String? returnRoute}) async {
   if (authYontemiBelirle(user) == AuthYontemi.email) {
     return returnRoute ?? AppRoutes.home;
@@ -293,12 +310,16 @@ Future<String?> _hedefBelirle(Ref ref, User user, {String? returnRoute}) async {
 
   KullaniciModel? profil;
   try {
-    profil = await ref.read(benimKullaniciProfilProvider.future);
+    profil = await ref
+        .read(kullaniciRepositoryProvider)
+        .kullaniciGetir(user.uid)
+        .timeout(const Duration(seconds: 6));
   } catch (_) {
-    // Profil sunucudan alınamadı (ör. ağ hatası) — sonsuza kadar splash'te
-    // kilitlenmemek için eski davranışa (tamamlanmamış say) düşüyoruz; bu,
-    // en azından kullanıcının tekrar deneyebileceği bir ekrana çıkarır.
-    profil = null;
+    // Sunucuya 6sn içinde ulaşılamadı (offline/timeout) — sonsuza kadar
+    // splash'te kilitlenmemek için, stream'in o ana kadar elinde olan
+    // (cache dahil) en güncel değerine düşüyoruz. "Yanlış form gösterme"
+    // riski, "sonsuza kilitlenme" riskinden daha kabul edilebilir.
+    profil = ref.read(benimKullaniciProfilProvider).value;
   }
 
   final tamamlandi = profil?.profilTamamlandi ?? false;
