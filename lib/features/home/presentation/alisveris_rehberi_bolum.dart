@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:iste_v3/shared/constants/app_colors.dart';
 
 enum _TagTipi { ucuz, ozel, populer }
@@ -33,7 +32,7 @@ class _Sehir {
 final _sehirler = <_Sehir>[
 
   _Sehir('ny', 'New York', 'assets/images/rehber/new_york.png', "New York'tan gelecek taşıyıcıdan ne istenir?", [
-    _Kategori('Ayakkabı & Spor', Symbols.steps, [
+    _Kategori('Ayakkabı & Spor', Icons.directions_walk_outlined, [
       _Urun('Nike / Jordan özel seri', "Türkiye'ye gelmeyen colorway'ler, outlet'te %40-60 ucuz", _TagTipi.ozel),
       _Urun('New Balance 9060', "Nordstrom Rack'te indirimli, Türkiye fiyatının yarısı", _TagTipi.ucuz),
       _Urun('Adidas Yeezy / Samba', "US'te stok çok bol, fiyatlar %30-50 daha düşük", _TagTipi.ucuz),
@@ -41,7 +40,7 @@ final _sehirler = <_Sehir>[
       _Urun('Converse & Vans', "ABD markası, Türkiye'de 2-3x pahalı", _TagTipi.ucuz),
       _Urun('Skechers', "ABD markası, fabrika outlet'te çok ucuz", _TagTipi.ucuz),
     ]),
-    _Kategori('Kozmetik & Parfüm', Symbols.experiment, [
+    _Kategori('Kozmetik & Parfüm', Icons.science_outlined, [
       _Urun('Rare Beauty', "Türkiye'de resmi satış yok, Sephora'dan al", _TagTipi.ozel),
       _Urun('Rhode', "Türkiye'de resmi satış yok, peptide lip tint popüler", _TagTipi.ozel),
       _Urun('elf Cosmetics', "Türkiye'de çok pahalı, US'te 1-5 dolar arası ürünler var", _TagTipi.ucuz),
@@ -51,7 +50,7 @@ final _sehirler = <_Sehir>[
       _Urun('NYX Professional Makeup', "Türkiye'de 3-4x pahalı, Ulta'dan çok uygun", _TagTipi.ucuz),
       _Urun('Benefit Cosmetics', "Sephora'da set halinde çok uygun", _TagTipi.ucuz),
     ]),
-    _Kategori('Elektronik', Symbols.devices, [
+    _Kategori('Elektronik', Icons.devices_outlined, [
       _Urun('Beats kulaklık', "Best Buy'da ABD fiyatı Türkiye'nin %40 altında", _TagTipi.ucuz),
       _Urun('JBL hoparlör', "ABD üretimi, Türkiye'de 2x pahalı", _TagTipi.ucuz),
       _Urun('GoPro & aksesuarlar', "US fiyatı Türkiye'nin %40 altında", _TagTipi.ucuz),
@@ -59,14 +58,14 @@ final _sehirler = <_Sehir>[
       _Urun('Anker şarj cihazları', "ABD markası, doğrudan ülkesinde ucuz", _TagTipi.ucuz),
       _Urun('Gaming aksesuarları', "Razer, SteelSeries — Türkiye'den ucuz", _TagTipi.ucuz),
     ]),
-    _Kategori('Vitamin & Takviye', Symbols.nutrition, [
+    _Kategori('Vitamin & Takviye', Icons.medication_outlined, [
       _Urun('Costco vitamin seti', "Omega-3, D3, B12 — Türkiye'de 3-4x pahalı", _TagTipi.ucuz),
       _Urun('Optimum Nutrition Protein', "5 lb kutu — Türkiye'de 2x fiyatına satılıyor", _TagTipi.ucuz),
       _Urun('Collagen takviyesi', "Vital Proteins — Türkiye'de resmi dağıtım yok", _TagTipi.ozel),
       _Urun('Melatonin gummies', "ABD'de ucuz ve çeşitli, Türkiye'de reçeteli", _TagTipi.ozel),
       _Urun('Pre-workout C4 / Ghost', "Türkiye'de ya yok ya da çok pahalı", _TagTipi.ucuz),
     ]),
-    _Kategori('Giyim & Moda', Symbols.styler, [
+    _Kategori('Giyim & Moda', Icons.checkroom_outlined, [
       _Urun("Levi's 501 jeans", "Türkiye'den 2-3x daha ucuz", _TagTipi.ucuz),
       _Urun('Ralph Lauren Polo', "Outlet'te %50-70 indirimli", _TagTipi.ucuz),
       _Urun('Coach / Kate Spade', "Woodbury Common outlet'te %70'e kadar indirim", _TagTipi.populer),
@@ -74,7 +73,7 @@ final _sehirler = <_Sehir>[
       _Urun('Michael Kors çanta', "Outlet'te Türkiye fiyatının üçte biri", _TagTipi.populer),
       _Urun('Abercrombie & Fitch', "Türkiye'de resmi mağaza yok", _TagTipi.ozel),
     ]),
-    _Kategori('Ev & Yaşam', Symbols.home, [
+    _Kategori('Ev & Yaşam', Icons.home_outlined, [
       _Urun('KitchenAid mutfak robotu', "ABD markası, Türkiye'de 3x pahalı", _TagTipi.ucuz),
       _Urun('Lodge dökme demir tava', "TJ Maxx'te çok uygun", _TagTipi.ucuz),
       _Urun('Yankee Candle mum seti', "Türkiye'de 3x pahalı", _TagTipi.ucuz),
@@ -83,7 +82,7 @@ final _sehirler = <_Sehir>[
   ]),
 
   _Sehir('london', 'Londra', 'assets/images/rehber/londra.png', "Londra'dan gelecek taşıyıcıdan ne istenir?", [
-    _Kategori('Giyim & Moda', Symbols.styler, [
+    _Kategori('Giyim & Moda', Icons.checkroom_outlined, [
       _Urun('ASOS özel seri', "Sale'de Türkiye fiyatının çok altında", _TagTipi.ucuz),
       _Urun('Burberry outlet', "Bicester Village'da %50-70 indirim", _TagTipi.populer),
       _Urun('Dr Martens', "İngiliz markası, Türkiye'de 2x pahalı", _TagTipi.ucuz),
@@ -91,47 +90,47 @@ final _sehirler = <_Sehir>[
       _Urun('Barbour ceket', "İngiliz ikonik marka, Türkiye'de resmi satış yok", _TagTipi.ozel),
       _Urun('Next & M&S giyim', "Sale'de çok uygun İngiliz markalar", _TagTipi.ucuz),
     ]),
-    _Kategori('Kozmetik', Symbols.experiment, [
+    _Kategori('Kozmetik', Icons.science_outlined, [
       _Urun('Charlotte Tilbury', "İngiliz lüks kozmetik, Türkiye'de resmi satış yok", _TagTipi.ozel),
       _Urun('The Body Shop seti', "Sale'de %50 indirim", _TagTipi.ucuz),
       _Urun('Elemis cilt bakım', "İngiliz premium marka, Türkiye'de yok", _TagTipi.ozel),
       _Urun('Lush el yapımı', "Türkiye'de çok az mağaza, fiyatlar yüksek", _TagTipi.ucuz),
       _Urun('Revolution Beauty', "Çok uygun İngiliz markası, Türkiye'de yok", _TagTipi.ucuz),
     ]),
-    _Kategori('Gıda & İçecek', Symbols.grocery, [
+    _Kategori('Gıda & İçecek', Icons.shopping_basket_outlined, [
       _Urun('Cadbury çikolata seti', "Türkiye'de bulunmayan tatlar: Caramel, Wispa", _TagTipi.ozel),
       _Urun('M&S gıda hediyelik', "Bisküvi seti, çaylar — Türkiye'de yok", _TagTipi.populer),
       _Urun('Yorkshire Tea & Clipper', "Kaliteli İngiliz çayları, Türkiye'de yok", _TagTipi.ozel),
       _Urun('Marmite & HP Sauce', "İngiliz ikonik gıdalar, Türkiye'de bulunmaz", _TagTipi.ozel),
     ]),
-    _Kategori('Elektronik', Symbols.devices, [
+    _Kategori('Elektronik', Icons.devices_outlined, [
       _Urun('Dyson Airwrap', "İngiliz markası, UK'de %20-30 ucuz", _TagTipi.ucuz),
       _Urun('Dyson V15 süpürge', "Türkiye'de çok pahalı", _TagTipi.ucuz),
     ]),
   ]),
 
   _Sehir('paris', 'Paris', 'assets/images/rehber/paris.png', "Paris'ten gelecek taşıyıcıdan ne istenir?", [
-    _Kategori('Lüks Moda', Symbols.shopping_bag, [
+    _Kategori('Lüks Moda', Icons.shopping_bag_outlined, [
       _Urun('Longchamp Le Pliage', "Paris'te Türkiye'ye göre %25-30 ucuz", _TagTipi.populer),
       _Urun('APC giyim', "Fransız minimal moda markası, Türkiye'de yok", _TagTipi.ozel),
       _Urun('Sandro & Maje', "Fransız orta segment, Türkiye'de yok", _TagTipi.ozel),
       _Urun('Isabel Marant', "Fransız bohem moda, Türkiye'de yok", _TagTipi.ozel),
     ]),
-    _Kategori('Parfüm', Symbols.air_freshener, [
+    _Kategori('Parfüm', Icons.spa_outlined, [
       _Urun('Diptyque mum & parfüm', "Paris'te Türkiye'nin %40 altında", _TagTipi.ozel),
       _Urun('Maison Margiela Replica', "Türkiye'de çok pahalı, Paris'te %30 ucuz", _TagTipi.ucuz),
       _Urun('Byredo parfüm', "Türkiye'de resmi satış yok", _TagTipi.ozel),
       _Urun('Duty Free Chanel / Dior', "CDG'de Türkiye fiyatının yarısı", _TagTipi.ucuz),
       _Urun('Annick Goutal', "Fransız butik parfüm, Türkiye'de yok", _TagTipi.ozel),
     ]),
-    _Kategori('Cilt Bakımı', Symbols.face_retouching_natural, [
+    _Kategori('Cilt Bakımı', Icons.face_outlined, [
       _Urun('La Roche-Posay', "Fransız eczane markası, Türkiye'de 2x pahalı", _TagTipi.ucuz),
       _Urun('Vichy Liftactiv', "Paris eczanesinden çok uygun", _TagTipi.ucuz),
       _Urun('Embryolisse krem', "Makyaj sanatçılarının tercihi, Türkiye'de yok", _TagTipi.ozel),
       _Urun('Avène thermal su', "Paris eczanesinden çok ucuz", _TagTipi.ozel),
       _Urun('Nuxe Huile Prodigieuse', "Fransız cilt yağı, Türkiye'de 2x pahalı", _TagTipi.ucuz),
     ]),
-    _Kategori('Gıda & Mutfak', Symbols.grocery, [
+    _Kategori('Gıda & Mutfak', Icons.shopping_basket_outlined, [
       _Urun('Valrhona çikolata', "Şeflerin kullandığı Fransız çikolata", _TagTipi.ucuz),
       _Urun('Maille hardal çeşitleri', "Dijon hardalı, Türkiye'de bulunmaz", _TagTipi.ozel),
       _Urun('Fauchon reçel seti', "Fransız gurme gıda, özel tatlar", _TagTipi.ozel),
@@ -139,26 +138,26 @@ final _sehirler = <_Sehir>[
   ]),
 
   _Sehir('tokyo', 'Tokyo', 'assets/images/rehber/tokyo.png', "Tokyo'dan gelecek taşıyıcıdan ne istenir?", [
-    _Kategori('Oyun & Anime', Symbols.sports_esports, [
+    _Kategori('Oyun & Anime', Icons.sports_esports_outlined, [
       _Urun('Nintendo Switch Japonya exclusive', "Japonya'ya özel oyunlar, Türkiye'de yok", _TagTipi.ozel),
       _Urun('Pokemon Center ürünleri', "Türkiye'de yok, orijinal koleksiyon", _TagTipi.populer),
       _Urun('Anime figür orijinal', "Akihabara'dan orijinal, Türkiye'de sahte çok", _TagTipi.populer),
       _Urun('Amiibo figure', "Nintendo koleksiyon, Japonya özel seri", _TagTipi.ozel),
     ]),
-    _Kategori('Cilt Bakımı', Symbols.face_retouching_natural, [
+    _Kategori('Cilt Bakımı', Icons.face_outlined, [
       _Urun('SK-II Facial Essence', "Japonya'da %40 ucuz, orijinal garantili", _TagTipi.ucuz),
       _Urun('Shiseido Ultimune', "Japonya'da üretiliyor, %30-40 ucuz", _TagTipi.ucuz),
       _Urun('Hada Labo Gokujyun', "Japonya'da çok ucuz, Türkiye'de yok", _TagTipi.ozel),
       _Urun('Biore / Anessa güneş kremi', "Japon güneş kremleri Türkiye'de yok", _TagTipi.ozel),
       _Urun('DHC Deep Cleansing Oil', "Japonya'da Türkiye'nin çok altında", _TagTipi.ucuz),
     ]),
-    _Kategori('Sneaker & Giyim', Symbols.steps, [
+    _Kategori('Sneaker & Giyim', Icons.directions_walk_outlined, [
       _Urun('Asics Japonya özel seri', "Japan exclusive colorway, hiçbir yerde satılmıyor", _TagTipi.ozel),
       _Urun('Onitsuka Tiger', "Türkiye'de 2x pahalı, Japonya'da geniş koleksiyon", _TagTipi.ucuz),
       _Urun('Uniqlo özel koleksiyon', "HEATTECH serisi çok popüler, Türkiye'de mağaza yok", _TagTipi.populer),
       _Urun('Muji ürünleri', "Japonya'da çok ucuz, Türkiye'de yok", _TagTipi.ucuz),
     ]),
-    _Kategori('Gıda & Atıştırmalık', Symbols.grocery, [
+    _Kategori('Gıda & Atıştırmalık', Icons.shopping_basket_outlined, [
       _Urun('Kit Kat özel Japon tatları', "Matcha, Sakura, Wasabi — Türkiye'de yok", _TagTipi.ozel),
       _Urun('Pocky & Pretz özel seri', "Japonya'ya özel tatlar", _TagTipi.ozel),
       _Urun('Meiji çikolata', "Japonya'da üretiliyor, çok ucuz", _TagTipi.ucuz),
@@ -166,44 +165,44 @@ final _sehirler = <_Sehir>[
   ]),
 
   _Sehir('dubai', 'Dubai', 'assets/images/rehber/dubai.png', "Dubai'den gelecek taşıyıcıdan ne istenir?", [
-    _Kategori('Duty Free & Parfüm', Symbols.flight_takeoff, [
+    _Kategori('Duty Free & Parfüm', Icons.flight_takeoff, [
       _Urun('Creed Aventus', "Dubai Duty Free'de Türkiye fiyatının %50 altında", _TagTipi.populer),
       _Urun('Amouage Gold / Interlude', "Orta Doğu'da üretilen lüks parfüm, Türkiye'de çok pahalı", _TagTipi.ozel),
       _Urun('Oud & Arap parfümleri', "Ajmal, Abdul Samad — Türkiye'de yok", _TagTipi.ozel),
       _Urun('Tom Ford parfüm', "Dubai Duty Free'de %30-40 ucuz", _TagTipi.ucuz),
       _Urun('Bakhoor & oud tütsü', "Arap geleneği, Türkiye'de yok", _TagTipi.ozel),
     ]),
-    _Kategori('Altın & Takı', Symbols.diamond, [
+    _Kategori('Altın & Takı', Icons.diamond_outlined, [
       _Urun('22 ayar altın kolye', "Gold Souk'ta işçilik Türkiye'nin üçte biri", _TagTipi.ucuz),
       _Urun('El yapımı gümüş takı', "Gold Souk'ta çok uygun", _TagTipi.ucuz),
       _Urun('Oud ahşap tespih', "El yapımı, Türkiye'de çok nadir", _TagTipi.ozel),
     ]),
-    _Kategori('Elektronik', Symbols.devices, [
+    _Kategori('Elektronik', Icons.devices_outlined, [
       _Urun('iPhone (KDV 0)', "Dubai'de KDV yok, Türkiye'den %20-30 ucuz", _TagTipi.ucuz),
       _Urun('Samsung Galaxy', "Global versiyon, Türkiye fiyatının %20 altında", _TagTipi.ucuz),
       _Urun('Sony & Canon kamera', "KDV avantajı, Türkiye'den %15-20 ucuz", _TagTipi.ucuz),
       _Urun('PS5 oyunları', "KDV avantajı ile Türkiye'den ucuz", _TagTipi.ucuz),
     ]),
-    _Kategori('Giyim & Marka', Symbols.styler, [
+    _Kategori('Giyim & Marka', Icons.checkroom_outlined, [
       _Urun('Ralph Lauren', "Saks Dubai outlet'te %50-90 indirim", _TagTipi.ucuz),
       _Urun('Hugo Boss', "Dubai Mall'da Türkiye'den %20-25 ucuz", _TagTipi.ucuz),
     ]),
   ]),
 
   _Sehir('berlin', 'Berlin', 'assets/images/rehber/berlin.png', "Berlin'den gelecek taşıyıcıdan ne istenir?", [
-    _Kategori('Giyim', Symbols.styler, [
+    _Kategori('Giyim', Icons.checkroom_outlined, [
       _Urun('Zalando outlet', "Almanya'da ucuz, Türkiye'ye kargo yok", _TagTipi.ucuz),
       _Urun('Adidas Almanya özel seri', "Alman markası, özel renkler ve koleksiyonlar", _TagTipi.ozel),
       _Urun('Hugo Boss outlet', "Almanya'da %30-40 ucuz", _TagTipi.ucuz),
       _Urun('Birkenstock', "Alman markası, kendi ülkesinde %20-30 ucuz", _TagTipi.ucuz),
     ]),
-    _Kategori('Cilt & Saç Bakımı', Symbols.face_retouching_natural, [
+    _Kategori('Cilt & Saç Bakımı', Icons.face_outlined, [
       _Urun('Nivea Almanya özel serisi', "Alman formülü Türkiye'dekinden farklı", _TagTipi.ozel),
       _Urun('Weleda doğal bakım', "Alman organik marka, Türkiye'de çok pahalı", _TagTipi.ucuz),
       _Urun('Lavera vegan kozmetik', "Alman sertifikalı organik, Türkiye'de yok", _TagTipi.ozel),
       _Urun('dm Drogerie özel marka', "Çok ucuz ve kaliteli Alman ürünleri", _TagTipi.ucuz),
     ]),
-    _Kategori('Gıda', Symbols.grocery, [
+    _Kategori('Gıda', Icons.shopping_basket_outlined, [
       _Urun('Haribo şeker çeşitleri', "Alman markası, Türkiye'de çok pahalı ve az çeşit", _TagTipi.ucuz),
       _Urun('Ritter Sport özel tatlar', "Almanya'ya özel tatlar, Türkiye'de yok", _TagTipi.ozel),
       _Urun('Bahlsen bisküvi seti', "Alman bisküvi, Türkiye'de yok", _TagTipi.ozel),
@@ -211,26 +210,26 @@ final _sehirler = <_Sehir>[
   ]),
 
   _Sehir('milano', 'Milano', 'assets/images/rehber/milano.png', "Milano'dan gelecek taşıyıcıdan ne istenir?", [
-    _Kategori('Deri & Çanta', Symbols.shopping_bag, [
+    _Kategori('Deri & Çanta', Icons.shopping_bag_outlined, [
       _Urun('Furla çanta', "İtalyan deri çanta, Türkiye'de 2x pahalı", _TagTipi.ucuz),
       _Urun('Coccinelle çanta', "Milano'da Türkiye'nin yarısı", _TagTipi.ucuz),
       _Urun('Gucci / Prada outlet', "Serravalle outlet'te %30-50 indirim", _TagTipi.populer),
       _Urun('Bottega Veneta aksesuar', "İtalya'da %20-25 ucuz", _TagTipi.ucuz),
     ]),
-    _Kategori('Ayakkabı', Symbols.steps, [
+    _Kategori('Ayakkabı', Icons.directions_walk_outlined, [
       _Urun("Tod's loafer", "İtalyan el yapımı ayakkabı, üretildiği ülkede ucuz", _TagTipi.ucuz),
       _Urun('Geox & Camper', "İtalyan konfor ayakkabı, Türkiye'de 2x pahalı", _TagTipi.ucuz),
       _Urun('Golden Goose sneaker', "İtalyan sneaker, Türkiye'de çok pahalı", _TagTipi.ucuz),
       _Urun('Premiata sneaker', "İtalyan tasarım, Türkiye'de yok", _TagTipi.ozel),
     ]),
-    _Kategori('Moda Aksesuar', Symbols.styler, [
+    _Kategori('Moda Aksesuar', Icons.checkroom_outlined, [
       _Urun('Armani / Versace güneş gözlüğü', "İtalya'da %20-30 ucuz, orijinal garantili", _TagTipi.ucuz),
       _Urun('Max Mara trençkot', "İtalyan kalite, Türkiye'de çok pahalı", _TagTipi.ozel),
     ]),
   ]),
 
   _Sehir('seul', 'Seul', 'assets/images/rehber/seul.png', "Seul'den gelecek taşıyıcıdan ne istenir?", [
-    _Kategori('K-Beauty', Symbols.experiment, [
+    _Kategori('K-Beauty', Icons.science_outlined, [
       _Urun('Laneige Water Sleeping Mask', "Kore'de üretiliyor, Türkiye'ye göre %50 ucuz", _TagTipi.ucuz),
       _Urun('COSRX Advanced Snail', "Salyangoz özlü serum, Türkiye'de sahte çok", _TagTipi.populer),
       _Urun('INNISFREE Green Tea Serum', "Türkiye'de resmi satış yok", _TagTipi.ozel),
@@ -238,17 +237,17 @@ final _sehirler = <_Sehir>[
       _Urun('Missha Time Revolution', "Kore best seller, Türkiye'de nadir", _TagTipi.ozel),
       _Urun('Beauty of Joseon', "Kore geleneksel bakım, Türkiye'de yok", _TagTipi.ozel),
     ]),
-    _Kategori('K-Pop & Koleksiyon', Symbols.music_note, [
+    _Kategori('K-Pop & Koleksiyon', Icons.music_note_outlined, [
       _Urun('BTS / Blackpink merch', "Weverse Shop orijinal, Türkiye'de sahte çok", _TagTipi.populer),
       _Urun('Aespa / NewJeans photocard', "Orijinal album ve photocard, Kore özel", _TagTipi.ozel),
       _Urun('Hybe / SM / JYP mağaza', "Artist exclusive ürünler", _TagTipi.ozel),
     ]),
-    _Kategori('K-Fashion', Symbols.styler, [
+    _Kategori('K-Fashion', Icons.checkroom_outlined, [
       _Urun('Gentle Monster gözlük', "Kore tasarım, Türkiye'de %40 pahalı", _TagTipi.ucuz),
       _Urun('Ader Error giyim', "Kore designer marka, Türkiye'de yok", _TagTipi.ozel),
       _Urun('MLB Korea cap', "Kore'de çok popüler, Türkiye'de yok", _TagTipi.ozel),
     ]),
-    _Kategori('Elektronik', Symbols.devices, [
+    _Kategori('Elektronik', Icons.devices_outlined, [
       _Urun('Samsung Kore sürümü', "Kore versiyonunda ek özellikler, fiyat Türkiye'den ucuz", _TagTipi.ucuz),
       _Urun('LG gram laptop', "Kore'de üretiliyor, %15-20 ucuz", _TagTipi.ucuz),
     ]),
@@ -282,7 +281,7 @@ class _AlisverisRehberiBolumState extends State<AlisverisRehberiBolum> {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
           child: Row(children: [
-            const Icon(Symbols.travel_explore, size: 16, color: AppColors.red),
+            const Icon(Icons.explore_outlined, size: 16, color: AppColors.red),
             const SizedBox(width: 6),
             Text('İstekçi rehberi',
                 style: GoogleFonts.notoSans(
@@ -423,7 +422,7 @@ class _KategoriKarti extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
               child: Row(children: [
-                Icon(kategori.ikon, size: 20, weight: 300, color: AppColors.textSecondary),
+                Icon(kategori.ikon, size: 20, color: AppColors.textSecondary),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(kategori.ad,
@@ -435,7 +434,7 @@ class _KategoriKarti extends StatelessWidget {
                 AnimatedRotation(
                   turns: acik ? 0.5 : 0,
                   duration: const Duration(milliseconds: 200),
-                  child: const Icon(Symbols.expand_more, size: 18, color: AppColors.textSecondary),
+                  child: const Icon(Icons.expand_more, size: 18, color: AppColors.textSecondary),
                 ),
               ]),
             ),

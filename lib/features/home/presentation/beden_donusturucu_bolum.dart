@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:iste_v3/shared/constants/app_colors.dart';
 
 // ── Veri ─────────────────────────────────────────────────────────────────────
@@ -90,7 +89,7 @@ class _BedenDonusturucuBolumState extends State<BedenDonusturuculBolum> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
             child: Row(children: [
-              const Icon(Symbols.straighten, size: 16, color: AppColors.red),
+              const Icon(Icons.straighten, size: 16, color: AppColors.red),
               const SizedBox(width: 6),
               Text('Bedenini bul',
                   style: GoogleFonts.notoSans(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
@@ -98,7 +97,7 @@ class _BedenDonusturucuBolumState extends State<BedenDonusturuculBolum> {
               AnimatedRotation(
                 turns: _acik ? 0.5 : 0,
                 duration: const Duration(milliseconds: 200),
-                child: const Icon(Symbols.expand_more, size: 22, color: AppColors.red),
+                child: const Icon(Icons.expand_more, size: 22, color: AppColors.red),
               ),
             ]),
           ),

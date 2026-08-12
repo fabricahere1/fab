@@ -20,6 +20,7 @@ import '../features/ilanlar/presentation/gelenler_screen.dart';
 import '../features/auth/data/auth_repository.dart' show AuthYontemi, authYontemiBelirle;
 import '../features/auth/providers/auth_provider.dart';
 import '../features/profil/providers/profil_provider.dart';
+import '../features/profil/domain/kullanici_model.dart';
 import '../core/services/surum_kapisi.dart';
 import '../shared/widgets/guncelleme_gerekli_screen.dart';
 import '../features/profil/presentation/takip_listesi_screen.dart';
@@ -107,7 +108,7 @@ GoRouter router(Ref ref) {
     navigatorKey: navigatorKey,
     initialLocation: AppRoutes.splash,
     refreshListenable: notifier,
-    redirect: (context, state) {
+    redirect: (context, state) async {
       if (ref.read(yenidenKimlikDogrulamaSuruyorProvider) ||
           ref.read(girisYapiliyorProvider)) {
         return null;
@@ -163,7 +164,7 @@ GoRouter router(Ref ref) {
           loc == AppRoutes.login  ||
           loc == AppRoutes.register ||
           loc == AppRoutes.karsilama) {
-        return _hedefBelirle(ref, user, returnRoute: returnRoute);
+        return await _hedefBelirle(ref, user, returnRoute: returnRoute);
       }
 
       if (loc == AppRoutes.profilTamamla) {
@@ -276,15 +277,31 @@ GoRouter router(Ref ref) {
   );
 }
 
-String? _hedefBelirle(Ref ref, User user, {String? returnRoute}) {
-  final profilAsync = ref.read(benimKullaniciProfilProvider);
-  if (profilAsync.isLoading) return null;
-
+// ÖNEMLİ: isLoading kontrolüne güvenmiyoruz — AsyncValue.isLoading, provider
+// henüz İLK değerini vermeden false'a dönebileceği durumlara karşı kırılgan
+// (ör. splash→home geçişinde bir kare içinde loading/data arasında geçiş
+// yaşanabiliyor). Bunun yerine benimKullaniciProfilProvider'ın GERÇEKTEN
+// ilk emisyonunu (.future) bekliyoruz — bu, provider zaten veri vermişse
+// anında, vermemişse ilk Firestore snapshot'ı gelene kadar bekleyerek
+// çözülüyor. Bu süre boyunca redirect Future'ı tamamlanmadığı için GoRouter
+// mevcut (splash) sayfada kalır — "0,5 saniye kayıt formu görünüp kaybolma"
+// sorununun kökü buydu.
+Future<String?> _hedefBelirle(Ref ref, User user, {String? returnRoute}) async {
   if (authYontemiBelirle(user) == AuthYontemi.email) {
     return returnRoute ?? AppRoutes.home;
   }
 
-  final tamamlandi = profilAsync.value?.profilTamamlandi ?? false;
+  KullaniciModel? profil;
+  try {
+    profil = await ref.read(benimKullaniciProfilProvider.future);
+  } catch (_) {
+    // Profil sunucudan alınamadı (ör. ağ hatası) — sonsuza kadar splash'te
+    // kilitlenmemek için eski davranışa (tamamlanmamış say) düşüyoruz; bu,
+    // en azından kullanıcının tekrar deneyebileceği bir ekrana çıkarır.
+    profil = null;
+  }
+
+  final tamamlandi = profil?.profilTamamlandi ?? false;
   if (!tamamlandi) {
     if (returnRoute != null) {
       return '${AppRoutes.profilTamamla}?returnRoute=${Uri.encodeComponent(returnRoute)}';

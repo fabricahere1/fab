@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:iste_v3/shared/constants/app_colors.dart';
 
 // ── Veri modeli ───────────────────────────────────────────────────────────────
@@ -34,8 +33,8 @@ class _Tab {
 // ── Veriler ───────────────────────────────────────────────────────────────────
 
 const _tablar = [
-  _Tab('Gümrük', Symbols.gavel, [
-    _Kart('Yolcu beraberinde getirme', Symbols.person_check, [
+  _Tab('Gümrük', Icons.gavel, [
+    _Kart('Yolcu beraberinde getirme', Icons.how_to_reg_outlined, [
       _Satir('430 Euro muafiyet hakkı',
           '18 yaş üstü her yolcu beraberinde 430 Euro değerinde eşyayı vergisiz getirebilir. 15 yaş altı için 150 Euro.',
           badge: '2026 güncel', badgeTipi: _BadgeTipi.yesil),
@@ -48,7 +47,7 @@ const _tablar = [
           'Yolcu beraberinde getirilen cep telefonu için yaklaşık 45.000 TL harç ödenerek IMEI kaydı yaptırılması gerekir.',
           badge: 'Dikkat', badgeTipi: _BadgeTipi.sari),
     ]),
-    _Kart('Yasak ve kısıtlı ürünler', Symbols.warning, [
+    _Kart('Yasak ve kısıtlı ürünler', Icons.warning_amber_outlined, [
       _Satir('Et ve süt ürünleri yasak',
           'Tarım Bakanlığı düzenlemesine göre et ve süt ürünlerinin kişisel sevkiyat olarak getirilmesi yasaktır. El konulabilir.',
           badge: 'Yasak', badgeTipi: _BadgeTipi.kirmizi),
@@ -60,7 +59,7 @@ const _tablar = [
           'Gümrük memurları ürün değerini faturaya göre belirler. Pahalı ürünlerde fatura gösteremezsen beyan değeri yüksek tutulabilir.',
           badge: 'İpucu', badgeTipi: _BadgeTipi.sari),
     ]),
-    _Kart('Pratik gümrük ipuçları', Symbols.lightbulb, [
+    _Kart('Pratik gümrük ipuçları', Icons.lightbulb_outline, [
       _Satir('Ambalajı aç',
           'Yeni ürünlerin orijinal kutusu açılmamışsa ticari mal sayılma riski artar. Kullanılmış görünmesi avantaj sağlar.',
           badge: 'Strateji', badgeTipi: _BadgeTipi.mavi),
@@ -73,8 +72,8 @@ const _tablar = [
     ]),
   ]),
 
-  _Tab('Bagaj', Symbols.luggage, [
-    _Kart('Havayolu bagaj hakları', Symbols.flight, [
+  _Tab('Bagaj', Icons.luggage_outlined, [
+    _Kart('Havayolu bagaj hakları', Icons.flight_outlined, [
       _Satir('THY — 20-30 kg',
           'Ekonomi sınıfı dış hat uçuşlarda genellikle 20-30 kg. Kabin bagajı max 8 kg, 55x40x23 cm.',
           badge: 'En yüksek hak', badgeTipi: _BadgeTipi.yesil),
@@ -86,7 +85,7 @@ const _tablar = [
           'Tüm havayollarında tek bir valiz 32 kg\'ı geçemez. Fazlası için en az 2 parçaya bölünmeli.',
           badge: 'Kural', badgeTipi: _BadgeTipi.kirmizi),
     ]),
-    _Kart('Ekstra bagaj stratejisi', Symbols.savings, [
+    _Kart('Ekstra bagaj stratejisi', Icons.savings_outlined, [
       _Satir('Online al, havalimanında alma',
           'Ekstra bagaj hakkını uçuştan önce online almak çok daha ucuz. Havalimanı kontuarında %50-100 fazla ücret alınır.',
           badge: 'Tasarruf', badgeTipi: _BadgeTipi.yesil),
@@ -96,7 +95,7 @@ const _tablar = [
       _Satir('Miles&Smiles ile ekstra hak',
           'THY sadakat programı üyeleri sınıfa göre ekstra bagaj hakkı kazanır.'),
     ]),
-    _Kart('Kabinde taşınamaz', Symbols.block, [
+    _Kart('Kabinde taşınamaz', Icons.block, [
       _Satir('Sıvılar max 100 ml',
           'Kabinde her sıvı ürün 100 ml\'yi geçemez. Şeffaf plastik torbada taşınmalı.',
           badge: 'Kural', badgeTipi: _BadgeTipi.kirmizi),
@@ -109,8 +108,8 @@ const _tablar = [
     ]),
   ]),
 
-  _Tab('Paketleme', Symbols.inventory_2, [
-    _Kart('Kırılabilir ürünler', Symbols.inventory_2, [
+  _Tab('Paketleme', Icons.inventory_2_outlined, [
+    _Kart('Kırılabilir ürünler', Icons.inventory_2_outlined, [
       _Satir('Kıyafet ile sar',
           'Kırılabilir ürünleri kıyafetlerin arasına sararak valizin ortasına yerleştir. En güvenli yöntem.',
           badge: 'İpucu', badgeTipi: _BadgeTipi.yesil),
@@ -120,7 +119,7 @@ const _tablar = [
           'Tüm sıvı ürünleri ziplock poşet içine koy. Basınç değişiminde sızıntı olabilir.',
           badge: 'Dikkat', badgeTipi: _BadgeTipi.sari),
     ]),
-    _Kart('Ağırlık yönetimi', Symbols.scale, [
+    _Kart('Ağırlık yönetimi', Icons.monitor_weight_outlined, [
       _Satir('Bagaj tartısı al',
           'Seyahat tartısı ile evde tartarak git. Havalimanı sürprizlerinden kaçın.',
           badge: 'Tavsiye', badgeTipi: _BadgeTipi.yesil),
@@ -132,8 +131,8 @@ const _tablar = [
     ]),
   ]),
 
-  _Tab('Ücret', Symbols.payments, [
-    _Kart('İstekçiden nasıl ücret alınır', Symbols.payments, [
+  _Tab('Ücret', Icons.payments_outlined, [
+    _Kart('İstekçiden nasıl ücret alınır', Icons.payments_outlined, [
       _Satir('Ürün fiyatı + taşıma ücreti',
           'Ürün maliyetini ve taşıma ücretini ayrı belirt. Anlaşma yapılmadan önce her ikisi de netleştirilmeli.',
           badge: 'Standart', badgeTipi: _BadgeTipi.mavi),
@@ -146,7 +145,7 @@ const _tablar = [
           'Taşıma ücretini ilana açıkça yaz. Müzakere sürecini kısaltır.',
           badge: 'Tavsiye', badgeTipi: _BadgeTipi.yesil),
     ]),
-    _Kart('Güvenli teslimat', Symbols.verified_user, [
+    _Kart('Güvenli teslimat', Icons.verified_user_outlined, [
       _Satir('Halka açık yerde buluş',
           'İlk teslimatı AVM, kafe gibi kalabalık ortamlarda yap.',
           badge: 'Güvenlik', badgeTipi: _BadgeTipi.yesil),
@@ -158,8 +157,8 @@ const _tablar = [
     ]),
   ]),
 
-  _Tab('VAT İadesi', Symbols.receipt_long, [
-    _Kart('VAT iadesi nedir?', Symbols.receipt_long, [
+  _Tab('VAT İadesi', Icons.receipt_long_outlined, [
+    _Kart('VAT iadesi nedir?', Icons.receipt_long_outlined, [
       _Satir('Ne kadar geri alırsın?',
           'AB ülkelerinde ödenen KDV\'nin %10-12\'sini iade alabilirsin. Aracı komisyon düşürüldükten sonra net iade bu kadardır.',
           badge: 'Bilgi', badgeTipi: _BadgeTipi.yesil),
@@ -169,7 +168,7 @@ const _tablar = [
           'Dubai\'de %5 KDV var, havalimanında kolayca iade alınabilir. Minimum 250 AED alışveriş şartı.',
           badge: 'Dubai', badgeTipi: _BadgeTipi.mavi),
     ]),
-    _Kart('VAT iadesi nasıl alınır?', Symbols.checklist, [
+    _Kart('VAT iadesi nasıl alınır?', Icons.checklist_outlined, [
       _Satir('1. Mağazadan form al',
           'Alışveriş yaparken kasadan Tax Free formu doldurmasını iste. Pasaport gerekebilir.'),
       _Satir('2. Havalimanında onaylat',
@@ -207,7 +206,7 @@ class _TasiyiciIpuclariBolumState extends State<TasiyiciIpuclariBolum> {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
           child: Row(children: [
-            const Icon(Symbols.travel, size: 16, color: AppColors.red),
+            const Icon(Icons.card_travel_outlined, size: 16, color: AppColors.red),
             const SizedBox(width: 6),
             Text('Taşıyıcı ipuçları',
                 style: GoogleFonts.notoSans(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
@@ -298,7 +297,7 @@ class _IpucuKartiState extends State<_IpucuKarti> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
               child: Row(children: [
-                Icon(widget.kart.ikon, size: 20, weight: 300, color: AppColors.textSecondary),
+                Icon(widget.kart.ikon, size: 20, color: AppColors.textSecondary),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(widget.kart.baslik,
@@ -307,7 +306,7 @@ class _IpucuKartiState extends State<_IpucuKarti> {
                 AnimatedRotation(
                   turns: _acik ? 0.5 : 0,
                   duration: const Duration(milliseconds: 200),
-                  child: const Icon(Symbols.expand_more, size: 18, color: AppColors.textSecondary),
+                  child: const Icon(Icons.expand_more, size: 18, color: AppColors.textSecondary),
                 ),
               ]),
             ),
