@@ -238,7 +238,9 @@
       "Bash(timeout 180 bash -c 'until grep -qE \"Syncing files|Flutter run key commands|Lost connection|Gradle task .* failed|Exception|A problem occurred\" C:/Users/User/AppData/Local/Temp/claude/C--src-iste-v3/8d8f2fa9-7916-4cae-95e9-fa4e811f8cc6/tasks/bl1o5bbfx.output 2>/dev/null; do sleep 3; done; tail -20 C:/Users/User/AppData/Local/Temp/claude/C--src-iste-v3/8d8f2fa9-7916-4cae-95e9-fa4e811f8cc6/tasks/bl1o5bbfx.output')",
       "Bash(identify \"C:/Users/User/AppData/Local/Temp/claude/C--src-iste-v3/8d8f2fa9-7916-4cae-95e9-fa4e811f8cc6/scratchpad/screen7.png\")",
       "Bash(awk '{print $3}')",
-      "Bash(GOOGLE_APPLICATION_CREDENTIALS=C:/src/iste_v3/yuk_testi/serviceAccountKey.json node -e ' *)"
+      "Bash(GOOGLE_APPLICATION_CREDENTIALS=C:/src/iste_v3/yuk_testi/serviceAccountKey.json node -e ' *)",
+      "PowerShell(flutter analyze *)",
+      "PowerShell(flutter test *)"
     ]
   }
 }

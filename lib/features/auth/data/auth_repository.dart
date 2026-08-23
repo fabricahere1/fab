@@ -97,6 +97,7 @@ class AuthRepository {
         'profilTamamlandi': false,
         'olusturmaTarihi':  FieldValue.serverTimestamp(),
       });
+      await auth.signOut();
     }
     return credential;
   }

@@ -68,6 +68,7 @@ IlanModel _gHittenIlan(Map<String, dynamic> hit) {
   final kategoriYolu = (hit['kategoriYolu'] as List<dynamic>?)
       ?.map((e) => e as String).toList() ?? [];
   final tarihMs = hit['olusturmaTarihi'] as int?;
+  final seyahatTarihiMs = hit['tarih'] as int?;
   return IlanModel(
     id:              hit['objectID']    as String? ?? '',
     tip:             hit['tip']         as String? ?? '',
@@ -87,6 +88,9 @@ IlanModel _gHittenIlan(Map<String, dynamic> hit) {
     goruntulenmeSayisi: (hit['goruntulenmeSayisi'] as num?)?.toInt() ?? 0,
     olusturmaTarihi: tarihMs != null
         ? DateTime.fromMillisecondsSinceEpoch(tarihMs)
+        : null,
+    tarih: seyahatTarihiMs != null
+        ? DateTime.fromMillisecondsSinceEpoch(seyahatTarihiMs)
         : null,
   );
 }
@@ -178,7 +182,16 @@ class _GelenlerScreenState extends ConsumerState<GelenlerScreen>
         hitsPerPage:     24,
       );
 
-      final yeniIlanlar = sonuc.ilanlar.map(_gHittenIlan).toList();
+      // Uçuş/seyahat tarihi geçmiş taşıyıcı ilanları burada da eleniyor —
+      // sunucudaki günlük ilanTasiyiciSuresidolduPasif job'ı çalışana kadar
+      // (en fazla 24 saat) Algolia'da hâlâ görünebiliyorlar, bu client-side
+      // filtre o pencereyi kapatıyor.
+      final bugun = DateTime.now();
+      final bugunGunBasi = DateTime(bugun.year, bugun.month, bugun.day);
+      final yeniIlanlar = sonuc.ilanlar
+          .map(_gHittenIlan)
+          .where((i) => i.tarih == null || !i.tarih!.isBefore(bugunGunBasi))
+          .toList();
       final mevcutIdler = _algoliaState.ilanlar.map((i) => i.id).toSet();
       final benzersiz   = yeniIlanlar.where((i) => !mevcutIdler.contains(i.id)).toList();
 

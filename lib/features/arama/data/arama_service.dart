@@ -295,7 +295,7 @@ Future<AlgoliaFiltreSonucu> algoliaFiltrele({
       'anaKategori', 'kategoriYolu', 'tip', 'aktif', 'durum',
       'resimUrl', 'resimThumbUrl', 'resimUrller', 'olusturmaTarihi',
       'kullaniciId', 'kullaniciAd', 'favoriSayisi', 'goruntulenmeSayisi',
-      'cinsiyet', 'beden',
+      'cinsiyet', 'beden', 'tarih',
     ],
     'facets': ['anaKategori'],
   };

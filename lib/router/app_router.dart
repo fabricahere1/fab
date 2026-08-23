@@ -148,7 +148,8 @@ GoRouter router(Ref ref) {
       }
 
       final user = authAsync.value;
-      final girisYapildi = user != null;
+      final girisYapildi = user != null &&
+          (authYontemiBelirle(user) != AuthYontemi.email || user.emailVerified);
 
       if (!girisYapildi) {
         if (loc == AppRoutes.login ||
@@ -304,10 +305,6 @@ GoRouter router(Ref ref) {
 // kullanıyoruz — ama genel kullaniciStream'i (profil ekranı, favoriler vb.
 // offline-first çalışan diğer tüketiciler) bilerek değiştirmiyoruz.
 Future<String?> _hedefBelirle(Ref ref, User user, {String? returnRoute}) async {
-  if (authYontemiBelirle(user) == AuthYontemi.email) {
-    return returnRoute ?? AppRoutes.home;
-  }
-
   KullaniciModel? profil;
   try {
     profil = await ref

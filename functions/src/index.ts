@@ -341,6 +341,7 @@ export const ilanModerasyonu = onDocumentCreated(
             kullaniciAd:        data.kullaniciAd ?? "",
             resimUrl:           resimUrller.length > 0 ? resimUrller[0] : (data.resimUrl ?? ""),
             olusturmaTarihi:    data.olusturmaTarihi?.toMillis() ?? Date.now(),
+            tarih:              data.tarih?.toMillis() ?? null,
             favoriSayisi:       data.favoriSayisi       ?? 0,
             goruntulenmeSayisi: data.goruntulenmeSayisi ?? 0,
             onerilenPuan,
@@ -514,6 +515,7 @@ export const ilanGuncellendi = onDocumentUpdated(
           resimUrl:           (data.resimUrller && data.resimUrller.length > 0)
                                 ? data.resimUrller[0] : (data.resimUrl ?? ""),
           olusturmaTarihi:    data.olusturmaTarihi?.toMillis() ?? Date.now(),
+          tarih:              data.tarih?.toMillis() ?? null,
           favoriSayisi:       data.favoriSayisi      ?? 0,
           goruntulenmeSayisi: data.goruntulenmeSayisi ?? 0,
           onerilenPuan,
@@ -769,6 +771,7 @@ export const algoliaTopluAktar = onCall(async (request) => {
       resimUrl:           (data.resimUrller && data.resimUrller.length > 0)
                             ? data.resimUrller[0] : (data.resimUrl ?? ""),
       olusturmaTarihi:    data.olusturmaTarihi?.toMillis() ?? Date.now(),
+      tarih:              data.tarih?.toMillis() ?? null,
       favoriSayisi:       data.favoriSayisi       ?? 0,
       goruntulenmeSayisi: data.goruntulenmeSayisi ?? 0,
       onerilenPuan,
@@ -1336,6 +1339,44 @@ export const ilanOtomatikPasif = onSchedule(
     await batch.commit();
 
     console.log(`${snap.size} adet ilan otomatik pasife düşürüldü.`);
+  }
+);
+
+// ── TAŞIYICI İLANLARINDA SÜRESİ DOLMUŞ SEYAHAT TARİHİ ────────────────────
+// "tasiyici" tipindeki ilanlar, taşıyıcının uçağının/seyahatinin ineceği
+// tarihi ("tarih" alanı) taşır. Bu tarih geçtikten sonra ilan artık
+// geçerli değil (uçak zaten inmiş) — Gelenler ekranında görünmeye devam
+// etmesini engellemek için günlük olarak pasife düşürülüyor. Aynı
+// ilanGuncellendi tetikleyicisi bu 'aktif' değişikliğini yakalayıp
+// Algolia'dan da siliyor (bkz. ilanOtomatikPasif yorumu).
+export const ilanTasiyiciSuresidolduPasif = onSchedule(
+  {
+    schedule: "every day 04:05",
+    timeZone: "Europe/Istanbul",
+    region: "europe-west1",
+  },
+  async (event) => {
+    const bugunGunBasi = new Date();
+    bugunGunBasi.setHours(0, 0, 0, 0);
+
+    const snap = await db
+      .collection("ilanlar")
+      .where("aktif", "==", true)
+      .where("tip", "==", "tasiyici")
+      .where("tarih", "<", bugunGunBasi)
+      .limit(500)
+      .get();
+
+    if (snap.empty) {
+      console.log("Süresi dolmuş taşıyıcı ilanı yok.");
+      return;
+    }
+
+    const batch = db.batch();
+    snap.docs.forEach((doc) => batch.update(doc.ref, { aktif: false }));
+    await batch.commit();
+
+    console.log(`${snap.size} adet süresi dolmuş taşıyıcı ilanı pasife düşürüldü.`);
   }
 );
 

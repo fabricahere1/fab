@@ -12,6 +12,7 @@ import 'package:iste_v3/features/home/presentation/alisveris_rehberi_bolum.dart'
 import 'package:iste_v3/features/home/presentation/beden_donusturucu_bolum.dart';
 import 'package:iste_v3/features/home/presentation/dunya_trendleri_bolum.dart';
 import 'package:iste_v3/features/home/presentation/tasiyici_ipuclari_bolum.dart';
+import 'package:iste_v3/features/home/presentation/istekci_ipuclari_bolum.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:iste_v3/core/cache/app_cache_manager.dart';
@@ -228,6 +229,7 @@ class KesfetRehberBedenIpucuBannerGrubu extends StatelessWidget {
         const AlisverisRehberiBolum(),
         const BedenDonusturuculBolum(),
         const TasiyiciIpuclariBolum(),
+        const IstekciIpuclariBolum(),
         IlkIlanBannerPublic(),
       ],
     );

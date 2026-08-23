@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/auth_provider.dart';
-import '../../profil/providers/profil_provider.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../router/app_router.dart'
     show AppRoutes, navigatorKey, girisYapiliyorProvider;
@@ -22,20 +21,22 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   String _hata = '';
 
+  // ÖNEMLİ: burada profilTamamlandi kararını KENDİMİZ vermiyoruz —
+  // benimKullaniciProfilProvider'ın .value'su, giriş az önce başarılı
+  // olduğu için henüz sunucudan gelmemiş/yanlış (cache-miss) olabilir.
+  // Bunun yerine splash'e gönderiyoruz; router'ın redirect'i zaten aynı
+  // kararı sunucu-onaylı, race-condition korumalı, offline-timeout'lu
+  // şekilde veriyor (bkz. app_router.dart _hedefBelirle) — mantığı burada
+  // tekrar yazıp aynı bug'ı ikinci kez üretmek yerine tek kaynağa güveniyoruz.
   void _girissonrasiGit(BuildContext ctx) {
     final returnRoute = GoRouterState.of(
       ctx,
     ).uri.queryParameters['returnRoute'];
-    final profil = ref.read(benimKullaniciProfilProvider).value;
-    if (profil?.profilTamamlandi == true) {
-      ctx.go(returnRoute ?? AppRoutes.home);
-    } else if (returnRoute != null) {
-      ctx.go(
-        '${AppRoutes.profilTamamla}?returnRoute=${Uri.encodeComponent(returnRoute)}',
-      );
-    } else {
-      ctx.go(AppRoutes.profilTamamla);
-    }
+    ctx.go(
+      returnRoute != null
+          ? '${AppRoutes.splash}?returnRoute=${Uri.encodeComponent(returnRoute)}'
+          : AppRoutes.splash,
+    );
   }
 
   Future<void> _googleIleGiris() async {
@@ -47,6 +48,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return;
     }
     if (mounted) _girissonrasiGit(context);
+  }
+
+  void _emailIleGiris() {
+    final returnRoute = GoRouterState.of(
+      context,
+    ).uri.queryParameters['returnRoute'];
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _EmailGirisSheet(
+        onHata: (msg) {
+          if (mounted) setState(() => _hata = msg);
+        },
+        onBasari: () {
+          final ctx = navigatorKey.currentContext;
+          if (ctx == null) return;
+          ctx.go(
+            returnRoute != null
+                ? '${AppRoutes.splash}?returnRoute=${Uri.encodeComponent(returnRoute)}'
+                : AppRoutes.splash,
+          );
+        },
+      ),
+    );
   }
 
   void _telefonIleGiris() {
@@ -64,16 +90,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         onBasari: () {
           final ctx = navigatorKey.currentContext;
           if (ctx == null) return;
-          final profil = ref.read(benimKullaniciProfilProvider).value;
-          if (profil?.profilTamamlandi == true) {
-            ctx.go(returnRoute ?? AppRoutes.home);
-          } else if (returnRoute != null) {
-            ctx.go(
-              '${AppRoutes.profilTamamla}?returnRoute=${Uri.encodeComponent(returnRoute)}',
-            );
-          } else {
-            ctx.go(AppRoutes.profilTamamla);
-          }
+          // bkz. _girissonrasiGit yorumu — aynı gerekçeyle karar burada
+          // verilmiyor, splash'e (router'ın _hedefBelirle'sine) devrediliyor.
+          ctx.go(
+            returnRoute != null
+                ? '${AppRoutes.splash}?returnRoute=${Uri.encodeComponent(returnRoute)}'
+                : AppRoutes.splash,
+          );
         },
       ),
     );
@@ -152,6 +175,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     size: 22,
                   ),
                   label: 'Telefon ile devam et',
+                  renk: Colors.black26,
+                  yaziRengi: Colors.white,
+                ),
+                const SizedBox(height: 12),
+
+                _GirisButonu(
+                  onTap: yukleniyor ? null : _emailIleGiris,
+                  yukleniyor: false,
+                  icon: const Icon(
+                    Icons.email_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                  label: 'E-posta ile devam et',
                   renk: Colors.black26,
                   yaziRengi: Colors.white,
                 ),
@@ -762,6 +799,325 @@ class _TelefonGirisSheetState extends ConsumerState<_TelefonGirisSheet> {
           ],
         ],
       ),
+    );
+  }
+}
+
+// ── E-posta Giriş/Kayıt Bottom Sheet ───────────────────────
+
+class _EmailGirisSheet extends ConsumerStatefulWidget {
+  final void Function(String) onHata;
+  final VoidCallback onBasari;
+  const _EmailGirisSheet({required this.onHata, required this.onBasari});
+
+  @override
+  ConsumerState<_EmailGirisSheet> createState() => _EmailGirisSheetState();
+}
+
+class _EmailGirisSheetState extends ConsumerState<_EmailGirisSheet> {
+  final _adSoyadCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _sifreCtrl = TextEditingController();
+
+  bool _kayitModu = false;
+  bool _yukleniyor = false;
+  bool _dogrulamaBekleniyor = false;
+  String _hata = '';
+
+  final _yukleniyorOverlay = TamEkranYukleniyorController();
+
+  @override
+  void dispose() {
+    _yukleniyorOverlay.gizle();
+    _adSoyadCtrl.dispose();
+    _emailCtrl.dispose();
+    _sifreCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _gonder() async {
+    final email = _emailCtrl.text.trim();
+    final sifre = _sifreCtrl.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      setState(() => _hata = 'Geçerli bir e-posta adresi gir.');
+      return;
+    }
+    if (sifre.length < 6) {
+      setState(() => _hata = 'Şifre en az 6 karakter olmalı.');
+      return;
+    }
+    if (_kayitModu && _adSoyadCtrl.text.trim().isEmpty) {
+      setState(() => _hata = 'Ad soyad gir.');
+      return;
+    }
+
+    setState(() {
+      _yukleniyor = true;
+      _hata = '';
+    });
+    _yukleniyorOverlay.goster(
+      context,
+      _kayitModu ? 'Hesap oluşturuluyor...' : 'Giriş yapılıyor...',
+      renk: Colors.blue,
+      spinnerBoyutu: 72,
+      strokeGenisligi: 5,
+      fontBoyutu: 28,
+    );
+
+    final notifier = ref.read(authProvider.notifier);
+
+    // bkz. _TelefonGirisSheet._girisYap yorumu — giriş başarılı olunca
+    // authStateProvider değişip GoRouter'ın kendi redirect'i otomatik
+    // tetikleniyor; bu, aşağıdaki manuel Navigator.pop + onBasari()
+    // navigasyonuyla AYNI navigatorKey üzerinde çakışıp
+    // '_elements.contains(element)' assertion'ına yol açabiliyor. Kayıtta
+    // signOut yüzünden de auth state değiştiği için aynı guard kayıt
+    // akışını da kapsıyor.
+    ref.read(girisYapiliyorProvider.notifier).state = true;
+    final AuthSonuc sonuc;
+    try {
+      sonuc = _kayitModu
+          ? await notifier.emailIleKayit(
+              adSoyad: _adSoyadCtrl.text.trim(),
+              email: email,
+              sifre: sifre,
+            )
+          : await notifier.emailIleGiris(email: email, sifre: sifre);
+    } finally {
+      ref.read(girisYapiliyorProvider.notifier).state = false;
+    }
+
+    if (!mounted) return;
+    setState(() => _yukleniyor = false);
+    _yukleniyorOverlay.gizle();
+
+    if (!sonuc.basarili) {
+      setState(() => _hata = sonuc.hata ?? 'İşlem başarısız.');
+      return;
+    }
+
+    if (_kayitModu) {
+      // Kayıt sonrası doğrulama e-postası gönderildi ama emailVerified
+      // henüz false — kullanıcı, e-postasını doğrulamadan giriş
+      // yapamayacağı için burada bilgilendirip sheet'i kapatıyoruz;
+      // login flow'una (girişte email-not-verified kontrolü) tekrar
+      // takılmadan net bir mesaj görsün.
+      setState(() => _dogrulamaBekleniyor = true);
+      return;
+    }
+
+    if (mounted) {
+      Navigator.pop(context);
+      widget.onBasari();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(28),
+          topRight: Radius.circular(28),
+        ),
+      ),
+      padding: EdgeInsets.fromLTRB(28, 20, 28, 28 + bottomInset),
+      child: _dogrulamaBekleniyor
+          ? _buildDogrulamaMesaji(context)
+          : _buildForm(context),
+    );
+  }
+
+  Widget _buildDogrulamaMesaji(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Center(
+          child: Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.divider,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        Icon(Icons.mark_email_unread_rounded, color: AppColors.red, size: 40),
+        const SizedBox(height: 16),
+        Text(
+          'E-postanı doğrulaman gerekiyor',
+          style: GoogleFonts.dmSans(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '${_emailCtrl.text.trim()} adresine bir doğrulama bağlantısı gönderdik. Gelen kutunu kontrol et, doğruladıktan sonra giriş yapabilirsin.',
+          style: GoogleFonts.dmSans(fontSize: 13, color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: 20),
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              elevation: 0,
+            ),
+            child: Text(
+              'Tamam',
+              style: GoogleFonts.dmSans(fontSize: 15, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildForm(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Center(
+          child: Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.divider,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        Text(
+          _kayitModu ? 'Hesap oluştur' : 'E-posta ile giriş yap',
+          style: GoogleFonts.dmSans(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        if (_kayitModu) ...[
+          TextField(
+            controller: _adSoyadCtrl,
+            autofocus: true,
+            textCapitalization: TextCapitalization.words,
+            style: GoogleFonts.dmSans(fontSize: 16),
+            decoration: InputDecoration(
+              hintText: 'Ad Soyad',
+              hintStyle: GoogleFonts.dmSans(color: AppColors.textHint),
+            ),
+          ),
+          const SizedBox(height: 14),
+        ],
+
+        TextField(
+          controller: _emailCtrl,
+          autofocus: !_kayitModu,
+          keyboardType: TextInputType.emailAddress,
+          style: GoogleFonts.dmSans(fontSize: 16),
+          decoration: InputDecoration(
+            hintText: 'E-posta',
+            hintStyle: GoogleFonts.dmSans(color: AppColors.textHint),
+          ),
+        ),
+        const SizedBox(height: 14),
+        TextField(
+          controller: _sifreCtrl,
+          obscureText: true,
+          style: GoogleFonts.dmSans(fontSize: 16),
+          decoration: InputDecoration(
+            hintText: 'Şifre',
+            hintStyle: GoogleFonts.dmSans(color: AppColors.textHint),
+          ),
+        ),
+
+        if (_hata.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              const Icon(Icons.error_outline, color: AppColors.red, size: 14),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  _hata,
+                  style: GoogleFonts.dmSans(color: AppColors.red, fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+        ],
+
+        const SizedBox(height: 24),
+
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton(
+            onPressed: _yukleniyor ? null : _gonder,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              elevation: 0,
+            ),
+            child: _yukleniyor
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Text(
+                    _kayitModu ? 'Hesap Oluştur' : 'Giriş Yap',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+          ),
+        ),
+
+        const SizedBox(height: 12),
+        Center(
+          child: TextButton(
+            onPressed: _yukleniyor
+                ? null
+                : () => setState(() {
+                      _kayitModu = !_kayitModu;
+                      _hata = '';
+                    }),
+            child: Text(
+              _kayitModu
+                  ? 'Zaten hesabın var mı? Giriş Yap'
+                  : 'Hesabın yok mu? Kayıt Ol',
+              style: GoogleFonts.dmSans(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

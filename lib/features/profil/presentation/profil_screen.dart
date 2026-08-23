@@ -119,30 +119,8 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 80, height: 80,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFEDE8E3),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.person_outline,
-                      size: 40, color: AppColors.textHint),
-                ),
-                const SizedBox(height: 20),
-                Text('Profilini görüntülemek için giriş yap',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.dmSans(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary)),
-                const SizedBox(height: 8),
-                Text('İlanlarını yönet, mesajlarını gör ve değerlendirmelerini takip et.',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.dmSans(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
-                        height: 1.5)),
-                const SizedBox(height: 28),
+                Image.asset('assets/images/logo.png', height: 88),
+                const SizedBox(height: 32),
                 SizedBox(
                   width: double.infinity,
                   height: 50,

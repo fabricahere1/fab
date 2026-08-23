@@ -1128,7 +1128,7 @@ class _SadeceGeliyorumToggle extends StatelessWidget {
 
 Widget _alanEtiket(String text) => Text(text,
     style: GoogleFonts.dmSans(
-        fontSize: 12, fontWeight: FontWeight.w500, color: const Color(0xFF999999)));
+        fontSize: 16, fontWeight: FontWeight.w500, color: const Color(0xFF1A1A1A)));
 
 Widget _altCizgiAlan({
   required TextEditingController controller,

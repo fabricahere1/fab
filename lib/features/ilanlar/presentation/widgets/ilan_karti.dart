@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -465,6 +464,7 @@ class _FavoriButonState extends ConsumerState<_FavoriButon>
     final gosterilen = ref.watch(
       favoriliIlanIdlerProvider.select((ids) => ids.contains(widget.ilan.id)),
     );
+    final favorilerYukleniyor = ref.watch(favorilerProvider).isLoading;
 
     return GestureDetector(
       onTap: () => _toglle(gosterilen),
@@ -483,12 +483,13 @@ class _FavoriButonState extends ConsumerState<_FavoriButon>
                 width: 0.5,
               ),
             ),
-            child: Icon(
-              Symbols.favorite,
-              fill: gosterilen ? 1 : 0,
-              weight: 200,
-              color: gosterilen ? AppColors.red : Colors.white,
-              size: 20,
+            child: Opacity(
+              opacity: favorilerYukleniyor ? 0.35 : 1.0,
+              child: Icon(
+                gosterilen ? Icons.favorite : Icons.favorite_border,
+                color: gosterilen ? AppColors.red : Colors.white,
+                size: 20,
+              ),
             ),
           ),
         ),
@@ -731,6 +732,47 @@ class _BedenCinsiyetSeridi extends StatelessWidget {
   }
 }
 
+// ── Seyahat tarihi etiketi — taşıyıcı ilanlarında "X gün sonra geliyor" ──────
+
+class _SeyahatTarihiEtiketi extends StatelessWidget {
+  final DateTime tarih;
+  const _SeyahatTarihiEtiketi({required this.tarih});
+
+  @override
+  Widget build(BuildContext context) {
+    final bugun = DateTime.now();
+    final bugunGunBasi = DateTime(bugun.year, bugun.month, bugun.day);
+    final tarihGunBasi = DateTime(tarih.year, tarih.month, tarih.day);
+    final gunFarki = tarihGunBasi.difference(bugunGunBasi).inDays;
+
+    final metin = switch (gunFarki) {
+      <= 0 => 'Bugün geliyor',
+      1    => 'Yarın geliyor',
+      _    => '$gunFarki gün sonra geliyor',
+    };
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.flight_land_outlined,
+            size: 10, color: AppColors.textSecondary),
+        const SizedBox(width: 2),
+        Flexible(
+          child: Text(
+            metin,
+            style: GoogleFonts.dmSans(
+                fontSize: AppLayout.fs(context, 10),
+                fontWeight: FontWeight.w500,
+                color: AppColors.textSecondary),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 // ── Shimmer Liste ─────────────────────────────────────────────────────────────
 
 class ShimmerListe extends StatelessWidget {
@@ -834,6 +876,10 @@ class _IlanKartiIcerik extends StatelessWidget {
               ),
             ],
           ),
+          if (ilan.tip == IlanTip.tasiyici && ilan.tarih != null) ...[
+            const SizedBox(height: 3),
+            _SeyahatTarihiEtiketi(tarih: ilan.tarih!),
+          ],
           const SizedBox(height: 5),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,

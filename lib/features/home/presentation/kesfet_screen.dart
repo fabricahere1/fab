@@ -21,6 +21,7 @@ import 'kategori_vitrini_bolum.dart';
 import 'alisveris_rehberi_bolum.dart';
 import 'beden_donusturucu_bolum.dart';
 import 'tasiyici_ipuclari_bolum.dart';
+import 'istekci_ipuclari_bolum.dart';
 
 class KesfetScreen extends ConsumerStatefulWidget {
   const KesfetScreen({super.key});
@@ -384,6 +385,7 @@ class _BedenIpucuVeBanner extends StatelessWidget {
       children: [
         BedenDonusturuculBolum(),
         TasiyiciIpuclariBolum(),
+        IstekciIpuclariBolum(),
         IlkIlanBannerPublic(),
       ],
     );
