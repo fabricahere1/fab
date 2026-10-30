@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:async';
 import '../../../shared/utils/app_hata_yonetici.dart';
 import '../../ilanlar/providers/ilan_provider.dart';
 import '../../ilanlar/domain/ilan_model.dart';
@@ -12,11 +12,36 @@ export '../data/kullanici_repository.dart' show kullaniciRepositoryProvider;
 
 part 'profil_provider.g.dart';
 
-@riverpod
-Stream<KullaniciModel?> benimKullaniciProfil(Ref ref) {
-  final uid = ref.watch(currentUserProvider)?.uid;
-  if (uid == null) return const Stream.empty();
-  return ref.watch(kullaniciRepositoryProvider).kullaniciStream(uid);
+const _profilYenilemeAraligi = Duration(seconds: 20);
+
+// Artık Stream DEĞİL (AWS backend'inde canlı akış yok) — periyodik
+// yenileme, bildirimler/sohbetler ile aynı desen.
+@Riverpod(keepAlive: true)
+class BenimKullaniciProfil extends _$BenimKullaniciProfil {
+  Timer? _zamanlayici;
+
+  @override
+  Future<KullaniciModel?> build() async {
+    ref.onDispose(() => _zamanlayici?.cancel());
+    final uid = ref.watch(currentUserProvider)?.uid;
+    if (uid == null) return null;
+
+    _zamanlayici?.cancel();
+    _zamanlayici = Timer.periodic(_profilYenilemeAraligi, (_) => yenile());
+
+    return ref.read(kullaniciRepositoryProvider).benimProfilimGetir();
+  }
+
+  Future<void> yenile() async {
+    if (ref.read(currentUserProvider)?.uid == null) return;
+    try {
+      final profil = await ref.read(kullaniciRepositoryProvider).benimProfilimGetir();
+      if (!ref.mounted) return;
+      state = AsyncData(profil);
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'benimKullaniciProfil.yenile');
+    }
+  }
 }
 
 @Riverpod(keepAlive: true)
@@ -24,7 +49,11 @@ Future<KullaniciModel?> kullaniciBilgi(Ref ref, String uid) {
   return ref.watch(kullaniciRepositoryProvider).kullaniciGetir(uid);
 }
 
-@riverpod
+// keepAlive ZORUNLU: profilGuncelle/profilTamamla ağ çağrısı bittikten
+// SONRA kendi ref'i üzerinden benimKullaniciProfilProvider'ı invalidate
+// ediyor — autoDispose olsaydı erken temizlenip "Ref ... disposed" hatası
+// fırlatabilirdi (bkz. 2026-10-23 Google girişi çökmesiyle aynı kök sebep).
+@Riverpod(keepAlive: true)
 class ProfilDuzenle extends _$ProfilDuzenle {
   @override
   AsyncValue<void> build() => const AsyncData(null);
@@ -38,6 +67,7 @@ class ProfilDuzenle extends _$ProfilDuzenle {
     state = const AsyncLoading();
     try {
       await _repo.profilGuncelle(uid: uid, data: data);
+      ref.invalidate(benimKullaniciProfilProvider);
       if (ref.mounted) state = const AsyncData(null);
       return true;
     } catch (e) {
@@ -53,6 +83,7 @@ class ProfilDuzenle extends _$ProfilDuzenle {
     state = const AsyncLoading();
     try {
       await _repo.profilTamamla(uid: uid, data: data);
+      ref.invalidate(benimKullaniciProfilProvider);
       if (ref.mounted) state = const AsyncData(null);
       return true;
     } catch (e) {
@@ -60,24 +91,12 @@ class ProfilDuzenle extends _$ProfilDuzenle {
       return false;
     }
   }
-
-  Future<String?> fotoGuncelle({
-    required String uid,
-    required File foto,
-  }) async {
-    state = const AsyncLoading();
-    try {
-      final url = await _repo.profilFotoYukle(uid: uid, foto: foto);
-      if (ref.mounted) state = const AsyncData(null);
-      return url;
-    } catch (e) {
-      if (ref.mounted) state = AsyncError(e, StackTrace.current);
-      return null;
-    }
-  }
 }
 
-@riverpod
+// keepAlive ZORUNLU: engelle()/engelKaldir() ağ çağrısı bittikten SONRA
+// kendi ref'i üzerinden engellenenlerProvider'ı invalidate ediyor — aynı
+// risk sınıfı (bkz. yukarıdaki ProfilDuzenle notu).
+@Riverpod(keepAlive: true)
 class Engelleme extends _$Engelleme {
   @override
   AsyncValue<void> build() => const AsyncData(null);
@@ -91,6 +110,7 @@ class Engelleme extends _$Engelleme {
     state = const AsyncLoading();
     try {
       await _repo.engelle(benimUid: benimUid, hedefUid: hedefUid);
+      ref.invalidate(engellenenlerProvider);
       if (ref.mounted) state = const AsyncData(null);
       return true;
     } catch (e) {
@@ -106,6 +126,7 @@ class Engelleme extends _$Engelleme {
     state = const AsyncLoading();
     try {
       await _repo.engelKaldir(benimUid: benimUid, hedefUid: hedefUid);
+      ref.invalidate(engellenenlerProvider);
       if (ref.mounted) state = const AsyncData(null);
       return true;
     } catch (e) {
@@ -115,15 +136,13 @@ class Engelleme extends _$Engelleme {
   }
 }
 
-// Eskiden ayrı bir engellenenlerStream(uid) açıyordu — bu, benimKullaniciProfil
-// ile aynı dökümanı 2 kez dinlemek anlamına geliyordu. Artık zaten açık olan
-// benimKullaniciProfil stream'inden map ediliyor — ekstra Firestore listener yok.
-// AsyncValue<List<String>> döndürür — kullanım tarafları (.value ?? []) değişmez.
+// Artık ayrı bir GET /v3/engellenenlerim çağrısı — backend profil
+// yanıtında bu alan yok (bkz. v3_engelleme_routes.go).
 @riverpod
-AsyncValue<List<String>> engellenenler(Ref ref) {
-  return ref
-      .watch(benimKullaniciProfilProvider)
-      .whenData((profil) => profil?.engellenenler ?? []);
+Future<List<String>> engellenenler(Ref ref) {
+  final uid = ref.watch(currentUserProvider)?.uid;
+  if (uid == null) return Future.value(const []);
+  return ref.read(kullaniciRepositoryProvider).engellenenlerGetir();
 }
 
 @riverpod
@@ -137,6 +156,7 @@ class Sikayet extends _$Sikayet {
     required String hedefAd,
     required String sebep,
     String ilanId = '',
+    String degerlendirmeId = '',
   }) async {
     state = const AsyncLoading();
     try {
@@ -146,6 +166,7 @@ class Sikayet extends _$Sikayet {
         hedefAd: hedefAd,
         sebep: sebep,
         ilanId: ilanId,
+        degerlendirmeId: degerlendirmeId,
       );
       if (ref.mounted) state = const AsyncData(null);
       return true;
@@ -156,38 +177,30 @@ class Sikayet extends _$Sikayet {
   }
 }
 
-/// Kullanıcının kendi ilanlarını real-time dinler.
-/// [keepAlive] sayesinde sayfa kapanınca dispose olmaz,
-/// tekrar açılınca Firestore'a yeniden bağlanmaz.
-/// uid null olduğunda (çıkış yapıldığında) provider invalidate edilir.
+/// Kullanıcının kendi ilanlarını getirir.
 @Riverpod(keepAlive: true)
-Stream<List<IlanModel>> ilanlarim(Ref ref) {
+Future<List<IlanModel>> ilanlarim(Ref ref) {
   final uid = ref.watch(currentUserProvider)?.uid;
-
-  if (uid == null) {
-    Future.microtask(() => ref.invalidateSelf());
-    return const Stream.empty();
-  }
-
-  return ref.watch(ilanRepositoryProvider).kullaniciIlanlarStream(uid);
+  if (uid == null) return Future.value(const []);
+  return ref.watch(ilanRepositoryProvider).ilanlarimGetir();
 }
 
 // ── Takip listesi provider'ları ──────────────────────────────────────────────
 
 @riverpod
-Stream<List<String>> takipciIdleri(Ref ref, String kullaniciId) {
-  return ref.watch(kullaniciRepositoryProvider).takipciIdleriStream(kullaniciId);
+Future<List<String>> takipciIdleri(Ref ref, String kullaniciId) {
+  return ref.watch(kullaniciRepositoryProvider).takipciIdleriGetir(kullaniciId);
 }
 
 @riverpod
-Stream<List<String>> takipEdilenIdleri(Ref ref, String kullaniciId) {
-  return ref.watch(kullaniciRepositoryProvider).takipEdilenIdleriStream(kullaniciId);
+Future<List<String>> takipEdilenIdleri(Ref ref, String kullaniciId) {
+  return ref.watch(kullaniciRepositoryProvider).takipEdilenIdleriGetir(kullaniciId);
 }
 
 /// Takip edilen kullanıcıların id → takip başlangıç tarihi haritası.
 @riverpod
-Stream<Map<String, DateTime>> takipEdilenTarihleri(Ref ref, String kullaniciId) {
-  return ref.watch(kullaniciRepositoryProvider).takipEdilenTarihleriStream(kullaniciId);
+Future<Map<String, DateTime>> takipEdilenTarihleri(Ref ref, String kullaniciId) {
+  return ref.watch(kullaniciRepositoryProvider).takipEdilenTarihleriGetir(kullaniciId);
 }
 
 /// 4.0 ve üzeri ortalama puana sahip taşıyıcılar (kendisi hariç).
@@ -246,34 +259,18 @@ class TakipciDelta extends _$TakipciDelta {
 
 // ── Takip provider'ları ───────────────────────────────────────────────────────
 
-// Ham Firestore stream'i — optimistikTakipProvider'a HİÇ bağımlı değil.
-// Bu ayrım kasıtlı: optimistikTakipProvider her değiştiğinde bu provider'ın
-// YENİDEN İNŞA EDİLMESİNİ (ve dolayısıyla .snapshots()'a yeniden abone
-// olup geçici bir AsyncLoading anı yaratmasını) önlemek için — bu, tıklanan
-// satırın butonunun kısa süreliğine skeleton'a düşüp geri gelmesine
-// (flicker) sebep oluyordu.
+// Ham değer — backend'den tek seferlik okuma (Stream yok). optimistikTakipProvider'a
+// bağımlı DEĞİL — bkz. takipEdiyorMu() nasıl birleştirdiği.
 @riverpod
-Stream<bool> takipEdiyorMuHam(Ref ref, String takipEdilenId) {
+Future<bool> takipEdiyorMuHam(Ref ref, String takipEdilenId) {
   final uid = ref.watch(currentUserProvider)?.uid;
-  if (uid == null) return Stream.value(false);
+  if (uid == null) return Future.value(false);
   return ref.watch(kullaniciRepositoryProvider).takipEdiyorMu(
     takipciId: uid,
     takipEdilenId: takipEdilenId,
   );
 }
 
-// Eskiden, optimistik bir kayıt varsa gerçek Firestore stream'i hiç
-// izlenmiyordu (return Stream.value(...) ile tamamen by-pass ediliyordu).
-// Bu, başarılı bir takip/takipten çık işleminden sonra optimistik kayıt
-// hiç temizlenmediği için (sadece hata durumunda temizleniyordu),
-// o oturum boyunca gerçek duruma bir daha hiç bakılmamasına yol açıyordu
-// — örn. başka bir cihazdan ilişki değişirse fark edilmiyordu. Artık
-// favoriliIlanIdler'daki gibi: gerçek stream HER ZAMAN izlenir, optimistik
-// kayıt sadece üzerine binen bir "yama" — kalıcı olsa bile zararsızdır.
-//
-// Senkron bool: optimistik değer değişince bu provider yeniden hesaplanır
-// ama bu, YALNIZCA bir map lookup — takipEdiyorMuHamProvider'ın kendi
-// stream aboneliğini yeniden kurmaz, dolayısıyla flicker'a sebep olmaz.
 @riverpod
 bool takipEdiyorMu(Ref ref, String takipEdilenId) {
   final optimistik = ref.watch(
@@ -285,13 +282,10 @@ bool takipEdiyorMu(Ref ref, String takipEdilenId) {
 
 @Riverpod(keepAlive: true)
 class TakipIslemleri extends _$TakipIslemleri {
-  late final KullaniciRepository _repo;
+  KullaniciRepository get _repo => ref.read(kullaniciRepositoryProvider);
 
   @override
-  AsyncValue<void> build() {
-    _repo = ref.read(kullaniciRepositoryProvider);
-    return const AsyncData(null);
-  }
+  AsyncValue<void> build() => const AsyncData(null);
 
   Future<bool> takipEt(String takipEdilenId) async {
     final uid = ref.read(currentUserProvider)?.uid;
@@ -299,14 +293,6 @@ class TakipIslemleri extends _$TakipIslemleri {
     ref.read(optimistikTakipProvider.notifier).takipEt(takipEdilenId);
     try {
       await _repo.takipEt(takipciId: uid, takipEdilenId: takipEdilenId);
-      // Başarı durumunda optimistik kaydı KASITLI OLARAK temizlemiyoruz —
-      // temizle() burada çağrılırsa, gerçek stream (takipEdiyorMuHamProvider)
-      // henüz Firestore'un yeni değerini almamış olabilir (transaction ack'i
-      // ile realtime listener push'u ayrı, sıralaması garanti olmayan iki ağ
-      // round-trip'i) — bu da butonun kısa süreliğine yanlış değere sıçrayıp
-      // gerçek stream yetişince tekrar doğruya dönmesine (flicker) sebep
-      // oluyordu. Optimistik değer artık başarı sonrası KALICI kalıyor;
-      // yalnızca hata/rollback durumunda temizleniyor (aşağıdaki catch).
       if (!ref.mounted) return false;
       ref.read(takipciDeltaProvider.notifier).arttir(takipEdilenId);
       return true;
@@ -324,7 +310,6 @@ class TakipIslemleri extends _$TakipIslemleri {
     ref.read(optimistikTakipProvider.notifier).takipiBirak(takipEdilenId);
     try {
       await _repo.takipiBirak(takipciId: uid, takipEdilenId: takipEdilenId);
-      // Bkz. takipEt() — aynı gerekçeyle başarı durumunda temizle() YOK.
       if (!ref.mounted) return false;
       ref.read(takipciDeltaProvider.notifier).azalt(takipEdilenId);
       return true;

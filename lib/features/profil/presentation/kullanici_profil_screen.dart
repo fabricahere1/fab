@@ -67,7 +67,7 @@ class _KullaniciProfilScreenState extends ConsumerState<KullaniciProfilScreen> {
             false)
         : false;
     final profilAsync   = ref.watch(kullaniciBilgiProvider(kullaniciId));
-    final ilanlarAsync  = ref.watch(kullaniciIlanlarStreamProvider(kullaniciId));
+    final ilanlarAsync  = ref.watch(kullaniciIlanlariGetirProvider(kullaniciId));
     final takipciDelta  = ref.watch(
         takipciDeltaProvider.select((m) => m[kullaniciId] ?? 0));
 

@@ -45,4 +45,5 @@ const _$BildirimTipEnumMap = {
   BildirimTip.degerlendirme: 'degerlendirme',
   BildirimTip.anlasildi: 'anlasildi',
   BildirimTip.eslesme: 'eslesme',
+  BildirimTip.takip: 'takip',
 };

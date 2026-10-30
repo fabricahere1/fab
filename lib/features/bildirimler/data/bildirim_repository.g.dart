@@ -55,4 +55,4 @@ final class BildirimRepositoryProvider
 }
 
 String _$bildirimRepositoryHash() =>
-    r'51fb0e0750a4a860540da65edaaeca1868e1f4b1';
+    r'81f5adbdd5d8ffa57823a5fafea8dfcef7c11c66';

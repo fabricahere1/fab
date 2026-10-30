@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,14 +6,11 @@ import 'package:iste_v3/features/mesajlar/domain/mesaj_model.dart';
 import 'package:iste_v3/features/mesajlar/presentation/mesajlar_screen.dart';
 import 'package:iste_v3/features/mesajlar/providers/mesaj_provider.dart';
 import 'package:iste_v3/features/profil/providers/profil_provider.dart';
-import 'package:mocktail/mocktail.dart';
 
 // _SohbetKarti private bir sınıf (mesajlar_screen.dart içinde) — bu
 // dosyadan doğrudan import/instantiate edilemez. Bu yüzden gerçek widget'ı
 // MesajlarScreen üzerinden, provider override'larıyla render ediyoruz —
 // tıpkı üretimdeki gibi.
-
-class _MockUser extends Mock implements User {}
 
 const _benimUid = 'uidA';
 const _karsiUid = 'uidB';
@@ -35,16 +31,21 @@ SohbetModel _sohbet({
   );
 }
 
-Future<void> _render(WidgetTester tester, SohbetModel sohbet) async {
-  final mockUser = _MockUser();
-  when(() => mockUser.uid).thenReturn(_benimUid);
+class _FakeSohbetler extends Sohbetler {
+  final SohbetModel _sohbet;
+  _FakeSohbetler(this._sohbet);
 
+  @override
+  Future<List<SohbetModel>> build() async => [_sohbet];
+}
+
+Future<void> _render(WidgetTester tester, SohbetModel sohbet) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        currentUserProvider.overrideWithValue(mockUser),
-        sohbetlerProvider.overrideWith((ref) => Stream.value([sohbet])),
-        engellenenlerProvider.overrideWith((ref) => const AsyncData([])),
+        currentUserProvider.overrideWithValue(AktifKullanici(uid: _benimUid)),
+        sohbetlerProvider.overrideWith(() => _FakeSohbetler(sohbet)),
+        engellenenlerProvider.overrideWith((ref) async => <String>[]),
       ],
       child: const MaterialApp(home: MesajlarScreen()),
     ),

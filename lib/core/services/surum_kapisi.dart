@@ -3,18 +3,24 @@
 // Minimum sürüm kapısı — eski build'lerin güncel backend'le konuşmasını
 // engeller. Bir güvenlik kapısı DEĞİL, hijyen kapısıdır: her hata/timeout/
 // doküman-yok durumunda FAIL-OPEN davranır (kullanıcıyı kilitlemez).
-
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:package_info_plus/package_info_plus.dart';
+//
+// AWS'ye taşınmadan ÖNCE Firestore'daki ayarlar/uygulama dökümanını
+// `Source.server` (cache atlanarak) okuyordu — Firestore artık v3 için
+// kapatıldığı için bu döküman hiç yanıt vermiyordu ve her soğuk açılışta
+// 5 saniyelik timeout'un TAMAMI bekleniyordu (bkz. app_router.dart'taki
+// "sürüm kapısı splash'te bile kontrol edilir" mantığı — bu bekleme
+// doğrudan splash süresine ekleniyordu). Backend'de henüz bir sürüm
+// kontrolü ucu yok, bu yüzden kapı şimdilik senkron/ağsız olarak hep
+// "uygun" dönüyor — fail-open davranışıyla zaten aynı sonuç, sadece
+// 5sn'lik bekleme olmadan. Gerçek bir min-sürüm zorlaması gerekirse
+// AWS backend'ine küçük bir /v3/surum-durumu ucu eklenip buradan
+// çağrılmalı (backlog).
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-
-import '../../shared/constants/app_constants.dart';
-import '../firebase/app_firestore.dart';
 
 part 'surum_kapisi.g.dart';
 
 @Riverpod(keepAlive: true)
-Future<SurumDurumu> surumDurumu(Ref ref) => SurumKapisi.kontrolEt();
+Future<SurumDurumu> surumDurumu(Ref ref) async => SurumDurumu.uygunSonuc;
 
 class SurumDurumu {
   final bool uygun;
@@ -26,38 +32,4 @@ class SurumDurumu {
 
   factory SurumDurumu.guncellemeGerekli(String? link) =>
       SurumDurumu(uygun: false, link: link);
-}
-
-class SurumKapisi {
-  SurumKapisi._();
-
-  static Future<SurumDurumu> kontrolEt() async {
-    try {
-      final paketBilgisi = await PackageInfo.fromPlatform();
-      final cihazBuild = int.tryParse(paketBilgisi.buildNumber);
-      if (cihazBuild == null) return SurumDurumu.uygunSonuc;
-
-      final doc = await AppFirestore.instance
-          .collection(Collections.ayarlar)
-          .doc('uygulama')
-          .get(const GetOptions(source: Source.server))
-          .timeout(const Duration(seconds: 5));
-
-      if (!doc.exists) return SurumDurumu.uygunSonuc;
-
-      final minSurumKodu = doc.data()?['minSurumKodu'] as int?;
-      if (minSurumKodu == null) return SurumDurumu.uygunSonuc;
-
-      if (cihazBuild < minSurumKodu) {
-        final link = doc.data()?['guncellemeLinki'] as String?;
-        return SurumDurumu.guncellemeGerekli(
-          (link != null && link.isNotEmpty) ? link : null,
-        );
-      }
-
-      return SurumDurumu.uygunSonuc;
-    } catch (_) {
-      return SurumDurumu.uygunSonuc;
-    }
-  }
 }

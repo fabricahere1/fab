@@ -253,18 +253,27 @@ class _KesfetTumEkran extends ConsumerWidget {
         return tb.compareTo(ta);
       });
 
+    // sonTarih artık ayrı bir alan değil — offset tabanlı sayfalamaya
+    // geçtiğimiz için (bkz. ilan_repository.dart), frontier tarihini
+    // doğrudan o akışın en son (en eski, listede sondaki) elemanının
+    // olusturmaTarihi'nden türetiyoruz. Davranış birebir aynı.
+    DateTime? sonTarihDerle(KesfetAkisState akis) =>
+        akis.ilanlar.isNotEmpty ? akis.ilanlar.last.olusturmaTarihi : null;
+    final istekSonTarih = sonTarihDerle(istekAkis);
+    final tasiyiciSonTarih = sonTarihDerle(tasiyiciAkis);
+
     // Bir akış ilk sayfasını henüz yüklememişse (dahaFazlaVar && sonTarih == null)
     // frontier'ı tanımsızdır — grid, iki akış da ilk sayfasını getirene kadar boş kalır.
     // (Boş ilk sayfa bitti=true döndürdüğü için burada takılı kalmaz.)
-    final istekHazir = !istekAkis.dahaFazlaVar || istekAkis.sonTarih != null;
-    final tasiyiciHazir = !tasiyiciAkis.dahaFazlaVar || tasiyiciAkis.sonTarih != null;
+    final istekHazir = !istekAkis.dahaFazlaVar || istekSonTarih != null;
+    final tasiyiciHazir = !tasiyiciAkis.dahaFazlaVar || tasiyiciSonTarih != null;
 
     // Frontier kesimi — iki akış farklı derinliklere sayfalanabilir; kesim olmadan
     // sonraki sayfa listenin ORTASINA eklenir (kullanıcı kaydırırken kartlar yer
     // değiştirir). Görüntü yalnızca her iki akışın da "buraya kadar eksiksizim"
     // dediği en geç tarihe kadar gösterilir, gerisi tamponda bekler.
-    final f1 = istekAkis.dahaFazlaVar ? istekAkis.sonTarih : null;
-    final f2 = tasiyiciAkis.dahaFazlaVar ? tasiyiciAkis.sonTarih : null;
+    final f1 = istekAkis.dahaFazlaVar ? istekSonTarih : null;
+    final f2 = tasiyiciAkis.dahaFazlaVar ? tasiyiciSonTarih : null;
     final kesim = (f1 != null && f2 != null)
         ? (f1.isAfter(f2) ? f1 : f2)
         : (f1 ?? f2);

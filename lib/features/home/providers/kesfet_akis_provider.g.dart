@@ -58,7 +58,7 @@ final class KesfetAkisProvider
   }
 }
 
-String _$kesfetAkisHash() => r'5bd4bf71e5f388403e801e21930d22e569030ea5';
+String _$kesfetAkisHash() => r'8082bf8527ca6cdfff2d8e7ec97d976d4320b2cb';
 
 final class KesfetAkisFamily extends $Family
     with

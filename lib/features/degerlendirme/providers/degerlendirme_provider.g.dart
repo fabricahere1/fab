@@ -9,161 +9,48 @@ part of 'degerlendirme_provider.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(sohbetDurumu)
-final sohbetDurumuProvider = SohbetDurumuFamily._();
+@ProviderFor(bekleyenDegerlendirmelerim)
+final bekleyenDegerlendirmelerimProvider =
+    BekleyenDegerlendirmelerimProvider._();
 
-final class SohbetDurumuProvider
+final class BekleyenDegerlendirmelerimProvider
     extends
         $FunctionalProvider<
-          AsyncValue<Map<String, dynamic>>,
-          Map<String, dynamic>,
-          Stream<Map<String, dynamic>>
+          AsyncValue<List<BekleyenDegerlendirme>>,
+          List<BekleyenDegerlendirme>,
+          FutureOr<List<BekleyenDegerlendirme>>
         >
     with
-        $FutureModifier<Map<String, dynamic>>,
-        $StreamProvider<Map<String, dynamic>> {
-  SohbetDurumuProvider._({
-    required SohbetDurumuFamily super.from,
-    required String super.argument,
-  }) : super(
-         retry: null,
-         name: r'sohbetDurumuProvider',
-         isAutoDispose: true,
-         dependencies: null,
-         $allTransitiveDependencies: null,
-       );
+        $FutureModifier<List<BekleyenDegerlendirme>>,
+        $FutureProvider<List<BekleyenDegerlendirme>> {
+  BekleyenDegerlendirmelerimProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'bekleyenDegerlendirmelerimProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
 
   @override
-  String debugGetCreateSourceHash() => _$sohbetDurumuHash();
-
-  @override
-  String toString() {
-    return r'sohbetDurumuProvider'
-        ''
-        '($argument)';
-  }
+  String debugGetCreateSourceHash() => _$bekleyenDegerlendirmelerimHash();
 
   @$internal
   @override
-  $StreamProviderElement<Map<String, dynamic>> $createElement(
+  $FutureProviderElement<List<BekleyenDegerlendirme>> $createElement(
     $ProviderPointer pointer,
-  ) => $StreamProviderElement(pointer);
+  ) => $FutureProviderElement(pointer);
 
   @override
-  Stream<Map<String, dynamic>> create(Ref ref) {
-    final argument = this.argument as String;
-    return sohbetDurumu(ref, argument);
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return other is SohbetDurumuProvider && other.argument == argument;
-  }
-
-  @override
-  int get hashCode {
-    return argument.hashCode;
+  FutureOr<List<BekleyenDegerlendirme>> create(Ref ref) {
+    return bekleyenDegerlendirmelerim(ref);
   }
 }
 
-String _$sohbetDurumuHash() => r'0a5c3953d3094bf9d1d600c6e55c56bbc76a8c0e';
-
-final class SohbetDurumuFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<Map<String, dynamic>>, String> {
-  SohbetDurumuFamily._()
-    : super(
-        retry: null,
-        name: r'sohbetDurumuProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
-        isAutoDispose: true,
-      );
-
-  SohbetDurumuProvider call(String sohbetId) =>
-      SohbetDurumuProvider._(argument: sohbetId, from: this);
-
-  @override
-  String toString() => r'sohbetDurumuProvider';
-}
-
-@ProviderFor(bekleyenDegerlendirmeler)
-final bekleyenDegerlendirmelerProvider = BekleyenDegerlendirmelerFamily._();
-
-final class BekleyenDegerlendirmelerProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<List<Map<String, dynamic>>>,
-          List<Map<String, dynamic>>,
-          Stream<List<Map<String, dynamic>>>
-        >
-    with
-        $FutureModifier<List<Map<String, dynamic>>>,
-        $StreamProvider<List<Map<String, dynamic>>> {
-  BekleyenDegerlendirmelerProvider._({
-    required BekleyenDegerlendirmelerFamily super.from,
-    required String super.argument,
-  }) : super(
-         retry: null,
-         name: r'bekleyenDegerlendirmelerProvider',
-         isAutoDispose: true,
-         dependencies: null,
-         $allTransitiveDependencies: null,
-       );
-
-  @override
-  String debugGetCreateSourceHash() => _$bekleyenDegerlendirmelerHash();
-
-  @override
-  String toString() {
-    return r'bekleyenDegerlendirmelerProvider'
-        ''
-        '($argument)';
-  }
-
-  @$internal
-  @override
-  $StreamProviderElement<List<Map<String, dynamic>>> $createElement(
-    $ProviderPointer pointer,
-  ) => $StreamProviderElement(pointer);
-
-  @override
-  Stream<List<Map<String, dynamic>>> create(Ref ref) {
-    final argument = this.argument as String;
-    return bekleyenDegerlendirmeler(ref, argument);
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return other is BekleyenDegerlendirmelerProvider &&
-        other.argument == argument;
-  }
-
-  @override
-  int get hashCode {
-    return argument.hashCode;
-  }
-}
-
-String _$bekleyenDegerlendirmelerHash() =>
-    r'fac5f62d9bb65cb393221536be38138304da230f';
-
-final class BekleyenDegerlendirmelerFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<List<Map<String, dynamic>>>, String> {
-  BekleyenDegerlendirmelerFamily._()
-    : super(
-        retry: null,
-        name: r'bekleyenDegerlendirmelerProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
-        isAutoDispose: true,
-      );
-
-  BekleyenDegerlendirmelerProvider call(String kullaniciId) =>
-      BekleyenDegerlendirmelerProvider._(argument: kullaniciId, from: this);
-
-  @override
-  String toString() => r'bekleyenDegerlendirmelerProvider';
-}
+String _$bekleyenDegerlendirmelerimHash() =>
+    r'4e7925177ac3f6b8dc201a2eaa7b796bc18cb9d1';
 
 @ProviderFor(KullaniciDegerlendirmeleri)
 final kullaniciDegerlendirmeleriProvider = KullaniciDegerlendirmeleriFamily._();
@@ -217,7 +104,7 @@ final class KullaniciDegerlendirmeleriProvider
 }
 
 String _$kullaniciDegerlendirmeleriHash() =>
-    r'04d0df597aadc77665f83895a381d4b742ded4e5';
+    r'9f0a0f0f2e038e7fbb01f29d3f789d650dc4f8fe';
 
 final class KullaniciDegerlendirmeleriFamily extends $Family
     with
@@ -278,7 +165,7 @@ final class DegerlendirmeIslemleriProvider
         argument: null,
         retry: null,
         name: r'degerlendirmeIslemleriProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -300,7 +187,7 @@ final class DegerlendirmeIslemleriProvider
 }
 
 String _$degerlendirmeIslemleriHash() =>
-    r'a588699be8b6f79cd529359c6337e9948c0129e6';
+    r'5520b0a13b98653beea3a3177769efb216e11eca';
 
 abstract class _$DegerlendirmeIslemleri extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();

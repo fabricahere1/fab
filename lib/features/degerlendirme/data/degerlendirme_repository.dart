@@ -1,187 +1,71 @@
 // lib/features/degerlendirme/data/degerlendirme_repository.dart
 
-import '../../../core/firebase/app_firestore.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../shared/constants/app_constants.dart';
-import '../../../shared/utils/app_hata_yonetici.dart';
+import '../../../core/api/api_client.dart';
 
 part 'degerlendirme_repository.g.dart';
 
 @riverpod
 DegerlendirmeRepository degerlendirmeRepository(Ref ref) {
-  return DegerlendirmeRepository(firestore: AppFirestore.instance);
+  return DegerlendirmeRepository();
+}
+
+class BekleyenDegerlendirme {
+  final String id;
+  final String ilanId;
+  final String degerlendirilenId;
+
+  const BekleyenDegerlendirme({
+    required this.id,
+    required this.ilanId,
+    required this.degerlendirilenId,
+  });
+
+  factory BekleyenDegerlendirme.fromApi(Map<String, dynamic> json) {
+    return BekleyenDegerlendirme(
+      id: json['id'] as String? ?? '',
+      ilanId: json['ilanId'] as String? ?? '',
+      degerlendirilenId: json['degerlendirilenId'] as String? ?? '',
+    );
+  }
 }
 
 class DegerlendirmeSayfasi {
   final List<Map<String, dynamic>> liste;
-  final DateTime? sonTarih;
   final bool bitti;
-  const DegerlendirmeSayfasi({required this.liste, required this.bitti, this.sonTarih});
+  const DegerlendirmeSayfasi({required this.liste, required this.bitti});
 }
 
 class DegerlendirmeRepository {
-  final FirebaseFirestore _db;
-
-  DegerlendirmeRepository({required FirebaseFirestore firestore})
-      : _db = firestore;
-
-  int _tariheGoreSirala(dynamic tA, dynamic tB) {
-    if (tA == null && tB == null) return 0;
-    if (tA == null) return 1;
-    if (tB == null) return -1;
-    try {
-      final dtA = (tA as Timestamp).toDate();
-      final dtB = (tB as Timestamp).toDate();
-      return dtB.compareTo(dtA);
-    } catch (e, s) {
-      AppHataYonetici.logla(e, s, etiket: 'degerlendirmeRepo.tariheGoreSirala');
-      return 0;
-    }
-  }
-
-  Future<void> degerlendirmeGonder({
-    required String sohbetId,
-    required String degerlendireninId,
-    required String hedefKullaniciId,
+  /// Backend yalnızca v3_bekleyen_degerlendirmeler'de kaydı olan (yani
+  /// gerçekten o ilan üzerinden işlem yapmış) çiftlerin değerlendirmesini
+  /// kabul ediyor — başarılı çağrı aynı zamanda bekleyen kaydı siler.
+  Future<String> degerlendirmeGonder({
+    required String ilanId,
+    required String degerlendirilenId,
     required double puan,
     required String yorum,
-    String ilanBaslik = '',
   }) async {
-    final bekleyenRef = _db
-        .collection(Collections.kullanicilar)
-        .doc(degerlendireninId)
-        .collection(Collections.bekleyenDegerlendirmeler)
-        .doc(sohbetId);
-
-    await _db.runTransaction((tx) async {
-      final sohbetRef    = _db.collection(Collections.sohbetler).doc(sohbetId);
-      final degRef       = _db.collection(Collections.degerlendirmeler).doc();
-      final bekleyenSnap = await tx.get(bekleyenRef);
-
-      final sohbetSnap = await tx.get(sohbetRef);
-
-      // Mükerrer değerlendirmeyi önle — transaction içinde atomik kontrol
-      if (sohbetSnap.exists) {
-        final d = sohbetSnap.data() as Map<String, dynamic>;
-        if (d['degerlendirmeYapildi_$degerlendireninId'] == true) {
-          throw Exception('zaten_degerlendirdi');
-        }
-      }
-
-      tx.set(degRef, {
-        'sohbetId':          sohbetId,
-        'degerlendireninId': degerlendireninId,
-        'hedefKullaniciId':  hedefKullaniciId,
-        'puan':              puan.round(),
-        'yorum':             yorum,
-        'ilanBaslik':        ilanBaslik,
-        'tarih':             FieldValue.serverTimestamp(),
-      });
-
-      // set+merge kullan — doküman yoksa da güvenli çalışır
-      tx.set(sohbetRef, {
-        'degerlendirmeYapildi_$degerlendireninId': true,
-      }, SetOptions(merge: true));
-
-      // Bekleyen değerlendirme kaydı varsa transaction içinde tamamlandı işaretle
-      if (bekleyenSnap.exists) {
-        tx.update(bekleyenRef, {'tamamlandi': true});
-      }
-
-      // ortalamaPuan ve degerlendirmeSayisi CF trigger tarafından güncellenir
+    final response = await ApiClient.dio.post('/degerlendirmeler', data: {
+      'ilanId': ilanId,
+      'degerlendirilenId': degerlendirilenId,
+      'puan': puan.round(),
+      'yorum': yorum,
     });
+    return response.data['id'] as String? ?? '';
   }
 
-  Future<void> sohbetDegerlendirmeyiIsaretle({
-    required String sohbetId,
-    required String kullaniciId,
-  }) async {
-    await _db.collection(Collections.sohbetler).doc(sohbetId).update({
-      'degerlendirmeAtlandi_$kullaniciId': true,
-    });
+  Future<List<BekleyenDegerlendirme>> bekleyenDegerlendirmelerimGetir() async {
+    final response = await ApiClient.dio.get('/bekleyen-degerlendirmelerim');
+    return (response.data['bekleyenler'] as List)
+        .map((j) => BekleyenDegerlendirme.fromApi(j as Map<String, dynamic>))
+        .toList();
   }
 
-  Future<bool> zatenDegerlendirdimMi({
-    required String sohbetId,
-    required String kullaniciId,
-  }) async {
-    final snap = await _db.collection(Collections.sohbetler).doc(sohbetId).get();
-    if (!snap.exists) return false;
-    final d = snap.data() as Map<String, dynamic>;
-    return d['degerlendirmeYapildi_$kullaniciId'] == true;
-  }
-
-  Future<void> bekleyenDegerlendirmeKaydet({
-    required String sohbetId,
-    required String kullaniciId,
-  }) async {
-    await _db
-        .collection(Collections.kullanicilar)
-        .doc(kullaniciId)
-        .collection(Collections.bekleyenDegerlendirmeler)
-        .doc(sohbetId)
-        .set({
-      'sohbetId':   sohbetId,
-      'tarih':      FieldValue.serverTimestamp(),
-      'tamamlandi': false,
-    }, SetOptions(merge: true));
-  }
-
-  Future<DegerlendirmeSayfasi> degerlendirmeSayfasiGetir(
-    String hedefKullaniciId, {
-    DateTime? sonTarih,
-    int limit = Pagination.degerlendirmeSayfaBoyutu,
-  }) async {
-    var q = _db
-        .collection(Collections.degerlendirmeler)
-        .where('hedefKullaniciId', isEqualTo: hedefKullaniciId)
-        .orderBy('tarih', descending: true)
-        .limit(limit);
-    if (sonTarih != null) {
-      q = q.startAfter([Timestamp.fromDate(sonTarih)]);
-    }
-    final snap = await q.get();
-    final liste = snap.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList();
-    final sonDokTarih = liste.isNotEmpty ? (liste.last['tarih'] as Timestamp?)?.toDate() : null;
-    return DegerlendirmeSayfasi(
-      liste: liste,
-      sonTarih: sonDokTarih ?? sonTarih,
-      bitti: snap.docs.length < limit,
-    );
-  }
-
-  // orderBy kaldırıldı — composite index gerektirmesin, client-side sıralanıyor
-  Stream<List<Map<String, dynamic>>> bekleyenDegerlendirmelerStream(
-      String kullaniciId) {
-    return _db
-        .collection(Collections.kullanicilar)
-        .doc(kullaniciId)
-        .collection(Collections.bekleyenDegerlendirmeler)
-        .where('tamamlandi', isEqualTo: false)
-        .snapshots()
-        .map((snap) {
-      final liste = snap.docs
-          .map((doc) => {'id': doc.id, ...doc.data()})
-          .toList();
-      liste.sort((a, b) => _tariheGoreSirala(a['tarih'], b['tarih']));
-      return liste;
-    });
-  }
-
-  /// Bekleyen değerlendirme kaydını tamamlandı olarak işaretler.
-  /// Kayıt yoksa (sohbet ekranından direkt yapıldıysa) sessizce döner.
-  Future<void> bekleyenDegerlendirmeTamamla({
-    required String sohbetId,
-    required String kullaniciId,
-  }) async {
-    final ref = _db
-        .collection(Collections.kullanicilar)
-        .doc(kullaniciId)
-        .collection(Collections.bekleyenDegerlendirmeler)
-        .doc(sohbetId);
-    final snap = await ref.get();
-    if (!snap.exists) return;
-    await ref.update({'tamamlandi': true});
+  /// Sayfalama artık yok — backend tüm geçmişi tek seferde döndürüyor.
+  Future<DegerlendirmeSayfasi> degerlendirmeSayfasiGetir(String hedefKullaniciId) async {
+    final response = await ApiClient.dio.get('/kullanicilar/$hedefKullaniciId/degerlendirmeler');
+    final liste = (response.data['degerlendirmeler'] as List).cast<Map<String, dynamic>>();
+    return DegerlendirmeSayfasi(liste: liste, bitti: true);
   }
 }

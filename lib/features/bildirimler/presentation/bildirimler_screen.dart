@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../domain/bildirim_model.dart';
 import '../providers/bildirim_provider.dart';
-import '../../auth/providers/auth_provider.dart';
-import '../../mesajlar/domain/mesaj_model.dart' show karsiTarafiBul;
 import '../../mesajlar/presentation/sohbet_screen.dart';
 import '../../ilanlar/presentation/ilan_detay_screen.dart';
 import '../../degerlendirme/presentation/degerlendirme_screen.dart';
@@ -245,19 +243,18 @@ class _BildirimSatiri extends ConsumerWidget {
 
   Future<void> _navigate(BuildContext context, WidgetRef ref) async {
     if (bildirim.tip == BildirimTip.mesaj && bildirim.hedefId.isNotEmpty) {
-      final parts = bildirim.hedefId.split('_');
-      if (parts.length < 3) return;
-
-      final ilanId = parts.last;
-      final karsiUid = bildirim.gondereId.isNotEmpty
-          ? bildirim.gondereId
-          : (() {
-              final benimUid = ref.read(currentUserProvider)?.uid ?? '';
-              return karsiTarafiBul(
-                  parts.sublist(0, parts.length - 1), benimUid);
-            })();
-
+      // hedefId artık backend'in ürettiği gerçek sohbet UUID'si — eski
+      // Firestore döneminde "uidA_uidB_ilanId" bileşik stringiydi, o
+      // parçalama mantığı burada YANLIŞ (UUID'de '_' olmadığı için
+      // parts.length<3'e takılıp sessizce hiçbir şey yapmıyordu).
+      final sohbetId = bildirim.hedefId;
+      final karsiUid = bildirim.gondereId;
       if (karsiUid.isEmpty) return;
+
+      final d = await ref.read(sohbetIslemleriProvider.notifier).getir(sohbetId);
+      if (d == null) return;
+
+      if (!context.mounted) return;
 
       Navigator.push(
         context,
@@ -265,7 +262,8 @@ class _BildirimSatiri extends ConsumerWidget {
           builder: (_) => SohbetScreen(
             karsiKullaniciId: karsiUid,
             karsiKullaniciAd: bildirim.gondereAd,
-            ilanId: ilanId,
+            ilanId: d.ilanId,
+            sohbetId: sohbetId,
           ),
         ),
       );
@@ -281,7 +279,7 @@ class _BildirimSatiri extends ConsumerWidget {
 
       final d = await ref.read(sohbetIslemleriProvider.notifier).getir(sohbetId);
       if (d == null) return;
-      final ilanId     = d['ilanId']     as String? ?? '';
+      final ilanId     = d.ilanId;
 
       if (!context.mounted) return;
 
@@ -292,6 +290,7 @@ class _BildirimSatiri extends ConsumerWidget {
             karsiKullaniciId: karsiId,
             karsiKullaniciAd: karsiAd,
             ilanId:        ilanId,
+            sohbetId:      sohbetId,
             autoOpenPanel: true,
           ),
         ),
@@ -308,7 +307,7 @@ class _BildirimSatiri extends ConsumerWidget {
 
       final d = await ref.read(sohbetIslemleriProvider.notifier).getir(sohbetId);
       if (d == null) return;
-      final ilanId     = d['ilanId']     as String? ?? '';
+      final ilanId     = d.ilanId;
 
       if (!context.mounted) return;
 
@@ -319,6 +318,7 @@ class _BildirimSatiri extends ConsumerWidget {
             karsiKullaniciId: karsiId,
             karsiKullaniciAd: karsiAd,
             ilanId:        ilanId,
+            sohbetId:      sohbetId,
             autoOpenPanel: true,
           ),
         ),
@@ -336,42 +336,32 @@ class _BildirimSatiri extends ConsumerWidget {
       return;
     }
 
-    if (bildirim.tip == BildirimTip.degerlendirme && bildirim.hedefId.isNotEmpty) {
-      final sohbetId = bildirim.hedefId;
-      final karsiId  = bildirim.gondereId;
-      final karsiAd  = bildirim.gondereAd;
-
+    if (bildirim.tip == BildirimTip.degerlendirme) {
+      // Bu bildirim "seni değerlendirdiler" bilgisini taşıyor (hedefId =
+      // değerlendirme id'si, backend'de üretiliyor). Karşı tarafı geri
+      // değerlendirebilmen için bekleyen listende hâlâ onunla ilgili bir
+      // kayıt var mı bakıyoruz.
+      final karsiId = bildirim.gondereId;
+      final karsiAd = bildirim.gondereAd;
       if (karsiId.isEmpty) return;
 
-      final benimUid = ref.read(currentUserProvider)?.uid ?? '';
-      if (benimUid.isEmpty) return;
-
-      final zaten = await ref.read(degerlendirmeIslemleriProvider.notifier).zatenYaptimMi(
-        sohbetId: sohbetId,
-        kullaniciId: benimUid,
-      );
-      if (zaten) {
+      final bekleyenler = await ref.read(bekleyenDegerlendirmelerimProvider.future);
+      final eslesen = bekleyenler.where((b) => b.degerlendirilenId == karsiId).firstOrNull;
+      if (eslesen == null) {
         if (context.mounted) {
-          AppSnackBar.bilgi(context, 'Bu ilanı zaten değerlendirdin.');
+          AppSnackBar.bilgi(context, 'Bu kullanıcıyı zaten değerlendirdin.');
         }
         return;
       }
 
       if (!context.mounted) return;
 
-      final tamamlandi = await DegerlendirmeModal.goster(
+      await DegerlendirmeModal.goster(
         context: context,
-        sohbetId: sohbetId,
+        ilanId: eslesen.ilanId,
         hedefKullaniciId: karsiId,
         hedefKullaniciAd: karsiAd,
       );
-
-      if (tamamlandi && context.mounted) {
-        await ref.read(degerlendirmeIslemleriProvider.notifier).bekleyenTamamla(
-          sohbetId: sohbetId,
-          kullaniciId: benimUid,
-        );
-      }
     }
   }
 
@@ -382,6 +372,7 @@ class _BildirimSatiri extends ConsumerWidget {
     BildirimTip.degerlendirme => Icons.star_outline_rounded,
     BildirimTip.anlasildi     => Icons.handshake_outlined,
     BildirimTip.eslesme       => Icons.route_outlined,
+    BildirimTip.takip         => Icons.person_add_alt_1_outlined,
   };
 
   Color get _ikonArkaRenk => switch (bildirim.tip) {

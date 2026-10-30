@@ -1,86 +1,65 @@
-import '../firebase/app_firestore.dart';
-import 'dart:async';
+// lib/core/services/bildirim_banner_service.dart
+//
+// "anlasildi" ve "sistem" (işlem durumu) tipindeki bildirimleri dinler,
+// karşı tarafın ekranında banner gösterir.
+//
+// Eskiden Firebase Auth'un authStateChanges()'ini dinleyip doğrudan
+// Firestore'daki bildirimler koleksiyonunu sorguluyordu — Google/e-posta
+// girişi artık Firebase Auth'u hiç tetiklemediği için (AWS migrasyonu)
+// bu dinleyici asla gerçek bir kullanıcı görmüyordu, banner hiç
+// gösterilmiyordu. Artık AWS backend'ini 20sn'de bir polling ile
+// yenileyen bildirimlerProvider'ı dinliyor — önceki listede olmayıp
+// yeni listede beliren, ve ilk yükleme OLMAYAN bildirimler banner olarak
+// gösteriliyor (gerçek zamanlı değil, en fazla 20sn gecikmeli).
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'banner_service.dart';
-import '../../shared/constants/app_constants.dart';
+import '../../features/bildirimler/domain/bildirim_model.dart';
+import '../../features/bildirimler/providers/bildirim_provider.dart';
 
-/// "anlasildi" ve "sistem" (işlem durumu) tipindeki bildirimleri dinler,
-/// karşı tarafın ekranında CANLI banner gösterir.
-///
-/// Mesaj bildirimleri (tip: 'mesaj') buraya dahil edilmedi — onlar zaten
-/// FCM foreground mesaj işleme akışında ayrı bir banner gösterimine sahip
-/// olabilir, burada da göstermek çift banner riski taşırdı.
-///
-/// IslemDurumuService'in eski "sohbet dökümanını dinle, durumu fark et"
-/// yaklaşımının yerine geçer — bu servis, doğrudan `bildirimler`
-/// koleksiyonunu (kullaniciId == benimUid) dinler. Bildirim artık ilgili
-/// repository fonksiyonu tarafından İŞLEM ANINDA, garantili şekilde
-/// yazıldığı için (mesaj bildirimleriyle aynı, kanıtlanmış desen), bu
-/// dinleyicinin tek işi "yeni bir bildirim koleksiyona eklendiğinde onu
-/// banner olarak göster" — durum karşılaştırması/race condition riski yok.
 class BildirimBannerService {
   BildirimBannerService._();
   static final instance = BildirimBannerService._();
 
-  final _firestore = AppFirestore.instance;
-  final _auth      = FirebaseAuth.instance;
-
-  StreamSubscription? _authSub;
-  StreamSubscription? _bildirimSub;
+  ProviderSubscription<AsyncValue<List<BildirimModel>>>? _sub;
+  Set<String> _bilinenIdler = {};
   bool _ilkSnapshot = true;
 
-  static const _bannerGosterilecekTipler = {'anlasildi', 'sistem'};
+  static const _bannerGosterilecekTipler = {
+    BildirimTip.anlasildi,
+    BildirimTip.sistem,
+  };
 
-  void init() {
-    _authSub = _auth.authStateChanges().listen(_authDegisti);
-  }
-
-  void _authDegisti(User? user) {
-    _bildirimSub?.cancel();
+  void init(WidgetRef ref) {
     _ilkSnapshot = true;
+    _bilinenIdler = {};
+    _sub = ref.listenManual<AsyncValue<List<BildirimModel>>>(
+      bildirimlerProvider,
+      (previous, next) {
+        final liste = next.value;
+        if (liste == null) return;
 
-    if (user == null) return;
+        // İlk snapshot — uygulama açılırken zaten var olan eski
+        // bildirimler. Bunlar için banner gösterme, sadece baseline
+        // olarak kabul et.
+        if (_ilkSnapshot) {
+          _ilkSnapshot = false;
+          _bilinenIdler = liste.map((b) => b.id).toSet();
+          return;
+        }
 
-    _bildirimSub = _firestore
-        .collection(Collections.bildirimler)
-        .where('kullaniciId', isEqualTo: user.uid)
-        .orderBy('tarih', descending: true)
-        .limit(20)
-        .snapshots()
-        .listen((snap) {
-      // İlk snapshot — uygulama açılırken zaten var olan eski bildirimler.
-      // Bunlar için banner gösterme, sadece baseline olarak kabul et.
-      if (_ilkSnapshot) {
-        _ilkSnapshot = false;
-        return;
-      }
-
-      for (final change in snap.docChanges) {
-        if (change.type != DocumentChangeType.added) continue;
-        final data = change.doc.data();
-        if (data == null) continue;
-
-        final tip = data['tip'] as String? ?? '';
-        if (!_bannerGosterilecekTipler.contains(tip)) continue;
-
-        final baslik = data['baslik'] as String? ?? '';
-        final icerik = data['icerik'] as String? ?? '';
-        if (icerik.isEmpty) continue;
-
-        BannerService.instance.goster(baslik: baslik, icerik: icerik, tip: 'islem');
-      }
-    }, onError: (e, s) {
-      // Eksik Firestore index'i ya da geçici bağlantı sorunu — banner
-      // gösterilemese de uygulama hiçbir koşulda çökmemeli.
-      debugPrint('[BildirimBannerService] dinleme hatası: $e');
-    });
+        for (final b in liste) {
+          if (_bilinenIdler.contains(b.id)) continue;
+          if (_bannerGosterilecekTipler.contains(b.tip) && b.icerik.isNotEmpty) {
+            BannerService.instance.goster(baslik: b.baslik, icerik: b.icerik, tip: 'islem');
+          }
+        }
+        _bilinenIdler = liste.map((b) => b.id).toSet();
+      },
+    );
   }
 
   void dispose() {
-    _authSub?.cancel();
-    _bildirimSub?.cancel();
+    _sub?.close();
   }
 }

@@ -148,13 +148,12 @@ List<IlanModel> favoriKategorilerYeniIlanlar(Ref ref) {
   if (favoriler.isEmpty) return [];
 
   final kategoriler = favoriler
-      .map((f) => f['kategori'] as String? ?? '')
+      .map((f) => f.kategori)
       .where((k) => k.isNotEmpty)
       .toSet();
   if (kategoriler.isEmpty) return [];
 
-  final favoriIlanIdleri =
-      favoriler.map((f) => f['ilanId'] as String? ?? '').toSet();
+  final favoriIlanIdleri = favoriler.map((f) => f.id).toSet();
   final simdi = DateTime.now();
 
   final sonuc = ref.watch(tasiyiciIlanlarProvider).filtrelenmis.where((i) {
@@ -251,13 +250,12 @@ List<IlanModel> favoriKategorilerYeniIstekIlanlari(Ref ref) {
   if (favoriler.isEmpty) return [];
 
   final kategoriler = favoriler
-      .map((f) => f['kategori'] as String? ?? '')
+      .map((f) => f.kategori)
       .where((k) => k.isNotEmpty)
       .toSet();
   if (kategoriler.isEmpty) return [];
 
-  final favoriIlanIdleri =
-      favoriler.map((f) => f['ilanId'] as String? ?? '').toSet();
+  final favoriIlanIdleri = favoriler.map((f) => f.id).toSet();
   final simdi = DateTime.now();
 
   final sonuc = ref.watch(istekIlanlarProvider).filtrelenmis.where((i) {

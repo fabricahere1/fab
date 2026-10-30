@@ -6,7 +6,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import '../../../../shared/constants/app_colors.dart';
 import '../../../../shared/constants/app_constants.dart' as app_constants;
 import '../../../../shared/widgets/turkiye_disi_arama_ekrani.dart';
@@ -634,14 +633,16 @@ class _GSiralamaSegmented extends StatelessWidget {
   }
 }
 
+// bkz. ilanlar_screen.dart kategoriIkon — aynı sebeple Material Symbols
+// yerine standart Material Icons kullanılıyor.
 IconData gelenlerKategoriIkon(String key) {
   switch (key) {
-    case 'kadin':       return Symbols.face_4;
-    case 'erkek':       return Symbols.face;
-    case 'cocuk':       return Symbols.face_retouching_natural;
-    case 'ev':          return Symbols.cottage;
-    case 'elektronik':  return Symbols.headphones;
-    case 'supplement':  return Symbols.vaccines;
-    default:            return Symbols.package_2;
+    case 'kadin':       return Icons.woman;
+    case 'erkek':       return Icons.man;
+    case 'cocuk':       return Icons.child_care;
+    case 'ev':          return Icons.cottage;
+    case 'elektronik':  return Icons.headphones;
+    case 'supplement':  return Icons.vaccines;
+    default:            return Icons.inventory_2;
   }
 }

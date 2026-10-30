@@ -1,7 +1,6 @@
 // lib/features/ilanlar/presentation/ilanlar_screen.dart
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -22,13 +21,15 @@ import 'widgets/filtre_ekrani.dart';
 import 'widgets/ilan_karti.dart';
 import 'widgets/swipe_karti.dart';
 import 'dart:async';
+import 'dart:math';
 import 'package:iste_v3/features/favoriler/presentation/favoriler_screen.dart';
 import 'ilan_detay_screen.dart';
 import '../../../shared/utils/app_hata_yonetici.dart';
 import '../../../shared/utils/oneri_skoru.dart';
 import '../../../shared/widgets/hata_durum_widget.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../home/presentation/hos_geldin_dialog.dart';
+import '../../tanitim/data/tanitim_repository.dart';
+import '../../tanitim/presentation/iste_tanitim_ekrani.dart';
+import '../../ilanlar/presentation/ilan_form_screen.dart';
 
 
 
@@ -70,36 +71,10 @@ class _AlgoliaState {
 }
 
 // Algolia sonucunu IlanModel'e donustur
-IlanModel _hittenIlan(Map<String, dynamic> hit) {
-  final resimUrller = (hit['resimUrller'] as List<dynamic>?)
-      ?.map((e) => e as String)
-      .toList() ?? [];
-  final kategoriYolu = (hit['kategoriYolu'] as List<dynamic>?)
-      ?.map((e) => e as String)
-      .toList() ?? [];
-  final tarihMs = hit['olusturmaTarihi'] as int?;
-  return IlanModel(
-    id:              hit['objectID']     as String? ?? '',
-    tip:             hit['tip']          as String? ?? '',
-    nereden:         hit['nereden']      as String? ?? '',
-    nereye:          hit['nereye']       as String? ?? '',
-    urun:            hit['urun']         as String? ?? '',
-    kategori:        hit['kategori']     as String? ?? 'diger',
-    anaKategori:     hit['anaKategori']  as String? ?? '',
-    kategoriYolu:    kategoriYolu,
-    resimUrl:        hit['resimUrl']     as String? ?? '',
-    resimUrller:     resimUrller,
-    aktif:           hit['aktif']        as bool?   ?? true,
-    durum:           hit['durum']        as String? ?? 'yayinda',
-    kullaniciId:     hit['kullaniciId']  as String? ?? '',
-    kullaniciAd:     hit['kullaniciAd']  as String? ?? '',
-    favoriSayisi:    (hit['favoriSayisi']       as num?)?.toInt() ?? 0,
-    goruntulenmeSayisi: (hit['goruntulenmeSayisi'] as num?)?.toInt() ?? 0,
-    olusturmaTarihi: tarihMs != null
-        ? DateTime.fromMillisecondsSinceEpoch(tarihMs)
-        : null,
-  );
-}
+// Artık Algolia'nın özel alan adları yerine ham v3Ilan JSON'ı geliyor
+// (bkz. arama_service.dart) — IlanModel.fromJson bunu zaten her yerde
+// (GET /ilanlar, GET /ilanlarim) ayrıştırdığı şekilde ayrıştırıyor.
+IlanModel _hittenIlan(Map<String, dynamic> hit) => IlanModel.fromJson(hit);
 
 class IsteklerIcEkran extends ConsumerStatefulWidget {
   final GlobalKey? filtreKey;
@@ -133,6 +108,14 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
 
   _AlgoliaState _algoliaState = const _AlgoliaState();
 
+  static const _ilkIlanBannerGorselleri = [
+    'assets/images/banner_ilk_ilan.png',
+    'assets/images/banner_ilk_ilan_aa.png',
+    'assets/images/banner_ilk_ilan_bb.png',
+  ];
+  late final String _ilkIlanBannerGorseli =
+      _ilkIlanBannerGorselleri[Random().nextInt(_ilkIlanBannerGorselleri.length)];
+
   @override
   bool get wantKeepAlive => true;
 
@@ -145,19 +128,45 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
   }
 
   Future<void> _hosGeldinKontrolEt() async {
-    final prefs = await SharedPreferences.getInstance();
-    const key = 'hosgeldin_gosterildi';
-    if (prefs.getBool(key) != true) {
-      if (!mounted) return;
-      await showDialog(
-        context: context,
-        barrierColor: Colors.black54,
-        builder: (_) => const HosGeldinDialog(),
-      );
-      await prefs.setBool(key, true);
-    }
+    if (!mounted) return;
+    final hemenIlanVer = await _tanitimKontrolEt();
+    // "Hemen ilan ver" ile ilan formuna gidiliyorsa coach mark'ı şimdi
+    // tetikleme — ikisi aynı anda yarışıp tur diyaloğu yeni açılan ilan
+    // formunun altında kalıp kayboluyordu. Tur, 'tur_gosterildi' bayrağı
+    // hâlâ false olduğu için bir sonraki ana sayfa ziyaretinde gösterilir.
+    if (hemenIlanVer == true) return;
     if (!mounted) return;
     widget.onHosGeldinKapandi?.call();
+  }
+
+  /// Tanıtım (onboarding) ekranı — Çekmece'deki ilan_tesvik gibi,
+  /// kullanici_id'ye bağlı olarak backend'de bir kerelik gösterilir.
+  /// Coach mark'tan ÖNCE çalışır.
+  Future<bool?> _tanitimKontrolEt() async {
+    bool goster;
+    try {
+      goster = await TanitimRepository().gosterilmeliMi();
+    } catch (_) {
+      // Ağ hatasında akışı bozma — tanıtımı sessizce atla, bir sonraki
+      // açılışta tekrar denenir (backend'de bayrak hâlâ false).
+      return null;
+    }
+    if (!goster || !mounted) return null;
+
+    final hemenIlanVer = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => IsteTanitimEkrani(
+          onTamamlandi: (hemenIlanVer) => Navigator.of(context).pop(hemenIlanVer),
+        ),
+      ),
+    );
+    unawaited(TanitimRepository().goruldu());
+    if (hemenIlanVer == true && mounted) {
+      Navigator.push(context, CupertinoPageRoute(
+        builder: (_) => IlanFormScreen(tip: IlanTip.istek),
+      ));
+    }
+    return hemenIlanVer;
   }
 
   double _sonScrollPixel = 0;
@@ -479,6 +488,10 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
 
                 kategoriScrollCtrl: _kategoriScrollCtrl,
                 filtreKey: widget.filtreKey,
+                mod: mod,
+                gorunumKey: widget.gorunumKey,
+                onModSec: (m) =>
+                    ref.read(gridTercihiProvider.notifier).modSec(m),
               ),
 
               Container(height: 0.5, color: AppColors.divider),
@@ -499,7 +512,7 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(14),
                                   child: Image.asset(
-                                    'assets/images/banner_ilk_ilan.png',
+                                    _ilkIlanBannerGorseli,
                                     width: double.infinity,
                                     fit: BoxFit.cover,
                                   ),
@@ -511,6 +524,21 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
                             ),
                             const SliverToBoxAdapter(
                               child: _Son24SaatBolumu(),
+                            ),
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(14),
+                                  child: const AspectRatio(
+                                    aspectRatio: 6,
+                                    child: _IlkIlanBannerCarousel(),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SliverToBoxAdapter(
+                              child: SizedBox(height: 10),
                             ),
                             SliverPadding(
                               padding: const EdgeInsets.all(10),
@@ -539,21 +567,6 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
               ),
             ],
           ),
-
-          Positioned(
-            right: 0, top: 0, bottom: 0,
-            child: Center(
-              child: KeyedSubtree(
-                key: widget.gorunumKey,
-                child: _DikeTabBar(
-                  mod: mod,
-                  isSwipe: isSwipe,
-                  onModSec: (m) =>
-                      ref.read(gridTercihiProvider.notifier).modSec(m),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -562,71 +575,53 @@ class _IsteklerIcEkranState extends ConsumerState<IsteklerIcEkran>
 
 // ── Dikey mod tab bar ─────────────────────────────────────────────────────────
 
-class _DikeTabBar extends StatelessWidget {
+// Çekmece'deki _GorunumIkonButonu ile aynı desen: popup açmaz, her
+// dokunuşta 2'li → 3'lü → swipe → (baştan) döngüsel geçiş yapar. Eskiden
+// ekranın sağ kenarına yapışık sabit bir dikey çubuktu (_DikeTabBar),
+// kullanıcı isteğiyle arama satırındaki filtre ikonunun eski yerine
+// taşındı.
+class _GorunumIkonButonu extends StatelessWidget {
   final GoruntulemeModeli mod;
-  final bool isSwipe;
   final ValueChanged<GoruntulemeModeli> onModSec;
+  final GlobalKey? gorunumKey;
 
-  const _DikeTabBar({
+  const _GorunumIkonButonu({
     required this.mod,
-    required this.isSwipe,
     required this.onModSec,
+    this.gorunumKey,
   });
+
+  static const _ikonlar = {
+    GoruntulemeModeli.iki:   Icons.grid_view_rounded,
+    GoruntulemeModeli.uc:    Icons.view_module_rounded,
+    GoruntulemeModeli.swipe: Icons.swipe_left_alt_rounded,
+  };
+
+  void _sonrakineGec() {
+    final degerler = GoruntulemeModeli.values;
+    final sonrakiIndex = (mod.index + 1) % degerler.length;
+    onModSec(degerler[sonrakiIndex]);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final modlar = [
-      (GoruntulemeModeli.iki,   Icons.grid_view_rounded),
-      (GoruntulemeModeli.uc,    Icons.view_module_rounded),
-      (GoruntulemeModeli.swipe, Icons.swipe_left_alt_rounded),
-    ];
-
-    final bgRenk = const Color(0x73000000);
-
-    final borderRenk = Colors.white;
-
-    return ClipRRect(
-      borderRadius: const BorderRadius.horizontal(left: Radius.circular(10)),
+    return GestureDetector(
+      key: gorunumKey,
+      onTap: _sonrakineGec,
       child: Container(
-        width: 30,
+        width: 40, height: 40,
         decoration: BoxDecoration(
-          color: bgRenk,
-          borderRadius:
-              const BorderRadius.horizontal(left: Radius.circular(10)),
+          color: const Color(0xFF2C2C2C),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: modlar.map((entry) {
-            final (m, ikon) = entry;
-            final aktif  = mod == m;
-            final isLast = m == GoruntulemeModeli.swipe;
-
-            final ikonRenk = aktif
-                ? Colors.white
-                : isSwipe
-                    ? Colors.white.withValues(alpha: 0.55)
-                    : const Color(0xFF888888);
-            final itemBg = aktif
-                ? AppColors.red.withValues(alpha: isSwipe ? 0.8 : 1.0)
-                : Colors.transparent;
-
-            return GestureDetector(
-              onTap: () => onModSec(m),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                width: 30, height: 40,
-                decoration: BoxDecoration(
-                  color: itemBg,
-                  border: isLast
-                      ? null
-                      : Border(
-                          bottom: BorderSide(color: borderRenk, width: 0.5)),
-                ),
-                child: Icon(ikon, size: 16, color: ikonRenk),
-              ),
-            );
-          }).toList(),
-        ),
+        child: Icon(_ikonlar[mod], color: Colors.white, size: 18),
       ),
     );
   }
@@ -649,6 +644,9 @@ class _IsteklerHeader extends StatelessWidget {
   final ValueChanged<String> onKategoriSec;
   final VoidCallback onFiltreSifirla;
   final GlobalKey? filtreKey;
+  final GoruntulemeModeli mod;
+  final ValueChanged<GoruntulemeModeli> onModSec;
+  final GlobalKey? gorunumKey;
 
   const _IsteklerHeader({
     required this.aramaCtrl,
@@ -661,6 +659,9 @@ class _IsteklerHeader extends StatelessWidget {
     required this.kategoriScrollCtrl,
     required this.onAramaChanged,
     required this.onAramaSifirla,
+    required this.mod,
+    required this.onModSec,
+    this.gorunumKey,
     required this.onFiltreAc,
     required this.onKategoriSec,
     required this.onFiltreSifirla,
@@ -724,87 +725,99 @@ class _IsteklerHeader extends StatelessWidget {
                 child: Row(
                   children: [
                     Expanded(
-                      child: GestureDetector(
-                        onTap: () => Navigator.of(context).push(
-                          PageRouteBuilder(
-                            pageBuilder: (_, _, _) => const AramaScreen(),
-                            transitionsBuilder: (_, anim, _, child) =>
-                                FadeTransition(opacity: anim, child: child),
-                            transitionDuration:
-                                const Duration(milliseconds: 200),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
                           ),
+                          borderRadius: BorderRadius.circular(22),
                         ),
+                        padding: const EdgeInsets.all(0.5),
                         child: Container(
+                          height: 43,
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
-                            ),
-                            borderRadius: BorderRadius.circular(22),
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(21.5),
                           ),
-                          padding: const EdgeInsets.all(0.5),
-                          child: Container(
-                            height: 43,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(21.5),
-                            ),
-                            child: Row(
-                              children: [
-                                const SizedBox(width: 14),
-                                const Icon(Icons.search_rounded,
-                                    size: 18,
-                                    color: Color(0xFFCCCCCC)),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Ne gelsin istersin ?',
-                                  style: GoogleFonts.dmSans(
-                                      color: const Color(0xFFCCCCCC),
-                                      fontSize: 13),
+                          child: Row(
+                            children: [
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () => Navigator.of(context).push(
+                                    PageRouteBuilder(
+                                      pageBuilder: (_, _, _) => const AramaScreen(),
+                                      transitionsBuilder: (_, anim, _, child) =>
+                                          FadeTransition(opacity: anim, child: child),
+                                      transitionDuration:
+                                          const Duration(milliseconds: 200),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.search_rounded,
+                                          size: 18,
+                                          color: Color(0xFFCCCCCC)),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Ne gelsin istersin ?',
+                                        style: GoogleFonts.dmSans(
+                                            color: const Color(0xFFCCCCCC),
+                                            fontSize: 13),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ],
-                            ),
+                              ),
+                              // Filtre ikonu — eskiden arama kutusunun
+                              // DIŞINDA, ayrı 44px'lik bir kutuydu; artık
+                              // arama çubuğunun içine, sağa, küçültülmüş
+                              // (18px radius) olarak taşındı.
+                              GestureDetector(
+                                key: filtreKey,
+                                onTap: onFiltreAc,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(right: 4),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    width: 36, height: 36,
+                                    decoration: BoxDecoration(
+                                      color: filtrAktif
+                                          ? const Color(0xFF1A1A1A)
+                                          : const Color(0xFF2C2C2C),
+                                      borderRadius: BorderRadius.circular(18),
+                                    ),
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        const Icon(Icons.tune_rounded,
+                                            color: Colors.white, size: 16),
+                                        if (filtrAktif)
+                                          Positioned(
+                                            top: 6, right: 6,
+                                            child: Container(
+                                              width: 6, height: 6,
+                                              decoration: const BoxDecoration(
+                                                  color: Colors.white,
+                                                  shape: BoxShape.circle),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    GestureDetector(
-                      key: filtreKey,
-                      onTap: onFiltreAc,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        width: 44, height: 44,
-                        decoration: BoxDecoration(
-                          color: filtrAktif
-                              ? const Color(0xFF1A1A1A)
-                              : const Color(0xFF2C2C2C),
-                          borderRadius: BorderRadius.circular(22),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            const Icon(Icons.tune_rounded,
-                                color: Colors.white, size: 19),
-                            if (filtrAktif)
-                              Positioned(
-                                top: 8, right: 8,
-                                child: Container(
-                                  width: 7, height: 7,
-                                  decoration: const BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
+                    _GorunumIkonButonu(
+                      mod: mod,
+                      onModSec: onModSec,
+                      gorunumKey: gorunumKey,
                     ),
                   ],
                 ),
@@ -967,6 +980,45 @@ class _IsteklerHeader extends StatelessWidget {
   }
 }
 
+// ── İlk İlan Banner Carousel ──────────────────────────────────────────────────
+
+class _IlkIlanBannerCarousel extends StatefulWidget {
+  const _IlkIlanBannerCarousel();
+
+  @override
+  State<_IlkIlanBannerCarousel> createState() =>
+      _IlkIlanBannerCarouselState();
+}
+
+class _IlkIlanBannerCarouselState extends State<_IlkIlanBannerCarousel> {
+  static const _gorseller = [
+    'assets/images/banner_ilk_ilan_cc.png',
+    'assets/images/banner_ilk_ilan_dd.png',
+    'assets/images/banner_ilk_ilan_ee.png',
+  ];
+
+  final _pageCtrl = PageController();
+
+  @override
+  void dispose() {
+    _pageCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PageView.builder(
+      controller: _pageCtrl,
+      itemCount: _gorseller.length,
+      itemBuilder: (context, i) => Image.asset(
+        _gorseller[i],
+        width: double.infinity,
+        fit: BoxFit.cover,
+      ),
+    );
+  }
+}
+
 // ── Son 24 Saat Bolumu ────────────────────────────────────────────────────────
 
 class _Son24SaatBolumu extends ConsumerWidget {
@@ -982,8 +1034,8 @@ class _Son24SaatBolumu extends ConsumerWidget {
       data: (ilanlar) {
         if (ilanlar.isEmpty) return const SizedBox.shrink();
 
-        const cardW = 140.0;
-        const cardH = 200.0;
+        const cardH = 190.0;
+        const cardW = 110.0;
 
         return Stack(
           children: [
@@ -992,47 +1044,29 @@ class _Son24SaatBolumu extends ConsumerWidget {
               child: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Color(0xFF1565C0), Color(0xFF1E88E5)],
+                    colors: [Color(0xFFD6ECFF), Color(0xFFFFD9E8)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                 ),
               ),
             ),
-            Positioned(top: -8, right: 20,
-              child: Icon(Icons.flight_takeoff_rounded, size: 80, color: AppColors.primary.withValues(alpha: 0.45))),
-            Positioned(top: 25, right: 115,
-              child: Icon(Icons.shopping_bag_outlined, size: 52, color: AppColors.primary.withValues(alpha: 0.40))),
-            Positioned(bottom: 8, right: 55,
-              child: Icon(Icons.local_shipping_outlined, size: 58, color: AppColors.primary.withValues(alpha: 0.38))),
-            Positioned(top: 10, left: 25,
-              child: Icon(Icons.location_on_outlined, size: 44, color: AppColors.primary.withValues(alpha: 0.40))),
-            Positioned(bottom: 6, left: 75,
-              child: Icon(Icons.star_outline_rounded, size: 40, color: AppColors.primary.withValues(alpha: 0.42))),
-            Positioned(top: 45, left: 145,
-              child: Icon(Icons.card_travel_outlined, size: 36, color: AppColors.primary.withValues(alpha: 0.38))),
-            Positioned(top: 5, right: 195,
-              child: Icon(Icons.redeem_outlined, size: 34, color: AppColors.primary.withValues(alpha: 0.35))),
-            Positioned(bottom: 12, right: 190,
-              child: Icon(Icons.airplane_ticket_outlined, size: 38, color: AppColors.primary.withValues(alpha: 0.37))),
-            Positioned(top: 60, right: 20,
-              child: Icon(Icons.card_giftcard_outlined, size: 30, color: AppColors.primary.withValues(alpha: 0.33))),
             Container(
-              padding: const EdgeInsets.only(top: 10, bottom: 28),
+              padding: const EdgeInsets.only(top: 12, bottom: 18),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 44, 12),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
                     child: Row(
                       children: [
                         Expanded(
                           child: Text(
                             "Haftanın Öne Çıkanları",
-                            style: GoogleFonts.playfairDisplay(
-                              fontSize: 17,
+                            style: GoogleFonts.manrope(
+                              fontSize: 13,
                               fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                              color: Colors.black,
                             ),
                           ),
                         ),
@@ -1043,12 +1077,19 @@ class _Son24SaatBolumu extends ConsumerWidget {
                               builder: (_) => const _HaftaninEnleriEkrani(),
                             ),
                           ),
-                          child: Text(
-                            'Tümünü Gör →',
-                            style: GoogleFonts.dmSans(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white.withValues(alpha: 0.85),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1565C0),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              'Tümünü Gör',
+                              style: GoogleFonts.dmSans(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
@@ -1131,10 +1172,31 @@ class _Son24SaatBolumu extends ConsumerWidget {
                                   ),
                                 ),
                               ),
+                              Positioned(
+                                top: 6,
+                                left: 6,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFD500),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    'Öne çıkan',
+                                    style: GoogleFonts.dmSans(
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.black,
+                                      height: 1,
+                                    ),
+                                  ),
+                                ),
+                              ),
                               if (ilan.yeniMi)
                               Positioned(
                                 top: 6,
-                                right: 16,
+                                right: 6,
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 6, vertical: 4),
@@ -1293,14 +1355,19 @@ class _HaftaninEnleriEkrani extends ConsumerWidget {
 }
 
 // Kategori ikon mapping — Material Symbols w100
+// Standart Material Icons kullanılıyor — Material Symbols (değişken font)
+// bazı daha az yaygın simgeleri (dry_cleaning, stroller gibi) her cihazda
+// doğru render etmiyordu ("ana kategori simgelerinden bazıları yok" bug
+// raporu), standart ikon fontu uygulamanın her yerinde zaten güvenilir
+// çalışıyor.
 IconData kategoriIkon(String key) {
   switch (key) {
-    case 'kadin':       return Symbols.checkroom;
-    case 'erkek':       return Symbols.dry_cleaning;
-    case 'cocuk':       return Symbols.stroller;
-    case 'ev':          return Symbols.cottage;
-    case 'elektronik':  return Symbols.headphones;
-    case 'supplement':  return Symbols.vaccines;
-    default:            return Symbols.package_2;
+    case 'kadin':       return Icons.checkroom;
+    case 'erkek':       return Icons.dry_cleaning;
+    case 'cocuk':       return Icons.stroller;
+    case 'ev':          return Icons.cottage;
+    case 'elektronik':  return Icons.headphones;
+    case 'supplement':  return Icons.vaccines;
+    default:            return Icons.inventory_2;
   }
 }

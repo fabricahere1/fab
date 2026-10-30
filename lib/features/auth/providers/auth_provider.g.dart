@@ -9,79 +9,6 @@ part of 'auth_provider.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(authState)
-final authStateProvider = AuthStateProvider._();
-
-final class AuthStateProvider
-    extends $FunctionalProvider<AsyncValue<User?>, User?, Stream<User?>>
-    with $FutureModifier<User?>, $StreamProvider<User?> {
-  AuthStateProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'authStateProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$authStateHash();
-
-  @$internal
-  @override
-  $StreamProviderElement<User?> $createElement($ProviderPointer pointer) =>
-      $StreamProviderElement(pointer);
-
-  @override
-  Stream<User?> create(Ref ref) {
-    return authState(ref);
-  }
-}
-
-String _$authStateHash() => r'2b859ceed8b2ae21b578b156b72dad1777184d06';
-
-@ProviderFor(currentUser)
-final currentUserProvider = CurrentUserProvider._();
-
-final class CurrentUserProvider extends $FunctionalProvider<User?, User?, User?>
-    with $Provider<User?> {
-  CurrentUserProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'currentUserProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$currentUserHash();
-
-  @$internal
-  @override
-  $ProviderElement<User?> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
-
-  @override
-  User? create(Ref ref) {
-    return currentUser(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(User? value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<User?>(value),
-    );
-  }
-}
-
-String _$currentUserHash() => r'ab87a355dd423d79a81ba656f9396a458ad8ed84';
-
 @ProviderFor(AuthNotifier)
 final authProvider = AuthNotifierProvider._();
 
@@ -106,7 +33,7 @@ final class AuthNotifierProvider
   AuthNotifier create() => AuthNotifier();
 }
 
-String _$authNotifierHash() => r'07d9330f5d07c482e3979dadeb3d47838befa2d6';
+String _$authNotifierHash() => r'8f7cfefa5d1a502f403269b505e29db15639dc8e';
 
 abstract class _$AuthNotifier extends $AsyncNotifier<void> {
   FutureOr<void> build();

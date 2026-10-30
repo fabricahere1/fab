@@ -9,19 +9,11 @@ part of 'mesaj_provider.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(sohbetler)
+@ProviderFor(Sohbetler)
 final sohbetlerProvider = SohbetlerProvider._();
 
 final class SohbetlerProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<List<SohbetModel>>,
-          List<SohbetModel>,
-          Stream<List<SohbetModel>>
-        >
-    with
-        $FutureModifier<List<SohbetModel>>,
-        $StreamProvider<List<SohbetModel>> {
+    extends $AsyncNotifierProvider<Sohbetler, List<SohbetModel>> {
   SohbetlerProvider._()
     : super(
         from: null,
@@ -38,17 +30,29 @@ final class SohbetlerProvider
 
   @$internal
   @override
-  $StreamProviderElement<List<SohbetModel>> $createElement(
-    $ProviderPointer pointer,
-  ) => $StreamProviderElement(pointer);
-
-  @override
-  Stream<List<SohbetModel>> create(Ref ref) {
-    return sohbetler(ref);
-  }
+  Sohbetler create() => Sohbetler();
 }
 
-String _$sohbetlerHash() => r'a262ef544fcacda3e2c3f3cd71c657ca5efb85d0';
+String _$sohbetlerHash() => r'cf54348c17032ee7ca5237dfd0f7523e8aa57587';
+
+abstract class _$Sohbetler extends $AsyncNotifier<List<SohbetModel>> {
+  FutureOr<List<SohbetModel>> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref =
+        this.ref as $Ref<AsyncValue<List<SohbetModel>>, List<SohbetModel>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<List<SohbetModel>>, List<SohbetModel>>,
+              AsyncValue<List<SohbetModel>>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
 
 @ProviderFor(okunmamisSayi)
 final okunmamisSayiProvider = OkunmamisSayiProvider._();
@@ -236,7 +240,8 @@ final class SohbetNotifierProvider
     extends $NotifierProvider<SohbetNotifier, SohbetEkraniState> {
   SohbetNotifierProvider._({
     required SohbetNotifierFamily super.from,
-    required ({String karsiKullaniciId, String ilanId}) super.argument,
+    required ({String karsiKullaniciId, String ilanId, String? sohbetId})
+    super.argument,
   }) : super(
          retry: null,
          name: r'sohbetProvider',
@@ -278,7 +283,7 @@ final class SohbetNotifierProvider
   }
 }
 
-String _$sohbetNotifierHash() => r'74b185c43b12cbb96703b14e4dd6aec5b2247eab';
+String _$sohbetNotifierHash() => r'108581eae5c74243ec72d35622678445078fd049';
 
 final class SohbetNotifierFamily extends $Family
     with
@@ -287,7 +292,7 @@ final class SohbetNotifierFamily extends $Family
           SohbetEkraniState,
           SohbetEkraniState,
           SohbetEkraniState,
-          ({String karsiKullaniciId, String ilanId})
+          ({String karsiKullaniciId, String ilanId, String? sohbetId})
         > {
   SohbetNotifierFamily._()
     : super(
@@ -301,8 +306,13 @@ final class SohbetNotifierFamily extends $Family
   SohbetNotifierProvider call({
     required String karsiKullaniciId,
     required String ilanId,
+    String? sohbetId,
   }) => SohbetNotifierProvider._(
-    argument: (karsiKullaniciId: karsiKullaniciId, ilanId: ilanId),
+    argument: (
+      karsiKullaniciId: karsiKullaniciId,
+      ilanId: ilanId,
+      sohbetId: sohbetId,
+    ),
     from: this,
   );
 
@@ -311,13 +321,16 @@ final class SohbetNotifierFamily extends $Family
 }
 
 abstract class _$SohbetNotifier extends $Notifier<SohbetEkraniState> {
-  late final _$args = ref.$arg as ({String karsiKullaniciId, String ilanId});
+  late final _$args =
+      ref.$arg as ({String karsiKullaniciId, String ilanId, String? sohbetId});
   String get karsiKullaniciId => _$args.karsiKullaniciId;
   String get ilanId => _$args.ilanId;
+  String? get sohbetId => _$args.sohbetId;
 
   SohbetEkraniState build({
     required String karsiKullaniciId,
     required String ilanId,
+    String? sohbetId,
   });
   @$mustCallSuper
   @override
@@ -336,128 +349,11 @@ abstract class _$SohbetNotifier extends $Notifier<SohbetEkraniState> {
       () => build(
         karsiKullaniciId: _$args.karsiKullaniciId,
         ilanId: _$args.ilanId,
+        sohbetId: _$args.sohbetId,
       ),
     );
   }
 }
-
-@ProviderFor(kullaniciProfil)
-final kullaniciProfilProvider = KullaniciProfilFamily._();
-
-final class KullaniciProfilProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<Map<String, dynamic>?>,
-          Map<String, dynamic>?,
-          Stream<Map<String, dynamic>?>
-        >
-    with
-        $FutureModifier<Map<String, dynamic>?>,
-        $StreamProvider<Map<String, dynamic>?> {
-  KullaniciProfilProvider._({
-    required KullaniciProfilFamily super.from,
-    required String super.argument,
-  }) : super(
-         retry: null,
-         name: r'kullaniciProfilProvider',
-         isAutoDispose: true,
-         dependencies: null,
-         $allTransitiveDependencies: null,
-       );
-
-  @override
-  String debugGetCreateSourceHash() => _$kullaniciProfilHash();
-
-  @override
-  String toString() {
-    return r'kullaniciProfilProvider'
-        ''
-        '($argument)';
-  }
-
-  @$internal
-  @override
-  $StreamProviderElement<Map<String, dynamic>?> $createElement(
-    $ProviderPointer pointer,
-  ) => $StreamProviderElement(pointer);
-
-  @override
-  Stream<Map<String, dynamic>?> create(Ref ref) {
-    final argument = this.argument as String;
-    return kullaniciProfil(ref, argument);
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return other is KullaniciProfilProvider && other.argument == argument;
-  }
-
-  @override
-  int get hashCode {
-    return argument.hashCode;
-  }
-}
-
-String _$kullaniciProfilHash() => r'254506d0c08fe28db3299cff7f59ae8620ed418c';
-
-final class KullaniciProfilFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<Map<String, dynamic>?>, String> {
-  KullaniciProfilFamily._()
-    : super(
-        retry: null,
-        name: r'kullaniciProfilProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
-        isAutoDispose: true,
-      );
-
-  KullaniciProfilProvider call(String uid) =>
-      KullaniciProfilProvider._(argument: uid, from: this);
-
-  @override
-  String toString() => r'kullaniciProfilProvider';
-}
-
-@ProviderFor(benimProfil)
-final benimProfilProvider = BenimProfilProvider._();
-
-final class BenimProfilProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<Map<String, dynamic>?>,
-          Map<String, dynamic>?,
-          Stream<Map<String, dynamic>?>
-        >
-    with
-        $FutureModifier<Map<String, dynamic>?>,
-        $StreamProvider<Map<String, dynamic>?> {
-  BenimProfilProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'benimProfilProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$benimProfilHash();
-
-  @$internal
-  @override
-  $StreamProviderElement<Map<String, dynamic>?> $createElement(
-    $ProviderPointer pointer,
-  ) => $StreamProviderElement(pointer);
-
-  @override
-  Stream<Map<String, dynamic>?> create(Ref ref) {
-    return benimProfil(ref);
-  }
-}
-
-String _$benimProfilHash() => r'4391d383b930a8c55321342f716c9083ad2a7053';
 
 @ProviderFor(IslemDurumuIslemleri)
 final islemDurumuIslemleriProvider = IslemDurumuIslemleriFamily._();
@@ -509,7 +405,7 @@ final class IslemDurumuIslemleriProvider
 }
 
 String _$islemDurumuIslemleriHash() =>
-    r'349843fa074193f7b109258d10f3345eaa53a54f';
+    r'3f3fe5ec02c4cac7cf659fcea08650921b0fd68c';
 
 final class IslemDurumuIslemleriFamily extends $Family
     with
@@ -589,7 +485,7 @@ final class SohbetIslemleriProvider
   }
 }
 
-String _$sohbetIslemleriHash() => r'c54a0b2a85d6270b333fc9a30f4ea2938ff7c6e5';
+String _$sohbetIslemleriHash() => r'06474cb84139d7b81011f1816c9880bbd4890d1f';
 
 abstract class _$SohbetIslemleri extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();

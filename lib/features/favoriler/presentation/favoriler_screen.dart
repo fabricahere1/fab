@@ -90,8 +90,10 @@ class FavorilerScreen extends ConsumerWidget {
                   padding: const EdgeInsets.all(8),
                   itemCount: favoriler.length,
                   itemBuilder: (context, index) {
-                    final favori = favoriler[index];
-                    final ilan = _favoridenIlan(favori);
+                    // favoriler artık doğrudan tam IlanModel listesi
+                    // (backend GET /favorilerim) — ayrı bir dönüştürmeye
+                    // gerek yok, eski denormalize favori-dokümanı yoktu.
+                    final ilan = favoriler[index];
                     return _FavoriKarti(
                       ilan: ilan,
                       uid: uid,
@@ -100,23 +102,6 @@ class FavorilerScreen extends ConsumerWidget {
                 );
               },
             ),
-    );
-  }
-
-  IlanModel _favoridenIlan(Map<String, dynamic> favori) {
-    return IlanModel(
-      id: favori['ilanId'] as String? ?? '',
-      tip: favori['tip'] as String? ?? 'istek',
-      nereden: favori['nereden'] as String? ?? '',
-      nereye: favori['nereye'] as String? ?? '',
-      ucret: favori['ucret'] as String? ?? '',
-      urun: favori['urun'] as String? ?? '',
-      notlar: favori['notlar'] as String? ?? '',
-      kategori: favori['kategori'] as String? ?? 'diger',
-      kullaniciId: favori['ilanSahibiId'] as String? ?? '',
-      kullaniciAd: favori['kullaniciAd'] as String? ?? '',
-      resimUrl: favori['resimUrl'] as String? ?? '',
-      resimUrller: List<String>.from(favori['resimUrller'] ?? []),
     );
   }
 }

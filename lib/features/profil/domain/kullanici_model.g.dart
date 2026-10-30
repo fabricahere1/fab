@@ -82,6 +82,14 @@ _KullaniciModel _$KullaniciModelFromJson(Map<String, dynamic> json) =>
               ?.map((e) => e as String)
               .toList() ??
           const [],
+      banli: json['banli'] as bool? ?? false,
+      banSebebi: json['banSebebi'] as String? ?? '',
+      bildirimTercihleri:
+          (json['bildirimTercihleri'] as Map<String, dynamic>?)?.map(
+            (k, e) => MapEntry(k, e as bool),
+          ) ??
+          const {},
+      sifreVarMi: json['sifreVarMi'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$KullaniciModelToJson(_KullaniciModel instance) =>
@@ -116,4 +124,8 @@ Map<String, dynamic> _$KullaniciModelToJson(_KullaniciModel instance) =>
       'takipSayisi': instance.takipSayisi,
       'guvenSkoru': instance.guvenSkoru,
       'rozetler': instance.rozetler,
+      'banli': instance.banli,
+      'banSebebi': instance.banSebebi,
+      'bildirimTercihleri': instance.bildirimTercihleri,
+      'sifreVarMi': instance.sifreVarMi,
     };

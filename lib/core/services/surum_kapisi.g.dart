@@ -46,4 +46,4 @@ final class SurumDurumuProvider
   }
 }
 
-String _$surumDurumuHash() => r'831326e54adeb4255f1fe578e8f7fe734ff29683';
+String _$surumDurumuHash() => r'9dd63533d00a4aed89510e018c56254191d37be5';

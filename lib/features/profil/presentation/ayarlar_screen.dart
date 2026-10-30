@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../auth/data/auth_repository.dart' show AuthYontemi, authYontemiBelirle;
 import '../../auth/providers/auth_provider.dart';
 import '../../degerlendirme/presentation/degerlendirmeler_liste_screen.dart';
 import '../../profil/providers/profil_provider.dart';
@@ -429,10 +428,16 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
               onPressed: () async {
                 final uid = ref.read(currentUserProvider)?.uid;
                 if (uid == null) return;
-                await ref.read(profilDuzenleProvider.notifier).profilGuncelle(
+                final basarili = await ref.read(profilDuzenleProvider.notifier).profilGuncelle(
                   uid: uid,
                   data: {'telefon': ctrl.text.trim()},
                 );
+                if (!basarili) {
+                  if (mounted) {
+                    AppSnackBar.hata(context, 'Telefon numarası güncellenemedi — bu numara zaten kullanımda olabilir.');
+                  }
+                  return;
+                }
                 if (ctx.mounted) Navigator.pop(ctx);
                 if (mounted) {
                   AppSnackBar.basari(context, 'Telefon numarası güncellendi.');
@@ -500,14 +505,18 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     );
     if (devamEt != true || !mounted) return;
 
-    switch (authYontemiBelirle(user)) {
-      case AuthYontemi.google:
-        await _googleReAuth();
-      case AuthYontemi.telefon:
-        await _telefonReAuth(user.phoneNumber ?? '');
-      case AuthYontemi.email:
-      case AuthYontemi.bilinmiyor:
-        await _emailReAuth(user.email ?? '');
+    // DÜZELTİLDİ (sağlık taraması bulgusu): önceden "email alanı dolu mu"
+    // diye bakılıyordu — ama Google ile girişte de email dolu olduğu için
+    // Google kullanıcılarına her zaman (hiç sahip olmadıkları) bir şifre
+    // soruluyordu, hesap silme onlar için fiilen çalışmıyordu. Backend
+    // artık gerçek bilgiyi (sifre_hash set mi) sifreVarMi olarak veriyor —
+    // AktifKullanici (login cache'i) bunu taşımadığı için tam profilden
+    // okuyoruz (bu ekran zaten benimKullaniciProfilProvider'ı izliyor).
+    final sifreVarMi = ref.read(benimKullaniciProfilProvider).value?.sifreVarMi ?? false;
+    if (sifreVarMi) {
+      await _emailReAuth(user.email!);
+    } else {
+      await _googleReAuth();
     }
   }
 
@@ -598,124 +607,6 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
     sifreCtrl.dispose();
   }
 
-  Future<void> _telefonReAuth(String telefon) async {
-    if (telefon.isEmpty) {
-      AppSnackBar.hata(context, 'Telefon numarası bulunamadı.');
-      return;
-    }
-
-    // login_screen.dart'taki _TelefonGirisSheet ile AYNI desen
-    // (telefonKoduGonder → callback ile verificationId) — tek fark,
-    // sonunda signInWithCredential yerine reauthenticateWithCredential
-    // çağıran telefonIleYenidenGiris() kullanılması.
-    _silmeProgressGoster('SMS kodu gönderiliyor...');
-    final kodGeldi = Completer<String?>();
-    String? gonderHatasi;
-
-    await ref.read(authProvider.notifier).telefonKoduGonder(
-      telefon: telefon,
-      onKodGonderildi: (vId) {
-        if (!kodGeldi.isCompleted) kodGeldi.complete(vId);
-      },
-      onHata: (msg) {
-        gonderHatasi = msg;
-        if (!kodGeldi.isCompleted) kodGeldi.complete(null);
-      },
-    );
-
-    final verificationId = await kodGeldi.future;
-    _silmeDialogKapat();
-
-    if (verificationId == null || !mounted) {
-      if (mounted) {
-        AppSnackBar.hata(context, gonderHatasi ?? 'SMS kodu gönderilemedi.');
-      }
-      return;
-    }
-
-    final kodCtrl = TextEditingController();
-    final onay = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Hesabını silmek için Kimliğini Doğrula',
-            style: GoogleFonts.manrope(
-                fontSize: 16, fontWeight: FontWeight.w600)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('$telefon numarasına gönderilen 6 haneli kodu gir.',
-                style: GoogleFonts.manrope(
-                    fontSize: 13, color: AppColors.textSecondary)),
-            const SizedBox(height: 12),
-            TextField(
-              controller: kodCtrl,
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.manrope(
-                  fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: 8),
-              decoration: InputDecoration(
-                hintText: '······',
-                hintStyle: GoogleFonts.manrope(
-                    color: AppColors.textHint, fontSize: 20, letterSpacing: 8),
-                filled: true,
-                fillColor: AppColors.surface,
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.divider)),
-                enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.divider)),
-                focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(
-                        color: AppColors.primary, width: 1.5)),
-                contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 12),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text('İptal',
-                style: GoogleFonts.manrope(color: AppColors.textSecondary)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Hesabı Sil',
-                style: GoogleFonts.manrope(
-                    color: AppColors.red, fontWeight: FontWeight.w700)),
-          ),
-        ],
-      ),
-    );
-
-    if (onay != true || !mounted) {
-      kodCtrl.dispose();
-      return;
-    }
-
-    if (kodCtrl.text.trim().length < 6) {
-      kodCtrl.dispose();
-      AppSnackBar.hata(context, '6 haneli kodu eksiksiz gir.');
-      return;
-    }
-
-    _silmeProgressGoster('Kimlik doğrulanıyor...');
-    try {
-      final yenidenGiris = await ref.read(authProvider.notifier)
-          .telefonIleYenidenGiris(
-              verificationId: verificationId, smsKodu: kodCtrl.text.trim());
-      if (!yenidenGiris.basarili) throw Exception(yenidenGiris.hata);
-      await _hesapSilVeYonlendir();
-    } catch (e) {
-      _silmeDialogKapat();
-      if (mounted) AppSnackBar.hata(context, 'Kod yanlış veya bir sorun oluştu.');
-    }
-    kodCtrl.dispose();
-  }
 
   Future<void> _googleReAuth() async {
     final onay = await showDialog<bool>(

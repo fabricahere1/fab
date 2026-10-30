@@ -197,7 +197,9 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                   isim: benimProfilAsync.value?.adSoyad.isNotEmpty == true
                       ? benimProfilAsync.value!.adSoyad
                       : (user.displayName ?? user.email ?? ''),
-                  fotoUrl: benimProfilAsync.value?.fotoUrl ?? user.photoURL,
+                  // user.photoURL (Google profil fotoğrafı) artık elimizde
+                  // yok — backend'den gelen gerçek profil fotoğrafına düşer.
+                  fotoUrl: benimProfilAsync.value?.fotoUrl,
                   radius: 36,
                 ),
                 const SizedBox(width: 16),
@@ -446,7 +448,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen>
                 onTap: () {
                   if (uid.isEmpty) return;
                   Navigator.push(context, MaterialPageRoute(
-                    builder: (_) => _BekleyenDegerlendirmelerScreen(kullaniciId: uid),
+                    builder: (_) => const _BekleyenDegerlendirmelerScreen(),
                   ));
                 },
               ),
@@ -849,12 +851,11 @@ class _SatirOge extends StatelessWidget {
 // ── Bekleyen Değerlendirmeler ─────────────────────────────
 
 class _BekleyenDegerlendirmelerScreen extends ConsumerWidget {
-  final String kullaniciId;
-  const _BekleyenDegerlendirmelerScreen({required this.kullaniciId});
+  const _BekleyenDegerlendirmelerScreen();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bekleyenlerAsync = ref.watch(bekleyenDegerlendirmelerProvider(kullaniciId));
+    final bekleyenlerAsync = ref.watch(bekleyenDegerlendirmelerimProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -900,8 +901,10 @@ class _BekleyenDegerlendirmelerScreen extends ConsumerWidget {
             itemCount: liste.length,
             itemBuilder: (ctx, i) {
               final item = liste[i];
-              final sohbetId = item['sohbetId'] as String? ?? '';
-              return _BekleyenKarti(sohbetId: sohbetId, kullaniciId: kullaniciId, index: i);
+              return _BekleyenKarti(
+                ilanId: item.ilanId,
+                degerlendirilenId: item.degerlendirilenId,
+              );
             },
           );
         },
@@ -911,27 +914,24 @@ class _BekleyenDegerlendirmelerScreen extends ConsumerWidget {
 }
 
 class _BekleyenKarti extends ConsumerWidget {
-  final String sohbetId;
-  final String kullaniciId;
-  final int index;
+  final String ilanId;
+  final String degerlendirilenId;
 
-  const _BekleyenKarti({required this.sohbetId, required this.kullaniciId, required this.index});
+  const _BekleyenKarti({required this.ilanId, required this.degerlendirilenId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sohbetAsync = ref.watch(sohbetDurumuProvider(sohbetId));
+    final ilanAsync = ref.watch(ilanByIdProvider(ilanId));
 
-    return sohbetAsync.when(
+    return ilanAsync.when(
       loading: () => const SizedBox(height: 72),
-      error: (e, s) { AppHataYonetici.logla(e, s, etiket: 'profilScreen.sohbetDurumu'); return const SizedBox.shrink(); },
-      data: (sohbet) {
-        if (sohbet.isEmpty) return const SizedBox.shrink();
-        final kullanicilar = List<String>.from(sohbet['kullanicilar'] ?? []);
-        final karsiId = kullanicilar.where((id) => id != kullaniciId).firstOrNull ?? '';
-        final ilanBaslik = sohbet['ilanBaslik'] as String? ?? 'İlan';
-        final karsiProfilAsync = karsiId.isNotEmpty ? ref.watch(kullaniciBilgiProvider(karsiId)) : null;
-        final karsiAd = karsiProfilAsync?.value?.adSoyad.isNotEmpty == true ? karsiProfilAsync!.value!.adSoyad : 'Kullanıcı';
-        final karsiFotoUrl = karsiProfilAsync?.value?.fotoUrl;
+      error: (e, s) { AppHataYonetici.logla(e, s, etiket: 'profilScreen.bekleyenIlan'); return const SizedBox.shrink(); },
+      data: (ilan) {
+        final ilanBaslik = (ilan?.urun.isNotEmpty ?? false) ? ilan!.urun : 'İlan';
+        final karsiId = degerlendirilenId;
+        final karsiProfilAsync = ref.watch(kullaniciBilgiProvider(karsiId));
+        final karsiAd = karsiProfilAsync.value?.adSoyad.isNotEmpty == true ? karsiProfilAsync.value!.adSoyad : 'Kullanıcı';
+        final karsiFotoUrl = karsiProfilAsync.value?.fotoUrl;
 
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
@@ -965,19 +965,15 @@ class _BekleyenKarti extends ConsumerWidget {
                 const SizedBox(width: 8),
                 GestureDetector(
                   onTap: () async {
-                    if (karsiId.isEmpty) return;
-                    final tamamlandi = await DegerlendirmeModal.goster(
+                    await DegerlendirmeModal.goster(
                       context: context,
-                      sohbetId: sohbetId,
+                      ilanId: ilanId,
                       hedefKullaniciId: karsiId,
                       hedefKullaniciAd: karsiAd,
                       hedefFotoUrl: karsiFotoUrl,
                     );
-                    if (tamamlandi && context.mounted) {
-                      await ref.read(degerlendirmeIslemleriProvider.notifier).bekleyenTamamla(
-                        sohbetId: sohbetId, kullaniciId: kullaniciId,
-                      );
-                    }
+                    // gonder() başarılı olduğunda bekleyenDegerlendirmelerimProvider
+                    // zaten invalidate ediliyor — liste otomatik yenilenir.
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),

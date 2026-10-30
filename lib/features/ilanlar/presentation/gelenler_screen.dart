@@ -62,38 +62,14 @@ class _GAlgoliaState {
   );
 }
 
-IlanModel _gHittenIlan(Map<String, dynamic> hit) {
-  final resimUrller = (hit['resimUrller'] as List<dynamic>?)
-      ?.map((e) => e as String).toList() ?? [];
-  final kategoriYolu = (hit['kategoriYolu'] as List<dynamic>?)
-      ?.map((e) => e as String).toList() ?? [];
-  final tarihMs = hit['olusturmaTarihi'] as int?;
-  final seyahatTarihiMs = hit['tarih'] as int?;
-  return IlanModel(
-    id:              hit['objectID']    as String? ?? '',
-    tip:             hit['tip']         as String? ?? '',
-    nereden:         hit['nereden']     as String? ?? '',
-    nereye:          hit['nereye']      as String? ?? '',
-    urun:            hit['urun']        as String? ?? '',
-    kategori:        hit['kategori']    as String? ?? 'diger',
-    anaKategori:     hit['anaKategori'] as String? ?? '',
-    kategoriYolu:    kategoriYolu,
-    resimUrl:        hit['resimUrl']    as String? ?? '',
-    resimUrller:     resimUrller,
-    aktif:           hit['aktif']       as bool?   ?? true,
-    durum:           hit['durum']       as String? ?? 'yayinda',
-    kullaniciId:     hit['kullaniciId'] as String? ?? '',
-    kullaniciAd:     hit['kullaniciAd'] as String? ?? '',
-    favoriSayisi:    (hit['favoriSayisi']          as num?)?.toInt() ?? 0,
-    goruntulenmeSayisi: (hit['goruntulenmeSayisi'] as num?)?.toInt() ?? 0,
-    olusturmaTarihi: tarihMs != null
-        ? DateTime.fromMillisecondsSinceEpoch(tarihMs)
-        : null,
-    tarih: seyahatTarihiMs != null
-        ? DateTime.fromMillisecondsSinceEpoch(seyahatTarihiMs)
-        : null,
-  );
-}
+// Artık Algolia'nın özel alan adları (objectID, epoch-ms tarihler) yerine
+// ham v3Ilan JSON'ı geliyor (bkz. arama_service.dart) — ilanlar_screen.dart
+// ile aynı düzeltme: IlanModel.fromJson bunu zaten her yerde ayrıştırdığı
+// şekilde ayrıştırıyor. Eskiden bu ekranın KENDİ, bağımsız bir eski-biçim
+// ayrıştırıcısı vardı ve hiç güncellenmemişti — "tarih" alanı artık ISO
+// string döndüğü için `as int?` cast'i çöküyor, bu yüzden "Gelenler"
+// ekranında hiç ilan görünmüyordu.
+IlanModel _gHittenIlan(Map<String, dynamic> hit) => IlanModel.fromJson(hit);
 
 class GelenlerScreen extends ConsumerStatefulWidget {
   final bool embedded;

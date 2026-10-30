@@ -34,6 +34,7 @@ class TimestampConverter implements JsonConverter<DateTime?, Object?> {
 abstract class IlanModel with _$IlanModel {
   const factory IlanModel({
     required String id,
+    @Default(0) int ilanNo,
     required String tip,
     required String nereden,
     required String nereye,
@@ -69,6 +70,7 @@ abstract class IlanModel with _$IlanModel {
     final data = doc.data() as Map<String, dynamic>;
     return IlanModel(
       id:              doc.id,
+      ilanNo:          (data['ilanNo']       as num?)?.toInt() ?? 0,
       tip:             data['tip']          as String? ?? '',
       nereden:         data['nereden']      as String? ?? '',
       nereye:          data['nereye']       as String? ?? '',

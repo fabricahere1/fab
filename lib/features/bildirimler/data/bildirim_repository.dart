@@ -1,115 +1,48 @@
-import '../../../core/firebase/app_firestore.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+// lib/features/bildirimler/data/bildirim_repository.dart
+//
+// Firestore'un yerini AWS Go backend'i (/v3/bildirimler*) alıyor. Gerçek
+// zamanlı stream YOK — Çekmece'deki ve v3'ün ilan/auth katmanlarındaki
+// aynı karar: periyodik yenileme (bildirim_provider.dart'ta polling).
+//
+// ÖNEMLİ: mesaj bildirimi artık BURADAN (client'tan) gönderilmiyor —
+// backend, /v3/sohbetler/:id/mesajlar çağrısında bunu KENDİSİ otomatik
+// yapıyor (bkz. v3_bildirim_gonder.go). mesajBildirimiGonder metodu bu
+// yüzden kaldırıldı; mesajlar özelliği AWS'ye taşınınca (henüz
+// taşınmadı, bkz. backlog) bu otomatik davranış devreye girecek.
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../../core/api/api_client.dart';
 import '../domain/bildirim_model.dart';
-import '../../../shared/constants/app_constants.dart';
- 
+
 part 'bildirim_repository.g.dart';
- 
+
 @riverpod
 BildirimRepository bildirimRepository(Ref ref) {
-  return BildirimRepository(firestore: AppFirestore.instance);
+  return BildirimRepository();
 }
- 
-class BildirimRepository {
-  final FirebaseFirestore firestore;
- 
-  BildirimRepository({required this.firestore});
- 
-  CollectionReference get _col => firestore.collection(Collections.bildirimler);
- 
-  // Kullanıcının bildirimlerini stream olarak dinle
-  Stream<List<BildirimModel>> bildirimlerStream(String kullaniciId) {
-    return _col
-        .where('kullaniciId', isEqualTo: kullaniciId)
-        .orderBy('tarih', descending: true)
-        .limit(50)
-        .snapshots(includeMetadataChanges: false)
-        .map((snap) => snap.docs
-            .map((doc) => BildirimModel.fromFirestore(doc))
-            .toList());
-  }
- 
-  // Okunmamış bildirim sayısı
-  Stream<int> okunmamisSayiStream(String kullaniciId) {
-    return _col
-        .where('kullaniciId', isEqualTo: kullaniciId)
-        .where('okundu', isEqualTo: false)
-        .limit(100)
-        .snapshots()
-        .map((snap) => snap.docs.length);
-  }
- 
-  // Bildirim oluştur
-  Future<void> bildirimOlustur({
-    required String kullaniciId,
-    required BildirimTip tip,
-    required String baslik,
-    required String icerik,
-    String hedefId = '',
-    String gondereId = '',
-    String gondereAd = '',
-  }) async {
-    await _col.add({
-      'kullaniciId': kullaniciId,
-      'tip': tip.name,
-      'baslik': baslik,
-      'icerik': icerik,
-      'okundu': false,
-      'tarih': FieldValue.serverTimestamp(),
-      'hedefId': hedefId,
-      'gondereId': gondereId,
-      'gondereAd': gondereAd,
-    });
-  }
- 
-  // Bildirimi okundu işaretle
-  Future<void> okunduIsaretle(String bildirimId) async {
-    await _col.doc(bildirimId).update({'okundu': true});
-  }
- 
-  // Tüm bildirimleri okundu işaretle
-  Future<void> tumunuOkunduIsaretle(String kullaniciId) async {
-    final snap = await _col
-        .where('kullaniciId', isEqualTo: kullaniciId)
-        .where('okundu', isEqualTo: false)
-        .get();
-    if (snap.docs.isEmpty) return;
 
-    // Firestore batch limiti 500 — gruplara böl (mesaj_repository deseni)
-    const grupBoyutu = 490;
-    for (int i = 0; i < snap.docs.length; i += grupBoyutu) {
-      final grup = snap.docs.sublist(
-          i, (i + grupBoyutu).clamp(0, snap.docs.length));
-      final batch = firestore.batch();
-      for (final doc in grup) {
-        batch.update(doc.reference, {'okundu': true});
-      }
-      await batch.commit();
-    }
+class BildirimRepository {
+  Future<List<BildirimModel>> bildirimleriGetir() async {
+    final response = await ApiClient.dio.get('/bildirimlerim');
+    return (response.data['bildirimler'] as List)
+        .map((j) => BildirimModel.fromApi(j as Map<String, dynamic>))
+        .toList();
   }
- 
-  // Bildirimi sil
+
+  Future<int> okunmamisSayiGetir() async {
+    final response = await ApiClient.dio.get('/bildirimler/okunmamis-sayisi');
+    return (response.data['sayi'] as num?)?.toInt() ?? 0;
+  }
+
+  Future<void> okunduIsaretle(String bildirimId) async {
+    await ApiClient.dio.patch('/bildirimler/$bildirimId/okundu');
+  }
+
+  Future<void> tumunuOkunduIsaretle() async {
+    await ApiClient.dio.patch('/bildirimler/tumunu-okundu');
+  }
+
   Future<void> bildirimSil(String bildirimId) async {
-    await _col.doc(bildirimId).delete();
-  }
- 
-  // Mesaj bildirimi gönder (mesaj gönderilince çağrılır)
-  Future<void> mesajBildirimiGonder({
-    required String aliciId,
-    required String gondereId,
-    required String gondereAd,
-    required String ilanBaslik,
-    required String sohbetId,
-  }) async {
-    await bildirimOlustur(
-      kullaniciId: aliciId,
-      tip: BildirimTip.mesaj,
-      baslik: gondereAd,
-      icerik: '$ilanBaslik hakkında mesaj gönderdi',
-      hedefId: sohbetId,
-      gondereId: gondereId,
-      gondereAd: gondereAd,
-    );
+    await ApiClient.dio.delete('/bildirimler/$bildirimId');
   }
 }

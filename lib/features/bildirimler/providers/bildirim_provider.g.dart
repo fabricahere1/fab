@@ -8,34 +8,19 @@ part of 'bildirim_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Kullanıcının tüm bildirimlerini real-time dinler.
-/// uid değişince (hesap geçişi) provider otomatik yeniden başlar.
 
-@ProviderFor(bildirimler)
+@ProviderFor(Bildirimler)
 final bildirimlerProvider = BildirimlerProvider._();
 
-/// Kullanıcının tüm bildirimlerini real-time dinler.
-/// uid değişince (hesap geçişi) provider otomatik yeniden başlar.
-
 final class BildirimlerProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<List<BildirimModel>>,
-          List<BildirimModel>,
-          Stream<List<BildirimModel>>
-        >
-    with
-        $FutureModifier<List<BildirimModel>>,
-        $StreamProvider<List<BildirimModel>> {
-  /// Kullanıcının tüm bildirimlerini real-time dinler.
-  /// uid değişince (hesap geçişi) provider otomatik yeniden başlar.
+    extends $AsyncNotifierProvider<Bildirimler, List<BildirimModel>> {
   BildirimlerProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'bildirimlerProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -45,39 +30,42 @@ final class BildirimlerProvider
 
   @$internal
   @override
-  $StreamProviderElement<List<BildirimModel>> $createElement(
-    $ProviderPointer pointer,
-  ) => $StreamProviderElement(pointer);
+  Bildirimler create() => Bildirimler();
+}
 
+String _$bildirimlerHash() => r'0a9e79c74b95ee7bc672ac48b635c34e6a4edbfd';
+
+abstract class _$Bildirimler extends $AsyncNotifier<List<BildirimModel>> {
+  FutureOr<List<BildirimModel>> build();
+  @$mustCallSuper
   @override
-  Stream<List<BildirimModel>> create(Ref ref) {
-    return bildirimler(ref);
+  void runBuild() {
+    final ref =
+        this.ref as $Ref<AsyncValue<List<BildirimModel>>, List<BildirimModel>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<List<BildirimModel>>, List<BildirimModel>>,
+              AsyncValue<List<BildirimModel>>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
   }
 }
 
-String _$bildirimlerHash() => r'45abe9374d338b31e4996cdb3c707a4106b0db9e';
-
-/// Okunmamış bildirim sayısı — navigation badge için.
-/// autoDispose: uid değişince (logout/login) eski stream otomatik kapanır.
-
-@ProviderFor(okunmamisBildirimSayi)
+@ProviderFor(OkunmamisBildirimSayi)
 final okunmamisBildirimSayiProvider = OkunmamisBildirimSayiProvider._();
 
-/// Okunmamış bildirim sayısı — navigation badge için.
-/// autoDispose: uid değişince (logout/login) eski stream otomatik kapanır.
-
 final class OkunmamisBildirimSayiProvider
-    extends $FunctionalProvider<AsyncValue<int>, int, Stream<int>>
-    with $FutureModifier<int>, $StreamProvider<int> {
-  /// Okunmamış bildirim sayısı — navigation badge için.
-  /// autoDispose: uid değişince (logout/login) eski stream otomatik kapanır.
+    extends $AsyncNotifierProvider<OkunmamisBildirimSayi, int> {
   OkunmamisBildirimSayiProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'okunmamisBildirimSayiProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -87,27 +75,39 @@ final class OkunmamisBildirimSayiProvider
 
   @$internal
   @override
-  $StreamProviderElement<int> $createElement($ProviderPointer pointer) =>
-      $StreamProviderElement(pointer);
-
-  @override
-  Stream<int> create(Ref ref) {
-    return okunmamisBildirimSayi(ref);
-  }
+  OkunmamisBildirimSayi create() => OkunmamisBildirimSayi();
 }
 
 String _$okunmamisBildirimSayiHash() =>
-    r'bfdc7c2f50fd3e153e24feb49b74bbd3475d261c';
+    r'295cd106ee0c7e69e779369b5e464b0efc4ede80';
 
-/// Bildirim işlemleri — okuma, silme, gönderme.
+abstract class _$OkunmamisBildirimSayi extends $AsyncNotifier<int> {
+  FutureOr<int> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<int>, int>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<int>, int>,
+              AsyncValue<int>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
+/// Bildirim işlemleri — okuma, silme.
 
 @ProviderFor(BildirimNotifier)
 final bildirimProvider = BildirimNotifierProvider._();
 
-/// Bildirim işlemleri — okuma, silme, gönderme.
+/// Bildirim işlemleri — okuma, silme.
 final class BildirimNotifierProvider
     extends $NotifierProvider<BildirimNotifier, AsyncValue<void>> {
-  /// Bildirim işlemleri — okuma, silme, gönderme.
+  /// Bildirim işlemleri — okuma, silme.
   BildirimNotifierProvider._()
     : super(
         from: null,
@@ -135,9 +135,9 @@ final class BildirimNotifierProvider
   }
 }
 
-String _$bildirimNotifierHash() => r'c8d49d604f3d2a3902a29f059d2fbfadf9f1c841';
+String _$bildirimNotifierHash() => r'7bcada0ef69065f4d489d2569ab839f06e32ecec';
 
-/// Bildirim işlemleri — okuma, silme, gönderme.
+/// Bildirim işlemleri — okuma, silme.
 
 abstract class _$BildirimNotifier extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();

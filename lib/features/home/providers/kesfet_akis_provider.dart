@@ -9,14 +9,14 @@ part 'kesfet_akis_provider.g.dart';
 
 class KesfetAkisState {
   final List<IlanModel> ilanlar;
-  final DateTime? sonTarih;
+  final int sonOffset;
   final bool yukleniyor;
   final bool dahaFazlaVar;
   final Object? hata;
 
   const KesfetAkisState({
     this.ilanlar = const [],
-    this.sonTarih,
+    this.sonOffset = 0,
     this.yukleniyor = false,
     this.dahaFazlaVar = true,
     this.hata,
@@ -24,14 +24,14 @@ class KesfetAkisState {
 
   KesfetAkisState copyWith({
     List<IlanModel>? ilanlar,
-    DateTime? sonTarih,
+    int? sonOffset,
     bool? yukleniyor,
     bool? dahaFazlaVar,
     Object? hata,
     bool temizleHata = false,
   }) => KesfetAkisState(
         ilanlar: ilanlar ?? this.ilanlar,
-        sonTarih: sonTarih ?? this.sonTarih,
+        sonOffset: sonOffset ?? this.sonOffset,
         yukleniyor: yukleniyor ?? this.yukleniyor,
         dahaFazlaVar: dahaFazlaVar ?? this.dahaFazlaVar,
         hata: temizleHata ? null : (hata ?? this.hata),
@@ -65,7 +65,7 @@ class KesfetAkis extends _$KesfetAkis {
       if (!ref.mounted) return;
       state = state.copyWith(
         ilanlar: sonuc.ilanlar,
-        sonTarih: sonuc.sonTarih,
+        sonOffset: sonuc.sonrakiOffset,
         dahaFazlaVar: !sonuc.bitti,
         yukleniyor: false,
       );
@@ -77,13 +77,12 @@ class KesfetAkis extends _$KesfetAkis {
   }
 
   Future<void> dahaFazlaYukle() async {
-    if (state.yukleniyor || !state.dahaFazlaVar || state.sonTarih == null) return;
+    if (state.yukleniyor || !state.dahaFazlaVar) return;
     state = state.copyWith(yukleniyor: true);
     try {
       final sonuc = await _repo.sonrakiSayfayiGetir(
         tip: tip,
-        sonTarih: state.sonTarih!,
-        siralama: 'olusturma',
+        offset: state.sonOffset,
       );
       if (!ref.mounted) return;
       final mevcutIdler = state.ilanlar.map((i) => i.id).toSet();
@@ -91,7 +90,7 @@ class KesfetAkis extends _$KesfetAkis {
           sonuc.ilanlar.where((i) => !mevcutIdler.contains(i.id)).toList();
       state = state.copyWith(
         ilanlar: [...state.ilanlar, ...yeniIlanlar],
-        sonTarih: sonuc.sonTarih ?? state.sonTarih,
+        sonOffset: sonuc.sonrakiOffset,
         dahaFazlaVar: !sonuc.bitti,
         yukleniyor: false,
       );

@@ -68,6 +68,8 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
   final List<File> _yeniResimler   = [];
   List<String>     _mevcutResimler = [];
   final _picker = ImagePicker();
+  bool _aiYukleniyor = false;
+  bool _aiNotuUyarisiGoster = false;
 
   bool? _basarili;
   bool  _overlayAktif = false;
@@ -315,6 +317,25 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
     }
   }
 
+  Future<void> _aiIleDoldur() async {
+    if (_yeniResimler.isEmpty) {
+      _snack('AI ile doldurmak için önce yeni bir fotoğraf ekle.');
+      return;
+    }
+    setState(() => _aiYukleniyor = true);
+    final notlar = await ref.read(ilanRepositoryProvider).aiNotOnerisiGetir(_yeniResimler.first);
+    if (!mounted) return;
+    setState(() => _aiYukleniyor = false);
+    if (notlar == null || notlar.trim().isEmpty) {
+      _snack('AI önerisi şu an alınamadı, elle doldurabilirsin.');
+      return;
+    }
+    setState(() {
+      _notlarCtrl.text = notlar.trim();
+      _aiNotuUyarisiGoster = true;
+    });
+  }
+
   // ── Tarih / kategori seçim sayfaları ──────────────────────────────────────────
 
   /// "Nereden" alanı için ülke arama akışı. Algolia'dan öneri gelir
@@ -523,6 +544,10 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
       } else {
         ref.read(tasiyiciIlanlarProvider.notifier).yenile();
       }
+      // "İlanlarım" (profil) ayrı, keepAlive bir provider — oluşturma/
+      // düzenleme sonrası hiç invalidate edilmiyordu, bu yüzden yeni ilan
+      // orada görünmüyordu.
+      ref.invalidate(ilanlarimProvider);
     } else if (hataMesaji != null && hataMesaji.isNotEmpty) {
       // Teknik bir hata (yükleme/ağ/yetki sorunu) — içerik moderasyonuyla ilgisi yok.
       AppSnackBar.hata(context, 'Bir sorun oluştu: $hataMesaji');
@@ -603,20 +628,21 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
                                   const SizedBox(height: 18),
                                   Text('ADIM ${_adim + 1} / $_toplamAdim',
                                       style: GoogleFonts.dmSans(
-                                          fontSize: 12, color: const Color(0xFFAAAAAA),
+                                          fontSize: 13, fontWeight: FontWeight.w600,
+                                          color: const Color(0xFF888880),
                                           letterSpacing: 0.3)),
                                   const SizedBox(height: 6),
                                   Text(tanim.baslik,
                                       textAlign: TextAlign.center,
                                     style: GoogleFonts.dmSans(
-                                        fontSize: 20, fontWeight: FontWeight.w500,
-                                        color: const Color(0xFF1A1A1A))),
+                                        fontSize: 22, fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF0C0B08))),
                                 const SizedBox(height: 8),
                                 Text(tanim.aciklama,
                                     textAlign: TextAlign.center,
                                     style: GoogleFonts.dmSans(
-                                        fontSize: 13, color: const Color(0xFF999999),
-                                        height: 1.5)),
+                                        fontSize: 14.5, color: const Color(0xFF6B665A),
+                                        height: 1.55)),
                                 const SizedBox(height: 30),
                               ],
                             ),
@@ -939,15 +965,6 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _alanEtiket('Notlar'),
-        const SizedBox(height: 6),
-        _altCizgiAlan(
-          controller: _notlarCtrl,
-          hint: 'Ek bilgi, özel istekler...',
-          maxLines: 3,
-          maxLength: 300,
-        ),
-        const SizedBox(height: 22),
         if (_sadeceGeliyorum) ...[
           Container(
             padding: const EdgeInsets.all(14),
@@ -971,6 +988,7 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
               ],
             ),
           ),
+          const SizedBox(height: 22),
         ] else ...[
         Row(
           children: [
@@ -1020,6 +1038,64 @@ class _IlanFormScreenState extends ConsumerState<IlanFormScreen> {
             ],
           ),
         ),
+        const SizedBox(height: 22),
+        ],
+        _alanEtiket('Açıklama'),
+        const SizedBox(height: 6),
+        _altCizgiAlan(
+          controller: _notlarCtrl,
+          hint: 'Ek bilgi, özel istekler...',
+          maxLines: 3,
+          maxLength: 300,
+        ),
+        if (_aiNotuUyarisiGoster) ...[
+          const SizedBox(height: 6),
+          Text(
+            'AI ile dolduruldu — lütfen kontrol ediniz, gerekirse metni değiştiriniz.',
+            style: GoogleFonts.dmSans(
+                fontSize: 11.5, fontStyle: FontStyle.italic,
+                color: const Color(0xFFB5471F)),
+          ),
+        ],
+        if (!_sadeceGeliyorum && _yeniResimler.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          GestureDetector(
+            onTap: _aiYukleniyor ? null : _aiIleDoldur,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFB5471F), width: 1.2),
+              ),
+              child: Row(
+                children: [
+                  if (_aiYukleniyor)
+                    const SizedBox(
+                      width: 18, height: 18,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Color(0xFFB5471F)),
+                    )
+                  else
+                    const Icon(Icons.auto_awesome, size: 18, color: Color(0xFFB5471F)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('AI ile Otomatik Doldur',
+                            style: GoogleFonts.dmSans(
+                                fontSize: 12.5, fontWeight: FontWeight.w700,
+                                color: const Color(0xFFB5471F))),
+                        Text('Fotoğraftan Açıklamayı doldur',
+                            style: GoogleFonts.dmSans(
+                                fontSize: 10.5, color: const Color(0xFF6B665A))),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ],
     );

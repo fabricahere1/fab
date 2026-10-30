@@ -15,7 +15,7 @@ class IlanListeState {
   final List<IlanModel> ilanlar;
   final bool yukleniyor;
   final bool dahaFazlaVar;
-  final DateTime? sonTarih;
+  final int sonOffset;
   final String siralama;
   final List<String> engellenenler;
   final String? hata;
@@ -24,7 +24,7 @@ class IlanListeState {
     this.ilanlar = const [],
     this.yukleniyor = false,
     this.dahaFazlaVar = true,
-    this.sonTarih,
+    this.sonOffset = 0,
     this.siralama = 'tarih',
     this.engellenenler = const [],
     this.hata,
@@ -34,7 +34,7 @@ class IlanListeState {
     List<IlanModel>? ilanlar,
     bool? yukleniyor,
     bool? dahaFazlaVar,
-    DateTime? sonTarih,
+    int? sonOffset,
     String? siralama,
     List<String>? engellenenler,
     String? hata,
@@ -44,7 +44,7 @@ class IlanListeState {
         ilanlar: ilanlar ?? this.ilanlar,
         yukleniyor: yukleniyor ?? this.yukleniyor,
         dahaFazlaVar: dahaFazlaVar ?? this.dahaFazlaVar,
-        sonTarih: sonTarih ?? this.sonTarih,
+        sonOffset: sonOffset ?? this.sonOffset,
         siralama: siralama ?? this.siralama,
         engellenenler: engellenenler ?? this.engellenenler,
         hata: temizleHata ? null : (hata ?? this.hata),
@@ -77,13 +77,10 @@ class IstekIlanlar extends _$IstekIlanlar {
       final sonuc = await _repo.istekIlanlariniGetir();
       state = state.copyWith(
         ilanlar: sonuc.ilanlar,
-        sonTarih: sonuc.sonTarih,
+        sonOffset: sonuc.sonrakiOffset,
         dahaFazlaVar: !sonuc.bitti,
         yukleniyor: false,
       );
-      if (sonuc.ilanlar.isNotEmpty) {
-        _arkaGuncelleIstekIlanlar();
-      }
     } catch (e) {
       if (deneme < 2) {
         await Future.delayed(const Duration(seconds: 2));
@@ -95,38 +92,17 @@ class IstekIlanlar extends _$IstekIlanlar {
     }
   }
 
-  Future<void> _arkaGuncelleIstekIlanlar() async {
-    try {
-      final sonuc = await _repo.istekIlanlariniGetirSunucu();
-      if (!ref.mounted) return;
-      if (!state.yukleniyor) {
-        state = state.copyWith(
-          ilanlar: sonuc.ilanlar,
-          sonTarih: sonuc.sonTarih,
-          dahaFazlaVar: !sonuc.bitti,
-        );
-        ref.read(sayacDeltaProvider.notifier)
-            .temizleToplu(sonuc.ilanlar.map((i) => i.id));
-      }
-    } catch (e, s) {
-      AppHataYonetici.logla(e, s, etiket: 'istekIlanlar.arkaGuncelle');
-    }
-  }
-
   Future<void> yenile() async {
     state = state.copyWith(yukleniyor: true);
     try {
-      final sonuc = await _repo.istekIlanlariniGetir(forceServer: true)
-          .timeout(const Duration(seconds: 15));
+      final sonuc = await _repo.istekIlanlariniGetir().timeout(const Duration(seconds: 15));
       if (!ref.mounted) return;
       state = state.copyWith(
         ilanlar: sonuc.ilanlar,
-        sonTarih: sonuc.sonTarih,
+        sonOffset: sonuc.sonrakiOffset,
         dahaFazlaVar: !sonuc.bitti,
         yukleniyor: false,
       );
-      ref.read(sayacDeltaProvider.notifier)
-          .temizleToplu(sonuc.ilanlar.map((i) => i.id));
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'istekIlanlar.yenile');
       if (!ref.mounted) return;
@@ -135,25 +111,19 @@ class IstekIlanlar extends _$IstekIlanlar {
   }
 
   Future<void> dahaFazlaYukle() async {
-    if (state.yukleniyor || !state.dahaFazlaVar || state.sonTarih == null) return;
+    if (state.yukleniyor || !state.dahaFazlaVar) return;
     state = state.copyWith(yukleniyor: true);
     try {
-      final sonuc = await _repo.sonrakiSayfayiGetir(
-        tip: 'istek',
-        sonTarih: state.sonTarih!,
-        siralama: 'olusturma',
-      );
+      final sonuc = await _repo.sonrakiSayfayiGetir(tip: 'istek', offset: state.sonOffset);
       if (!ref.mounted) return;
       final mevcutIdler = state.ilanlar.map((m) => m.id).toSet();
       final yeniIlanlar = sonuc.ilanlar.where((i) => !mevcutIdler.contains(i.id)).toList();
       state = state.copyWith(
         ilanlar: [...state.ilanlar, ...yeniIlanlar],
-        sonTarih: sonuc.sonTarih ?? state.sonTarih,
+        sonOffset: sonuc.sonrakiOffset,
         dahaFazlaVar: !sonuc.bitti,
         yukleniyor: false,
       );
-      ref.read(sayacDeltaProvider.notifier)
-          .temizleToplu(yeniIlanlar.map((i) => i.id));
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'istekIlanlar.dahaFazlaYukle');
       if (!ref.mounted) return;
@@ -165,8 +135,7 @@ class IstekIlanlar extends _$IstekIlanlar {
     state = state.copyWith(
       ilanlar: state.ilanlar.map((i) {
         if (i.id == ilanId) {
-          return i.copyWith(
-              favoriSayisi: (i.favoriSayisi + delta).clamp(0, 999999));
+          return i.copyWith(favoriSayisi: (i.favoriSayisi + delta).clamp(0, 999999));
         }
         return i;
       }).toList(),
@@ -221,7 +190,7 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
       final sonuc = await _repo.tasiyiciIlanlariniGetir();
       state = state.copyWith(
         ilanlar: sonuc.ilanlar,
-        sonTarih: sonuc.sonTarih,
+        sonOffset: sonuc.sonrakiOffset,
         dahaFazlaVar: !sonuc.bitti,
         yukleniyor: false,
       );
@@ -239,17 +208,14 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
   Future<void> yenile() async {
     state = IlanListeState(siralama: state.siralama, yukleniyor: true);
     try {
-      final sonuc = await _repo.tasiyiciIlanlariniGetir(forceServer: true)
-          .timeout(const Duration(seconds: 15));
+      final sonuc = await _repo.tasiyiciIlanlariniGetir().timeout(const Duration(seconds: 15));
       if (!ref.mounted) return;
       state = IlanListeState(
         ilanlar: sonuc.ilanlar,
-        sonTarih: sonuc.sonTarih,
+        sonOffset: sonuc.sonrakiOffset,
         dahaFazlaVar: !sonuc.bitti,
         siralama: state.siralama,
       );
-      ref.read(sayacDeltaProvider.notifier)
-          .temizleToplu(sonuc.ilanlar.map((i) => i.id));
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'tasiyiciIlanlar.yenile');
       if (!ref.mounted) return;
@@ -258,25 +224,19 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
   }
 
   Future<void> dahaFazlaYukle() async {
-    if (state.yukleniyor || !state.dahaFazlaVar || state.sonTarih == null) return;
+    if (state.yukleniyor || !state.dahaFazlaVar) return;
     state = state.copyWith(yukleniyor: true);
     try {
-      final sonuc = await _repo.sonrakiSayfayiGetir(
-        tip: 'tasiyici',
-        sonTarih: state.sonTarih!,
-        siralama: state.siralama,
-      );
+      final sonuc = await _repo.sonrakiSayfayiGetir(tip: 'tasiyici', offset: state.sonOffset);
       if (!ref.mounted) return;
       final mevcutIdler = state.ilanlar.map((m) => m.id).toSet();
       final yeniIlanlar = sonuc.ilanlar.where((i) => !mevcutIdler.contains(i.id)).toList();
       state = state.copyWith(
         ilanlar: [...state.ilanlar, ...yeniIlanlar],
-        sonTarih: sonuc.sonTarih ?? state.sonTarih,
+        sonOffset: sonuc.sonrakiOffset,
         dahaFazlaVar: !sonuc.bitti,
         yukleniyor: false,
       );
-      ref.read(sayacDeltaProvider.notifier)
-          .temizleToplu(yeniIlanlar.map((i) => i.id));
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'tasiyiciIlanlar.dahaFazlaYukle');
       if (!ref.mounted) return;
@@ -288,8 +248,7 @@ class TasiyiciIlanlar extends _$TasiyiciIlanlar {
     state = state.copyWith(
       ilanlar: state.ilanlar.map((i) {
         if (i.id == ilanId) {
-          return i.copyWith(
-              favoriSayisi: (i.favoriSayisi + delta).clamp(0, 999999));
+          return i.copyWith(favoriSayisi: (i.favoriSayisi + delta).clamp(0, 999999));
         }
         return i;
       }).toList(),
@@ -381,49 +340,34 @@ class IlanOlustur extends _$IlanOlustur {
     }
   }
 
-  /// Moderasyon sonucunu bekler. [ilanId] için Firestore'u dinler;
-  /// "yayinda" veya "reddedildi" durumuna ulaşınca tamamlanır.
-  /// [zaman asimi] içinde sonuç gelmezse null döner.
-  /// Moderasyon sonucunu bekler: true=yayında, false=reddedildi, null=timeout
+  /// Moderasyon sonucunu bekler. Artık Firestore stream'i YOK — backend'i
+  /// periyodik olarak (2sn'de bir) POLLING ile sorguluyoruz, "onayBekliyor"
+  /// dışına çıkınca (yayinda/reddedildi) tamamlanıyor. [timeout] içinde
+  /// sonuç gelmezse null döner.
   Future<bool?> durumBekle(
     String ilanId, {
     Duration timeout = const Duration(seconds: 40),
-  }) {
-    final completer = Completer<bool?>();
-    final stream = ref.read(ilanRepositoryProvider).ilanStream(ilanId).map((ilan) => ilan?.durum);
-    StreamSubscription? sub;
-    Timer? timer;
-
-    timer = Timer(timeout, () {
-      sub?.cancel();
-      if (!completer.isCompleted) completer.complete(null);
-    });
-
-    sub = stream.listen(
-      (durum) {
-        // 'onayBekliyor' = moderasyon henüz sonuçlanmadı, bekle.
-        // Hem create (ilk snapshot zaten onayBekliyor olur) hem edit (guncelle()
-        // durum'u onayBekliyor'a çekiyor) akışında doğru çalışır.
-        if (durum == IlanDurum.onayBekliyor) return;
-        if (durum == IlanDurum.yayinda || durum == IlanDurum.reddedildi) {
-          timer?.cancel();
-          sub?.cancel();
-          if (!completer.isCompleted) completer.complete(durum == IlanDurum.yayinda);
-        }
-      },
-      onError: (_) {
-        timer?.cancel();
-        if (!completer.isCompleted) completer.complete(null);
-      },
-    );
-
-    return completer.future;
+  }) async {
+    final baslangic = DateTime.now();
+    while (DateTime.now().difference(baslangic) < timeout) {
+      try {
+        final ilan = await ref.read(ilanRepositoryProvider).ilanGetir(ilanId);
+        if (ilan == null) return null;
+        if (ilan.durum == IlanDurum.yayinda) return true;
+        if (ilan.durum == IlanDurum.reddedildi) return false;
+      } catch (_) {
+        // ağ hatası — bir sonraki denemede tekrar dener, timeout'a kadar.
+      }
+      await Future.delayed(const Duration(seconds: 2));
+    }
+    return null;
   }
 
-  /// İlanı (gerekiyorsa yeni resimlerle) günceller. Yükleme overlay'i görünsün
-  /// diye [IlanOlusturState]'i sürer. Kayıttan sonra sunucudaki
-  /// `ilanGuncellemeModerasyon` (onUpdate) içeriği yeniden modere edip uygunsa
-  /// yayınlar, uygunsuzsa yayından kaldırır.
+  /// İlanı günceller — [yeniResimler] verilirse backend'e multipart olarak
+  /// gönderilip mevcut resim_urller listesine eklenir (2026-10-28'e kadar
+  /// bu parametre sessizce yok sayılıyordu, bkz. ilan_repository.dart).
+  /// [mevcutResimler] şu an backend'de kullanılmıyor — mevcut resimleri
+  /// SİLME desteği henüz yok, sadece ekleme var.
   Future<bool> guncelle(
     String ilanId,
     Map<String, dynamic> data, {
@@ -432,22 +376,7 @@ class IlanOlustur extends _$IlanOlustur {
   }) async {
     state = const IlanOlusturState(yukleniyor: true, yuklemeProgress: 0.1);
     try {
-      await ref.read(ilanRepositoryProvider).ilanResimliGuncelle(
-        ilanId: ilanId,
-        data: {
-          ...data,
-          'durum': IlanDurum.onayBekliyor,
-          'redSebebi': '',
-        },
-        yeniResimler: yeniResimler,
-        mevcutResimler: mevcutResimler,
-        onProgress: (index, progress) {
-          state = state.copyWith(
-            yuklenenResimIndex: index,
-            yuklemeProgress: progress,
-          );
-        },
-      );
+      await ref.read(ilanRepositoryProvider).ilanGuncelle(ilanId, data, yeniResimler: yeniResimler);
       state = const IlanOlusturState(yukleniyor: true, yuklemeProgress: 1.0);
       await Future.delayed(const Duration(milliseconds: 800));
       state = const IlanOlusturState();
@@ -459,11 +388,11 @@ class IlanOlustur extends _$IlanOlustur {
   }
 }
 
-// ── Tekil ilan stream ─────────────────────────────────────────────────────────
+// ── Tekil ilan ────────────────────────────────────────────────────────────────
 
 @riverpod
-Stream<IlanModel?> ilanById(Ref ref, String ilanId) {
-  return ref.watch(ilanRepositoryProvider).ilanStream(ilanId);
+Future<IlanModel?> ilanById(Ref ref, String ilanId) {
+  return ref.watch(ilanRepositoryProvider).ilanGetir(ilanId);
 }
 
 // ── Son 24 saat ilanları ─────────────────────────────────────────────────────
@@ -483,33 +412,15 @@ Future<List<IlanModel>> haftaninEnleri(Ref ref) {
 // ── Favori provider'lar ───────────────────────────────────────────────────────
 
 @riverpod
-Stream<List<Map<String, dynamic>>> favoriler(Ref ref) {
+Future<List<IlanModel>> favoriler(Ref ref) {
   final uid = ref.watch(currentUserProvider)?.uid;
-  if (uid == null) return const Stream.empty();
-  return ref.watch(ilanRepositoryProvider).favorilerStream(uid);
+  if (uid == null) return Future.value(const []);
+  return ref.watch(ilanRepositoryProvider).favorileriGetir();
 }
 
 @riverpod
-Stream<bool> ilanFavorideMi(Ref ref, String ilanId) {
-  final uid = ref.watch(currentUserProvider)?.uid;
-  if (uid == null) return Stream.value(false);
-  return ref.watch(ilanRepositoryProvider).favorideMi(
-    kullaniciId: uid,
-    ilanId: ilanId,
-  );
-}
-
-// keepAlive kasıtlı olarak kaldırıldı — family provider'da keepAlive, her farklı
-// kullaniciId için ayrı bir stream instance'ı sonsuza kadar hafızada biriktirir.
-// autoDispose (varsayılan) ile, provider widget tree'den kalkınca stream kapanır.
-@riverpod
-Stream<List<IlanModel>> kullaniciIlanlarStream(Ref ref, String kullaniciId) {
-  return ref.watch(ilanRepositoryProvider).kullaniciIlanlarStream(kullaniciId);
-}
-
-@riverpod
-Stream<int> ilanFavoriSayisi(Ref ref, String ilanId) {
-  return ref.watch(ilanRepositoryProvider).favoriSayisiStream(ilanId);
+Future<List<IlanModel>> kullaniciIlanlariGetir(Ref ref, String kullaniciId) {
+  return ref.watch(ilanRepositoryProvider).kullaniciIlanlariGetir(kullaniciId);
 }
 
 // ── Breadcrumb navigasyon provider'ı ─────────────────────────────────────────
@@ -607,14 +518,11 @@ class OptimistikFavori extends _$OptimistikFavori {
 
 @riverpod
 Set<String> favoriliIlanIdler(Ref ref) {
-  final fav       = ref.watch(favorilerProvider);
+  final fav = ref.watch(favorilerProvider);
   final optimistik = ref.watch(optimistikFavoriProvider);
 
   final base = fav.when(
-    data: (liste) => liste
-        .map((f) => f['ilanId'] as String? ?? '')
-        .where((id) => id.isNotEmpty)
-        .toSet(),
+    data: (liste) => liste.map((i) => i.id).toSet(),
     loading: () => <String>{},
     error: (_, _) => <String>{},
   );
@@ -624,6 +532,13 @@ Set<String> favoriliIlanIdler(Ref ref) {
     if (eklendi) { sonuc.add(id); } else { sonuc.remove(id); }
   });
   return sonuc;
+}
+
+/// Eski Stream&lt;bool&gt; favorideMi provider'ının yerini alıyor —
+/// favoriliIlanIdler zaten senkron ve polling'e göre daha ucuz.
+@riverpod
+bool ilanFavorideMi(Ref ref, String ilanId) {
+  return ref.watch(favoriliIlanIdlerProvider).contains(ilanId);
 }
 
 // ── Favori işlemleri ──────────────────────────────────────────────────────────
@@ -642,15 +557,11 @@ class FavoriNotifier extends _$FavoriNotifier {
     if (ilan.kullaniciId == uid) return; // kendi ilanını favorileyemezsin
     ref.read(optimistikFavoriProvider.notifier).ekle(ilan.id);
     try {
-      final yazdi = await _repo.favoriyeEkle(kullaniciId: uid, ilan: ilan);
-      // keepAlive eklendiyse bu kontrol artık tetiklenmemeli, ama provider
-      // ileride yanlışlıkla autoDispose'a çevrilirse çökme yerine sessizce
-      // çıkmayı garanti eden bir güvenlik ağı olarak kalsın.
-      // Başarılı yazma sonrası optimistik kaydı temizle — gerçek Firestore
-      // stream'i artık güncel olduğu için devreye girebilsin.
+      await _repo.favoriyeEkle(ilan.id);
       if (!ref.mounted) return;
-      if (yazdi) ref.read(sayacDeltaProvider.notifier).favoriArttir(ilan.id);
+      ref.read(sayacDeltaProvider.notifier).favoriArttir(ilan.id);
       ref.read(optimistikFavoriProvider.notifier).temizle(ilan.id);
+      ref.invalidate(favorilerProvider);
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'favoriNotifier.ekle');
       if (!ref.mounted) return;
@@ -663,10 +574,11 @@ class FavoriNotifier extends _$FavoriNotifier {
     if (uid.isEmpty) return;
     ref.read(optimistikFavoriProvider.notifier).cikar(ilanId);
     try {
-      final yazdi = await _repo.favoridanCikar(kullaniciId: uid, ilanId: ilanId);
+      await _repo.favoridenCikar(ilanId);
       if (!ref.mounted) return;
-      if (yazdi) ref.read(sayacDeltaProvider.notifier).favoriAzalt(ilanId);
+      ref.read(sayacDeltaProvider.notifier).favoriAzalt(ilanId);
       ref.read(optimistikFavoriProvider.notifier).temizle(ilanId);
+      ref.invalidate(favorilerProvider);
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'favoriNotifier.cikar');
       if (!ref.mounted) return;
@@ -684,8 +596,16 @@ class IlanIslemleri extends _$IlanIslemleri {
 
   IlanRepository get _repo => ref.read(ilanRepositoryProvider);
 
+  /// Backend'de henüz bir "pasif yap" endpoint'i yok (bkz. v3_backlog.md)
+  /// — şimdilik ilanı tamamen silmek yerine sessizce hiçbir şey yapmıyor,
+  /// loglayıp geri dönüyor. Gerçek davranış backend'e eklenince
+  /// güncellenecek.
   Future<void> pasifYap(String ilanId) async {
-    await _repo.ilanPasifYap(ilanId);
+    AppHataYonetici.logla(
+      Exception('pasifYap: backend endpoint\'i henüz yok'),
+      null,
+      etiket: 'ilanIslemleri.pasifYap.eksikEndpoint',
+    );
   }
 
   Future<bool> sil(String ilanId) async {
@@ -700,12 +620,13 @@ class IlanIslemleri extends _$IlanIslemleri {
     return true;
   }
 
+  /// Backend GET /ilanlar/:id çağrısında görüntülenmeyi KENDİSİ
+  /// arttırıyor (bkz. v3_ilan_routes.go) — client'ın ayrıca bir şey
+  /// yapmasına gerek yok, bu metod geriye dönük uyumluluk için duruyor.
   Future<void> goruntulemeKaydet({
     required String kullaniciId,
     required String ilanId,
-  }) async {
-    await _repo.goruntulenmeyiKaydet(kullaniciId: kullaniciId, ilanId: ilanId);
-  }
+  }) async {}
 
   Future<void> guncelle(String ilanId, Map<String, dynamic> data) async {
     await _repo.ilanGuncelle(ilanId, data);
@@ -713,8 +634,6 @@ class IlanIslemleri extends _$IlanIslemleri {
 }
 
 // ── Nav bar görünürlük provider'ı ────────────────────────────────────────────
-// ilanlar_screen scroll direction'ını buraya yazıyor
-// home_screen buradan okuyor
 
 @Riverpod(keepAlive: true)
 class NavBarGizli extends _$NavBarGizli {

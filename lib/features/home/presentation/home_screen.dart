@@ -153,6 +153,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     TutorialCoachMark(
       targets: _turHedefleri(),
       skipWidget: turSkipWidget,
+      colorShadow: Colors.black,
+      opacityShadow: 0.92,
       focusAnimationDuration: const Duration(milliseconds: 250),
       unFocusAnimationDuration: const Duration(milliseconds: 250),
       onFinish: () => prefs.setBool(key, true),
@@ -168,6 +170,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           identify: 'istek_tab',
           keyTarget: _istekTabKey,
           shape: ShapeLightFocus.Circle,
+          radius: 12,
+          borderSide: turNeonBorder,
           contents: [
             turIcerik(
               'Yurt dışından istediğin ürünü buradan paylaş',
@@ -179,6 +183,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           identify: 'gelen_tab',
           keyTarget: _gelenTabKey,
           shape: ShapeLightFocus.Circle,
+          radius: 12,
+          borderSide: turNeonBorder,
           contents: [
             turIcerik(
               'Seyahat eden taşıyıcıları buradan bul',
@@ -190,6 +196,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           identify: 'kesfet_tab',
           keyTarget: _kesfetTabKey,
           shape: ShapeLightFocus.Circle,
+          radius: 12,
+          borderSide: turNeonBorder,
           contents: [
             turIcerik(
               'Tüm ilanları buradan keşfet ve Sana özel önerileri buradan gör',
@@ -201,6 +209,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           identify: 'filtre',
           keyTarget: _filtreKey,
           shape: ShapeLightFocus.Circle,
+          radius: 12,
+          borderSide: turNeonBorder,
           contents: [
             turIcerik('Kategoriye, şehre göre hızlıca filtrele'),
           ],
@@ -209,6 +219,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           identify: 'ilan_ver',
           keyTarget: _ilanVerKey,
           shape: ShapeLightFocus.Circle,
+          radius: 12,
+          borderSide: turNeonBorder,
           contents: [
             turIcerik(
               'Buradan istek ya da Gelen ilanı ver',
@@ -220,6 +232,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           identify: 'gorunum',
           keyTarget: _gorunumKey,
           shape: ShapeLightFocus.Circle,
+          radius: 12,
+          borderSide: turNeonBorder,
           contents: [
             turIcerik(
               'Görünümü değiştir — kart listesi ya da kaydırmalı keşif',

@@ -7,19 +7,44 @@ import '../data/mesaj_repository.dart';
 import '../domain/mesaj_model.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
-import '../../../shared/constants/app_constants.dart';
 
 export '../data/mesaj_repository.dart' show mesajRepositoryProvider;
 
 part 'mesaj_provider.g.dart';
 
+const _sohbetYenilemeAraligi = Duration(seconds: 15);
+
 // ── Sohbet listesi ────────────────────────────────────────────────────────────
+// Artık Stream DEĞİL (AWS backend'inde canlı akış yok) — periyodik
+// yenileme (Çekmece'deki ve v3'ün diğer taşınmış özelliklerindeki aynı
+// desen).
 
 @Riverpod(keepAlive: true)
-Stream<List<SohbetModel>> sohbetler(Ref ref) {
-  final uid = ref.watch(currentUserProvider)?.uid;
-  if (uid == null) return const Stream.empty();
-  return ref.watch(mesajRepositoryProvider).sohbetlerStream(uid);
+class Sohbetler extends _$Sohbetler {
+  Timer? _zamanlayici;
+
+  @override
+  Future<List<SohbetModel>> build() async {
+    ref.onDispose(() => _zamanlayici?.cancel());
+    final uid = ref.watch(currentUserProvider)?.uid;
+    if (uid == null) return [];
+
+    _zamanlayici?.cancel();
+    _zamanlayici = Timer.periodic(_sohbetYenilemeAraligi, (_) => yenile());
+
+    return ref.read(mesajRepositoryProvider).sohbetleriGetir();
+  }
+
+  Future<void> yenile() async {
+    if (ref.read(currentUserProvider)?.uid == null) return;
+    try {
+      final liste = await ref.read(mesajRepositoryProvider).sohbetleriGetir();
+      if (!ref.mounted) return;
+      state = AsyncData(liste);
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'sohbetler.yenile');
+    }
+  }
 }
 
 // ── Okunmamış sayısı ──────────────────────────────────────────────────────────
@@ -45,9 +70,7 @@ int okunmamisSayi(Ref ref) {
 @Riverpod(keepAlive: true)
 Future<String> karsiKullaniciAd(Ref ref, String uid) async {
   if (uid.isEmpty) return 'Kullanıcı';
-  final data = await ref
-      .read(kullaniciRepositoryProvider)
-      .kullaniciDataGetir(uid);
+  final data = await ref.read(kullaniciRepositoryProvider).kullaniciDataGetir(uid);
   if (data == null) return 'Kullanıcı';
   final adSoyad = data['adSoyad'] as String? ?? '';
   if (adSoyad.isNotEmpty) return adSoyad;
@@ -60,22 +83,17 @@ Future<String> karsiKullaniciAd(Ref ref, String uid) async {
 @Riverpod(keepAlive: true)
 Future<String?> karsiKullaniciFoto(Ref ref, String uid) async {
   if (uid.isEmpty) return null;
-  final data = await ref
-      .read(kullaniciRepositoryProvider)
-      .kullaniciDataGetir(uid);
+  final data = await ref.read(kullaniciRepositoryProvider).kullaniciDataGetir(uid);
   return data?['fotoUrl'] as String?;
 }
 
 // ── Sohbet ekranı state ───────────────────────────────────────────────────────
-// ✅ raw Map<String, dynamic> yerine typed MesajModel kullanıyor
 
 class SohbetEkraniState {
   final Map<String, MesajModel> mesajMap;
   final List<MesajModel> siraliMesajlar;
   final bool yukleniyor;
   final bool gonderiyor;
-  final bool dahaFazlaVar;
-  final DateTime? enEskiZaman;
   final String? hata;
   final List<File> geciciResimler;
 
@@ -84,8 +102,6 @@ class SohbetEkraniState {
     this.siraliMesajlar = const [],
     this.yukleniyor = true,
     this.gonderiyor = false,
-    this.dahaFazlaVar = true,
-    this.enEskiZaman,
     this.hata,
     this.geciciResimler = const [],
   });
@@ -95,8 +111,6 @@ class SohbetEkraniState {
     List<MesajModel>? siraliMesajlar,
     bool? yukleniyor,
     bool? gonderiyor,
-    bool? dahaFazlaVar,
-    DateTime? enEskiZaman,
     String? hata,
     bool temizleHata = false,
     List<File>? geciciResimler,
@@ -106,8 +120,6 @@ class SohbetEkraniState {
         siraliMesajlar: siraliMesajlar ?? this.siraliMesajlar,
         yukleniyor: yukleniyor ?? this.yukleniyor,
         gonderiyor: gonderiyor ?? this.gonderiyor,
-        dahaFazlaVar: dahaFazlaVar ?? this.dahaFazlaVar,
-        enEskiZaman: enEskiZaman ?? this.enEskiZaman,
         hata: temizleHata ? null : (hata ?? this.hata),
         geciciResimler: geciciResimler ?? this.geciciResimler,
       );
@@ -115,18 +127,12 @@ class SohbetEkraniState {
 
 @riverpod
 class SohbetNotifier extends _$SohbetNotifier {
-  late String _sohbetId;
-  late String _benimId;
-  StreamSubscription? _mesajSub;
-  Timer? _okunduTimer;
-  String? _sonOkunduMesajId;
+  String? _sohbetId;
+  Timer? _yenilemeTimer;
   final _geciciIdler = <String>{};
 
-  // firestore.rules.oneri.txt'teki mesajHizSiniriGecerliMi() (aynı gönderenin
-  // 1sn'den kısa aralıklı ardışık mesajını reddeden hız sınırı) ile AYNI
-  // pencere — burada kullanıcıya "gönderilemedi" hatası göstermek yerine,
-  // gönderimi cooldown dolana kadar sessizce erteliyoruz. 1sn'lik rules
-  // penceresinden biraz fazla (1100ms) tutuluyor ki ağ gecikmesi payı olsun.
+  // firestore.rules.oneri.txt'teki mesajHizSiniriGecerliMi() ile AYNI
+  // pencere — ağ gecikmesi payı için 1100ms.
   DateTime? _sonGonderimZamani;
 
   Future<void> _mesajHizSiniriBekle() async {
@@ -144,95 +150,85 @@ class SohbetNotifier extends _$SohbetNotifier {
   SohbetEkraniState build({
     required String karsiKullaniciId,
     required String ilanId,
+    String? sohbetId,
   }) {
     final user = ref.watch(currentUserProvider);
     if (user == null) return const SohbetEkraniState();
 
-    _benimId = user.uid;
-    final ids = [_benimId, karsiKullaniciId]..sort();
-    _sohbetId = '${ids[0]}_${ids[1]}_$ilanId';
+    _baslat(sohbetId);
 
-    _baslat(karsiKullaniciId);
-
-    ref.onDispose(() {
-      _mesajSub?.cancel();
-      _okunduTimer?.cancel();
-    });
+    ref.onDispose(() => _yenilemeTimer?.cancel());
 
     return const SohbetEkraniState();
   }
 
-  Future<void> _baslat(String karsiKullaniciId) async {
-    // mesajGonder() zaten batch içinde sohbet dokümanını merge:true ile
-    // oluşturduğu için ayrıca bir "garanti" yazmasına gerek yok.
-    // Direkt dinlemeye başlıyoruz — ilk temasta güvenlik kuralı (sohbetKatilimcisiMi)
-    // doküman henüz yoksa false dönebilir, ama bu durumda mesajlar stream'i
-    // boş kalır (hata vermez), ilk mesaj gönderilince doküman oluşur ve
-    // stream otomatik güncellenir.
-    if (ref.mounted) _mesajlariDinle();
-  }
-
   MesajRepository get _repo => ref.read(mesajRepositoryProvider);
 
-  void _mesajlariDinle() {
-    _mesajSub?.cancel();
-    _mesajSub = _repo.mesajlarStream(sohbetId: _sohbetId).listen((mesajlar) {
-      // ✅ Artık List<MesajModel> geliyor — Firestore tipi yok
-      final yeniMap = Map<String, MesajModel>.from(state.mesajMap);
+  /// [sohbetIdBiliniyor] mesaj listesinden (var olan bir sohbete) girildiğinde
+  /// doludur — bu durumda sohbet-baslat'ı HİÇ çağırmıyoruz. Önemli: o uç
+  /// karşı tarafı her zaman "ilan sahibi" varsayıyor, ilan sahibi KENDİ
+  /// ilanıyla ilgili var olan bir sohbeti tekrar açmaya çalışınca
+  /// (benimID == ilan sahibi) "kendi ilanınla sohbet başlatamazsın" diye
+  /// reddediyordu — var olan sohbete asla yeniden "başlamaya" gerek yok,
+  /// zaten ID'si elimizde.
+  ///
+  /// ID bilinmiyorsa (ilan detayından ilk kez "mesaj gönder") sohbet-baslat
+  /// çağrılır — sunucu tarafında gen_random_uuid ile üretilen gerçek ID bu
+  /// şekilde alınır (idempotent: aynı ilan+kullanıcı çifti için hep AYNI
+  /// sohbeti döner).
+  Future<void> _baslat(String? sohbetIdBiliniyor) async {
+    try {
+      if (sohbetIdBiliniyor != null && sohbetIdBiliniyor.isNotEmpty) {
+        _sohbetId = sohbetIdBiliniyor;
+      } else {
+        final sohbet = await _repo.sohbetBaslat(ilanId: ilanId);
+        if (!ref.mounted) return;
+        _sohbetId = sohbet.id;
+      }
+      await _mesajlariYenile();
+      _yenilemeTimer?.cancel();
+      _yenilemeTimer = Timer.periodic(const Duration(seconds: 4), (_) => _mesajlariYenile());
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'sohbetNotifier.baslat');
+      if (ref.mounted) {
+        state = state.copyWith(yukleniyor: false, hata: 'Sohbet başlatılamadı. Tekrar dene.');
+      }
+    }
+  }
 
-      // Gelen snapshot'taki mesajları güncelle
+  Future<void> _mesajlariYenile() async {
+    if (_sohbetId == null) return;
+    try {
+      final mesajlar = await _repo.mesajlariGetir(_sohbetId!);
+      if (!ref.mounted) return;
+
+      final yeniMap = Map<String, MesajModel>.from(state.mesajMap);
       for (final mesaj in mesajlar) {
         yeniMap[mesaj.id] = mesaj;
       }
-
-      // Snapshot'ta olmayan (silinen) mesajları kaldır.
-      // Geçici (bildirimden eklenen) mesajlar sunucu onayı gelene kadar korunur.
-      final snapIds = mesajlar.map((m) => m.id).toSet();
-      _geciciIdler.removeWhere((id) => snapIds.contains(id)); // sunucudan gelince geçici listeden düş
-      yeniMap.removeWhere((id, _) => !snapIds.contains(id) && !_geciciIdler.contains(id));
-
-      // En eski zamanı cursor olarak sakla
-      final enEskiZaman = mesajlar.isNotEmpty ? mesajlar.last.zaman : state.enEskiZaman;
+      final sunucuIdler = mesajlar.map((m) => m.id).toSet();
+      _geciciIdler.removeWhere((id) => sunucuIdler.contains(id));
+      yeniMap.removeWhere((id, _) => !sunucuIdler.contains(id) && !_geciciIdler.contains(id));
 
       state = state.copyWith(
         mesajMap: yeniMap,
         siraliMesajlar: _sirala(yeniMap),
         yukleniyor: false,
-        dahaFazlaVar: mesajlar.length >= Pagination.mesajSayfaBoyutu,
-        enEskiZaman: enEskiZaman,
       );
 
       if (mesajlar.isNotEmpty) {
-        final sonMesajId = mesajlar.first.id;
-        if (_sonOkunduMesajId != sonMesajId) {
-          _sonOkunduMesajId = sonMesajId;
-          _okunduDebounce();
-        }
+        unawaited(_repo.okunduIsaretle(_sohbetId!).catchError((e, s) {
+          AppHataYonetici.logla(e, s, etiket: 'sohbetNotifier.okunduIsaretle');
+        }));
       }
-    }, onError: (hata, stack) {
-      AppHataYonetici.logla(hata, stack, etiket: 'mesajlarStream');
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'sohbetNotifier.mesajlariYenile');
       if (ref.mounted) {
-        state = state.copyWith(
-          yukleniyor: false,
-          hata: 'Mesajlar yüklenemedi. Tekrar dene.',
-        );
+        state = state.copyWith(yukleniyor: false, hata: 'Mesajlar yüklenemedi. Tekrar dene.');
       }
-    });
+    }
   }
 
-  void _okunduDebounce() {
-    _okunduTimer?.cancel();
-    _okunduTimer = Timer(const Duration(milliseconds: 500), _okunduIsaretle);
-  }
-
-  Future<void> _okunduIsaretle() async {
-    try {
-      await _repo.okunduIsaretle(sohbetId: _sohbetId, kullaniciId: _benimId);
-    } catch (e, s) { AppHataYonetici.logla(e, s, etiket: 'mesajProvider.okunduIsaretle'); /* bilinçli sessiz: okundu işareti başarısız olsa da mesajlaşma devam eder */ }
-    if (!ref.mounted) return;
-  }
-
-  // ✅ Timestamp yok — MesajModel.zaman zaten DateTime
   List<MesajModel> _sirala(Map<String, MesajModel> map) {
     final liste = map.values.toList();
     liste.sort((a, b) {
@@ -249,52 +245,24 @@ class SohbetNotifier extends _$SohbetNotifier {
     required String gondereId,
     DateTime? zaman,
   }) {
-    if (state.mesajMap.containsKey(id)) return; // snapshot erken geldiyse zaten var
+    if (state.mesajMap.containsKey(id)) return;
     _geciciIdler.add(id);
     final gecici = MesajModel(
-      id:           id,
-      metin:        metin,
-      gondereId:    gondereId,
-      zaman:        zaman ?? DateTime.now(),
-      okundu:       false,
+      id: id,
+      metin: metin,
+      gondereId: gondereId,
+      zaman: zaman ?? DateTime.now(),
+      okundu: false,
       gonderiliyor: false,
     );
     final yeniMap = Map<String, MesajModel>.from(state.mesajMap)..[id] = gecici;
-    state = state.copyWith(
-      mesajMap:       yeniMap,
-      siraliMesajlar: _sirala(yeniMap),
-    );
+    state = state.copyWith(mesajMap: yeniMap, siraliMesajlar: _sirala(yeniMap));
   }
 
-  Future<void> dahaFazlaYukle() async {
-    if (state.yukleniyor || !state.dahaFazlaVar || state.enEskiZaman == null) return;
-
-    // ✅ Artık List<MesajModel> geliyor
-    final mesajlar = await _repo.eskiMesajlariGetir(
-      sohbetId: _sohbetId,
-      sonZaman: state.enEskiZaman!,
-    );
-
-    // SohbetNotifier autoDispose — kullanıcı await sürerken ekrandan
-    // çıkarsa provider yok edilebilir, state'e dokunmadan önce kontrol et.
-    if (!ref.mounted) return;
-
-    final yeniMap = Map<String, MesajModel>.from(state.mesajMap);
-    for (final mesaj in mesajlar) {
-      if (!yeniMap.containsKey(mesaj.id)) {
-        yeniMap[mesaj.id] = mesaj;
-      }
-    }
-
-    final enEskiZaman = mesajlar.isNotEmpty ? mesajlar.last.zaman : state.enEskiZaman;
-
-    state = state.copyWith(
-      mesajMap: yeniMap,
-      siraliMesajlar: _sirala(yeniMap),
-      dahaFazlaVar: mesajlar.length >= Pagination.mesajSayfaBoyutu,
-      enEskiZaman: enEskiZaman,
-    );
-  }
+  /// Backend şu an tüm mesajları (limitsiz) döndüğü için "daha fazla yükle"
+  /// (eski mesaj sayfalama) kavramı kalmadı — her yenilemede zaten tüm
+  /// geçmiş geliyor. Bu metod geriye dönük uyumluluk için duruyor.
+  Future<void> dahaFazlaYukle() async {}
 
   Future<void> mesajGonder({
     required String metin,
@@ -307,48 +275,16 @@ class SohbetNotifier extends _$SohbetNotifier {
     String ilanTip = '',
     String tip = 'mesaj',
   }) async {
-    if (metin.trim().isEmpty) return;
-    final benimAd = await _getBenimAd();
-    if (!ref.mounted) return;
-    final String mesajId;
-    final gonderimZamani = DateTime.now();
+    if (metin.trim().isEmpty || _sohbetId == null) return;
     await _mesajHizSiniriBekle();
     try {
-      mesajId = await _repo.mesajGonder(
-        sohbetId: _sohbetId,
-        gondereId: _benimId,
-        karsiId: karsiKullaniciId,
-        ilanId: ilanId,
-        ilanBaslik: ilanBaslik,
-        ilanResimUrl: ilanResimUrl,
-        ilanSahibiId: ilanSahibiId,
-        ilanTip: ilanTip,
-        metin: metin.trim(),
-        tip: tip,
-        gondereAd: benimAd,
-        karsiAd: karsiKullaniciAd,
-      );
+      await _repo.mesajGonder(sohbetId: _sohbetId!, metin: metin.trim());
+      if (!ref.mounted) return;
+      await _mesajlariYenile();
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'mesajGonder');
-      if (ref.mounted) {
-        state = state.copyWith(hata: 'Mesaj gönderilemedi. Tekrar dene.');
-      }
-      return;
+      if (ref.mounted) state = state.copyWith(hata: 'Mesaj gönderilemedi. Tekrar dene.');
     }
-    // Push bildirimi arka planda — mesajId ve zaman payload'a ekleniyor
-    _repo.mesajBildirimiGonder(
-      aliciId: karsiKullaniciId,
-      gondereId: _benimId,
-      gondereAd: benimAd,
-      ilanBaslik: ilanBaslik,
-      sohbetId: _sohbetId,
-      metin: metin.trim(),
-      ilanId: ilanId,
-      ilanSahibiId: ilanSahibiId,
-      ilanResimUrl: ilanResimUrl,
-      mesajId: mesajId,
-      mesajZaman: gonderimZamani.toIso8601String(),
-    ).catchError((_) {});
   }
 
   Future<void> resimGonder({
@@ -361,36 +297,14 @@ class SohbetNotifier extends _$SohbetNotifier {
     String ilanSahibiId = '',
     String ilanTip = '',
   }) async {
-    if (state.gonderiyor) return;
-    final benimAd = await _getBenimAd();
-    if (!ref.mounted) return;
+    if (state.gonderiyor || _sohbetId == null) return;
 
-    // Optimistic: resmi hemen ekrana düşür
-    state = state.copyWith(
-      gonderiyor: true,
-      geciciResimler: [...state.geciciResimler, dosya],
-    );
-
+    state = state.copyWith(gonderiyor: true, geciciResimler: [...state.geciciResimler, dosya]);
     try {
-      final url = await _repo.resimYukle(dosya: dosya, gondereId: _benimId);
-      if (!ref.mounted) return;
       await _mesajHizSiniriBekle();
-      await _repo.mesajGonder(
-        sohbetId: _sohbetId,
-        gondereId: _benimId,
-        karsiId: karsiKullaniciId,
-        ilanId: ilanId,
-        ilanBaslik: ilanBaslik,
-        ilanResimUrl: ilanResimUrl,
-        ilanSahibiId: ilanSahibiId,
-        ilanTip: ilanTip,
-        metin: '📷 Fotoğraf',
-        tip: 'resim',
-        resimUrl: url,
-        gondereAd: benimAd,
-        karsiAd: karsiKullaniciAd,
-      );
-      // Gerçek mesaj stream'den gelince gecici otomatik kaybolur
+      await _repo.mesajGonder(sohbetId: _sohbetId!, metin: '📷 Fotoğraf', resim: dosya);
+      if (!ref.mounted) return;
+      await _mesajlariYenile();
       if (ref.mounted) {
         final updated = List<File>.from(state.geciciResimler)..remove(dosya);
         state = state.copyWith(geciciResimler: updated);
@@ -399,70 +313,25 @@ class SohbetNotifier extends _$SohbetNotifier {
       AppHataYonetici.logla(e, s, etiket: 'resimGonder');
       if (ref.mounted) {
         final updated = List<File>.from(state.geciciResimler)..remove(dosya);
-        state = state.copyWith(
-          gonderiyor: false,
-          geciciResimler: updated,
-          hata: 'Resim gönderilemedi. Tekrar dene.',
-        );
+        state = state.copyWith(gonderiyor: false, geciciResimler: updated, hata: 'Resim gönderilemedi. Tekrar dene.');
       }
       return;
     } finally {
       if (ref.mounted) state = state.copyWith(gonderiyor: false);
     }
-    // Push bildirimi artık burada beklenmiyor — fotoğraf zaten gönderildi,
-    // buton serbest kaldı. Bildirim arka planda, hatasız şekilde devam eder.
-    _repo.mesajBildirimiGonder(
-      aliciId: karsiKullaniciId,
-      gondereId: _benimId,
-      gondereAd: benimAd,
-      ilanBaslik: ilanBaslik,
-      sohbetId: _sohbetId,
-      metin: '📷 Fotoğraf',
-      ilanId: ilanId,
-      ilanSahibiId: ilanSahibiId,
-      ilanResimUrl: ilanResimUrl,
-    ).catchError((_) {});
   }
 
-Future<void> mesajSil({
-    required String mesajId,
-    required String metin,
-  }) async {
-    await _repo.mesajSil(
-      sohbetId: _sohbetId,
-      mesajId: mesajId,
-      metin: metin,
-    );
+  Future<void> mesajSil({required String mesajId, required String metin}) async {
+    if (_sohbetId == null) return;
+    await _repo.mesajSil(sohbetId: _sohbetId!, mesajId: mesajId);
     if (!ref.mounted) return;
-    final yeniMap = Map<String, MesajModel>.from(state.mesajMap)
-      ..remove(mesajId);
-    state = state.copyWith(
-      mesajMap: yeniMap,
-      siraliMesajlar: _sirala(yeniMap),
-    );
+    final yeniMap = Map<String, MesajModel>.from(state.mesajMap)..remove(mesajId);
+    state = state.copyWith(mesajMap: yeniMap, siraliMesajlar: _sirala(yeniMap));
   }
 
-  Future<String> _getBenimAd() async {
-    // Önce profil provider'dan bak — zaten keepAlive, Firestore query yok
-    final profil = ref.read(kullaniciBilgiProvider(_benimId)).value;
-    if (profil != null && profil.adSoyad.isNotEmpty) return profil.adSoyad;
-    // Fallback: auth display name
-    return ref.read(currentUserProvider)?.displayName ?? '';
-  }
-
-  String get sohbetId => _sohbetId;
-}
-
-@riverpod
-Stream<Map<String, dynamic>?> kullaniciProfil(Ref ref, String uid) {
-  return ref.watch(kullaniciRepositoryProvider).kullaniciDataStream(uid);
-}
-
-@riverpod
-Stream<Map<String, dynamic>?> benimProfil(Ref ref) {
-  final uid = ref.watch(currentUserProvider)?.uid;
-  if (uid == null) return const Stream.empty();
-  return ref.watch(kullaniciRepositoryProvider).kullaniciDataStream(uid);
+  // build() parametresi olan "sohbetId" ile çakışmasın diye farklı isim —
+  // bu, sohbet-baslat çağrısından SONRA kesinleşen GERÇEK (çözümlenmiş) ID.
+  String? get cozumlenenSohbetId => _sohbetId;
 }
 
 // ── İşlem durumu işlemleri ────────────────────────────────────────────────────
@@ -474,10 +343,11 @@ class IslemDurumuIslemleri extends _$IslemDurumuIslemleri {
 
   MesajRepository get _repo => ref.read(mesajRepositoryProvider);
 
-  Future<void> guncelle(String durum) async {
-    final uid = ref.read(currentUserProvider)?.uid;
-    if (uid == null) return;
-    await _repo.islemDurumuGuncelle(sohbetId: sohbetId, durum: durum, yapanUid: uid);
+  /// [bildirimIcerigi] — ekran tarafında IslemDurumu.gecmisDonusu'ndan
+  /// üretilip buraya geçiriliyor (backend sadece aynen iletiyor, üretme
+  /// mantığı client'ta kalıyor).
+  Future<void> guncelle(String durum, {String? bildirimIcerigi}) async {
+    await _repo.islemDurumuGuncelle(sohbetId: sohbetId, anahtar: durum, bildirimIcerigi: bildirimIcerigi);
   }
 
   Future<void> anlasildiIsaretle(String benimUid) async {
@@ -485,9 +355,7 @@ class IslemDurumuIslemleri extends _$IslemDurumuIslemleri {
   }
 
   Future<void> teslimTamamla() async {
-    final uid = ref.read(currentUserProvider)?.uid;
-    if (uid == null) return;
-    await _repo.teslimTamamla(sohbetId: sohbetId, yapanUid: uid);
+    await _repo.teslimTamamla(sohbetId: sohbetId);
   }
 }
 
@@ -500,64 +368,45 @@ class SohbetIslemleri extends _$SohbetIslemleri {
 
   MesajRepository get _repo => ref.read(mesajRepositoryProvider);
 
-  Future<void> gizle({
-    required String sohbetId,
-    required String kullaniciId,
-  }) async {
-    await _repo.sohbetiGizle(sohbetId: sohbetId, kullaniciId: kullaniciId);
+  Future<void> gizle({required String sohbetId, required String kullaniciId}) async {
+    await _repo.sohbetiGizle(sohbetId);
   }
 
-  Future<Map<String, dynamic>?> getir(String sohbetId) async {
+  Future<SohbetModel?> getir(String sohbetId) async {
     return _repo.sohbetGetir(sohbetId);
   }
 }
 
-// ── İşlem durumu stream provider'ları (islem_durumu_panel için) ──────────────
-//
-// Performans notu: eskiden bu 5 provider, AYNI sohbet dökümanını ayrı ayrı
-// 5 kere dinliyordu (5 bağımsız Firestore listener'ı, her biri tüm
-// dökümanı indirip sadece 1 alanını kullanıyordu). Artık tek bir dinleyici
-// (sohbetDokumanProvider) var, diğerleri ondan türetiliyor — gerçek ağ/
-// Firestore maliyeti 5'te 1'e indi, UI tarafında kullanım şekli (provider
-// adları, .value ile okuma) hiç değişmedi.
-//
-// Not: Riverpod 3'te StreamProvider'ın .stream özelliği kaldırıldığı için,
-// türetilmiş provider'lar StreamProvider.family DEĞİL, normal
-// Provider.family olarak tanımlanıp AsyncValue.whenData() ile veri
-// dönüştürüyor — bu, .stream'e hiç ihtiyaç duymadan, AsyncValue zincirini
-// (loading/error/data) doğru şekilde taşıyor.
+// ── İşlem durumu provider'ları (islem_durumu_panel için) ─────────────────────
+// Artık Stream DEĞİL — tek seferlik okuma (FutureProvider.family), ekranlar
+// gerektiğinde ref.invalidate ile tazeler.
 
 final sohbetDokumanProvider =
-    StreamProvider.family<Map<String, dynamic>, String>((ref, sohbetId) {
-  return ref.read(mesajRepositoryProvider).sohbetDurumuStream(sohbetId);
+    FutureProvider.family<SohbetModel?, String>((ref, sohbetId) {
+  return ref.read(mesajRepositoryProvider).sohbetGetir(sohbetId);
 });
 
 final islemDurumuProvider =
     Provider.family<AsyncValue<Map<String, dynamic>>, String>((ref, sohbetId) {
-  return ref.watch(sohbetDokumanProvider(sohbetId)).whenData(
-      (d) => Map<String, dynamic>.from(d['islemDurumlari'] as Map? ?? {}));
+  return ref.watch(sohbetDokumanProvider(sohbetId)).whenData((s) => s?.islemDurumlari ?? {});
 });
 
 final sohbetIlanSahibiIdProvider =
     Provider.family<AsyncValue<String>, String>((ref, sohbetId) {
-  return ref.watch(sohbetDokumanProvider(sohbetId))
-      .whenData((d) => d['ilanSahibiId'] as String? ?? '');
+  return ref.watch(sohbetDokumanProvider(sohbetId)).whenData((s) => s?.ilanSahibiId ?? '');
 });
 
 final sohbetIlanTipProvider =
     Provider.family<AsyncValue<String>, String>((ref, sohbetId) {
-  return ref.watch(sohbetDokumanProvider(sohbetId))
-      .whenData((d) => d['ilanTip'] as String? ?? 'istek');
+  return ref.watch(sohbetDokumanProvider(sohbetId)).whenData((s) => s?.ilanTip ?? 'istek');
 });
 
 final sohbetKullanicilarProvider =
     Provider.family<AsyncValue<List<String>>, String>((ref, sohbetId) {
-  return ref.watch(sohbetDokumanProvider(sohbetId))
-      .whenData((d) => List<String>.from(d['kullanicilar'] ?? []));
+  return ref.watch(sohbetDokumanProvider(sohbetId)).whenData((s) => s?.kullanicilar ?? []);
 });
 
 final sohbetIlanBaslikProvider =
     Provider.family<AsyncValue<String>, String>((ref, sohbetId) {
-  return ref.watch(sohbetDokumanProvider(sohbetId))
-      .whenData((d) => (d['ilanBaslik'] as String?) ?? '');
+  return ref.watch(sohbetDokumanProvider(sohbetId)).whenData((s) => s?.ilanBaslik ?? '');
 });

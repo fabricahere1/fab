@@ -1,281 +1,142 @@
-import '../../../core/firebase/app_firestore.dart';
-import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../../core/api/api_client.dart';
 import '../domain/kullanici_model.dart';
-import '../../../shared/constants/app_constants.dart';
- 
+
 part 'kullanici_repository.g.dart';
- 
+
 @riverpod
 KullaniciRepository kullaniciRepository(Ref ref) {
-  return KullaniciRepository(
-    firestore: AppFirestore.instance,
-    storage: FirebaseStorage.instance,
-    auth: FirebaseAuth.instance,
-  );
+  return KullaniciRepository();
 }
- 
+
 class KullaniciRepository {
-  final FirebaseFirestore firestore;
-  final FirebaseStorage storage;
-  final FirebaseAuth auth;
- 
-  KullaniciRepository({
-    required this.firestore,
-    required this.storage,
-    required this.auth,
-  });
- 
-  CollectionReference get _col =>
-      firestore.collection(Collections.kullanicilar);
- 
   Future<KullaniciModel?> kullaniciGetir(String uid) async {
-    final doc = await _col.doc(uid).get();
-    if (!doc.exists) return null;
-    return KullaniciModel.fromFirestore(doc);
+    try {
+      final response = await ApiClient.dio.get('/kullanicilar/$uid');
+      return KullaniciModel.fromApi(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      rethrow;
+    }
   }
- 
-  Stream<KullaniciModel?> kullaniciStream(String uid) {
-    return _col.doc(uid).snapshots().map((doc) {
-      if (!doc.exists) return null;
-      return KullaniciModel.fromFirestore(doc);
-    });
-  }
- 
-  Stream<Map<String, dynamic>?> kullaniciDataStream(String uid) {
-    return _col.doc(uid).snapshots().map((doc) {
-      if (!doc.exists) return null;
-      return doc.data() as Map<String, dynamic>?;
-    });
+
+  Future<KullaniciModel?> benimProfilimGetir() async {
+    final response = await ApiClient.dio.get('/profilim');
+    return KullaniciModel.fromApi(response.data as Map<String, dynamic>);
   }
 
   Future<Map<String, dynamic>?> kullaniciDataGetir(String uid) async {
-    final doc = await _col.doc(uid).get();
-    if (!doc.exists) return null;
-    return doc.data() as Map<String, dynamic>?;
+    final model = await kullaniciGetir(uid);
+    if (model == null) return null;
+    return {'adSoyad': model.adSoyad, 'displayName': model.adSoyad, 'fotoUrl': model.fotoUrl};
   }
- 
-  Future<void> profilOlustur({
-    required String uid,
-    required String adSoyad,
-    required String email,
-  }) async {
-    await _col.doc(uid).set({
-      'adSoyad':          adSoyad,
-      'email': email,
-      'profilTamamlandi': false,
-      'olusturmaTarihi':  FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-  }
- 
+
   Future<void> profilGuncelle({
     required String uid,
     required Map<String, dynamic> data,
   }) async {
-    await _col.doc(uid).update(data);
+    await ApiClient.dio.patch('/profilim', data: data);
   }
- 
+
   Future<void> profilTamamla({
     required String uid,
     required Map<String, dynamic> data,
   }) async {
-    await _col.doc(uid).set(
-      {...data, 'profilTamamlandi': true, 'guncellemeTarihi': FieldValue.serverTimestamp()},
-      SetOptions(merge: true),
-    );
+    await ApiClient.dio.patch('/profilim', data: data);
   }
 
   /// bildirimTercihleri map'ini döndürür; doküman/alan yoksa null.
   Future<Map<String, bool>?> bildirimTercihleriGetir(String uid) async {
-    final snap = await firestore
-        .collection(Collections.kullanicilar).doc(uid).get();
-    final t = snap.data()?['bildirimTercihleri'] as Map<String, dynamic>?;
-    if (t == null) return null;
-    return t.map((k, v) => MapEntry(k, v as bool? ?? true));
+    final profil = await benimProfilimGetir();
+    if (profil == null || profil.bildirimTercihleri.isEmpty) return null;
+    return profil.bildirimTercihleri;
   }
 
-  /// Tek tercihi merge ile yazar (mevcut davranışla aynı: nested map deep-merge,
-  /// diğer anahtarlar korunur).
-  Future<void> bildirimTercihGuncelle(String uid, String anahtar, bool deger) =>
-      firestore.collection(Collections.kullanicilar).doc(uid).set(
-        {'bildirimTercihleri': {anahtar: deger}},
-        SetOptions(merge: true),
-      );
-
-  // KULLANILMIYOR — profil fotoğrafı yükleme bilinçli kapalı (ürün kararı).
-  // Açılırsa: Vision moderasyonu + dosya adını '${uid}_...' desenine getir
-  // + storage.rules'a profil_fotograflari klasör kuralı ekle.
-  Future<String> profilFotoYukle({
-    required String uid,
-    required File foto,
-  }) async {
-    final ref = storage
-        .ref()
-        .child(StoragePaths.profilFotolari)
-        .child('$uid.jpg');
-    await ref.putFile(
-      foto,
-      SettableMetadata(cacheControl: 'public, max-age=31536000'),
-    );
-    final url = await ref.getDownloadURL();
-    await _col.doc(uid).update({'fotoUrl': url});
-    await auth.currentUser?.updatePhotoURL(url);
-    return url;
-  }
- 
- 
- 
-  Future<void> engelle({required String benimUid, required String hedefUid}) =>
-      _col.doc(benimUid).update({
-        'engellenenler': FieldValue.arrayUnion([hedefUid]),
-      });
- 
-  Future<void> engelKaldir({required String benimUid, required String hedefUid}) =>
-      _col.doc(benimUid).update({
-        'engellenenler': FieldValue.arrayRemove([hedefUid]),
-      });
- 
-  Stream<List<String>> engellenenlerStream(String uid) {
-    return _col.doc(uid).snapshots().map((doc) {
-      if (!doc.exists) return [];
-      return List<String>.from(
-        (doc.data() as Map<String, dynamic>)['engellenenler'] ?? [],
-      );
+  Future<void> bildirimTercihGuncelle(String uid, String anahtar, bool deger) {
+    return ApiClient.dio.patch('/profilim/bildirim-tercihi', data: {
+      'anahtar': anahtar,
+      'deger': deger,
     });
   }
- 
+
+  Future<void> engelle({required String benimUid, required String hedefUid}) {
+    return ApiClient.dio.post('/kullanicilar/$hedefUid/engelle');
+  }
+
+  Future<void> engelKaldir({required String benimUid, required String hedefUid}) {
+    return ApiClient.dio.delete('/kullanicilar/$hedefUid/engelle');
+  }
+
+  Future<List<String>> engellenenlerGetir() async {
+    final response = await ApiClient.dio.get('/engellenenlerim');
+    return List<String>.from(response.data as List);
+  }
+
   Future<void> sikayetGonder({
     required String sikayetEdenId,
     required String hedefId,
     required String hedefAd,
     required String sebep,
     String ilanId = '',
-  }) async {
-    // Şikayet yazımı + şikayet edenin "son şikayet zamanı" damgası TEK
-    // atomik batch içinde birlikte yazılır — firestore.rules.oneri.txt'teki
-    // create cooldown kuralı bu alanı okuyor (kitlesel/taciz amaçlı şikayet
-    // spam'ini önlemek için — bkz. sonIlanOlusturmaZamani ile aynı desen).
-    final sikayetRef = firestore.collection(Collections.sikayetler).doc();
-    final batch = firestore.batch();
-    batch.set(sikayetRef, {
-      'sikayetEdenId': sikayetEdenId,
-      'hedefId':       hedefId,
-      'hedefAd':       hedefAd,
-      'sebep':         sebep,
-      'ilanId':        ilanId,
-      'tarih':         FieldValue.serverTimestamp(),
+    String degerlendirmeId = '',
+  }) {
+    return ApiClient.dio.post('/sikayetler', data: {
+      'hedefId': degerlendirmeId.isNotEmpty ? degerlendirmeId : (ilanId.isNotEmpty ? ilanId : hedefId),
+      'hedefTipi': degerlendirmeId.isNotEmpty ? 'degerlendirme' : (ilanId.isNotEmpty ? 'ilan' : 'kullanici'),
+      'sebep': sebep,
     });
-    batch.set(
-      firestore.collection(Collections.kullanicilar).doc(sikayetEdenId),
-      {'sonSikayetZamani': FieldValue.serverTimestamp()},
-      SetOptions(merge: true),
-    );
-    await batch.commit();
   }
 
   // ── Takip sistemi ──────────────────────────────────────────────────────────
 
-  Future<void> takipEt({required String takipciId, required String takipEdilenId}) async {
-    final takipId = '${takipciId}_$takipEdilenId';
-    final takipRef = firestore.collection(Collections.takipler).doc(takipId);
-    await firestore.runTransaction((txn) async {
-      final snap = await txn.get(takipRef);
-      if (snap.exists) return;
-      txn.set(takipRef, {
-        'takipciId':     takipciId,
-        'takipEdilenId': takipEdilenId,
-        'tarih':         FieldValue.serverTimestamp(),
-      });
-      // Sayaç güncellemesi CF trigger'ı (takipOlustuSayacArttir) tarafından yapılır.
-    });
+  Future<void> takipEt({required String takipciId, required String takipEdilenId}) {
+    return ApiClient.dio.post('/kullanicilar/$takipEdilenId/takip');
   }
 
-  Future<void> takipiBirak({required String takipciId, required String takipEdilenId}) async {
-    final takipId = '${takipciId}_$takipEdilenId';
-    final takipRef = firestore.collection(Collections.takipler).doc(takipId);
-    await firestore.runTransaction((txn) async {
-      final snap = await txn.get(takipRef);
-      if (!snap.exists) return;
-      txn.delete(takipRef);
-      // Sayaç güncellemesi CF trigger'ı (takipSilindiSayacAzalt) tarafından yapılır.
-    });
+  Future<void> takipiBirak({required String takipciId, required String takipEdilenId}) {
+    return ApiClient.dio.delete('/kullanicilar/$takipEdilenId/takip');
   }
 
-  Stream<bool> takipEdiyorMu({required String takipciId, required String takipEdilenId}) {
-    return firestore
-        .collection(Collections.takipler)
-        .doc('${takipciId}_$takipEdilenId')
-        .snapshots()
-        .map((snap) => snap.exists);
+  Future<bool> takipEdiyorMu({required String takipciId, required String takipEdilenId}) async {
+    final response = await ApiClient.dio.get('/kullanicilar/$takipEdilenId/takip-durumu');
+    return response.data['takipEdiyor'] as bool? ?? false;
   }
 
-  Stream<List<String>> takipciIdleriStream(String kullaniciId) {
-    return firestore
-        .collection(Collections.takipler)
-        .where('takipEdilenId', isEqualTo: kullaniciId)
-        .limit(500)
-        .snapshots()
-        .map((snap) => snap.docs.map((d) => d.data()['takipciId'] as String).toList());
+  Future<List<String>> takipciIdleriGetir(String kullaniciId) async {
+    final response = await ApiClient.dio.get('/kullanicilar/$kullaniciId/takipciler');
+    return List<String>.from(response.data as List);
   }
 
-  Stream<List<String>> takipEdilenIdleriStream(String kullaniciId) {
-    return firestore
-        .collection(Collections.takipler)
-        .where('takipciId', isEqualTo: kullaniciId)
-        .limit(500)
-        .snapshots()
-        .map((snap) => snap.docs.map((d) => d.data()['takipEdilenId'] as String).toList());
+  Future<List<String>> takipEdilenIdleriGetir(String kullaniciId) async {
+    final response = await ApiClient.dio.get('/kullanicilar/$kullaniciId/takip-edilenler');
+    return List<String>.from(response.data as List);
   }
 
   /// Takip edilen kullanıcıların id → takip başlangıç tarihi haritası.
-  /// "Takip ettiğin taşıyıcıların YENİ ilanları" gibi, takipten sonra açılan
-  /// ilanları filtrelemek için zaman bilgisine ihtiyaç duyan akışlar kullanır.
-  Stream<Map<String, DateTime>> takipEdilenTarihleriStream(String kullaniciId) {
-    return firestore
-        .collection(Collections.takipler)
-        .where('takipciId', isEqualTo: kullaniciId)
-        .snapshots()
-        .map((snap) => {
-              for (final d in snap.docs)
-                d.data()['takipEdilenId'] as String:
-                    (d.data()['tarih'] as Timestamp?)?.toDate() ?? DateTime.now(),
-            });
+  Future<Map<String, DateTime>> takipEdilenTarihleriGetir(String kullaniciId) async {
+    final response = await ApiClient.dio.get('/kullanicilar/$kullaniciId/takip-edilenler-tarihli');
+    return {
+      for (final j in (response.data as List))
+        (j as Map<String, dynamic>)['id'] as String:
+            DateTime.tryParse(j['tarih'] as String? ?? '') ?? DateTime.now(),
+    };
   }
 
-  /// Ortalama puanı [minPuan] ve üzeri olan taşıyıcılar, puana göre sıralı.
+  Future<List<KullaniciModel>> _yuksekPuanliGetir(String tip) async {
+    final response = await ApiClient.dio.get('/kullanicilar/yuksek-puanli', queryParameters: {'tip': tip});
+    return (response.data['kullanicilar'] as List)
+        .map((j) => KullaniciModel.fromApi(j as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<List<KullaniciModel>> yuksekPuanliTasiyicilariGetir({
     double minPuan = 4.0,
     int limit = 20,
-  }) async {
-    final snap = await _col
-        .where('ortalamaPuan', isGreaterThanOrEqualTo: minPuan)
-        .orderBy('ortalamaPuan', descending: true)
-        .limit(limit * 3) // istekçi tipi olanları eledikten sonra yetsin diye fazla çek
-        .get();
-    return snap.docs
-        .map(KullaniciModel.fromFirestore)
-        .where((k) => k.tasiyiciMi)
-        .take(limit)
-        .toList();
-  }
+  }) => _yuksekPuanliGetir('tasiyici');
 
-  /// Ortalama puanı [minPuan] ve üzeri olan istekçiler, puana göre sıralı.
   Future<List<KullaniciModel>> yuksekPuanliIstekcileriGetir({
     double minPuan = 4.0,
     int limit = 20,
-  }) async {
-    final snap = await _col
-        .where('ortalamaPuan', isGreaterThanOrEqualTo: minPuan)
-        .orderBy('ortalamaPuan', descending: true)
-        .limit(limit * 3) // taşıyıcı tipi olanları eledikten sonra yetsin diye fazla çek
-        .get();
-    return snap.docs
-        .map(KullaniciModel.fromFirestore)
-        .where((k) => k.istekMi)
-        .take(limit)
-        .toList();
-  }
+  }) => _yuksekPuanliGetir('istek');
 }

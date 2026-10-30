@@ -351,7 +351,7 @@ final class FavoriKategorilerYeniIlanlarProvider
 }
 
 String _$favoriKategorilerYeniIlanlarHash() =>
-    r'b8baeaf3d5281384d304e42618c685841783ded8';
+    r'51a40c2cf9276d5b6cb9771fdce0871388a163f7';
 
 /// Takip edilen taşıyıcıların, takip başladıktan SONRA açtığı ilanlar.
 
@@ -645,7 +645,7 @@ final class FavoriKategorilerYeniIstekIlanlariProvider
 }
 
 String _$favoriKategorilerYeniIstekIlanlariHash() =>
-    r'a2526b975510554b450e32b674dec0239ac908ef';
+    r'24b492a1484aa5e52f5bb4b781cd4ff8c13c99db';
 
 /// Takip edilen istekçilerin, takip başladıktan SONRA açtığı istek ilanları.
 

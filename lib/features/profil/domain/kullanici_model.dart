@@ -39,6 +39,12 @@ abstract class KullaniciModel with _$KullaniciModel {
     @Default(0) int takipSayisi,
     @Default(0) int guvenSkoru,
     @Default([]) List<String> rozetler,
+    @Default(false) bool banli,
+    @Default('') String banSebebi,
+    @Default({}) Map<String, bool> bildirimTercihleri,
+    // Hesap silme ekranının yeniden-doğrulama akışını seçmesi için —
+    // e-posta/şifre ile kayıtlıysa true, Google/telefon ile girişte false.
+    @Default(false) bool sifreVarMi,
   }) = _KullaniciModel;
  
   factory KullaniciModel.fromFirestore(DocumentSnapshot doc) {
@@ -74,9 +80,54 @@ abstract class KullaniciModel with _$KullaniciModel {
       takipSayisi:          ((d['takipSayisi']   as num?)?.toInt()) ?? 0,
       guvenSkoru:           ((d['guvenSkoru']    as num?)?.toInt()) ?? 0,
       rozetler:             List<String>.from(d['rozetler'] ?? []),
+      banli:                d['banli']      as bool?   ?? false,
+      banSebebi:            d['banSebebi']  as String? ?? '',
     );
   }
  
+  /// AWS backend'inden (GET /v3/kullanicilar/:id, GET /v3/profilim) gelen
+  /// JSON'u okur. engellenenler artık burada YOK — ayrı bir uçtan
+  /// (GET /v3/engellenenlerim) geliyor, bkz. KullaniciRepository.
+  factory KullaniciModel.fromApi(Map<String, dynamic> json) {
+    final bedenler = json['bedenTercihleri'] as Map<String, dynamic>? ?? {};
+    final bildirimTercihleri = json['bildirimTercihleri'] as Map<String, dynamic>? ?? {};
+    return KullaniciModel(
+      id: json['id'] as String? ?? '',
+      adSoyad: json['adSoyad'] as String? ?? '',
+      fotoUrl: (json['fotoUrl'] as String?)?.isEmpty == true ? null : json['fotoUrl'] as String?,
+      telefon: (json['telefon'] as String?)?.isEmpty == true ? null : json['telefon'] as String?,
+      email: (json['email'] as String?)?.isEmpty == true ? null : json['email'] as String?,
+      fcmToken: json['fcmToken'] as String?,
+      profilTamamlandi: json['profilTamamlandi'] as bool? ?? false,
+      ortalamaPuan: (json['ortalamaPuan'] as num?)?.toDouble() ?? 0.0,
+      degerlendirmeSayisi: (json['degerlendirmeSayisi'] as num?)?.toInt() ?? 0,
+      kullaniciTipi: json['kullaniciTipi'] as String? ?? '',
+      yasadigiUlke: json['yasadigiUlke'] as String? ?? '',
+      bulunduguSehir: json['bulunduguSehir'] as String? ?? '',
+      geldigiSehirler: List<String>.from(json['geldigiSehirler'] ?? []),
+      hakkinda: json['hakkinda'] as String? ?? '',
+      telefonGizli: json['telefonGizli'] as bool? ?? false,
+      ilgiKategorileri: List<String>.from(json['ilgiKategorileri'] ?? []),
+      dutyFreeIlgileniyor: json['dutyFreeIlgileniyor'] as bool?,
+      istekTeslimatTercihi: json['istekTeslimatTercihi'] as String?,
+      kadinUstBeden: List<String>.from(bedenler['kadinUstBeden'] ?? []),
+      kadinAltBeden: List<String>.from(bedenler['kadinAltBeden'] ?? []),
+      erkekUstBeden: List<String>.from(bedenler['erkekUstBeden'] ?? []),
+      erkekAltBeden: List<String>.from(bedenler['erkekAltBeden'] ?? []),
+      kadinAyakkabi: List<String>.from(bedenler['kadinAyakkabi'] ?? []),
+      erkekAyakkabi: List<String>.from(bedenler['erkekAyakkabi'] ?? []),
+      cocukAyakkabi: List<String>.from(bedenler['cocukAyakkabi'] ?? []),
+      takipciSayisi: (json['takipciSayisi'] as num?)?.toInt() ?? 0,
+      takipSayisi: (json['takipSayisi'] as num?)?.toInt() ?? 0,
+      guvenSkoru: (json['guvenSkoru'] as num?)?.toInt() ?? 0,
+      rozetler: List<String>.from(json['rozetler'] ?? []),
+      banli: json['banli'] as bool? ?? false,
+      banSebebi: json['banSebebi'] as String? ?? '',
+      bildirimTercihleri: bildirimTercihleri.map((k, v) => MapEntry(k, v as bool? ?? true)),
+      sifreVarMi: json['sifreVarMi'] as bool? ?? false,
+    );
+  }
+
   factory KullaniciModel.fromJson(Map<String, dynamic> json) =>
       _$KullaniciModelFromJson(json);
 }

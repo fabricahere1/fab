@@ -1,55 +1,47 @@
-import '../firebase/app_firestore.dart';
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 
+import '../api/api_client.dart';
 import 'banner_service.dart';
 import '../../shared/utils/app_hata_yonetici.dart';
-import '../../shared/constants/app_constants.dart';
 
 /// Tüm FCM sorumluluğu bu sınıftadır.
 /// - İzin isteme
-/// - Token alma, Firestore'a yazma, yenilenince güncelleme
-/// - Çıkışta token silme (authStateChanges null olunca)
+/// - Token alma, backend'e (PATCH /v3/profilim) yazma, yenilenince güncelleme
+/// - Çıkışta token silme
 /// - Foreground mesaj → BannerService
+///
+/// ÖNEMLİ FARK (Firebase→AWS geçişi): token kaydı artık Firebase
+/// authStateChanges()'e DEĞİL, kendi JWT oturumumuza bağlı — Google/e-posta
+/// girişi Firebase Auth'u hiç tetiklemiyor, bu yüzden "giriş oldu" sinyalini
+/// auth_repository.dart (girişten hemen sonra girisSonrasiTokenKaydet()
+/// çağırarak) veriyor; burası kendi başına auth durumunu dinlemiyor.
 ///
 /// Kullanım (main.dart):
 ///   await FcmService.instance.init(onBildirimAc: _bildirimdenAc);
-///
-/// auth_repository.dart FCM'den tamamen habersizdir.
 class FcmService {
   FcmService._();
   static final instance = FcmService._();
 
   final _messaging = FirebaseMessaging.instance;
-  final _firestore = AppFirestore.instance;
-  final _auth      = FirebaseAuth.instance;
 
-  StreamSubscription<User?>? _authSub;
   StreamSubscription<String>? _tokenSub;
   StreamSubscription<RemoteMessage>? _messageSub;
   StreamSubscription<RemoteMessage>? _openedAppSub;
 
-  String? _sonUid;
-
   String _maskele(String s) => s.length <= 6 ? s : '...${s.substring(s.length - 6)}';
 
-  /// [onBildirimAc] — bildirime tıklanınca çağrılır (router erişimi için
-  /// main.dart'tan inject edilir).
   Future<void> init({
     required void Function(RemoteMessage) onBildirimAc,
     required void Function(RemoteMessage) onIlkAcilis,
   }) async {
-    // 1. İzin iste (iOS + Android 13+)
     final izin = await _messaging.requestPermission();
     if (kDebugMode) {
       debugPrint('FCM izin durumu: ${izin.authorizationStatus}');
     }
-    // Kullanıcı reddettiyse bildirimler çalışmayacak — sessizce devam et,
-    // ama Crashlytics'e logla ki production'da kaç kullanıcı reddettiğini görelim.
     if (izin.authorizationStatus == AuthorizationStatus.denied) {
       AppHataYonetici.logla(
         Exception('FCM izni reddedildi'),
@@ -58,95 +50,66 @@ class FcmService {
       );
     }
 
-    // 2. Kullanıcı giriş/çıkış yaptıkça token kaydet / sil
-    _authSub = _auth.authStateChanges().listen(_authDegisti);
+    // Zaten giriş yapılmışsa (uygulama yeniden açıldı) token'ı tazele.
+    final mevcutToken = await ApiClient.tokenOku();
+    if (mevcutToken != null) {
+      await girisSonrasiTokenKaydet();
+    }
 
-    // 3. Token yenilenince Firestore'u güncelle
-    _tokenSub = _messaging.onTokenRefresh.listen((yeniToken) {
-      final uid = _auth.currentUser?.uid;
-      if (uid != null) _tokenKaydet(uid, yeniToken);
+    _tokenSub = _messaging.onTokenRefresh.listen((yeniToken) async {
+      if (await ApiClient.tokenOku() != null) {
+        await _tokenKaydet(yeniToken);
+      }
     });
 
-    // 4. Foreground — in-app banner
     _messageSub = FirebaseMessaging.onMessage.listen((message) {
       _foregroundMesajIsle(message, onBildirimAc);
     });
 
-    // 5. Arka planda bildirime tıklandı
     _openedAppSub = FirebaseMessaging.onMessageOpenedApp.listen(onBildirimAc);
 
-    // 6. Uygulama kapalıyken bildirime tıklanıp açıldı — HomeScreen'de işlenir
     final initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
       onIlkAcilis(initialMessage);
     }
   }
 
-  /// Auth değişince çağrılır.
-  /// - user != null → token al ve kaydet
-  /// - user == null → güvenlik ağı: oturumKapanisTemizligi asıl temizliği yapar,
-  ///   ama ikisi de idempotent, burada da deneriz.
-  Future<void> _authDegisti(User? user) async {
-    if (user == null) {
-      await _tokenSil(_sonUid);
-      _sonUid = null;
-      return;
+  /// Giriş başarılı olduktan hemen sonra (auth_repository.dart'tan)
+  /// çağrılır — fire-and-forget, ağ hatası girişi engellemez.
+  Future<void> girisSonrasiTokenKaydet() async {
+    try {
+      final token = await _messaging.getToken();
+      if (token != null) await _tokenKaydet(token);
+    } catch (e, s) {
+      AppHataYonetici.logla(e, s, etiket: 'FCM.girisSonrasiTokenKaydet');
     }
-    _sonUid = user.uid;
-    final token = await _messaging.getToken();
-    if (token != null) await _tokenKaydet(user.uid, token);
   }
 
-  /// Token'ı Firestore'a yazar.
-  /// set(merge:true) → döküman yoksa bile çalışır, sadece fcmToken alanını yazar.
-  Future<void> _tokenKaydet(String uid, String token) async {
+  Future<void> _tokenKaydet(String token) async {
     try {
-      await _firestore
-          .collection(Collections.kullanicilar)
-          .doc(uid)
-          .set({'fcmToken': token}, SetOptions(merge: true));
+      await ApiClient.dio.patch('/profilim', data: {'fcmToken': token});
       debugPrint('[FCM] Token kaydedildi: ${_maskele(token)}');
-    } catch (e, stack) {
+    } catch (e, s) {
       debugPrint('[FCM] Token kaydedilemedi: $e');
-      AppHataYonetici.logla(e, stack, etiket: 'FCM.tokenKaydet');
+      AppHataYonetici.logla(e, s, etiket: 'FCM.tokenKaydet');
     }
   }
 
-  /// Firestore'dan fcmToken alanını siler.
-  Future<void> _tokenSil(String? uid) async {
-    if (uid == null) return;
-    try {
-      await _firestore
-          .collection(Collections.kullanicilar)
-          .doc(uid)
-          .update({'fcmToken': FieldValue.delete()});
-      debugPrint('[FCM] Token silindi uid=${_maskele(uid)}');
-    } catch (e, stack) {
-      debugPrint('[FCM] Token silinemedi: $e');
-      AppHataYonetici.logla(e, stack, etiket: 'FCM.tokenSil');
-    }
-  }
-
-  /// Çıkış öncesi çağrılır: Firestore token'ını siler ve cihaz token'ını iptal eder.
-  /// deleteToken → eski hesapta kopya kalsa bile geçersiz; yeni girişte taze token üretilir.
-  /// Ağ hatası çıkışı engellemez (catch, rethrow yok).
+  /// Çıkış öncesi çağrılır: backend'deki fcmToken'ı temizler ve cihaz
+  /// token'ını iptal eder. Ağ hatası çıkışı engellemez.
   Future<void> oturumKapanisTemizligi() async {
-    final uid = _auth.currentUser?.uid;
-    if (uid == null) return;
     try {
-      await _firestore
-          .collection(Collections.kullanicilar)
-          .doc(uid)
-          .update({'fcmToken': FieldValue.delete()});
+      await ApiClient.dio.patch('/profilim', data: {'fcmToken': ''});
       await _messaging.deleteToken();
-      _sonUid = null;
-      debugPrint('[FCM] Çıkış temizliği tamamlandı uid=${_maskele(uid)}');
+      debugPrint('[FCM] Çıkış temizliği tamamlandı');
+    } on DioException catch (_) {
+      // Token zaten geçersizse (401) ya da ağ hatasıysa sessizce geç —
+      // çıkışı engellememeli.
     } catch (e, s) {
       AppHataYonetici.logla(e, s, etiket: 'cikis.fcmTemizlik');
     }
   }
 
-  /// Foreground mesajı → BannerService ile in-app bildirim gösterir.
   void _foregroundMesajIsle(
     RemoteMessage message,
     void Function(RemoteMessage) onBildirimAc,
@@ -169,9 +132,7 @@ class FcmService {
     );
   }
 
-  /// Uygulama kapanırken çağrılır (gerekirse).
   void dispose() {
-    _authSub?.cancel();
     _tokenSub?.cancel();
     _messageSub?.cancel();
     _openedAppSub?.cancel();

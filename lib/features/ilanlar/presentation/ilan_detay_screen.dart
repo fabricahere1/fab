@@ -444,8 +444,7 @@ class _IlanDetayIcerik extends ConsumerWidget {
         ? ref.watch(favoriliIlanIdlerProvider.select((ids) => ids.contains(ilan.id)))
         : false;
 
-    final favoriSayisi =
-        ref.watch(ilanFavoriSayisiProvider(ilan.id)).value ?? ilan.favoriSayisi;
+    final favoriSayisi = ref.canliFavoriSayisi(ilan);
 
     final benzerIlanlarAsync = ref.watch(istekIlanlarProvider);
     final benzerIlanlar = benzerIlanlarAsync.filtrelenmis

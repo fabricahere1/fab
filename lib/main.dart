@@ -12,6 +12,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/api/api_client.dart';
+import 'features/auth/providers/aktif_kullanici_provider.dart';
 import 'core/services/badge_service.dart';
 import 'core/services/bildirim_banner_service.dart';
 import 'core/services/fcm_service.dart';
@@ -77,12 +79,23 @@ void main() async {
     ),
   );
 
+  // AWS Go backend'imizle konuşan HTTP istemcisi — Firebase'in (Auth
+  // hariç telefon OTP'si için, Firestore tamamen) yerini alıyor.
+  await ApiClient.init();
+
   FlutterNativeSplash.remove();
 
+  final container = ProviderContainer();
+  ApiClient.onUnauthorized = () async {
+    // tokenSil() zaten ApiClient içinde yapıldı — kullanıcı verisini de
+    // temizleyip aktifKullaniciProvider'ı invalidate ediyoruz, router bunu
+    // dinlediği için otomatik olarak login'e döner.
+    await aktifKullaniciSil();
+    container.invalidate(aktifKullaniciProvider);
+  };
+
   runApp(
-    const ProviderScope(
-      child: IsteApp(),
-    ),
+    UncontrolledProviderScope(container: container, child: const IsteApp()),
   );
 }
 
@@ -102,8 +115,8 @@ class _IsteAppState extends ConsumerState<IsteApp> {
       onIlkAcilis: (message) =>
           ref.read(bekleyenBildirimProvider.notifier).set(message),
     );
-    BildirimBannerService.instance.init();
-    BadgeService.instance.init();
+    BildirimBannerService.instance.init(ref);
+    BadgeService.instance.init(ref);
   }
 
   @override

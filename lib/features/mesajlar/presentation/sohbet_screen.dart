@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import '../../../shared/utils/app_hata_yonetici.dart';
 import 'package:flutter/cupertino.dart';
@@ -16,7 +17,6 @@ import '../../../core/cache/app_cache_manager.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../shared/utils/app_snackbar.dart';
 import '../../ilanlar/presentation/ilan_detay_screen.dart';
-import '../../ilanlar/providers/ilan_provider.dart';
 import '../../ilanlar/domain/ilan_model.dart';
 import '../../profil/presentation/kullanici_profil_screen.dart';
 import 'islem_durumu_panel.dart';
@@ -60,6 +60,8 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
   final _mesajCtrl  = TextEditingController();
   final _scrollCtrl = ScrollController();
   bool _degerlendirmeAcik = false;
+  bool _degerlendirmeSonlandi = false;
+  Timer? _degerlendirmeTimer;
   final _islemPaneliKey = GlobalKey();
 
   // İlan meta bilgisi (ilanTip/ilanBaslik/ilanResimUrl/ilanSahibiId) —
@@ -122,6 +124,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
         ref.read(sohbetProvider(
           karsiKullaniciId: widget.karsiKullaniciId,
           ilanId: widget.ilanId,
+          sohbetId: widget.sohbetId,
         ).notifier).geciciMesajEkle(
           id:        bm.id,
           metin:     bm.metin,
@@ -188,9 +191,9 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
     } catch (e, s) { AppHataYonetici.logla(e, s, etiket: 'sohbetScreen'); }
   }
 
-  void _panelAc() {
+  Future<void> _panelAc() async {
     if (!mounted) return;
-    Navigator.of(context).push(
+    await Navigator.of(context).push(
       PageRouteBuilder(
         opaque: false,
         barrierColor: Colors.black.withValues(alpha: 0.35),
@@ -211,48 +214,94 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
         ),
       ),
     );
+    // Panel kapandı (ör. "teslim aldım" işaretleyip kendiliğinden
+    // kapanmış olabilir) — ekranın 5sn'lik periyodik yoklamasını
+    // beklemeden HEMEN tazeleyip değerlendirme kontrolü yapıyoruz. Bunu
+    // yapan/işaretleyen taraf, panel kapanır kapanmaz ekrandan ayrılsa
+    // bile (ör. geri tuşu) fırsatı kaçırmasın diye.
+    if (!mounted) return;
+    ref.invalidate(sohbetDokumanProvider(_sohbetId));
+    final d = await ref.read(sohbetDokumanProvider(_sohbetId).future);
+    if (!mounted || d == null) return;
+    final benimUid = ref.read(currentUserProvider)?.uid ?? '';
+    if (benimUid.isEmpty) return;
+    await _degerlendirmeKontrolEtVeGoster(d, benimUid);
   }
 
   void _degerlendirmeyiDinle() {
-    bool ilkSnapshot = true;
+    // Backend'de canlı akış yok (Future tabanlı) — karşı tarafın
+    // teslim-tamamla çağrısını yakalamak için periyodik invalidate ile
+    // sohbetDokumanProvider'ı tazeliyoruz, listenManual her yeni veri
+    // geldiğinde tetikleniyor.
+    //
+    // ÖNEMLİ: eskiden İLK snapshot kasıtlı atlanıyordu ("zaten böyleydi,
+    // popup gösterme" — sohbete her girişte yeniden tetiklenmesini önlemek
+    // içindi). Ama bu, "teslim aldım" işaretlenirken o ekranda AÇIK
+    // olmayan taraf (işaretleyen taraf panel kapanıp ekrandan ayrılınca,
+    // ya da sohbete SONRADAN giren taraf) için popup'ın HİÇ tetiklenmemesi
+    // anlamına geliyordu — bekleyenDegerlendirmelerimProvider kontrolü
+    // zaten "gerçekten bekleyen bir değerlendirme var mı" diye bakıyor,
+    // yani daha önce değerlendirilmiş/atlanmış bir sohbete her girişte
+    // tekrar popup çıkma riski yok — bu yüzden ilk snapshot'ı atlamaya
+    // hiç gerek yoktu.
+    _degerlendirmeTimer?.cancel();
+    _degerlendirmeTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (mounted) ref.invalidate(sohbetDokumanProvider(_sohbetId));
+    });
 
-    // Not: Eskiden 'sohbetDurumuProvider' (degerlendirme_provider.dart)
-    // kullanılıyordu — bu, AYNI sohbet dökümanı için, IslemDurumuPanel'in
-    // kullandığı 'sohbetDokumanProvider'dan (mesaj_provider.dart) BAĞIMSIZ
-    // ikinci bir Firestore dinleyicisi açıyordu. Artık tek, paylaşılan
-    // kaynak kullanılıyor.
     ref.listenManual(
       sohbetDokumanProvider(_sohbetId),
       (_, next) async {
-        // İlk snapshot mevcut durumu yansıtır — değerlendirme popup'ı gösterme.
-        // Sohbete her girişte yeniden tetiklenmesini önler.
-        if (ilkSnapshot) {
-          ilkSnapshot = false;
-          return;
-        }
-
         if (!mounted) return;
         final d = next.value;
         if (d == null) return;
-
         final benimUid = ref.read(currentUserProvider)?.uid ?? '';
         if (benimUid.isEmpty) return;
+        await _degerlendirmeKontrolEtVeGoster(d, benimUid);
+      },
+    );
+  }
 
-        final teslimAlindi =
-            (d['islemDurumlari'] as Map<String, dynamic>?)?[IslemDurumu.teslimAlindi.firestoreKey] == true;
-        final zatenYaptim = d['degerlendirmeYapildi_$benimUid'] == true ||
-                             d['degerlendirmeAtlandi_$benimUid'] == true;
+  /// [[_panelAc]] (panel kapanınca hemen) ve periyodik yoklama dinleyicisi
+  /// TARAFINDAN ortak çağrılır. [_degerlendirmeSonlandi] — bu sohbet
+  /// ekranı açıkken kullanıcı bir kez "değerlendir/daha sonra" seçimi
+  /// yaptıysa, bir sonraki 5sn'lik yoklama turunda (hâlâ bekleyen kayıt
+  /// duruyor olsa bile — "daha sonra" seçildiğinde kasıtlı olarak
+  /// SİLİNMİYOR) popup'ın ART ARDA tekrar açılmasını önler.
+  Future<void> _degerlendirmeKontrolEtVeGoster(
+      SohbetModel d, String benimUid) async {
+    if (_degerlendirmeAcik || _degerlendirmeSonlandi) return;
 
-        if (!teslimAlindi || zatenYaptim || _degerlendirmeAcik) return;
+    final teslimAlindi = d.islemDurumlari[IslemDurumu.teslimAlindi.firestoreKey] == true;
+    if (!teslimAlindi) return;
 
-        final kullanicilar = List<String>.from(d['kullanicilar'] ?? []);
-        final karsiId = kullanicilar.firstWhere(
-            (id) => id != benimUid, orElse: () => '');
-        if (karsiId.isEmpty || !mounted) return;
+    final kullanicilar = d.kullanicilar;
+    final karsiId = kullanicilar.firstWhere(
+        (id) => id != benimUid, orElse: () => '');
+    if (karsiId.isEmpty) return;
 
-        _degerlendirmeAcik = true;
+    // KRİTİK: bayrağı burada, HENÜZ hiçbir await'ten ÖNCE, senkron olarak
+    // işaretliyoruz. Eskiden bu satır aşağıdaki "await bekleyenler..."
+    // satırından SONRAYDI — bu da her 5sn'lik yoklamanın (panel kapanışı +
+    // periyodik zamanlayıcı neredeyse aynı anda tetiklediği için) bu
+    // kontrolü ikisi de "boş" (_degerlendirmeAcik henüz false) görüp aynı
+    // anda geçmesine, yani pencerenin art arda 2 kez açılmasına yol
+    // açıyordu (yarış durumu / race condition).
+    _degerlendirmeAcik = true;
 
-        final sonuc = await showGeneralDialog<bool>(
+    // "Zaten yaptım/atladım" artık sohbet dokümanında bir bayrak değil
+    // — v3_bekleyen_degerlendirmeler'de bu ilan+karşı taraf için hâlâ
+    // bekleyen bir kayıt var mı diye bakıyoruz (kayıt, değerlendirme
+    // gönderilince backend'de siliniyor).
+    final bekleyenler = await ref.read(bekleyenDegerlendirmelerimProvider.future);
+    final hedefBekliyor = bekleyenler.any((b) =>
+        b.ilanId == d.ilanId && b.degerlendirilenId == karsiId);
+    if (!hedefBekliyor || !mounted) {
+      _degerlendirmeAcik = false;
+      return;
+    }
+
+    final sonuc = await showGeneralDialog<bool>(
           context: context,
           barrierDismissible: true,
           barrierLabel: '',
@@ -283,7 +332,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
         if (sonuc == true) {
           final gonderildi = await DegerlendirmeModal.goster(
             context: context,
-            sohbetId: _sohbetId,
+            ilanId: d.ilanId,
             hedefKullaniciId: karsiId,
             hedefKullaniciAd: widget.karsiKullaniciAd,
           );
@@ -353,19 +402,20 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
             );
           }
         } else if (sonuc == false) {
-          await ref.read(degerlendirmeIslemleriProvider.notifier).bekleyenKaydet(
-            sohbetId: _sohbetId,
-            kullaniciId: benimUid,
-          );
+          // Backend'de bekleyen kayıt zaten teslim-tamamla ile otomatik
+          // oluşuyor — burada ayrıca "kaydet" çağrısına gerek yok, sadece
+          // kullanıcıya nerede bulacağını hatırlatıyoruz.
           if (mounted) {
             AppSnackBar.bilgi(
                 context,
                 "Değerlendirme Ayarlar > Değerlendirmelerim'de bekliyor.");
           }
         }
-        _degerlendirmeAcik = false;
-      },
-    );
+    _degerlendirmeAcik = false;
+    _degerlendirmeSonlandi = true;
+    // Bir daha sorulmayacağına göre periyodik yoklamayı da durdurup
+    // gereksiz ağ isteklerini kesiyoruz.
+    _degerlendirmeTimer?.cancel();
   }
 
   Future<void> _gonderIlgileniyorum() async {
@@ -374,6 +424,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
     await ref.read(sohbetProvider(
       karsiKullaniciId: widget.karsiKullaniciId,
       ilanId: widget.ilanId,
+      sohbetId: widget.sohbetId,
     ).notifier).mesajGonder(
       metin: widget.ilgileniyorumMesaji!,
       karsiKullaniciId: widget.karsiKullaniciId,
@@ -388,17 +439,25 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
 
   @override
   void dispose() {
+    _degerlendirmeTimer?.cancel();
     _mesajCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();
   }
 
+  /// Eskiden (Firestore döneminde) iki uid + ilanId'den deterministik
+  /// olarak hesaplanıyordu. Backend artık sohbet ID'sini kendi üretiyor
+  /// (gen_random_uuid) — bu yüzden gerçek ID'yi SohbetNotifier'ın
+  /// kendisinden okumak gerekiyor (widget.sohbetId zaten biliniyorsa onu,
+  /// yoksa notifier'ın sohbet-baslat ile aldığı değeri).
   String get _sohbetId {
-    final ids = [
-      ref.read(currentUserProvider)?.uid ?? '',
-      widget.karsiKullaniciId
-    ]..sort();
-    return '${ids[0]}_${ids[1]}_${widget.ilanId}';
+    return widget.sohbetId ??
+        ref.read(sohbetProvider(
+          karsiKullaniciId: widget.karsiKullaniciId,
+          ilanId: widget.ilanId,
+          sohbetId: widget.sohbetId,
+        ).notifier).cozumlenenSohbetId ??
+        '';
   }
 
   Future<void> _ucNoktaMenu(String benimUid) async {
@@ -533,6 +592,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
     final sohbetState = ref.watch(sohbetProvider(
       karsiKullaniciId: widget.karsiKullaniciId,
       ilanId: widget.ilanId,
+      sohbetId: widget.sohbetId,
     ));
 
     // Mesaj stream hatalarını dinle → snackbar göster
@@ -540,6 +600,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
       sohbetProvider(
         karsiKullaniciId: widget.karsiKullaniciId,
         ilanId: widget.ilanId,
+        sohbetId: widget.sohbetId,
       ),
       (onceki, sonraki) {
         if (sonraki.hata != null && sonraki.hata != onceki?.hata) {
@@ -547,12 +608,6 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
         }
       },
     );
-    final ilanAsync = widget.ilanId.isNotEmpty
-        ? ref.watch(ilanByIdProvider(widget.ilanId))
-        : null;
-    final guzergah = ilanAsync?.value != null
-        ? '${ilanAsync!.value!.nereden} → ${ilanAsync.value!.nereye}'
-        : '';
     // Provider henüz resolve olmadıysa (ilk kare), 'istek' gibi kör bir
     // varsayılana düşmek yerine — elimizde zaten bilinenIlan varsa ondan
     // türetilen doğru meta'yı kullanıyoruz. Provider resolve olduktan
@@ -576,7 +631,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(114),
+        preferredSize: const Size.fromHeight(68),
         child: Container(
           color: Colors.white,
           child: SafeArea(
@@ -592,73 +647,60 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                         color: Colors.black87, size: 20),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  // İki kart alt alta
+                  // Kişi avatarı — ayrı, tek başına: profile gider.
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).push(
+                      PageRouteBuilder(
+                        pageBuilder: (ctx, anim, _) => KullaniciProfilScreen(
+                          kullaniciId: widget.karsiKullaniciId,
+                          kullaniciAd: widget.karsiKullaniciAd,
+                        ),
+                        transitionsBuilder: (ctx, anim, _, child) => SlideTransition(
+                          position: Tween(
+                            begin: const Offset(1, 0),
+                            end: Offset.zero,
+                          ).animate(CurvedAnimation(
+                              parent: anim, curve: Curves.easeOutCubic)),
+                          child: child,
+                        ),
+                        transitionDuration: const Duration(milliseconds: 280),
+                      ),
+                    ),
+                    child: CircleAvatar(
+                      radius: 15,
+                      backgroundColor: AppColors.red.withValues(alpha: 0.15),
+                      child: Text(
+                        _karsiAd(ref).isNotEmpty
+                            ? _karsiAd(ref)[0].toUpperCase()
+                            : '?',
+                        style: GoogleFonts.dmSans(
+                            color: AppColors.red,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // İsim + ürün çipi — "Takım Rozeti": isim üstte kalın,
+                  // ürün altında kendi çerçevesi olan AYRI bir çip (ikisi
+                  // birbirine yapışık görünmesin diye) — dokununca ilan
+                  // detayına gider, profile değil.
                   Expanded(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Kişi kartı
-                        GestureDetector(
-                          onTap: () => Navigator.of(context).push(
-                            PageRouteBuilder(
-                              pageBuilder: (ctx, anim, _) => KullaniciProfilScreen(
-                                kullaniciId: widget.karsiKullaniciId,
-                                kullaniciAd: widget.karsiKullaniciAd,
-                              ),
-                              transitionsBuilder: (ctx, anim, _, child) => SlideTransition(
-                                position: Tween(
-                                  begin: const Offset(1, 0),
-                                  end: Offset.zero,
-                                ).animate(CurvedAnimation(
-                                    parent: anim, curve: Curves.easeOutCubic)),
-                                child: child,
-                              ),
-                              transitionDuration: const Duration(milliseconds: 280),
-                            ),
-                          ),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF5F5F5),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: AppColors.divider, width: 0.7),
-                            ),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 14,
-                                  backgroundColor: AppColors.red.withValues(alpha: 0.15),
-                                  child: Text(
-                                    _karsiAd(ref).isNotEmpty
-                                        ? _karsiAd(ref)[0].toUpperCase()
-                                        : '?',
-                                    style: GoogleFonts.dmSans(
-                                        color: AppColors.red,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 12),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    _karsiAd(ref),
-                                    style: GoogleFonts.dmSans(
-                                        color: Colors.black87,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 13),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                const Icon(Icons.chevron_right,
-                                    color: AppColors.textHint, size: 16),
-                              ],
-                            ),
-                          ),
+                        Text(
+                          _karsiAd(ref),
+                          style: GoogleFonts.dmSans(
+                              color: Colors.black87,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13.5),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 5),
-                        // İlan kartı
-                        if (widget.ilanId.isNotEmpty && meta.ilanBaslik.isNotEmpty)
+                        if (widget.ilanId.isNotEmpty && meta.ilanBaslik.isNotEmpty) ...[
+                          const SizedBox(height: 3),
                           GestureDetector(
                             onTap: () => Navigator.push(
                               context,
@@ -667,13 +709,14 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                               ),
                             ),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                              padding: const EdgeInsets.fromLTRB(3, 3, 7, 3),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF5F5F5),
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(7),
                                 border: Border.all(color: AppColors.divider, width: 0.7),
                               ),
                               child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   if (meta.ilanResimUrl.isNotEmpty)
                                     ClipRRect(
@@ -681,51 +724,55 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                                       child: CachedNetworkImage(
                                         imageUrl: meta.ilanResimUrl,
                                         cacheManager: AppCacheManager.instance,
-                                        width: 28,
-                                        height: 28,
+                                        width: 20,
+                                        height: 20,
                                         fit: BoxFit.cover,
-                                        memCacheWidth: 56,
-                                        memCacheHeight: 56,
+                                        memCacheWidth: 40,
+                                        memCacheHeight: 40,
                                         fadeInDuration: Duration.zero,
                                         errorWidget: (_, _, _) => _IlanResimPlaceholder(),
                                       ),
                                     )
                                   else
                                     _IlanResimPlaceholder(),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          meta.ilanBaslik,
-                                          style: GoogleFonts.dmSans(
-                                              color: Colors.black87,
-                                              fontWeight: FontWeight.w700,
-                                              fontSize: 12),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        if (guzergah.isNotEmpty)
-                                          Text(
-                                            guzergah,
-                                            style: GoogleFonts.dmSans(
-                                                color: AppColors.textSecondary,
-                                                fontSize: 10),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                      ],
+                                  const SizedBox(width: 6),
+                                  ConstrainedBox(
+                                    constraints: const BoxConstraints(maxWidth: 110),
+                                    child: Text(
+                                      meta.ilanBaslik,
+                                      style: GoogleFonts.dmSans(
+                                          color: Colors.black87,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 11),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
+                                  const SizedBox(width: 3),
                                   const Icon(Icons.chevron_right,
-                                      color: AppColors.textHint, size: 16),
+                                      color: AppColors.textHint, size: 13),
                                 ],
                               ),
                             ),
                           ),
+                        ],
                       ],
+                    ),
+                  ),
+                  // İşlem paneli rozeti — eskiden sağ kenarda yapışık bir
+                  // çıkıntıydı, artık başlığın doğal bir parçası.
+                  Container(
+                    key: _islemPaneliKey,
+                    margin: const EdgeInsets.only(left: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: const BoxDecoration(
+                      border: Border(
+                          left: BorderSide(color: AppColors.divider, width: 1)),
+                    ),
+                    child: IslemDurumuTetikleyici(
+                      sohbetId: _sohbetId,
+                      karsiKullaniciAd: widget.karsiKullaniciAd,
+                      ilanTip: meta.ilanTip,
                     ),
                   ),
                   // Üç nokta menü
@@ -752,6 +799,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                   karsiAd: widget.karsiKullaniciAd,
                   karsiId: widget.karsiKullaniciId,
                   ilanId: widget.ilanId,
+                  sohbetId: widget.sohbetId,
                   scrollCtrl: _scrollCtrl,
                 ),
               ),
@@ -762,21 +810,6 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
                 onGonder: () => _gonder(benimUid),
               ),
             ],
-          ),
-          Positioned(
-            right: 0,
-            top: 0,
-            bottom: 0,
-            child: Center(
-              child: KeyedSubtree(
-                key: _islemPaneliKey,
-                child: IslemDurumuTetikleyici(
-                  sohbetId: _sohbetId,
-                  karsiKullaniciAd: widget.karsiKullaniciAd,
-                  ilanTip: meta.ilanTip,
-                ),
-              ),
-            ),
           ),
         ],
       ),
@@ -795,6 +828,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
         .read(sohbetProvider(
           karsiKullaniciId: widget.karsiKullaniciId,
           ilanId: widget.ilanId,
+          sohbetId: widget.sohbetId,
         ).notifier)
         .resimGonder(
           dosya: File(picked.path),
@@ -816,6 +850,7 @@ class _SohbetScreenState extends ConsumerState<SohbetScreen> {
         .read(sohbetProvider(
           karsiKullaniciId: widget.karsiKullaniciId,
           ilanId: widget.ilanId,
+          sohbetId: widget.sohbetId,
         ).notifier)
         .mesajGonder(
           metin: metin,
@@ -838,6 +873,7 @@ class _MesajListesi extends ConsumerWidget {
   final String karsiAd;
   final String karsiId;
   final String ilanId;
+  final String? sohbetId;
   final ScrollController scrollCtrl;
 
   const _MesajListesi({
@@ -846,6 +882,7 @@ class _MesajListesi extends ConsumerWidget {
     required this.karsiAd,
     required this.karsiId,
     required this.ilanId,
+    required this.sohbetId,
     required this.scrollCtrl,
   });
 
@@ -872,6 +909,7 @@ class _MesajListesi extends ConsumerWidget {
                 onPressed: () => ref.invalidate(sohbetProvider(
                   karsiKullaniciId: karsiId,
                   ilanId: ilanId,
+                  sohbetId: sohbetId,
                 )),
                 child: Text('Tekrar Dene',
                     style: GoogleFonts.dmSans(
@@ -933,7 +971,9 @@ class _MesajListesi extends ConsumerWidget {
     // Gecici resimler index 0,1,... → en altta görünür
     final geciciResimler = sohbetState.geciciResimler;
     final geciciSayi = geciciResimler.length;
-    final dahaFazlaOffset = sohbetState.dahaFazlaVar ? 1 : 0;
+    // Backend artık tüm mesaj geçmişini tek seferde döndüğü için "daha
+    // fazla yükle" göstergesi kalmadı (bkz. SohbetNotifier.dahaFazlaYukle).
+    const dahaFazlaOffset = 0;
     final bannerIndex = geciciSayi + sohbetState.siraliMesajlar.length + dahaFazlaOffset;
 
     return ListView.builder(
@@ -981,7 +1021,9 @@ class _MesajListesi extends ConsumerWidget {
               child: TextButton(
                 onPressed: () => ref
                     .read(sohbetProvider(
-                            karsiKullaniciId: karsiId, ilanId: ilanId)
+                            karsiKullaniciId: karsiId,
+                            ilanId: ilanId,
+                            sohbetId: sohbetId)
                         .notifier)
                     .dahaFazlaYukle(),
                 child: Text('Daha fazla mesaj yükle',

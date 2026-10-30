@@ -1,244 +1,138 @@
-import '../../../core/firebase/app_firestore.dart';
+// lib/features/ilanlar/data/ilan_repository.dart
+//
+// Firestore'un yerini AWS Go backend'i (/v3/ilanlar route'ları) alıyor.
+// Gerçek zamanlı Firestore stream'leri YOK ARTIK — Çekmece'deki (ikinciel)
+// aynı geçişte kullanıcı onayıyla kabul edilen desen: "yenile" (pull-to-
+// refresh / tekrar fetch) modeli. Resim sıkıştırma client'ta kalıyor
+// (daha hızlı yükleme), ama yükleme artık doğrudan backend'in multipart
+// /v3/ilanlar'ına — Firebase Storage'a değil.
+
 import 'dart:async';
 import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../../core/api/api_client.dart';
 import '../domain/ilan_model.dart';
 import '../../../shared/constants/app_constants.dart';
-import '../../../shared/utils/app_hata_yonetici.dart';
 import '../../../shared/utils/oneri_skoru.dart';
 
 part 'ilan_repository.g.dart';
 
 class IlanSayfasi {
   final List<IlanModel> ilanlar;
-  final DateTime? sonTarih;
-  final String? sonId;
+  final int sonrakiOffset;
   final bool bitti;
 
   const IlanSayfasi({
     required this.ilanlar,
+    required this.sonrakiOffset,
     required this.bitti,
-    this.sonTarih,
-    this.sonId,
   });
 }
 
 @riverpod
 IlanRepository ilanRepository(Ref ref) {
-  return IlanRepository(
-    firestore: AppFirestore.instance,
-    storage: FirebaseStorage.instance,
-    auth: FirebaseAuth.instance,
-  );
+  return IlanRepository();
 }
 
 class IlanRepository {
-  final FirebaseFirestore firestore;
-  final FirebaseStorage storage;
-  final FirebaseAuth auth;
-
-  IlanRepository({
-    required this.firestore,
-    required this.storage,
-    required this.auth,
-  });
-
-  CollectionReference get _col => firestore.collection(Collections.ilanlar);
-
-  Stream<IlanModel?> ilanStream(String ilanId) {
-    return _col.doc(ilanId).snapshots().map((doc) {
-      if (!doc.exists) return null;
-      return IlanModel.fromFirestore(doc);
+  Future<List<IlanModel>> _ilanlariGetir({
+    required String tip,
+    String? kategori,
+    String? arama,
+    int limit = Pagination.ilanSayfaBoyutu,
+    int offset = 0,
+  }) async {
+    final response = await ApiClient.dio.get('/ilanlar', queryParameters: {
+      'tip': tip,
+      if (kategori != null) 'kategori': kategori,
+      if (arama != null && arama.isNotEmpty) 'arama': arama,
+      'limit': limit,
+      'offset': offset,
     });
+    final liste = (response.data['ilanlar'] as List)
+        .map((j) => IlanModel.fromJson(j as Map<String, dynamic>))
+        .toList();
+    return liste;
   }
 
   Future<IlanSayfasi> istekIlanlariniGetir({
     String? kategori,
     int limit = Pagination.ilanSayfaBoyutu,
-    bool forceServer = false,
+    bool forceServer = false, // artık fark etmiyor, hep sunucudan çekiyoruz
   }) async {
-    Query q = _col
-        .where('tip', isEqualTo: IlanTip.istek)
-        .where('aktif', isEqualTo: true)
-        .orderBy('olusturmaTarihi', descending: true)
-        .limit(limit);
-    if (kategori != null) q = q.where('kategori', isEqualTo: kategori);
-
-    QuerySnapshot snap;
-    if (forceServer) {
-      snap = await q.get(const GetOptions(source: Source.server));
-    } else {
-      try {
-        snap = await q.get(const GetOptions(source: Source.cache));
-        if (snap.docs.isEmpty) {
-          snap = await q.get(const GetOptions(source: Source.server));
-        }
-      } catch (e, s) {
-        AppHataYonetici.logla(e, s, etiket: 'ilanRepo.istekIlanlariniGetirCache');
-        snap = await q.get(const GetOptions(source: Source.server));
-      }
-    }
-
-    final ilanlar = snap.docs.map(IlanModel.fromFirestore).toList();
-    return IlanSayfasi(
-      ilanlar: ilanlar,
-      sonTarih: ilanlar.isNotEmpty ? ilanlar.last.olusturmaTarihi : null,
-      sonId: ilanlar.isNotEmpty ? ilanlar.last.id : null,
-      bitti: snap.docs.length < limit,
-    );
+    final ilanlar = await _ilanlariGetir(tip: IlanTip.istek, kategori: kategori, limit: limit);
+    return IlanSayfasi(ilanlar: ilanlar, sonrakiOffset: ilanlar.length, bitti: ilanlar.length < limit);
   }
 
   Future<IlanSayfasi> istekIlanlariniGetirSunucu({
     String? kategori,
     int limit = Pagination.ilanSayfaBoyutu,
-  }) async {
-    Query q = _col
-        .where('tip', isEqualTo: IlanTip.istek)
-        .where('aktif', isEqualTo: true)
-        .orderBy('olusturmaTarihi', descending: true)
-        .limit(limit);
-    if (kategori != null) q = q.where('kategori', isEqualTo: kategori);
-
-    final snap = await q.get(const GetOptions(source: Source.server));
-    final ilanlar = snap.docs.map(IlanModel.fromFirestore).toList();
-    return IlanSayfasi(
-      ilanlar: ilanlar,
-      sonTarih: ilanlar.isNotEmpty ? ilanlar.last.olusturmaTarihi : null,
-      sonId: ilanlar.isNotEmpty ? ilanlar.last.id : null,
-      bitti: snap.docs.length < limit,
-    );
-  }
-
-  Future<List<IlanModel>> son24SaatIlanlariniGetir({int limit = 15}) async {
-    final sinir = Timestamp.fromDate(
-        DateTime.now().subtract(const Duration(hours: 24)));
-    final q = _col
-        .where('tip', isEqualTo: IlanTip.istek)
-        .where('aktif', isEqualTo: true)
-        .where('olusturmaTarihi', isGreaterThanOrEqualTo: sinir)
-        .orderBy('olusturmaTarihi', descending: true)
-        .limit(limit);
-    try {
-      final cache = await q.get(const GetOptions(source: Source.cache));
-      if (cache.docs.isNotEmpty) {
-        return cache.docs.map(IlanModel.fromFirestore).toList();
-      }
-    } catch (e, s) { AppHataYonetici.logla(e, s, etiket: 'ilanRepo.sonIlanlarCache'); /* bilinçli sessiz: sunucudan çekilmeye devam eder */ }
-    final snap = await q.get(const GetOptions(source: Source.server));
-    return snap.docs.map(IlanModel.fromFirestore).toList();
-  }
-
-  /// Son 7 günün en yüksek puanlı ilanları (onerilenPuan'a göre)
-  Future<List<IlanModel>> haftaninEnleriGetir({int limit = 15}) async {
-    final sinir = Timestamp.fromDate(
-        DateTime.now().subtract(const Duration(days: 7)));
-    final q = _col
-        .where('tip', isEqualTo: IlanTip.istek)
-        .where('aktif', isEqualTo: true)
-        .where('olusturmaTarihi', isGreaterThanOrEqualTo: sinir)
-        .orderBy('olusturmaTarihi', descending: true)
-        .limit(50); // fazla çek, sonra puana göre sırala
-    try {
-      final snap = await q.get(const GetOptions(source: Source.server));
-      final ilanlar = snap.docs.map(IlanModel.fromFirestore).toList();
-      return _puanaGoreSirala(ilanlar, limit);
-    } catch (e, s) {
-      AppHataYonetici.logla(e, s, etiket: 'ilanRepo.haftaninEnleriServer'); /* çevrimdışı olabilir — cache'e düş */
-      final cache = await q.get(const GetOptions(source: Source.cache));
-      final ilanlar = cache.docs.map(IlanModel.fromFirestore).toList();
-      return _puanaGoreSirala(ilanlar, limit);
-    }
-  }
-
-  List<IlanModel> _puanaGoreSirala(List<IlanModel> ilanlar, int limit) {
-    final skorlar = {for (final i in ilanlar) i.id: oneriSkoru(i)};
-    final sirali = [...ilanlar]
-      ..sort((a, b) => skorlar[b.id]!.compareTo(skorlar[a.id]!));
-    return sirali.take(limit).toList();
-  }
+  }) => istekIlanlariniGetir(kategori: kategori, limit: limit);
 
   Future<IlanSayfasi> tasiyiciIlanlariniGetir({
     int limit = Pagination.ilanSayfaBoyutu,
     bool forceServer = false,
   }) async {
-    final q = _col
-        .where('tip', isEqualTo: IlanTip.tasiyici)
-        .where('aktif', isEqualTo: true)
-        .orderBy('olusturmaTarihi', descending: true)
-        .limit(limit);
-
-    QuerySnapshot snap;
-    if (forceServer) {
-      snap = await q.get(const GetOptions(source: Source.server));
-    } else {
-      try {
-        snap = await q.get(const GetOptions(source: Source.cache));
-        if (snap.docs.isEmpty) {
-          snap = await q.get(const GetOptions(source: Source.server));
-        }
-      } catch (e, s) {
-        AppHataYonetici.logla(e, s, etiket: 'ilanRepo.tasiyiciIlanlariniGetirCache');
-        snap = await q.get(const GetOptions(source: Source.server));
-      }
-    }
-
-    final ilanlar = snap.docs.map(IlanModel.fromFirestore).toList();
-    return IlanSayfasi(
-      ilanlar: ilanlar,
-      sonTarih: ilanlar.isNotEmpty ? ilanlar.last.olusturmaTarihi : null,
-      sonId: ilanlar.isNotEmpty ? ilanlar.last.id : null,
-      bitti: snap.docs.length < limit,
-    );
+    final ilanlar = await _ilanlariGetir(tip: IlanTip.tasiyici, limit: limit);
+    return IlanSayfasi(ilanlar: ilanlar, sonrakiOffset: ilanlar.length, bitti: ilanlar.length < limit);
   }
 
   Future<IlanSayfasi> sonrakiSayfayiGetir({
     required String tip,
-    required DateTime sonTarih,
-    required String siralama,
+    required int offset,
+    String? kategori,
     int limit = Pagination.ilanSayfaBoyutu,
   }) async {
-    final orderField = (tip == IlanTip.tasiyici && siralama == 'tarih')
-        ? 'tarih'
-        : 'olusturmaTarihi';
-    final cursor = Timestamp.fromDate(sonTarih);
-    final snap = await _col
-        .where('tip', isEqualTo: tip)
-        .where('aktif', isEqualTo: true)
-        .orderBy(orderField, descending: orderField == 'olusturmaTarihi')
-        .startAfter([cursor])
-        .limit(limit)
-        .get();
-    final ilanlar = snap.docs.map(IlanModel.fromFirestore).toList();
+    final ilanlar = await _ilanlariGetir(tip: tip, kategori: kategori, limit: limit, offset: offset);
     return IlanSayfasi(
       ilanlar: ilanlar,
-      sonTarih: ilanlar.isNotEmpty
-          ? (orderField == 'tarih'
-              ? ilanlar.last.tarih
-              : ilanlar.last.olusturmaTarihi)
-          : sonTarih,
-      sonId: ilanlar.isNotEmpty ? ilanlar.last.id : null,
-      bitti: snap.docs.length < limit,
+      sonrakiOffset: offset + ilanlar.length,
+      bitti: ilanlar.length < limit,
     );
   }
 
-  // limit(100): firestore.rules'taki "allow list: if request.query.limit
-  // <= 100" scraping korumasıyla uyumlu üst sınır — limitsiz sorgu bu
-  // kural tarafından reddediliyordu (bkz. İlanlarım ekranı regresyonu).
-  Stream<List<IlanModel>> kullaniciIlanlarStream(String kullaniciId) {
-    return _col
-        .where('kullaniciId', isEqualTo: kullaniciId)
-        .orderBy('olusturmaTarihi', descending: true)
-        .limit(100)
-        .snapshots()
-        .map((snap) => snap.docs.map(IlanModel.fromFirestore).toList());
+  Future<List<IlanModel>> son24SaatIlanlariniGetir({int limit = 15}) async {
+    final tumu = await _ilanlariGetir(tip: IlanTip.istek, limit: 50);
+    final simdi = DateTime.now();
+    return tumu
+        .where((i) => i.olusturmaTarihi != null && simdi.difference(i.olusturmaTarihi!).inHours < 24)
+        .take(limit)
+        .toList();
   }
 
-  /// Full resim: max 1080px, %75 kalite → 100-300 KB
+  Future<List<IlanModel>> haftaninEnleriGetir({int limit = 15}) async {
+    final tumu = await _ilanlariGetir(tip: IlanTip.istek, limit: 50);
+    final simdi = DateTime.now();
+    final sonYedi = tumu
+        .where((i) => i.olusturmaTarihi != null && simdi.difference(i.olusturmaTarihi!).inDays < 7)
+        .toList();
+    final skorlar = {for (final i in sonYedi) i.id: oneriSkoru(i)};
+    final sirali = [...sonYedi]..sort((a, b) => skorlar[b.id]!.compareTo(skorlar[a.id]!));
+    return sirali.take(limit).toList();
+  }
+
+  /// Kendi ilanlarım (onay bekleyen/reddedilen dahil).
+  Future<List<IlanModel>> ilanlarimGetir() async {
+    final response = await ApiClient.dio.get('/ilanlarim');
+    return (response.data['ilanlar'] as List)
+        .map((j) => IlanModel.fromJson(j as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<IlanModel>> kullaniciIlanlariGetir(String kullaniciId) async {
+    // Backend'de "başka bir kullanıcının ilanları" için ayrı bir endpoint
+    // yok — herkese açık listeden client tarafında filtreliyoruz. Küçük
+    // ölçekte (v3) kabul edilebilir, büyürse backend'e
+    // GET /ilanlar?kullaniciId= eklenir.
+    final istek = await _ilanlariGetir(tip: IlanTip.istek, limit: 100);
+    final tasiyici = await _ilanlariGetir(tip: IlanTip.tasiyici, limit: 100);
+    return [...istek, ...tasiyici].where((i) => i.kullaniciId == kullaniciId).toList();
+  }
+
+  /// Full resim: max 1080px, %75 kalite → 100-300 KB (yükleme hızı için).
   Future<File> _resimSikistir(File dosya, int index) async {
     final tempDir = await getTemporaryDirectory();
     final hedefYol =
@@ -253,7 +147,6 @@ class IlanRepository {
     );
     if (sonuc == null) return dosya;
     final sikistirilmis = File(sonuc.path);
-    // Sıkıştırılmış dosya yüklenip işi bitince temizlenir
     unawaited(Future.delayed(const Duration(minutes: 5), () async {
       if (await sikistirilmis.exists()) {
         await sikistirilmis.delete().catchError((_) => sikistirilmis as FileSystemEntity);
@@ -262,381 +155,127 @@ class IlanRepository {
     return sikistirilmis;
   }
 
-  /// Thumbnail: max 300px, %65 kalite → 10-25 KB
-  Future<File> _thumbnailOlustur(File dosya) async {
-    final tempDir = await getTemporaryDirectory();
-    final hedefYol =
-        '${tempDir.path}/ilan_thumb_${DateTime.now().millisecondsSinceEpoch}.jpg';
-    final sonuc = await FlutterImageCompress.compressAndGetFile(
-      dosya.absolute.path,
-      hedefYol,
-      quality: 65,
-      minWidth: 300,
-      minHeight: 300,
-      format: CompressFormat.jpeg,
-    );
-    if (sonuc == null) return dosya;
-    final thumb = File(sonuc.path);
-    unawaited(Future.delayed(const Duration(minutes: 5), () async {
-      if (await thumb.exists()) {
-        await thumb.delete().catchError((_) => thumb as FileSystemEntity);
-      }
-    }));
-    return thumb;
-  }
-
+  /// İlan oluşturur — backend tüm fotoğraf işleme/moderasyon/thumbnail
+  /// üretimini KENDİSİ yapıyor (bkz. v3_ilan_routes.go), client sadece
+  /// sıkıştırıp multipart olarak gönderiyor.
   Future<String> ilanOlustur({
     required IlanModel ilan,
     List<File> resimler = const [],
     void Function(int index, double progress)? onProgress,
   }) async {
-    final user = auth.currentUser;
-    if (user == null) throw Exception('Giriş yapılmamış');
+    final sikistirilmisler = await Future.wait(
+      List.generate(resimler.length, (i) => _resimSikistir(resimler[i], i)),
+    );
 
-    final ts = DateTime.now().millisecondsSinceEpoch;
-    final List<Reference> yuklenenRefler = [];
-    String thumbUrl = '';
-    Reference? thumbRef;
+    final formData = FormData.fromMap({
+      'tip': ilan.tip,
+      'nereden': ilan.nereden,
+      'nereye': ilan.nereye,
+      'ucret': ilan.ucret,
+      'urun': ilan.urun,
+      'notlar': ilan.notlar,
+      'urunLinki': ilan.urunLinki,
+      'kategori': ilan.kategori,
+      'anaKategori': ilan.anaKategori,
+      'kategoriYolu': ilan.kategoriYolu.join(','),
+      'tasimaTercihi': ilan.tasimaTercihi,
+      'cinsiyet': ilan.cinsiyet,
+      'beden': ilan.beden,
+      // toUtc() şart: lokal DateTime.toIso8601String() 'Z'/offset içermez,
+      // backend (Go time.RFC3339) böylesini parse edemez.
+      if (ilan.tarih != null) 'tarih': ilan.tarih!.toUtc().toIso8601String(),
+      if (ilan.sahipIstekTeslimatTercihi != null)
+        'sahipIstekTeslimatTercihi': ilan.sahipIstekTeslimatTercihi,
+      'sahipDutyFree': ilan.sahipDutyFree.toString(),
+      'sadeceGeliyorum': ilan.sadeceGeliyorum.toString(),
+      'resimler': [
+        for (final dosya in sikistirilmisler)
+          await MultipartFile.fromFile(dosya.path, filename: dosya.uri.pathSegments.last),
+      ],
+    });
 
+    final response = await ApiClient.dio.post(
+      '/ilanlar',
+      data: formData,
+      onSendProgress: (gonderilen, toplam) {
+        if (toplam > 0) onProgress?.call(0, gonderilen / toplam);
+      },
+    );
+    return (response.data as Map<String, dynamic>)['id'] as String;
+  }
+
+  /// Çekmece'deki "AI ile Doldur" ile aynı Gemini altyapısını kullanan
+  /// v3'e özgü sade karşılığı — sadece "Notlar" alanı için bir öneri
+  /// döner (v3'ün ilan modelinde başlık/kategori/marka yok). Başarısız
+  /// olursa null döner, çağıran taraf elle doldurmaya devam eder.
+  Future<String?> aiNotOnerisiGetir(File resim) async {
     try {
-      // ── 1. Tüm resimleri paralel sıkıştır ───────────────────────────────
-      final sikistirilmisler = await Future.wait(
-        List.generate(resimler.length, (i) => _resimSikistir(resimler[i], i)),
-      );
-
-      // ── 2. Tüm resimleri paralel yükle ──────────────────────────────────
-      final refs = List.generate(resimler.length, (i) => storage
-          .ref()
-          .child(StoragePaths.ilanResimleri)
-          .child('${user.uid}_${ts}_$i.jpg'));
-
-      // Progress takibi için her resim için ayrı progress tutuyoruz
-      final progresses = List<double>.filled(resimler.length, 0.0);
-
-      final uploadFutures = List.generate(resimler.length, (i) async {
-        onProgress?.call(i, 0.0);
-        final task = refs[i].putFile(
-          sikistirilmisler[i],
-          SettableMetadata(cacheControl: 'public, max-age=31536000'),
-        );
-        task.snapshotEvents.listen((snap) {
-          progresses[i] = snap.bytesTransferred / snap.totalBytes;
-          // Toplam progress ortalamasını bildir
-          final toplamProgress =
-              progresses.reduce((a, b) => a + b) / progresses.length;
-          onProgress?.call(i, toplamProgress);
-        });
-        await task;
-        yuklenenRefler.add(refs[i]);
+      final formData = FormData.fromMap({
+        'resim': await MultipartFile.fromFile(resim.path, filename: resim.uri.pathSegments.last),
       });
-
-      // ── 3. Thumbnail paralel başlat (ilk resim için) ─────────────────────
-      Future<void>? thumbFuture;
-      if (resimler.isNotEmpty) {
-        thumbFuture = () async {
-          final thumb = await _thumbnailOlustur(resimler[0]);
-          thumbRef = storage
-              .ref()
-              .child(StoragePaths.ilanThumbnailleri)
-              .child('${user.uid}_${ts}_thumb.jpg');
-          await thumbRef!.putFile(
-            thumb,
-            SettableMetadata(cacheControl: 'public, max-age=31536000'),
-          );
-          thumbUrl = await thumbRef!.getDownloadURL();
-        }();
-      }
-
-      // ── 4. Tüm yüklemeleri bekle ─────────────────────────────────────────
-      await Future.wait([
-        ...uploadFutures,
-        ?thumbFuture,
-      ]);
-
-      // ── 5. Download URL'leri paralel al ──────────────────────────────────
-      final resimUrller = await Future.wait(
-        refs.map((ref) => ref.getDownloadURL()),
-      );
-
-      // ── 6. Kullanıcı puanını çek ─────────────────────────────────────────
-      final kullaniciDoc = await firestore
-          .collection(Collections.kullanicilar)
-          .doc(user.uid)
-          .get();
-      final kullaniciPuan =
-          (kullaniciDoc.data()?['ortalamaPuan'] as num?)?.toDouble() ?? 0.0;
-
-      // ── 7. Firestore'a kaydet ─────────────────────────────────────────────
-      final ilanData =
-          ilan.copyWith(kullaniciPuan: kullaniciPuan).toFirestore();
-      if (resimUrller.isNotEmpty) {
-        ilanData['resimUrl'] = resimUrller.first;
-        ilanData['resimUrller'] = resimUrller;
-        if (thumbUrl.isNotEmpty) ilanData['resimThumbUrl'] = thumbUrl;
-      }
-
-      // İlan yazımı + kullanıcının "son ilan oluşturma zamanı" damgası TEK
-      // atomik batch içinde birlikte yazılır — firestore.rules.oneri.txt'teki
-      // create cooldown kuralı bu alanı okuyor; ayrı yazılırsa iki işlem
-      // arasında tutarsızlık/atlatma penceresi doğar.
-      final ref = _col.doc();
-      final batch = firestore.batch();
-      batch.set(ref, ilanData);
-      batch.set(
-        firestore.collection(Collections.kullanicilar).doc(user.uid),
-        {'sonIlanOlusturmaZamani': FieldValue.serverTimestamp()},
-        SetOptions(merge: true),
-      );
-      await batch.commit();
-      return ref.id;
-    } catch (e) {
-      // Upload yarıda kestiyse yüklenmiş dosyaları temizle
-      for (final ref in yuklenenRefler) {
-        await ref.delete().catchError((_) {});
-      }
-      if (thumbRef != null) {
-        await thumbRef!.delete().catchError((_) {});
-      }
-      rethrow;
+      final response = await ApiClient.dio.post('/ilanlar/ai-oneri', data: formData);
+      return (response.data as Map<String, dynamic>)['notlar'] as String?;
+    } on DioException {
+      return null;
     }
   }
 
   Future<IlanModel?> ilanGetir(String ilanId) async {
-    final snap = await _col.doc(ilanId).get();
-    if (!snap.exists) return null;
-    return IlanModel.fromFirestore(snap);
-  }
-
-  Future<void> ilanGuncelle(String ilanId, Map<String, dynamic> data) =>
-      _col.doc(ilanId).update(data);
-
-  /// İlanı (gerekiyorsa yeni resimlerle) günceller.
-  /// [mevcutResimler] korunan eski URL'ler, [yeniResimler] eklenen yerel dosyalar.
-  /// Sıkıştırıp yükler, `resimUrl`/`resimUrller` alanlarını yeniden kurar.
-  /// Resimler değiştiğinde sunucudaki `ilanGuncellemeModerasyon` Vision ile tekrar denetler.
-  Future<void> ilanResimliGuncelle({
-    required String ilanId,
-    required Map<String, dynamic> data,
-    List<File> yeniResimler = const [],
-    List<String> mevcutResimler = const [],
-    void Function(int index, double progress)? onProgress,
-  }) async {
-    final user = auth.currentUser;
-    if (user == null) throw Exception('Giriş yapılmamış');
-
-    final ts = DateTime.now().millisecondsSinceEpoch;
-    final List<String> yeniUrller = [];
-    String? yeniThumbUrl;
-    final List<Reference> yuklenenRefler = [];
-    Reference? thumbRef;
-
     try {
-      if (yeniResimler.isNotEmpty) {
-        // Paralel sıkıştır + yükle
-        final sikistirilmisler = await Future.wait(
-          List.generate(yeniResimler.length, (i) => _resimSikistir(yeniResimler[i], i)),
-        );
-        final refs = List.generate(
-          yeniResimler.length,
-          (i) => storage
-              .ref()
-              .child(StoragePaths.ilanResimleri)
-              .child('${user.uid}_${ts}_d$i.jpg'),
-        );
-        final progresses = List<double>.filled(yeniResimler.length, 0.0);
-        await Future.wait(List.generate(yeniResimler.length, (i) async {
-          onProgress?.call(i, 0.0);
-          final task = refs[i].putFile(
-            sikistirilmisler[i],
-            SettableMetadata(cacheControl: 'public, max-age=31536000'),
-          );
-          task.snapshotEvents.listen((snap) {
-            progresses[i] = snap.bytesTransferred / snap.totalBytes;
-            onProgress?.call(
-                i, progresses.reduce((a, b) => a + b) / progresses.length);
-          });
-          await task;
-          yuklenenRefler.add(refs[i]);
-        }));
-        yeniUrller.addAll(await Future.wait(refs.map((r) => r.getDownloadURL())));
-
-        // İlk resim yeni (yerel) bir dosyaysa thumbnail üret
-        if (mevcutResimler.isEmpty) {
-          final thumb = await _thumbnailOlustur(yeniResimler.first);
-          thumbRef = storage
-              .ref()
-              .child(StoragePaths.ilanThumbnailleri)
-              .child('${user.uid}_${ts}_thumb.jpg');
-          await thumbRef.putFile(
-            thumb,
-            SettableMetadata(cacheControl: 'public, max-age=31536000'),
-          );
-          yeniThumbUrl = await thumbRef.getDownloadURL();
-        }
-      }
-
-      final tumResimler = [...mevcutResimler, ...yeniUrller];
-      if (tumResimler.isNotEmpty) {
-        data['resimUrl'] = tumResimler.first;
-        data['resimUrller'] = tumResimler;
-        if (yeniThumbUrl != null) data['resimThumbUrl'] = yeniThumbUrl;
-      }
-
-      await _col.doc(ilanId).update(data);
-    } catch (e) {
-      // Yüklenmiş ama işlem tamamlanmamış YENİ dosyaları temizle
-      // (mevcut eski resimlere dokunulmaz)
-      for (final ref in yuklenenRefler) {
-        try {
-          await ref.delete();
-        } catch (de, ds) {
-          AppHataYonetici.logla(de, ds, etiket: 'ilanGuncelle.resimTemizlik');
-        }
-      }
-      if (thumbRef != null) {
-        try {
-          await thumbRef.delete();
-        } catch (de, ds) {
-          AppHataYonetici.logla(de, ds, etiket: 'ilanGuncelle.thumbTemizlik');
-        }
-      }
+      final response = await ApiClient.dio.get('/ilanlar/$ilanId');
+      return IlanModel.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
       rethrow;
     }
   }
 
+  /// [yeniResimler] verilirse multipart olarak gönderilir — backend bunları
+  /// mevcut resim_urller listesine EKLER (2026-10-28'de eklendi: resimsiz
+  /// girilmiş bir ilana düzenlemeden resim eklenemiyordu, bkz. v3_ilan_routes.go
+  /// PUT /ilanlar/:id). Resim yoksa eskisi gibi düz JSON gönderilir.
+  Future<void> ilanGuncelle(
+    String ilanId,
+    Map<String, dynamic> data, {
+    List<File> yeniResimler = const [],
+  }) async {
+    if (yeniResimler.isEmpty) {
+      await ApiClient.dio.put('/ilanlar/$ilanId', data: {
+        if (data.containsKey('ucret')) 'ucret': data['ucret'],
+        if (data.containsKey('urun')) 'urun': data['urun'],
+        if (data.containsKey('notlar')) 'notlar': data['notlar'],
+        if (data.containsKey('tasimaTercihi')) 'tasimaTercihi': data['tasimaTercihi'],
+      });
+      return;
+    }
+
+    final sikistirilmisler = await Future.wait(
+      List.generate(yeniResimler.length, (i) => _resimSikistir(yeniResimler[i], i)),
+    );
+    final formData = FormData.fromMap({
+      if (data.containsKey('ucret')) 'ucret': data['ucret'],
+      if (data.containsKey('urun')) 'urun': data['urun'],
+      if (data.containsKey('notlar')) 'notlar': data['notlar'],
+      if (data.containsKey('tasimaTercihi')) 'tasimaTercihi': data['tasimaTercihi'],
+      'resimler': [
+        for (final dosya in sikistirilmisler)
+          await MultipartFile.fromFile(dosya.path, filename: dosya.uri.pathSegments.last),
+      ],
+    });
+    await ApiClient.dio.put('/ilanlar/$ilanId', data: formData);
+  }
+
   Future<void> ilanSil(String ilanId) async {
-    // Sadece ilanın kendi dokümanını sil — sahibi için kurallarca her zaman izinli.
-    // İlişkili favoriler/goruntulenmeler temizliği sunucudaki `ilanSilindi`
-    // (onDelete) Cloud Function'ında yapılır; çünkü diğer kullanıcıların favori
-    // kayıtlarını client'tan `where ilanId==` ile sorgulamak güvenlik
-    // kurallarınca reddedilir ve tüm silme işlemini patlatır.
-    await _col.doc(ilanId).delete();
+    await ApiClient.dio.delete('/ilanlar/$ilanId');
   }
 
-  Future<void> ilanPasifYap(String ilanId) =>
-      _col.doc(ilanId).update({'aktif': false});
-
-  Stream<int> favoriSayisiStream(String ilanId) {
-    return _col.doc(ilanId).snapshots().map((doc) =>
-        ((doc.data() as Map<String, dynamic>?)?['favoriSayisi'] as num?)
-            ?.toInt() ??
-        0);
+  Future<List<IlanModel>> favorileriGetir() async {
+    final response = await ApiClient.dio.get('/favorilerim');
+    return (response.data['ilanlar'] as List)
+        .map((j) => IlanModel.fromJson(j as Map<String, dynamic>))
+        .toList();
   }
 
-  Stream<bool> favorideMi({
-    required String kullaniciId,
-    required String ilanId,
-  }) {
-    return firestore
-        .collection(Collections.favoriler)
-        .where('kullaniciId', isEqualTo: kullaniciId)
-        .where('ilanId', isEqualTo: ilanId)
-        .snapshots()
-        .map((snap) => snap.docs.isNotEmpty);
-  }
-
-  /// Transaction gerçekten yazdıysa true, favoriSnap zaten varsa (guard'lı
-  /// erken çıkış) false döner — çağıran, sayaç delta'sını buna göre uygular.
-  Future<bool> favoriyeEkle({
-    required String kullaniciId,
-    required IlanModel ilan,
-  }) async {
-    final favoriId = '${kullaniciId}_${ilan.id}';
-    final favoriRef = firestore.collection(Collections.favoriler).doc(favoriId);
-
-    final yazdi = await firestore.runTransaction<bool>((txn) async {
-      final favoriSnap = await txn.get(favoriRef);
-      if (favoriSnap.exists) return false;
-
-      txn.set(favoriRef, {
-        'kullaniciId':  kullaniciId,
-        'ilanSahibiId': ilan.kullaniciId,
-        'ilanId':       ilan.id,
-        'tip':          ilan.tip,
-        'kullaniciAd':  ilan.kullaniciAd,
-        'nereden':      ilan.nereden,
-        'nereye':       ilan.nereye,
-        'urun':         ilan.urun,
-        'ucret':        ilan.ucret,
-        'kategori':     ilan.kategori,
-        if (ilan.resimUrl.isNotEmpty) 'resimUrl': ilan.resimUrl,
-        'eklemeTarihi': FieldValue.serverTimestamp(),
-      });
-      txn.update(_col.doc(ilan.id), {
-        'favoriSayisi': FieldValue.increment(1),
-      });
-      // Hız sınırlaması: hızlı ekle/sil/ekle döngüsüyle favoriSayisi'ni
-      // spam'lemeyi önlemek için — bkz. firestore.rules.oneri.txt'teki
-      // favoriler/create cooldown kuralı (AYNI transaction'da yazılıyor).
-      txn.set(
-        firestore.collection(Collections.kullanicilar).doc(kullaniciId),
-        {'sonFavoriZamani': FieldValue.serverTimestamp()},
-        SetOptions(merge: true),
-      );
-      return true;
-    });
-    return yazdi;
-  }
-
-  /// Transaction gerçekten sildiyse true, favori zaten yoksa (guard'lı
-  /// erken çıkış) false döner — çağıran, sayaç delta'sını buna göre uygular.
-  Future<bool> favoridanCikar({
-    required String kullaniciId,
-    required String ilanId,
-  }) async {
-    final favoriId = '${kullaniciId}_$ilanId';
-    final favoriRef = firestore.collection(Collections.favoriler).doc(favoriId);
-    final yazdi = await firestore.runTransaction<bool>((txn) async {
-      final snap = await txn.get(favoriRef);
-      if (!snap.exists) return false;
-      txn.delete(favoriRef);
-      txn.update(_col.doc(ilanId), {
-        'favoriSayisi': FieldValue.increment(-1),
-      });
-      return true;
-    });
-    return yazdi;
-  }
-
-  Future<bool> goruntulenmeyiKaydet({
-    required String kullaniciId,
-    required String ilanId,
-  }) async {
-    final kayitRef = firestore
-        .collection(Collections.goruntulenmeler)
-        .doc('${kullaniciId}_$ilanId');
-
-    bool sayildi = false;
-    await firestore.runTransaction((txn) async {
-      final snap = await txn.get(kayitRef);
-      final simdi = DateTime.now();
-
-      if (snap.exists) {
-        final sonTarih = (snap.data()!['sonTarih'] as Timestamp).toDate();
-        if (simdi.difference(sonTarih).inHours < 12) return;
-      }
-
-      txn.set(kayitRef, {
-        'kullaniciId': kullaniciId,
-        'ilanId':      ilanId,
-        'sonTarih':    Timestamp.fromDate(simdi),
-      });
-      txn.update(_col.doc(ilanId), {
-        'goruntulenmeSayisi': FieldValue.increment(1),
-      });
-      sayildi = true;
-    });
-    return sayildi;
-  }
-
-  Stream<List<Map<String, dynamic>>> favorilerStream(String kullaniciId) {
-    return firestore
-        .collection(Collections.favoriler)
-        .where('kullaniciId', isEqualTo: kullaniciId)
-        .orderBy('eklemeTarihi', descending: true)
-        .snapshots()
-        .map((snap) => snap.docs
-            .map((doc) => {'id': doc.id, ...doc.data()})
-            .toList());
-  }
+  Future<void> favoriyeEkle(String ilanId) => ApiClient.dio.post('/ilanlar/$ilanId/favori');
+  Future<void> favoridenCikar(String ilanId) => ApiClient.dio.delete('/ilanlar/$ilanId/favori');
 }

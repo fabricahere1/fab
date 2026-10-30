@@ -1,19 +1,27 @@
+import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart' show VoidCallback;
+import 'package:flutter/foundation.dart' show VoidCallback, debugPrint;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/auth_repository.dart';
 import '../../../shared/utils/app_hata_yonetici.dart';
+// currentUserProvider/AktifKullanici artık burada tanımlı değil ama
+// uygulama genelinde 40+ dosya "auth_provider.dart"ı import edip
+// currentUserProvider'a erişiyor — hepsini değiştirmek yerine
+// re-export ediyoruz.
+export 'aktif_kullanici_provider.dart';
 
 part 'auth_provider.g.dart';
 
-@riverpod
-Stream<User?> authState(Ref ref) {
-  return ref.watch(authRepositoryProvider).authStateChanges();
-}
-
-@riverpod
-User? currentUser(Ref ref) {
-  return ref.watch(authStateProvider).value;
+/// Backend'in {"hata": "..."} gövdesinden kullanıcıya gösterilecek
+/// mesajı çıkarır, yoksa [varsayilan]'a düşer.
+String _backendHatasi(Object e, String varsayilan) {
+  if (e is DioException) {
+    final govde = e.response?.data;
+    if (govde is Map && govde['hata'] is String) {
+      return govde['hata'] as String;
+    }
+  }
+  return varsayilan;
 }
 
 @riverpod
@@ -29,22 +37,12 @@ class AuthNotifier extends _$AuthNotifier {
   }) async {
     state = const AsyncLoading();
     try {
-      final credential = await _repo.emailIleGiris(
-        email: email,
-        sifre: sifre,
-      );
-      if (credential.user == null) {
-        if (ref.mounted) state = const AsyncData(null);
-        return AuthSonuc.hata('Giriş başarısız.');
-      }
+      final sonuc = await _repo.epostaIleGiris(email: email, sifre: sifre);
       if (ref.mounted) state = const AsyncData(null);
-      return AuthSonuc.basarili(credential.user!.uid);
-    } on FirebaseAuthException catch (e) {
-      if (ref.mounted) state = const AsyncData(null);
-      return AuthSonuc.hata(AuthRepository.hataMesaji(e.code));
+      return AuthSonuc.basarili(sonuc.kullanici['id'] as String);
     } catch (e) {
       if (ref.mounted) state = const AsyncData(null);
-      return AuthSonuc.hata('Beklenmeyen bir hata oluştu.');
+      return AuthSonuc.hata(_backendHatasi(e, 'E-posta veya şifre hatalı.'));
     }
   }
 
@@ -55,41 +53,29 @@ class AuthNotifier extends _$AuthNotifier {
   }) async {
     state = const AsyncLoading();
     try {
-      final credential = await _repo.emailIleKayit(
+      final sonuc = await _repo.epostaIleKayit(
         adSoyad: adSoyad,
         email: email,
         sifre: sifre,
       );
       if (ref.mounted) state = const AsyncData(null);
-      return AuthSonuc.basarili(credential.user?.uid ?? '');
-    } on FirebaseAuthException catch (e) {
-      if (ref.mounted) state = const AsyncData(null);
-      return AuthSonuc.hata(AuthRepository.hataMesaji(e.code));
+      return AuthSonuc.basarili(sonuc.kullanici['id'] as String);
     } catch (e) {
       if (ref.mounted) state = const AsyncData(null);
-      return AuthSonuc.hata('Beklenmeyen bir hata oluştu.');
+      return AuthSonuc.hata(_backendHatasi(e, 'Bu e-posta ile kayıt oluşturulamadı.'));
     }
   }
 
   Future<AuthSonuc> googleIleGiris() async {
     state = const AsyncLoading();
     try {
-      final credential = await _repo.googleIleGiris();
-      if (credential.user == null) {
-        if (ref.mounted) state = const AsyncData(null);
-        return AuthSonuc.hata('Google girişi başarısız.');
-      }
+      final sonuc = await _repo.googleIleGiris();
       if (ref.mounted) state = const AsyncData(null);
-      return AuthSonuc.basarili(credential.user!.uid);
+      return AuthSonuc.basarili(sonuc.kullanici['id'] as String);
     } on FirebaseAuthException catch (e) {
       if (ref.mounted) state = const AsyncData(null);
       return AuthSonuc.hata(AuthRepository.hataMesaji(e.code));
     } catch (e, s) {
-      // GoogleSignIn'in fırlattığı gerçek hata (genelde PlatformException/
-      // ApiException) buraya kadar geliyordu ama hiçbir yere loglanmadan
-      // sabit bir mesajla yutuluyordu — test kullanıcılarında yaşanan
-      // "Google ile giriş yapılamıyor" sorununun gerçek nedenini görmek
-      // için Crashlytics'e kaydediyoruz.
       AppHataYonetici.logla(e, s, etiket: 'auth.googleIleGiris');
       if (ref.mounted) state = const AsyncData(null);
       return AuthSonuc.hata('Google ile giriş yapılamadı.');
@@ -116,17 +102,21 @@ class AuthNotifier extends _$AuthNotifier {
   }) async {
     state = const AsyncLoading();
     try {
-      final credential = await _repo.telefonIleGiris(
+      final sonuc = await _repo.telefonIleGiris(
         verificationId: verificationId,
         smsKodu: smsKodu,
       );
       if (ref.mounted) state = const AsyncData(null);
-      return AuthSonuc.basarili(credential.user?.uid ?? '');
+      return AuthSonuc.basarili(sonuc.kullanici['id'] as String);
     } on FirebaseAuthException catch (e) {
       if (ref.mounted) state = const AsyncData(null);
+      // TANI: "Bir hata oluştu" (hataMesaji'nin eşlenmemiş-kod varsayılanı)
+      // raporlandı — gerçek kodu görebilmek için logluyoruz.
+      debugPrint('[TELEFON_GIRIS_HATA] code=${e.code} message=${e.message}');
       return AuthSonuc.hata(AuthRepository.hataMesaji(e.code));
     } catch (e) {
       if (ref.mounted) state = const AsyncData(null);
+      debugPrint('[TELEFON_GIRIS_HATA] beklenmeyen tip: $e');
       return AuthSonuc.hata('Doğrulama başarısız. Tekrar dene.');
     }
   }
@@ -140,10 +130,8 @@ class AuthNotifier extends _$AuthNotifier {
     required String sifre,
   }) async {
     try {
-      await _repo.emailIleYenidenGiris(email: email, sifre: sifre);
+      await _repo.epostaIleYenidenGiris(email: email, sifre: sifre);
       return AuthSonuc.basarili('');
-    } on FirebaseAuthException catch (e) {
-      return AuthSonuc.hata(AuthRepository.hataMesaji(e.code));
     } catch (_) {
       return AuthSonuc.hata('Kimlik doğrulama başarısız.');
     }
@@ -156,8 +144,6 @@ class AuthNotifier extends _$AuthNotifier {
     try {
       await _repo.telefonIleYenidenGiris(verificationId: verificationId, smsKodu: smsKodu);
       return AuthSonuc.basarili('');
-    } on FirebaseAuthException catch (e) {
-      return AuthSonuc.hata(AuthRepository.hataMesaji(e.code));
     } catch (_) {
       return AuthSonuc.hata('Kimlik doğrulama başarısız.');
     }
@@ -165,7 +151,8 @@ class AuthNotifier extends _$AuthNotifier {
 
   Future<AuthSonuc> googleIleYenidenGiris({VoidCallback? onHesapSecildi}) async {
     try {
-      await _repo.googleIleYenidenGiris(onHesapSecildi: onHesapSecildi);
+      onHesapSecildi?.call();
+      await _repo.googleIleYenidenGiris();
       return AuthSonuc.basarili('');
     } catch (_) {
       return AuthSonuc.hata('Google doğrulama başarısız.');

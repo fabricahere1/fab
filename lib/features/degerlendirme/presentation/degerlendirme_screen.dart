@@ -10,39 +10,35 @@ import '../../../shared/constants/app_colors.dart';
 import '../../../shared/utils/app_snackbar.dart';
 
 class DegerlendirmeModal extends ConsumerStatefulWidget {
-  final String sohbetId;
+  final String ilanId;
   final String hedefKullaniciId;
   final String hedefKullaniciAd;
   final String? hedefFotoUrl;
-  final String ilanBaslik;
 
   const DegerlendirmeModal({
     super.key,
-    required this.sohbetId,
+    required this.ilanId,
     required this.hedefKullaniciId,
     required this.hedefKullaniciAd,
     this.hedefFotoUrl,
-    this.ilanBaslik = '',
   });
 
   static Future<bool> goster({
     required BuildContext context,
-    required String sohbetId,
+    required String ilanId,
     required String hedefKullaniciId,
     required String hedefKullaniciAd,
     String? hedefFotoUrl,
-    String ilanBaslik = '',
   }) async {
     final sonuc = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => DegerlendirmeModal(
-        sohbetId:         sohbetId,
+        ilanId:           ilanId,
         hedefKullaniciId: hedefKullaniciId,
         hedefKullaniciAd: hedefKullaniciAd,
         hedefFotoUrl:     hedefFotoUrl,
-        ilanBaslik:       ilanBaslik,
       ),
     );
     return sonuc == true;
@@ -70,12 +66,10 @@ class _DegerlendirmeModalState extends ConsumerState<DegerlendirmeModal> {
 
     setState(() => _gonderiyor = true);
     final basarili = await ref.read(degerlendirmeIslemleriProvider.notifier).gonder(
-      sohbetId:          widget.sohbetId,
-      degerlendireninId: benimUid,
-      hedefKullaniciId:  widget.hedefKullaniciId,
+      ilanId:            widget.ilanId,
+      degerlendirilenId: widget.hedefKullaniciId,
       puan:              _secilenYildiz.toDouble(),
       yorum:             _yorumCtrl.text.trim(),
-      ilanBaslik:        widget.ilanBaslik,
     );
     if (!mounted) return;
     if (basarili) {

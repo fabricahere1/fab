@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/degerlendirme_provider.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../../profil/providers/profil_provider.dart';
 import '../../profil/presentation/kullanici_profil_screen.dart';
 import '../../../shared/constants/app_colors.dart';
+import '../../../shared/utils/app_snackbar.dart';
 
 // ── Ekran ─────────────────────────────────────────────────
 
@@ -100,7 +102,7 @@ class DegerlendirmelerListeScreen extends ConsumerWidget {
         child: ListView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
-          itemCount: state.liste.length + (state.dahaFazlaVar ? 1 : 0),
+          itemCount: state.liste.length,
           itemBuilder: (ctx, i) {
             if (i >= state.liste.length) {
               return const Padding(
@@ -338,11 +340,65 @@ class DegerlendirmeKarti extends ConsumerWidget {
                     );
                   }),
                 ),
+                IconButton(
+                  icon: const Icon(Icons.flag_outlined,
+                      size: 16, color: AppColors.textHint),
+                  tooltip: 'Şikayet Et',
+                  onPressed: () => _sikayetEt(context, ref),
+                ),
               ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _sikayetEt(BuildContext context, WidgetRef ref) async {
+    final sebep = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        final controller = TextEditingController();
+        return AlertDialog(
+          title: const Text('Yorumu Şikayet Et'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(hintText: 'Şikayet sebebini yaz'),
+            maxLines: 3,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('İptal'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+              child: const Text('Gönder'),
+            ),
+          ],
+        );
+      },
+    );
+    if (sebep == null || sebep.isEmpty) return;
+
+    final uid = ref.read(currentUserProvider)?.uid;
+    if (uid == null) return;
+
+    final degerlendirmeId  = data['id'] as String? ?? '';
+    final hedefKullaniciId = data['hedefKullaniciId'] as String? ?? '';
+
+    final basarili = await ref.read(sikayetProvider.notifier).sikayetGonder(
+          sikayetEdenId: uid,
+          hedefId: hedefKullaniciId,
+          hedefAd: data['ilanBaslik'] as String? ?? '',
+          sebep: sebep,
+          degerlendirmeId: degerlendirmeId,
+        );
+    if (!context.mounted) return;
+    if (basarili) {
+      AppSnackBar.basari(context, 'Şikayetiniz iletildi.');
+    } else {
+      AppSnackBar.hata(context, 'Şikayet gönderilemedi, tekrar dene.');
+    }
   }
 }

@@ -39,6 +39,26 @@ abstract class MesajModel with _$MesajModel {
     );
   }
 
+  /// AWS backend'inden (GET/POST /v3/sohbetler/:id/mesajlar) gelen JSON'u
+  /// okur — fromFirestore'daki aynı mantık, sadece Timestamp yerine ISO
+  /// string ve gondereId zaten doğru alan adıyla geliyor.
+  factory MesajModel.fromApi(Map<String, dynamic> json) {
+    final tipStr = json['tip'] as String? ?? 'mesaj';
+    return MesajModel(
+      id: json['id'] as String? ?? '',
+      metin: json['metin'] as String? ?? '',
+      gondereId: json['gondereId'] as String? ?? '',
+      tip: tipStr == 'sistem'
+          ? MesajTip.sistem
+          : tipStr == 'resim'
+              ? MesajTip.resim
+              : MesajTip.mesaj,
+      zaman: DateTime.tryParse(json['zaman'] as String? ?? '') ?? DateTime.now(),
+      okundu: json['okundu'] as bool? ?? false,
+      resimUrl: (json['resimUrl'] as String?)?.isEmpty == true ? null : json['resimUrl'] as String?,
+    );
+  }
+
   factory MesajModel.fromJson(Map<String, dynamic> json) =>
       _$MesajModelFromJson(json);
 }
@@ -112,6 +132,51 @@ abstract class SohbetModel with _$SohbetModel {
         ) ?? {},
       ),
       islemDurumlari: Map<String, dynamic>.from(d['islemDurumlari'] ?? {}),
+    );
+  }
+
+  /// AWS backend'inden (GET /v3/sohbetlerim, POST /v3/ilanlar/:id/sohbet-baslat)
+  /// gelen JSON'u okur. gizli/sabitlenmis/islemDurumlari backend'de opak
+  /// JSONB olarak tutuluyor — burada da aynen Map&lt;String,dynamic&gt; olarak
+  /// alınıyor, yorumlama (SohbetModelX extension'ındaki gizliMi/sabitMi/
+  /// anlasmaOnerildi) client tarafında kalıyor.
+  factory SohbetModel.fromApi(Map<String, dynamic> json) {
+    return SohbetModel(
+      id: json['id'] as String? ?? '',
+      kullanicilar: List<String>.from(json['kullanicilar'] ?? []),
+      ilanId: json['ilanId'] as String? ?? '',
+      ilanBaslik: json['ilanBaslik'] as String? ?? '',
+      ilanResimUrl: json['ilanResimUrl'] as String? ?? '',
+      ilanSahibiId: json['ilanSahibiId'] as String? ?? '',
+      ilanTip: (json['ilanTip'] as String?)?.isNotEmpty == true ? json['ilanTip'] as String : 'istek',
+      sonMesaj: json['sonMesaj'] as String?,
+      sonMesajZamani: json['sonMesajZamani'] != null
+          ? DateTime.tryParse(json['sonMesajZamani'] as String)
+          : null,
+      sonAktiviteZamani: json['sonAktiviteZamani'] != null
+          ? DateTime.tryParse(json['sonAktiviteZamani'] as String)
+          : null,
+      sonGondereId: json['sonGondereId'] as String? ?? '',
+      okunmamis: Map<String, int>.from(
+        (json['okunmamis'] as Map?)?.map(
+              (k, v) => MapEntry(k.toString(), (v as num).toInt()),
+            ) ??
+            {},
+      ),
+      gizli: Map<String, dynamic>.from(json['gizli'] ?? {}),
+      sabitlenmis: Map<String, bool>.from(
+        (json['sabitlenmis'] as Map?)?.map(
+              (k, v) => MapEntry(k.toString(), v as bool),
+            ) ??
+            {},
+      ),
+      kullaniciAdlari: Map<String, String>.from(
+        (json['kullaniciAdlari'] as Map?)?.map(
+              (k, v) => MapEntry(k.toString(), v.toString()),
+            ) ??
+            {},
+      ),
+      islemDurumlari: Map<String, dynamic>.from(json['islemDurumlari'] ?? {}),
     );
   }
 

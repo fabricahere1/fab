@@ -289,7 +289,7 @@ class _KesfetKart extends ConsumerWidget {
     return GestureDetector(
       onTap: () { ref.read(sonGoruntulenenlerProvider.notifier).kaydet(ilan); context.push(AppRoutes.ilanDetayPath(ilan.id), extra: ilan); },
       child: Container(
-        width: 155, margin: const EdgeInsets.symmetric(horizontal: 4),
+        width: 110, margin: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12),
             border: Border.all(color: const Color(0xFF888888), width: 0.3),
             boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))]),

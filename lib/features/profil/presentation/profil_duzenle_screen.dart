@@ -141,7 +141,12 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
     setState(() => _yukleniyor = true);
 
     try {
-      await ref.read(profilDuzenleProvider.notifier).profilGuncelle(
+      // profilGuncelle kendi içinde hatayı yutup false dönüyor (asla
+      // rethrow etmiyor) — dönen değeri kontrol etmezsek backend 500
+      // dönse bile burada "başarılı" sanıp kullanıcıya yanlış mesaj
+      // gösteriyorduk (2026-10-28'de bulundu: telefon unique çakışması
+      // PATCH'i 500'letiyordu ama ekran "Profil güncellendi!" diyordu).
+      final basarili = await ref.read(profilDuzenleProvider.notifier).profilGuncelle(
         uid: uid,
         data: {
           'adSoyad':          _adSoyadCtrl.text.trim(),
@@ -161,6 +166,10 @@ class _ProfilDuzenleScreenState extends ConsumerState<ProfilDuzenleScreen> {
       );
 
       if (!mounted) return;
+      if (!basarili) {
+        AppSnackBar.hata(context, 'Profil güncellenemedi. Tekrar dene.');
+        return;
+      }
       Navigator.pop(context);
       AppSnackBar.basari(context, 'Profil güncellendi!');
     } catch (e) {

@@ -1,46 +1,33 @@
-import '../firebase/app_firestore.dart';
-import 'dart:async';
+// lib/core/services/badge_service.dart
+//
+// Okunmamış bildirim sayısını uygulama ikonuna badge olarak yazar.
+// Eskiden Firebase Auth'un authStateChanges()'ini dinleyip doğrudan
+// Firestore'daki bildirimler koleksiyonunu sorguluyordu — Google/e-posta
+// girişi artık Firebase Auth'u hiç tetiklemediği için (AWS migrasyonu)
+// bu dinleyici asla gerçek bir kullanıcı görmüyordu, badge hiç
+// güncellenmiyordu. Artık AWS backend'ini 20sn'de bir polling ile
+// yenileyen okunmamisBildirimSayiProvider'ı dinliyor.
 
 import 'package:app_badge_plus/app_badge_plus.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/bildirimler/providers/bildirim_provider.dart';
 
-import '../../shared/constants/app_constants.dart';
-
-/// Okunmamış bildirim sayısını dinler ve uygulama ikonuna badge yazar.
 class BadgeService {
   BadgeService._();
   static final instance = BadgeService._();
 
-  final _firestore = AppFirestore.instance;
-  final _auth      = FirebaseAuth.instance;
+  ProviderSubscription<AsyncValue<int>>? _sub;
 
-  StreamSubscription? _authSub;
-  StreamSubscription? _bildirimSub;
-
-  void init() {
-    _authSub = _auth.authStateChanges().listen(_authDegisti);
-  }
-
-  void _authDegisti(User? user) {
-    _bildirimSub?.cancel();
-
-    if (user == null) {
-      AppBadgePlus.updateBadge(0);
-      return;
-    }
-
-    _bildirimSub = _firestore
-        .collection(Collections.bildirimler)
-        .where('kullaniciId', isEqualTo: user.uid)
-        .where('okundu', isEqualTo: false)
-        .snapshots()
-        .listen((snap) {
-      AppBadgePlus.updateBadge(snap.size);
-    });
+  void init(WidgetRef ref) {
+    _sub = ref.listenManual<AsyncValue<int>>(
+      okunmamisBildirimSayiProvider,
+      (previous, next) => AppBadgePlus.updateBadge(next.value ?? 0),
+      fireImmediately: true,
+    );
   }
 
   void dispose() {
-    _authSub?.cancel();
-    _bildirimSub?.cancel();
+    _sub?.close();
+    AppBadgePlus.updateBadge(0);
   }
 }

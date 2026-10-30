@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iste_v3/features/auth/providers/auth_provider.dart';
@@ -10,24 +9,19 @@ import 'package:mocktail/mocktail.dart';
 
 class _MockKullaniciRepository extends Mock implements KullaniciRepository {}
 
-class _MockUser extends Mock implements User {}
-
 void main() {
   const benimUid = 'uidA';
   const takipEdilenId = 'uidB';
 
   late _MockKullaniciRepository mockRepo;
-  late _MockUser mockUser;
   late ProviderContainer container;
 
   setUp(() {
     mockRepo = _MockKullaniciRepository();
-    mockUser = _MockUser();
-    when(() => mockUser.uid).thenReturn(benimUid);
 
     container = ProviderContainer(
       overrides: [
-        currentUserProvider.overrideWithValue(mockUser),
+        currentUserProvider.overrideWithValue(AktifKullanici(uid: benimUid)),
         kullaniciRepositoryProvider.overrideWithValue(mockRepo),
       ],
     );
@@ -38,12 +32,14 @@ void main() {
   test(
       '1) optimistik değer true iken, ham stream HENÜZ HİÇ değer vermeden '
       'bile takipEdiyorMu true döner (optimistik önceliklidir)', () {
-    final controller = StreamController<bool>();
-    addTearDown(controller.close);
+    final completer = Completer<bool>();
+    addTearDown(() {
+      if (!completer.isCompleted) completer.complete(false);
+    });
     when(() => mockRepo.takipEdiyorMu(
           takipciId: any(named: 'takipciId'),
           takipEdilenId: any(named: 'takipEdilenId'),
-        )).thenAnswer((_) => controller.stream);
+        )).thenAnswer((_) => completer.future);
 
     container.read(optimistikTakipProvider.notifier).takipEt(takipEdilenId);
 
@@ -58,7 +54,7 @@ void main() {
     when(() => mockRepo.takipEdiyorMu(
           takipciId: any(named: 'takipciId'),
           takipEdilenId: any(named: 'takipEdilenId'),
-        )).thenAnswer((_) => Stream.value(true));
+        )).thenAnswer((_) async => true);
 
     // autoDispose'un, .future tamamlanır tamamlanmaz (dinleyici yokken)
     // provider'ı yok etmesini önlemek için — üretimde widget'ın watch
@@ -80,7 +76,7 @@ void main() {
     when(() => mockRepo.takipEdiyorMu(
           takipciId: any(named: 'takipciId'),
           takipEdilenId: any(named: 'takipEdilenId'),
-        )).thenAnswer((_) => Stream.value(true));
+        )).thenAnswer((_) async => true);
 
     final sub =
         container.listen(takipEdiyorMuProvider(takipEdilenId), (_, _) {});
@@ -105,7 +101,7 @@ void main() {
     when(() => mockRepo.takipEdiyorMu(
           takipciId: any(named: 'takipciId'),
           takipEdilenId: any(named: 'takipEdilenId'),
-        )).thenAnswer((_) => Stream.value(false));
+        )).thenAnswer((_) async => false);
 
     // takipEdiyorMuProvider'ı canlı tutan bir dinleyici — autoDispose'un
     // testler arasında devreden çıkmasını önler, üretimdeki widget'ın

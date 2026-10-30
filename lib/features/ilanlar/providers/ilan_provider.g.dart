@@ -41,7 +41,7 @@ final class IstekIlanlarProvider
   }
 }
 
-String _$istekIlanlarHash() => r'9aeacc2de7fa12e3a731b2bfc1b517d10eae8f5a';
+String _$istekIlanlarHash() => r'82bcbb2d5c4d0027c2a20cbf0e04b9baaed10f9b';
 
 abstract class _$IstekIlanlar extends $Notifier<IlanListeState> {
   IlanListeState build();
@@ -93,7 +93,7 @@ final class TasiyiciIlanlarProvider
   }
 }
 
-String _$tasiyiciIlanlarHash() => r'889a7dd9f638363d3c55a954282b0570da52b5d6';
+String _$tasiyiciIlanlarHash() => r'0b4dfa2103f8fff2d0c2a237afb38447363cf6d1';
 
 abstract class _$TasiyiciIlanlar extends $Notifier<IlanListeState> {
   IlanListeState build();
@@ -145,7 +145,7 @@ final class IlanOlusturProvider
   }
 }
 
-String _$ilanOlusturHash() => r'1b73efe4bb208abacf30fd2f7b8631a85cf26d2f';
+String _$ilanOlusturHash() => r'6e6f7691ddd5b0f570d6e0c887f919d7c219ec22';
 
 abstract class _$IlanOlustur extends $Notifier<IlanOlusturState> {
   IlanOlusturState build();
@@ -173,9 +173,9 @@ final class IlanByIdProvider
         $FunctionalProvider<
           AsyncValue<IlanModel?>,
           IlanModel?,
-          Stream<IlanModel?>
+          FutureOr<IlanModel?>
         >
-    with $FutureModifier<IlanModel?>, $StreamProvider<IlanModel?> {
+    with $FutureModifier<IlanModel?>, $FutureProvider<IlanModel?> {
   IlanByIdProvider._({
     required IlanByIdFamily super.from,
     required String super.argument,
@@ -199,11 +199,11 @@ final class IlanByIdProvider
 
   @$internal
   @override
-  $StreamProviderElement<IlanModel?> $createElement($ProviderPointer pointer) =>
-      $StreamProviderElement(pointer);
+  $FutureProviderElement<IlanModel?> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
 
   @override
-  Stream<IlanModel?> create(Ref ref) {
+  FutureOr<IlanModel?> create(Ref ref) {
     final argument = this.argument as String;
     return ilanById(ref, argument);
   }
@@ -219,10 +219,10 @@ final class IlanByIdProvider
   }
 }
 
-String _$ilanByIdHash() => r'8d240a8d24b31e8adc4a01b60f7877f170ffc24d';
+String _$ilanByIdHash() => r'53e8aa75e26a198dc3de0e918b3c41f52cbb9205';
 
 final class IlanByIdFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<IlanModel?>, String> {
+    with $FunctionalFamilyOverride<FutureOr<IlanModel?>, String> {
   IlanByIdFamily._()
     : super(
         retry: null,
@@ -323,13 +323,11 @@ final favorilerProvider = FavorilerProvider._();
 final class FavorilerProvider
     extends
         $FunctionalProvider<
-          AsyncValue<List<Map<String, dynamic>>>,
-          List<Map<String, dynamic>>,
-          Stream<List<Map<String, dynamic>>>
+          AsyncValue<List<IlanModel>>,
+          List<IlanModel>,
+          FutureOr<List<IlanModel>>
         >
-    with
-        $FutureModifier<List<Map<String, dynamic>>>,
-        $StreamProvider<List<Map<String, dynamic>>> {
+    with $FutureModifier<List<IlanModel>>, $FutureProvider<List<IlanModel>> {
   FavorilerProvider._()
     : super(
         from: null,
@@ -346,134 +344,65 @@ final class FavorilerProvider
 
   @$internal
   @override
-  $StreamProviderElement<List<Map<String, dynamic>>> $createElement(
+  $FutureProviderElement<List<IlanModel>> $createElement(
     $ProviderPointer pointer,
-  ) => $StreamProviderElement(pointer);
+  ) => $FutureProviderElement(pointer);
 
   @override
-  Stream<List<Map<String, dynamic>>> create(Ref ref) {
+  FutureOr<List<IlanModel>> create(Ref ref) {
     return favoriler(ref);
   }
 }
 
-String _$favorilerHash() => r'f68b10f139c1a84397778ace385f4dc2d904c3f0';
+String _$favorilerHash() => r'69ca1ccb80e1dac87f72e01ed3be5a01ce3b83cb';
 
-@ProviderFor(ilanFavorideMi)
-final ilanFavorideMiProvider = IlanFavorideMiFamily._();
+@ProviderFor(kullaniciIlanlariGetir)
+final kullaniciIlanlariGetirProvider = KullaniciIlanlariGetirFamily._();
 
-final class IlanFavorideMiProvider
-    extends $FunctionalProvider<AsyncValue<bool>, bool, Stream<bool>>
-    with $FutureModifier<bool>, $StreamProvider<bool> {
-  IlanFavorideMiProvider._({
-    required IlanFavorideMiFamily super.from,
-    required String super.argument,
-  }) : super(
-         retry: null,
-         name: r'ilanFavorideMiProvider',
-         isAutoDispose: true,
-         dependencies: null,
-         $allTransitiveDependencies: null,
-       );
-
-  @override
-  String debugGetCreateSourceHash() => _$ilanFavorideMiHash();
-
-  @override
-  String toString() {
-    return r'ilanFavorideMiProvider'
-        ''
-        '($argument)';
-  }
-
-  @$internal
-  @override
-  $StreamProviderElement<bool> $createElement($ProviderPointer pointer) =>
-      $StreamProviderElement(pointer);
-
-  @override
-  Stream<bool> create(Ref ref) {
-    final argument = this.argument as String;
-    return ilanFavorideMi(ref, argument);
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return other is IlanFavorideMiProvider && other.argument == argument;
-  }
-
-  @override
-  int get hashCode {
-    return argument.hashCode;
-  }
-}
-
-String _$ilanFavorideMiHash() => r'39086f5abf7d8fd9fd72c73f57260652e945e9a4';
-
-final class IlanFavorideMiFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<bool>, String> {
-  IlanFavorideMiFamily._()
-    : super(
-        retry: null,
-        name: r'ilanFavorideMiProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
-        isAutoDispose: true,
-      );
-
-  IlanFavorideMiProvider call(String ilanId) =>
-      IlanFavorideMiProvider._(argument: ilanId, from: this);
-
-  @override
-  String toString() => r'ilanFavorideMiProvider';
-}
-
-@ProviderFor(kullaniciIlanlarStream)
-final kullaniciIlanlarStreamProvider = KullaniciIlanlarStreamFamily._();
-
-final class KullaniciIlanlarStreamProvider
+final class KullaniciIlanlariGetirProvider
     extends
         $FunctionalProvider<
           AsyncValue<List<IlanModel>>,
           List<IlanModel>,
-          Stream<List<IlanModel>>
+          FutureOr<List<IlanModel>>
         >
-    with $FutureModifier<List<IlanModel>>, $StreamProvider<List<IlanModel>> {
-  KullaniciIlanlarStreamProvider._({
-    required KullaniciIlanlarStreamFamily super.from,
+    with $FutureModifier<List<IlanModel>>, $FutureProvider<List<IlanModel>> {
+  KullaniciIlanlariGetirProvider._({
+    required KullaniciIlanlariGetirFamily super.from,
     required String super.argument,
   }) : super(
          retry: null,
-         name: r'kullaniciIlanlarStreamProvider',
+         name: r'kullaniciIlanlariGetirProvider',
          isAutoDispose: true,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
 
   @override
-  String debugGetCreateSourceHash() => _$kullaniciIlanlarStreamHash();
+  String debugGetCreateSourceHash() => _$kullaniciIlanlariGetirHash();
 
   @override
   String toString() {
-    return r'kullaniciIlanlarStreamProvider'
+    return r'kullaniciIlanlariGetirProvider'
         ''
         '($argument)';
   }
 
   @$internal
   @override
-  $StreamProviderElement<List<IlanModel>> $createElement(
+  $FutureProviderElement<List<IlanModel>> $createElement(
     $ProviderPointer pointer,
-  ) => $StreamProviderElement(pointer);
+  ) => $FutureProviderElement(pointer);
 
   @override
-  Stream<List<IlanModel>> create(Ref ref) {
+  FutureOr<List<IlanModel>> create(Ref ref) {
     final argument = this.argument as String;
-    return kullaniciIlanlarStream(ref, argument);
+    return kullaniciIlanlariGetir(ref, argument);
   }
 
   @override
   bool operator ==(Object other) {
-    return other is KullaniciIlanlarStreamProvider &&
+    return other is KullaniciIlanlariGetirProvider &&
         other.argument == argument;
   }
 
@@ -483,94 +412,25 @@ final class KullaniciIlanlarStreamProvider
   }
 }
 
-String _$kullaniciIlanlarStreamHash() =>
-    r'a77ed489851dce352f3d8a361c56e258163b1e90';
+String _$kullaniciIlanlariGetirHash() =>
+    r'40674f2bbc450d1e4594d8651605a551d81d7e1a';
 
-final class KullaniciIlanlarStreamFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<List<IlanModel>>, String> {
-  KullaniciIlanlarStreamFamily._()
+final class KullaniciIlanlariGetirFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<List<IlanModel>>, String> {
+  KullaniciIlanlariGetirFamily._()
     : super(
         retry: null,
-        name: r'kullaniciIlanlarStreamProvider',
+        name: r'kullaniciIlanlariGetirProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 
-  KullaniciIlanlarStreamProvider call(String kullaniciId) =>
-      KullaniciIlanlarStreamProvider._(argument: kullaniciId, from: this);
+  KullaniciIlanlariGetirProvider call(String kullaniciId) =>
+      KullaniciIlanlariGetirProvider._(argument: kullaniciId, from: this);
 
   @override
-  String toString() => r'kullaniciIlanlarStreamProvider';
-}
-
-@ProviderFor(ilanFavoriSayisi)
-final ilanFavoriSayisiProvider = IlanFavoriSayisiFamily._();
-
-final class IlanFavoriSayisiProvider
-    extends $FunctionalProvider<AsyncValue<int>, int, Stream<int>>
-    with $FutureModifier<int>, $StreamProvider<int> {
-  IlanFavoriSayisiProvider._({
-    required IlanFavoriSayisiFamily super.from,
-    required String super.argument,
-  }) : super(
-         retry: null,
-         name: r'ilanFavoriSayisiProvider',
-         isAutoDispose: true,
-         dependencies: null,
-         $allTransitiveDependencies: null,
-       );
-
-  @override
-  String debugGetCreateSourceHash() => _$ilanFavoriSayisiHash();
-
-  @override
-  String toString() {
-    return r'ilanFavoriSayisiProvider'
-        ''
-        '($argument)';
-  }
-
-  @$internal
-  @override
-  $StreamProviderElement<int> $createElement($ProviderPointer pointer) =>
-      $StreamProviderElement(pointer);
-
-  @override
-  Stream<int> create(Ref ref) {
-    final argument = this.argument as String;
-    return ilanFavoriSayisi(ref, argument);
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return other is IlanFavoriSayisiProvider && other.argument == argument;
-  }
-
-  @override
-  int get hashCode {
-    return argument.hashCode;
-  }
-}
-
-String _$ilanFavoriSayisiHash() => r'6b53d2c725b07deadb774514c62f9782a19772f7';
-
-final class IlanFavoriSayisiFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<int>, String> {
-  IlanFavoriSayisiFamily._()
-    : super(
-        retry: null,
-        name: r'ilanFavoriSayisiProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
-        isAutoDispose: true,
-      );
-
-  IlanFavoriSayisiProvider call(String ilanId) =>
-      IlanFavoriSayisiProvider._(argument: ilanId, from: this);
-
-  @override
-  String toString() => r'ilanFavoriSayisiProvider';
+  String toString() => r'kullaniciIlanlariGetirProvider';
 }
 
 @ProviderFor(BreadcrumbIlanTipi)
@@ -823,7 +683,97 @@ final class FavoriliIlanIdlerProvider
   }
 }
 
-String _$favoriliIlanIdlerHash() => r'2cdb6eaffd2db12d88cfaa4d1f76704684258dbe';
+String _$favoriliIlanIdlerHash() => r'cde10325a9c8e9ffb8df79ad2ae9d6d6341eb2ea';
+
+/// Eski Stream&lt;bool&gt; favorideMi provider'ının yerini alıyor —
+/// favoriliIlanIdler zaten senkron ve polling'e göre daha ucuz.
+
+@ProviderFor(ilanFavorideMi)
+final ilanFavorideMiProvider = IlanFavorideMiFamily._();
+
+/// Eski Stream&lt;bool&gt; favorideMi provider'ının yerini alıyor —
+/// favoriliIlanIdler zaten senkron ve polling'e göre daha ucuz.
+
+final class IlanFavorideMiProvider extends $FunctionalProvider<bool, bool, bool>
+    with $Provider<bool> {
+  /// Eski Stream&lt;bool&gt; favorideMi provider'ının yerini alıyor —
+  /// favoriliIlanIdler zaten senkron ve polling'e göre daha ucuz.
+  IlanFavorideMiProvider._({
+    required IlanFavorideMiFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'ilanFavorideMiProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$ilanFavorideMiHash();
+
+  @override
+  String toString() {
+    return r'ilanFavorideMiProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $ProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  bool create(Ref ref) {
+    final argument = this.argument as String;
+    return ilanFavorideMi(ref, argument);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(bool value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<bool>(value),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is IlanFavorideMiProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$ilanFavorideMiHash() => r'38736276518ed136020323c7d0f4798b1bc64b5f';
+
+/// Eski Stream&lt;bool&gt; favorideMi provider'ının yerini alıyor —
+/// favoriliIlanIdler zaten senkron ve polling'e göre daha ucuz.
+
+final class IlanFavorideMiFamily extends $Family
+    with $FunctionalFamilyOverride<bool, String> {
+  IlanFavorideMiFamily._()
+    : super(
+        retry: null,
+        name: r'ilanFavorideMiProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Eski Stream&lt;bool&gt; favorideMi provider'ının yerini alıyor —
+  /// favoriliIlanIdler zaten senkron ve polling'e göre daha ucuz.
+
+  IlanFavorideMiProvider call(String ilanId) =>
+      IlanFavorideMiProvider._(argument: ilanId, from: this);
+
+  @override
+  String toString() => r'ilanFavorideMiProvider';
+}
 
 @ProviderFor(FavoriNotifier)
 final favoriProvider = FavoriNotifierProvider._();
@@ -857,7 +807,7 @@ final class FavoriNotifierProvider
   }
 }
 
-String _$favoriNotifierHash() => r'880e713f5c6ba907410242f601b1259becb3cf11';
+String _$favoriNotifierHash() => r'9b7987c3fd609e9c8d87fc4bd091cea176a2abea';
 
 abstract class _$FavoriNotifier extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();
@@ -909,7 +859,7 @@ final class IlanIslemleriProvider
   }
 }
 
-String _$ilanIslemleriHash() => r'2ea3ac149aa0db8ff0b5b45e0a4c92eb793572bb';
+String _$ilanIslemleriHash() => r'29036ec2ee930bb74c784f78fb48e08de912ac48';
 
 abstract class _$IlanIslemleri extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();

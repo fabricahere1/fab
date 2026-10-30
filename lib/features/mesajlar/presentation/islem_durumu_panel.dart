@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -281,9 +280,17 @@ class IslemDurumuPanel extends ConsumerWidget {
 
   // Artık Future<void> döndürüyor ve çağıran widget'a rethrow ediyor —
   // widget bu hatayı yakalayıp kullanıcıya snackbar ile gösteriyor.
+  //
+  // Başarı sonrası sohbetDokumanProvider'ı HEMEN invalidate ediyoruz —
+  // eskiden bu olmadığı için buton, sohbet_screen.dart'taki 5 saniyelik
+  // periyodik yoklamanın bir sonraki turunu bekliyordu: hem "anlaşma
+  // öner" butonu birkaç saniye boşuna dönüyordu, hem de "teslim aldım"ı
+  // işaretleyen taraf ekrandan ayrılırsa bir sonraki tur hiç gelmeden
+  // değerlendirme penceresini kaçırabiliyordu.
   Future<void> _anlasildiIsaretle(WidgetRef ref, String benimUid) async {
     await ref.read(islemDurumuIslemleriProvider(sohbetId).notifier)
         .anlasildiIsaretle(benimUid);
+    ref.invalidate(sohbetDokumanProvider(sohbetId));
   }
 
   Future<void> _adimIsaretle(WidgetRef ref, IslemDurumu durum) async {
@@ -294,6 +301,7 @@ class IslemDurumuPanel extends ConsumerWidget {
       await ref.read(islemDurumuIslemleriProvider(sohbetId).notifier)
           .guncelle(durum.firestoreKey);
     }
+    ref.invalidate(sohbetDokumanProvider(sohbetId));
   }
 }
 
@@ -338,6 +346,19 @@ class _AdimSatiriState extends State<_AdimSatiri> {
     setState(() => _gonderiliyor = true);
     try {
       await widget.onTap!();
+      // "Teslim aldım" işaretleyen taraf panel AÇIK kalırken değerlendirme
+      // penceresini kaçırıyordu — sohbet_screen.dart'taki dinleyici
+      // teoride panelin ÜSTÜNE yeni bir dialog açabiliyor ama kullanıcı
+      // hâlâ panelle meşgulken bunu fark etmiyordu. Panel'i kendiliğinden
+      // kapatıp alttaki ekrana (ve dinleyicisine) net bir sahne bırakıyoruz.
+      if (widget.durum == IslemDurumu.teslimAlindi && mounted) {
+        // Gecikmeden hemen kapat — sohbetDokumanProvider invalidate'i
+        // (onTap! içinde) az önce tetiklendi, değerlendirme dinleyicisi
+        // bu yanıtı çok kısa sürede işleyip dialog açmaya çalışacak;
+        // panel o ana kadar ekranda kalırsa dialog panelin altında/
+        // arkasında açılıp kullanıcı tarafından fark edilmiyordu.
+        Navigator.of(context).pop();
+      }
     } catch (e) {
       if (mounted) {
         AppSnackBar.hata(context, 'İşaretlenemedi. Lütfen tekrar dene.');
@@ -561,15 +582,7 @@ class _AnlasildiSatiriState extends State<_AnlasildiSatiri>
     } catch (e) {
       if (mounted) {
         setState(() => _gonderiliyor = false);
-        // Sohbet dokümanı hiç yoksa (henüz mesaj atılmadan "anlaşma öner"e
-        // basılırsa) Firestore .update() 'not-found' ile patlar — bu
-        // durumda net bir mesaj gösteriyoruz. Başka bir hata (ör. ağ
-        // kesintisi) sohbet zaten var olsa bile oluşabileceğinden, o
-        // durumlarda yanlış bilgi vermemek için genel mesaj korunuyor.
-        final mesaj = (e is FirebaseException && e.code == 'not-found')
-            ? 'Sohbet başlatmadan anlaşma önerilemez'
-            : 'Onaylanamadı. Lütfen tekrar dene.';
-        AppSnackBar.hata(context, mesaj);
+        AppSnackBar.hata(context, 'Onaylanamadı. Lütfen tekrar dene.');
       }
     }
   }
@@ -783,7 +796,6 @@ class _IslemDurumuTetikleyiciState
     with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
   late Animation<double> _scaleX;
-  late Animation<double> _scaleY;
 
   @override
   void initState() {
@@ -794,21 +806,11 @@ class _IslemDurumuTetikleyiciState
     );
     _scaleX = TweenSequence([
       TweenSequenceItem(
-          tween: Tween(begin: 1.0, end: 0.6)
+          tween: Tween(begin: 1.0, end: 0.8)
               .chain(CurveTween(curve: Curves.easeIn)),
           weight: 30),
       TweenSequenceItem(
-          tween: Tween(begin: 0.6, end: 1.0)
-              .chain(CurveTween(curve: Curves.elasticOut)),
-          weight: 70),
-    ]).animate(_ctrl);
-    _scaleY = TweenSequence([
-      TweenSequenceItem(
-          tween: Tween(begin: 1.0, end: 1.3)
-              .chain(CurveTween(curve: Curves.easeIn)),
-          weight: 30),
-      TweenSequenceItem(
-          tween: Tween(begin: 1.3, end: 1.0)
+          tween: Tween(begin: 0.8, end: 1.0)
               .chain(CurveTween(curve: Curves.elasticOut)),
           weight: 70),
     ]).animate(_ctrl);
@@ -866,65 +868,43 @@ class _IslemDurumuTetikleyiciState
     }).length;
     final toplam = adimlar.length;
 
+    // "Takım Rozeti" tasarımı — eskiden sağ kenara yapışık kırmızı bir
+    // çıkıntıydı (kullanıcı raporu: "sağdaki işlem panelini açan çıkıntı"),
+    // artık üst başlığın kendi doğal bir parçası: kompakt ok+sayaç+etiket.
     return GestureDetector(
       onTap: _onTap,
       child: AnimatedBuilder(
         animation: _ctrl,
-        builder: (_, child) => Transform(
-          alignment: Alignment.centerRight,
-          transform: Matrix4.identity()
-            ..scaleByDouble(_scaleX.value, _scaleY.value, 1.0, 1.0),
+        builder: (_, child) => Transform.scale(
+          scale: _scaleX.value,
           child: child,
         ),
-        child: Container(
-          width: 28,
-          height: 96,
-          decoration: BoxDecoration(
-            color: const Color(0xFFE24B4A),
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(48),
-              bottomLeft: Radius.circular(48),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Icon(Icons.chevron_left_rounded,
+                color: Color(0xFFE24B4A), size: 18),
+            Text(
+              '$tamamlanan/$toplam',
+              style: const TextStyle(
+                color: Color(0xFFE24B4A),
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                height: 1.1,
+              ),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFFE24B4A).withValues(alpha: 0.4),
-                blurRadius: 14,
-                offset: const Offset(-4, 0),
+            Text(
+              'İŞLEM',
+              style: TextStyle(
+                color: const Color(0xFFE24B4A).withValues(alpha: 0.7),
+                fontSize: 7,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.3,
+                height: 1.3,
               ),
-            ],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.chevron_left_rounded,
-                  color: Colors.white, size: 20),
-              const SizedBox(height: 4),
-              Text(
-                '$tamamlanan',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  height: 1,
-                ),
-              ),
-              Container(
-                width: 12,
-                height: 1,
-                color: Colors.white38,
-                margin: const EdgeInsets.symmetric(vertical: 2),
-              ),
-              Text(
-                '$toplam',
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  height: 1,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

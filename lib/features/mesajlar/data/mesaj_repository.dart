@@ -1,484 +1,108 @@
-import '../../../core/firebase/app_firestore.dart';
+// lib/features/mesajlar/data/mesaj_repository.dart
+//
+// Firestore'un yerini AWS Go backend'i (/v3/sohbetler*) alıyor. İşlem
+// durumu state machine'inin TÜM iş mantığı (hangi anahtar, hangi sırada,
+// hangi metinle) client'ta (islem_durumu.dart) kalıyor — backend sadece
+// opak bir anahtar=true deposu + bildirim göndericisi.
+
 import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../../core/api/api_client.dart';
 import '../domain/mesaj_model.dart';
-import '../domain/islem_durumu.dart';
-import '../../../shared/constants/app_constants.dart';
-import '../../../shared/utils/app_hata_yonetici.dart';
-import '../../ilanlar/data/ilan_repository.dart';
 
 part 'mesaj_repository.g.dart';
 
-String sohbetIdUret(String uid1, String uid2, String ilanId) {
-  final ids = [uid1, uid2]..sort();
-  return '${ids[0]}_${ids[1]}_$ilanId';
-}
-
 @riverpod
 MesajRepository mesajRepository(Ref ref) {
-  return MesajRepository(
-    firestore: AppFirestore.instance,
-    storage: FirebaseStorage.instance,
-    ilanRepository: ref.read(ilanRepositoryProvider),
-  );
+  return MesajRepository();
 }
 
 class MesajRepository {
-  final FirebaseFirestore firestore;
-  final FirebaseStorage storage;
-  final IlanRepository ilanRepository;
-
-  MesajRepository({
-    required this.firestore,
-    required this.storage,
-    required this.ilanRepository,
-  });
-
-  CollectionReference get _sohbetler =>
-      firestore.collection(Collections.sohbetler);
-
-  CollectionReference _mesajlar(String sohbetId) =>
-      _sohbetler.doc(sohbetId).collection(Collections.mesajlar);
-
-  /// İlk temasta (henüz hiç mesaj gönderilmemişken) sohbet dokümanının
-  /// 'kullanicilar' alanı olmadan var olmaması, mesajlar dinleyicisinin
-  /// güvenlik kuralı kontrolünde (sohbetKatilimcisiMi) hataya düşmesine
-  /// sebep oluyordu. Bu metod, dinleyici başlamadan önce çağrılarak
-  /// dokümanın en azından bu alanla var olmasını garanti eder — mevcut
-  /// veriyi bozmadan (merge: true).
-  static FirebaseFunctions get _functions =>
-      FirebaseFunctions.instanceFor(region: 'europe-west1');
-
-  Future<String> resimYukle({
-    required File dosya,
-    required String gondereId,
-  }) async {
-    final ref = storage
-        .ref()
-        .child(StoragePaths.mesajResimleri)
-        .child('${gondereId}_${DateTime.now().millisecondsSinceEpoch}.jpg');
-    await ref.putFile(
-      dosya,
-      SettableMetadata(cacheControl: 'public, max-age=31536000'),
-    );
-    return await ref.getDownloadURL();
+  Future<SohbetModel> sohbetBaslat({required String ilanId}) async {
+    final response = await ApiClient.dio.post('/ilanlar/$ilanId/sohbet-baslat');
+    return SohbetModel.fromApi(response.data as Map<String, dynamic>);
   }
 
-  Future<Map<String, dynamic>?> sohbetGetir(String sohbetId) async {
-    final snap = await _sohbetler.doc(sohbetId).get();
-    if (!snap.exists) return null;
-    return snap.data() as Map<String, dynamic>;
-  }
-
-  Future<String> mesajGonder({
-    required String sohbetId,
-    required String gondereId,
-    required String karsiId,
-    required String ilanId,
-    required String ilanBaslik,
-    required String metin,
-    String gondereAd = '',
-    String karsiAd = '',
-    String ilanResimUrl = '',
-    String tip = 'mesaj',
-    String? resimUrl,
-    String ilanSahibiId = '',
-    // "Sanki 'istek'miş gibi" sessiz bir varsayılan YOK — bilinmiyorsa
-    // boş geçilir, aşağıdaki isNotEmpty koruması sayesinde yanlış veri
-    // asla yazılmaz, yalnızca eksik kalır (regresyon: bugün defalarca
-    // görülen, veriyi 'istek' varsayımıyla kalıcı olarak bozan hata).
-    String ilanTip = '',
-  }) async {
-    // Son savunma katmanı — istemci UI'ı (ilan_detay_screen.dart'taki
-    // "İletişime Geç" butonunun devre dışı bırakılması) bir şekilde
-    // atlanırsa (değiştirilmiş bir client, doğrudan SDK çağrısı), alıcı
-    // gönderen kişiyi engellemişse mesaj burada da durdurulur. Asıl
-    // güvenlik sınırı firestore.rules'ta olmalı (ayrı görev) — bu yalnızca
-    // ek bir katman.
-    final karsiDoc = await firestore.collection(Collections.kullanicilar).doc(karsiId).get();
-    final karsiEngellenenler = List<String>.from(
-      karsiDoc.data()?['engellenenler'] ?? [],
-    );
-    if (karsiEngellenenler.contains(gondereId)) {
-      throw Exception('Bu kullanıcıyla iletişim kuramıyorsunuz.');
+  Future<SohbetModel?> sohbetGetir(String sohbetId) async {
+    try {
+      final response = await ApiClient.dio.get('/sohbetler/$sohbetId');
+      return SohbetModel.fromApi(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404 || e.response?.statusCode == 403) return null;
+      rethrow;
     }
-
-    final sohbetRef = _sohbetler.doc(sohbetId);
-    final mesajRef  = _mesajlar(sohbetId).doc();
-    final batch     = firestore.batch();
-
-    // İlk temasta (sohbet dokümanı henüz yokken) çağıran ilanBaslik'i boş geçerse,
-    // guard (aşağıda) hiçbir şey yazmaz ve alan kalıcı olarak boş doğar — F1'in
-    // sohbetMetaProvider'daki ilan-dokümanı fallback'iyle AYNI GÜVENLİK AĞI burada,
-    // yazma tarafında kuruluyor. Yalnızca ilanBaslik boşken (nadir, savunma amaçlı)
-    // tetiklenir — normal akışta hiç çalışmaz, ekstra okuma maliyeti oluşturmaz.
-    var efektifIlanBaslik   = ilanBaslik;
-    var efektifIlanResimUrl = ilanResimUrl;
-    var efektifIlanSahibiId = ilanSahibiId;
-    if (efektifIlanBaslik.isEmpty && ilanId.isNotEmpty) {
-      try {
-        final ilan = await ilanRepository.ilanGetir(ilanId);
-        if (ilan != null) {
-          efektifIlanBaslik   = ilan.urun.isNotEmpty ? ilan.urun : 'İlan';
-          efektifIlanResimUrl = ilan.resimThumbUrl.isNotEmpty
-              ? ilan.resimThumbUrl
-              : ilan.resimUrl;
-          efektifIlanSahibiId = ilan.kullaniciId;
-        }
-      } catch (e, s) {
-        AppHataYonetici.logla(e, s, etiket: 'mesajRepository.ilanFallback');
-        // Sessiz devam — fallback başarısız olursa mesaj yine de gönderilmeli,
-        // sadece meta alanları boş kalır (F1'in okuma-tarafı fallback'i devrede kalır).
-      }
-    }
-
-    // Tek bir set() — eskiden aynı dökümana (sohbetRef) iki ayrı set()
-    // çağrısı yapılıyordu (ana veri + okunmamis sayacı). İlk temasta
-    // (sohbet dökümanı henüz yokken) ikinci yazma, Firestore kuralının
-    // "create" olarak değerlendirdiği ama 'kullanicilar' alanı içermeyen
-    // bir istek oluşturuyordu — kural bu alana erişmeye çalışırken
-    // permission-denied veriyordu. Tek yazmaya birleştirince bu risk
-    // tamamen ortadan kalkıyor. NOT: set()'te (update()'in aksine) noktalı
-    // String anahtarlar nested path'e ÇEVRİLMEZ, harfiyen literal alan adı
-    // olarak yazılır — bu yüzden okunmamis sayacı nested Map olarak veriliyor;
-    // merge:true, bu map'in diğer kullanıcıya ait anahtarını silmeden korur.
-    batch.set(sohbetRef, {
-      'kullanicilar':         [gondereId, karsiId],
-      'sonMesaj':             tip == 'resim' ? '📷 Fotoğraf' : metin,
-      'sonMesajZamani':       FieldValue.serverTimestamp(),
-      'sonAktiviteZamani':    FieldValue.serverTimestamp(),
-      'sonGondereId':         gondereId,
-      'islemDurumlari':       {IslemDurumu.iletisimBasladi.firestoreKey: true},
-      'olusturmaTarihi':      FieldValue.serverTimestamp(),
-      'okunmamis':            {karsiId: FieldValue.increment(1)},
-      if (gondereAd.isNotEmpty)   'kullaniciAdlari.$gondereId': gondereAd,
-      if (karsiAd.isNotEmpty)     'kullaniciAdlari.$karsiId':   karsiAd,
-      // İlan meta: boş geçilirse mevcut değeri ezme
-      if (ilanId.isNotEmpty)             'ilanId':       ilanId,
-      if (ilanTip.isNotEmpty)             'ilanTip':      ilanTip,
-      if (efektifIlanBaslik.isNotEmpty)   'ilanBaslik':   efektifIlanBaslik,
-      if (efektifIlanResimUrl.isNotEmpty) 'ilanResimUrl': efektifIlanResimUrl,
-      if (efektifIlanSahibiId.isNotEmpty) 'ilanSahibiId': efektifIlanSahibiId,
-    }, SetOptions(merge: true));
-
-
-    batch.set(mesajRef, {
-      'metin':     metin,
-      'gondereId': gondereId,
-      'tip':       tip,
-      'zaman':     FieldValue.serverTimestamp(),
-      'okundu':    false,
-      'resimUrl': resimUrl,
-    });
-
-    await batch.commit();
-    return mesajRef.id;
   }
 
-  Stream<List<SohbetModel>> sohbetlerStream(String kullaniciId) {
-    return _sohbetler
-        .where('kullanicilar', arrayContains: kullaniciId)
-        .orderBy('sonAktiviteZamani', descending: true)
-        .snapshots()
-        .map((snap) => snap.docs
-            .map((doc) => SohbetModel.fromFirestore(doc))
-            .toList());
-  }
-
-  Stream<List<MesajModel>> mesajlarStream({
-    required String sohbetId,
-    int limit = Pagination.mesajSayfaBoyutu,
-  }) {
-    return _mesajlar(sohbetId)
-        .orderBy('zaman', descending: true)
-        .limit(limit)
-        .snapshots()
-        .map((snap) => snap.docs
-            .map((doc) => MesajModel.fromFirestore(doc))
-            .toList());
-  }
-
-  Future<List<MesajModel>> eskiMesajlariGetir({
-    required String sohbetId,
-    required DateTime sonZaman,
-    int limit = Pagination.mesajSayfaBoyutu,
-  }) async {
-    final snap = await _mesajlar(sohbetId)
-        .orderBy('zaman', descending: true)
-        .startAfter([Timestamp.fromDate(sonZaman)])
-        .limit(limit)
-        .get();
-    return snap.docs
-        .map((doc) => MesajModel.fromFirestore(doc))
+  Future<List<SohbetModel>> sohbetleriGetir() async {
+    final response = await ApiClient.dio.get('/sohbetlerim');
+    return (response.data['sohbetler'] as List)
+        .map((j) => SohbetModel.fromApi(j as Map<String, dynamic>))
         .toList();
   }
 
-  Future<void> okunduIsaretle({
+  Future<MesajModel> mesajGonder({
     required String sohbetId,
-    required String kullaniciId,
+    String metin = '',
+    File? resim,
   }) async {
-    try {
-      await _sohbetler.doc(sohbetId).update({
-        'okunmamis.$kullaniciId': 0,
+    dynamic data;
+    if (resim != null) {
+      data = FormData.fromMap({
+        'metin': metin,
+        'resim': await MultipartFile.fromFile(resim.path, filename: resim.uri.pathSegments.last),
       });
-      final mesajlar = await _mesajlar(sohbetId)
-          .where('okundu', isEqualTo: false)
-          .get();
-      if (mesajlar.docs.isEmpty) return;
-
-      // Firestore batch limiti 500 — gruplara böl
-      final hedefler = mesajlar.docs.where((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        return data['gondereId'] != kullaniciId;
-      }).toList();
-
-      const grupBoyutu = 490;
-      for (int i = 0; i < hedefler.length; i += grupBoyutu) {
-        final grup = hedefler.sublist(
-          i, (i + grupBoyutu).clamp(0, hedefler.length));
-        final batch = firestore.batch();
-        for (final doc in grup) {
-          batch.update(doc.reference, {'okundu': true});
-        }
-        await batch.commit();
-      }
-    } catch (e, s) {
-      AppHataYonetici.logla(e, s, etiket: 'mesajRepository.okunduIsaretle');
+    } else {
+      data = {'metin': metin};
     }
+    final response = await ApiClient.dio.post('/sohbetler/$sohbetId/mesajlar', data: data);
+    return MesajModel.fromApi(response.data as Map<String, dynamic>);
   }
 
-  Future<void> mesajSil({
-    required String sohbetId,
-    required String mesajId,
-    required String metin,
-  }) async {
-    final sohbetRef = _sohbetler.doc(sohbetId);
-    final sohbetSnap = await sohbetRef.get();
-    final sohbetData = sohbetSnap.data() as Map<String, dynamic>?;
-
-    await _mesajlar(sohbetId).doc(mesajId).delete();
-
-    // Silinen mesaj son mesajsa güncelle — sonMesaj == metin karşılaştırmasıyla tespit
-    // edilir. Aynı metinli iki mesaj varsa yanlış pozitif olabilir; zararsızdır, çünkü
-    // sonMesaj her durumda kalan en son mesajdan yeniden okunup yazılır — maliyeti
-    // yalnızca gereksiz 1 okuma + 1 yazmadır.
-    final sonMesaj = sohbetData?['sonMesaj'] as String?;
-    if (sohbetSnap.exists && sonMesaj == metin) {
-      final onceki = await _mesajlar(sohbetId)
-          .orderBy('zaman', descending: true)
-          .limit(1)
-          .get();
-      final yeniSonMesaj = onceki.docs.isNotEmpty
-          ? (onceki.docs.first.data() as Map<String, dynamic>)['metin'] ?? ''
-          : '';
-      final yeniGondereId = onceki.docs.isNotEmpty
-          ? (onceki.docs.first.data() as Map<String, dynamic>)['gondereId'] ?? ''
-          : '';
-      await sohbetRef.update({
-        'sonMesaj': yeniSonMesaj,
-        'sonGondereId': yeniGondereId,
-      });
-    }
+  Future<List<MesajModel>> mesajlariGetir(String sohbetId) async {
+    final response = await ApiClient.dio.get('/sohbetler/$sohbetId/mesajlar');
+    return (response.data['mesajlar'] as List)
+        .map((j) => MesajModel.fromApi(j as Map<String, dynamic>))
+        .toList();
   }
 
-Future<void> sohbetiGizle({
-    required String sohbetId,
-    required String kullaniciId,
-  }) =>
-      _sohbetler.doc(sohbetId).update({
-        'gizli.$kullaniciId': FieldValue.serverTimestamp(),
-      });
-
-  Future<void> sohbetiSabitle({
-    required String sohbetId,
-    required String kullaniciId,
-    required bool sabitlenmis,
-  }) =>
-      _sohbetler.doc(sohbetId).update({
-        'sabitlenmis.$kullaniciId': !sabitlenmis,
-      });
-
-  Stream<int> toplamOkunmamisStream(String kullaniciId) {
-    return _sohbetler
-        .where('kullanicilar', arrayContains: kullaniciId)
-        .snapshots()
-        .map((snap) {
-      int toplam = 0;
-      for (final doc in snap.docs) {
-        final d = doc.data() as Map<String, dynamic>;
-        final gizli = (d['gizli'] as Map<String, dynamic>?) ?? {};
-        final gizliDeger = gizli[kullaniciId];
-        if (gizliDeger != null) {
-          if (gizliDeger is bool && gizliDeger == true) continue;
-          if (gizliDeger is Timestamp) {
-            final sonMesajZamani = d['sonMesajZamani'] as Timestamp?;
-            if (sonMesajZamani == null) continue;
-            if (!sonMesajZamani.toDate().isAfter(gizliDeger.toDate())) continue;
-          }
-        }
-        final okunmamis = (d['okunmamis'] as Map<String, dynamic>?) ?? {};
-        toplam += ((okunmamis[kullaniciId] as num?)?.toInt() ?? 0);
-      }
-      return toplam;
-    });
+  Future<void> mesajSil({required String sohbetId, required String mesajId}) {
+    return ApiClient.dio.delete('/sohbetler/$sohbetId/mesajlar/$mesajId');
   }
 
-  CollectionReference get _kullanicilar =>
-      firestore.collection(Collections.kullanicilar);
-
-  CollectionReference get _bildirimler =>
-      firestore.collection(Collections.bildirimler);
-
-  /// Sohbetin karşı taraf uid'ini, ilan başlığını ve benim adımı tek
-  /// okumada toplar — bildirim yazarken ihtiyaç duyulan bağlamı sağlar.
-  /// Mesaj bildirimleri gibi, "anında yaz" deseniyle çalışır; sonradan
-  /// dinleyip fark etmeye (IslemDurumuService'in eski yaklaşımı) güvenmez
-  /// — o yaklaşım, uygulama yeni açıldığında oluşan bir yarış durumu
-  /// (race condition) yüzünden bildirimleri kaçırıyordu.
-  Future<({String karsiUid, String ilanBaslik, String benimAd, Map<String, dynamic> mevcutDurumlar})>
-      _bildirimBaglamiOku(String sohbetId, String benimUid) async {
-    final sohbetSnap = await _sohbetler.doc(sohbetId).get();
-    final sohbetData = sohbetSnap.data() as Map<String, dynamic>? ?? {};
-    final kullanicilar = List<String>.from(sohbetData['kullanicilar'] ?? []);
-    final karsiUid = karsiTarafiBul(kullanicilar, benimUid);
-    final ilanBaslik = sohbetData['ilanBaslik'] as String? ?? 'İlan';
-    final mevcutDurumlar = Map<String, dynamic>.from(sohbetData['islemDurumlari'] as Map? ?? {});
-
-    final benimDoc = await _kullanicilar.doc(benimUid).get();
-    final benimAd = (benimDoc.data() as Map<String, dynamic>?)?['adSoyad'] as String? ?? 'Kullanıcı';
-
-    return (karsiUid: karsiUid, ilanBaslik: ilanBaslik, benimAd: benimAd, mevcutDurumlar: mevcutDurumlar);
+  Future<void> okunduIsaretle(String sohbetId) {
+    return ApiClient.dio.patch('/sohbetler/$sohbetId/okundu');
   }
 
-  Future<void> _islemBildirimiYaz({
-    required String kullaniciId,
-    required String gondereId,
-    required String gondereAd,
-    required String icerik,
-    required String tip,
-    required String hedefId,
-  }) async {
-    if (kullaniciId.isEmpty) return;
-    try {
-      await _bildirimler.add({
-        'kullaniciId': kullaniciId,
-        'tip':         tip,
-        'baslik':      gondereAd,
-        'icerik':      icerik,
-        'okundu':      false,
-        'tarih':       FieldValue.serverTimestamp(),
-        'hedefId':     hedefId,
-        'gondereId':   gondereId,
-        'gondereAd':   gondereAd,
-      });
-    } catch (e, s) {
-      AppHataYonetici.logla(e, s, etiket: 'mesajRepository.islemBildirimiYaz');
-    }
+  Future<void> sohbetiGizle(String sohbetId) {
+    return ApiClient.dio.patch('/sohbetler/$sohbetId/gizle');
   }
 
-  /// [yapanUid] — bu işlemi gerçekten yapan kişinin uid'i, durum boolean'ı
-  /// ile AYNI atomik update() çağrısında yazılır.
+  Future<bool> sohbetiSabitle(String sohbetId) async {
+    final response = await ApiClient.dio.patch('/sohbetler/$sohbetId/sabitle');
+    return response.data['sabitlenmis'] as bool? ?? false;
+  }
+
+  /// [anahtar] — IslemDurumu.firestoreKey ya da "anlasildi_&lt;uid&gt;" gibi
+  /// bileşik bir anahtar. [bildirimIcerigi] verilirse karşı tarafa
+  /// bildirim gider (IslemDurumu.gecmisDonusu'ndan client tarafından
+  /// üretiliyor — backend sadece aynen iletiyor).
   Future<void> islemDurumuGuncelle({
     required String sohbetId,
-    required String durum,
-    required String yapanUid,
-  }) async {
-    final baglam = await _bildirimBaglamiOku(sohbetId, yapanUid);
-
-    await _sohbetler.doc(sohbetId).update({
-      'islemDurumlari.$durum': true,
-      'islemDurumlari.${durum}_yapanUid': yapanUid,
-    });
-
-    final durumEnum = IslemDurumu.values.firstWhere(
-      (d) => d.firestoreKey == durum,
-      orElse: () => IslemDurumu.iletisimBasladi,
-    );
-    if (durumEnum == IslemDurumu.iletisimBasladi) return; // bu duruma bildirim yazılmaz
-
-    await _islemBildirimiYaz(
-      kullaniciId: baglam.karsiUid,
-      gondereId: yapanUid,
-      gondereAd: baglam.benimAd,
-      icerik: '"${baglam.ilanBaslik}" ilanını ${durumEnum.gecmisDonusu}',
-      tip: 'sistem',
-      hedefId: sohbetId,
-    );
-  }
-
-  Future<void> teslimTamamla({
-    required String sohbetId,
-    required String yapanUid,
-  }) async {
-    await islemDurumuGuncelle(
-      sohbetId: sohbetId,
-      durum: IslemDurumu.teslimAlindi.firestoreKey,
-      yapanUid: yapanUid,
-    );
-    await _sohbetler.doc(sohbetId).update({
-      'degerlendirmeBekliyor': true,
+    required String anahtar,
+    String? bildirimIcerigi,
+  }) {
+    return ApiClient.dio.patch('/sohbetler/$sohbetId/islem-durumu', data: {
+      'anahtar': anahtar,
+      if (bildirimIcerigi != null) 'bildirimIcerigi': bildirimIcerigi,
     });
   }
 
-  // ── Anlaşıldı — iki taraflı onay ─────────────────────────
-  //
-  // İlk kişi tıkladığında "önerdi", ikinci kişi (karşı taraf ZATEN
-  // onaylamışken) tıkladığında "kabul etti" mesajı gider — yapanUid yazma
-  // anından ÖNCE mevcut durumu okuyup karşı tarafın onayının olup
-  // olmadığına bakarak ayrım yapılır.
-  Future<void> anlasildiIsaretle({
-    required String sohbetId,
-    required String benimUid,
-  }) async {
-    await _sohbetler.doc(sohbetId).update({
-      'islemDurumlari.${anlasildiAlani(benimUid)}': true,
-      'sonAktiviteZamani': FieldValue.serverTimestamp(),
-    });
-
-    // bildirimler yazma + push Cloud Function tarafından yapılıyor
+  Future<void> anlasildiIsaretle({required String sohbetId, required String benimUid}) {
+    return islemDurumuGuncelle(sohbetId: sohbetId, anahtar: anlasildiAlani(benimUid));
   }
 
-  Future<void> mesajBildirimiGonder({
-    required String aliciId,
-    required String gondereId,
-    required String gondereAd,
-    required String ilanBaslik,
-    required String sohbetId,
-    required String metin,
-    String ilanId = '',
-    String ilanSahibiId = '',
-    String ilanResimUrl = '',
-    String mesajId = '',
-    String mesajZaman = '',
-  }) async {
-    try {
-      await _functions.httpsCallable('mesajBildirimiGonder').call({
-        'aliciId':      aliciId,
-        'gondereAd':    gondereAd,
-        'ilanBaslik':   ilanBaslik,
-        'sohbetId':     sohbetId,
-        'metin':        metin,
-        'ilanId':       ilanId,
-        'ilanSahibiId': ilanSahibiId,
-        'ilanResimUrl': ilanResimUrl,
-        'mesajId':      mesajId,
-        'mesajZaman':   mesajZaman,
-      });
-    } catch (e, s) {
-      AppHataYonetici.logla(e, s, etiket: 'mesajRepository.mesajBildirimiGonder');
-    }
-  }
-
-  // ── Sohbet dökümanı stream'leri ──────────────────────────
-
-  Stream<Map<String, dynamic>> sohbetDurumuStream(String sohbetId) {
-    return _sohbetler.doc(sohbetId).snapshots().map((doc) {
-      if (!doc.exists) return <String, dynamic>{};
-      return Map<String, dynamic>.from(
-          doc.data() as Map<String, dynamic>? ?? {});
-    });
+  Future<void> teslimTamamla({required String sohbetId}) {
+    return ApiClient.dio.post('/sohbetler/$sohbetId/teslim-tamamla');
   }
 }

@@ -4,7 +4,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'bildirim_model.freezed.dart';
 part 'bildirim_model.g.dart';
 
-enum BildirimTip { mesaj, ilan, sistem, degerlendirme, anlasildi, eslesme }
+enum BildirimTip { mesaj, ilan, sistem, degerlendirme, anlasildi, eslesme, takip }
 
 @freezed
 abstract class BildirimModel with _$BildirimModel {
@@ -37,18 +37,41 @@ abstract class BildirimModel with _$BildirimModel {
     );
   }
 
+  /// AWS backend'inden (GET /v3/bildirimlerim) gelen JSON'u okur. fromJson
+  /// (json_serializable üretimi) KASITLI OLARAK kullanılmıyor — backend'in
+  /// tip string'leri (ör. "ilan_onayla") enum ada birebir uymuyor,
+  /// json_serializable'ın katı $enumDecode'u bunlarla çöker. Alan adları
+  /// da uyuşmuyor (gonderenId/gonderenAd vs eski gondereId/gondereAd).
+  factory BildirimModel.fromApi(Map<String, dynamic> json) {
+    return BildirimModel(
+      id: json['id'] as String? ?? '',
+      kullaniciId: json['kullaniciId'] as String? ?? '',
+      tip: _tipFromString(json['tip'] as String? ?? 'sistem'),
+      baslik: json['baslik'] as String? ?? '',
+      icerik: json['icerik'] as String? ?? '',
+      okundu: json['okundu'] as bool? ?? false,
+      tarih: DateTime.tryParse(json['olusturmaTarihi'] as String? ?? ''),
+      hedefId: json['hedefId'] as String? ?? '',
+      gondereId: json['gonderenId'] as String? ?? '',
+      gondereAd: json['gonderenAd'] as String? ?? '',
+    );
+  }
+
   factory BildirimModel.fromJson(Map<String, dynamic> json) =>
       _$BildirimModelFromJson(json);
 }
 
 BildirimTip _tipFromString(String tip) {
   switch (tip) {
-    case 'mesaj':         return BildirimTip.mesaj;
-    case 'ilan':          return BildirimTip.ilan;
-    case 'degerlendirme': return BildirimTip.degerlendirme;
-    case 'anlasildi':     return BildirimTip.anlasildi;
-    case 'eslesme':       return BildirimTip.eslesme;
-    default:              return BildirimTip.sistem;
+    case 'mesaj':                               return BildirimTip.mesaj;
+    case 'ilan':
+    case 'ilan_onayla':
+    case 'ilan_reddedildi':                      return BildirimTip.ilan;
+    case 'degerlendirme':                        return BildirimTip.degerlendirme;
+    case 'anlasildi':                             return BildirimTip.anlasildi;
+    case 'eslesme':                               return BildirimTip.eslesme;
+    case 'takip':                                 return BildirimTip.takip;
+    default:                                      return BildirimTip.sistem;
   }
 }
 

@@ -50,4 +50,11 @@ app.*.map.json
 yuk_testi/serviceAccountKey.json
 yuk_testi/node_modules/
 yuk_testi/
-node_modules/
+node_modules/.claude/worktrees/
+
+# Build/test artifacts (gönderilmemeli)
+admin_panel/build/
+rules-tests/node_modules/
+.firebase/
+screen.png
+screen2.png

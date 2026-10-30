@@ -67,7 +67,7 @@ final class SohbetMetaProvider
   }
 }
 
-String _$sohbetMetaHash() => r'255880a6b76e15b9361e032a22eae8134203bfd4';
+String _$sohbetMetaHash() => r'014deaa351b3bc02812b98a76495608e876975bf';
 
 final class SohbetMetaFamily extends $Family
     with

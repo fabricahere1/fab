@@ -4,8 +4,6 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import 'package:firebase_auth/firebase_auth.dart';
-
 import 'package:flutter/cupertino.dart';
 
 import '../features/auth/presentation/login_screen.dart';
@@ -17,8 +15,8 @@ import '../features/ilanlar/presentation/ilan_detay_screen.dart';
 import '../features/ilanlar/presentation/ilan_form_screen.dart';
 import '../shared/constants/app_constants.dart' show IlanTip;
 import '../features/ilanlar/presentation/gelenler_screen.dart';
-import '../features/auth/data/auth_repository.dart' show AuthYontemi, authYontemiBelirle;
 import '../features/auth/providers/auth_provider.dart';
+import '../features/auth/providers/aktif_kullanici_provider.dart';
 import '../features/profil/providers/profil_provider.dart';
 import '../features/profil/domain/kullanici_model.dart';
 import '../core/services/surum_kapisi.dart';
@@ -80,7 +78,7 @@ abstract class AppRoutes {
 
 class _AppStateNotifier extends ChangeNotifier {
   _AppStateNotifier(this._ref) {
-    _authSub   = _ref.listen(authStateProvider, (_, _) => notifyListeners());
+    _authSub   = _ref.listen(aktifKullaniciProvider, (_, _) => notifyListeners());
     _profilSub = _ref.listen(benimKullaniciProfilProvider, (_, _) => notifyListeners());
     _surumSub  = _ref.listen(surumDurumuProvider, (_, _) => notifyListeners());
   }
@@ -123,7 +121,7 @@ GoRouter router(Ref ref) {
         return null;
       }
 
-      final authAsync = ref.read(authStateProvider);
+      final authAsync = ref.read(aktifKullaniciProvider);
       final loc = state.matchedLocation;
       final returnRoute = state.uri.queryParameters['returnRoute'];
 
@@ -148,8 +146,10 @@ GoRouter router(Ref ref) {
       }
 
       final user = authAsync.value;
-      final girisYapildi = user != null &&
-          (authYontemiBelirle(user) != AuthYontemi.email || user.emailVerified);
+      // E-posta doğrulama kontrolü kaldırıldı — AWS backend'inde henüz
+      // e-posta doğrulama akışı yok (bkz. v3_backlog.md), giriş yapmış
+      // olmak (JWT'nin varlığı) artık tek şart.
+      final girisYapildi = user != null;
 
       if (!girisYapildi) {
         if (loc == AppRoutes.login ||
@@ -304,7 +304,7 @@ GoRouter router(Ref ref) {
 // Firestore'un varsayılan serverAndCache kaynağıyla önce sunucuyu dener)
 // kullanıyoruz — ama genel kullaniciStream'i (profil ekranı, favoriler vb.
 // offline-first çalışan diğer tüketiciler) bilerek değiştirmiyoruz.
-Future<String?> _hedefBelirle(Ref ref, User user, {String? returnRoute}) async {
+Future<String?> _hedefBelirle(Ref ref, AktifKullanici user, {String? returnRoute}) async {
   KullaniciModel? profil;
   try {
     profil = await ref

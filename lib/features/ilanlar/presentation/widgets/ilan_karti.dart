@@ -119,15 +119,25 @@ class IlanKarti extends ConsumerWidget {
                     top: 6, left: 6,
                     child: _YeniRozeti(),
                   ),
-                // ── Optimistic favori butonu ──────────────────────────────
-                if (gosterFavori)
-                  Positioned(
-                    top: 6, right: 6,
-                    child: _FavoriButon(
-                      ilan: guncelIlan,
-                      uid: uid,
-                    ),
+                // ── Optimistic favori butonu + geliş tarihi kutusu ─────────
+                // "Yeni" rozetiyle aynı yükseklikte (top:6) sağ köşede;
+                // taşıyıcı ilanlarında (gelenler) favori butonunun solunda
+                // geliş tarihini gösteren siyah kutu da buraya ekleniyor.
+                Positioned(
+                  top: 6, right: 6,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (guncelIlan.tip == IlanTip.tasiyici && guncelIlan.tarih != null)
+                        _GelisTarihiKutusu(tarih: guncelIlan.tarih!),
+                      if (gosterFavori)
+                        _FavoriButon(
+                          ilan: guncelIlan,
+                          uid: uid,
+                        ),
+                    ],
                   ),
+                ),
                 // ── Beden/cinsiyet şeridi — resmin en altında ──────────────
                 // Önceden içerik alanının sağında, iki ayrı mavi etiket
                 // olarak gösteriliyordu. Artık tek bir siyah şerit + beyaz
@@ -412,6 +422,41 @@ class _YildizRozetiPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ── Geliş tarihi kutusu — taşıyıcı (gelenler) kartlarında sağ üst ──────────
+// "Yeni" rozetiyle aynı hizada (top:6), siyah zemin + beyaz yazı.
+class _GelisTarihiKutusu extends StatelessWidget {
+  final DateTime tarih;
+  const _GelisTarihiKutusu({required this.tarih});
+
+  static const _aylar = [
+    'Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz',
+    'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final metin = '${tarih.day} ${_aylar[tarih.month - 1]}';
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.72),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          metin,
+          style: GoogleFonts.dmSans(
+            fontSize: AppLayout.fs(context, 10),
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _FavoriButon extends ConsumerStatefulWidget {
@@ -852,8 +897,8 @@ class _IlanKartiIcerik extends StatelessWidget {
             ilan.urun.isNotEmpty ? ilan.urun : 'İlan',
             style: GoogleFonts.dmSans(
                 fontSize: AppLayout.fs(context, 12),
-                fontWeight: FontWeight.w200,
-                color: AppColors.textPrimary),
+                fontWeight: FontWeight.w300,
+                color: Colors.black),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),

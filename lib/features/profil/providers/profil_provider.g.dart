@@ -9,24 +9,18 @@ part of 'profil_provider.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(benimKullaniciProfil)
+@ProviderFor(BenimKullaniciProfil)
 final benimKullaniciProfilProvider = BenimKullaniciProfilProvider._();
 
 final class BenimKullaniciProfilProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<KullaniciModel?>,
-          KullaniciModel?,
-          Stream<KullaniciModel?>
-        >
-    with $FutureModifier<KullaniciModel?>, $StreamProvider<KullaniciModel?> {
+    extends $AsyncNotifierProvider<BenimKullaniciProfil, KullaniciModel?> {
   BenimKullaniciProfilProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'benimKullaniciProfilProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -36,18 +30,29 @@ final class BenimKullaniciProfilProvider
 
   @$internal
   @override
-  $StreamProviderElement<KullaniciModel?> $createElement(
-    $ProviderPointer pointer,
-  ) => $StreamProviderElement(pointer);
-
-  @override
-  Stream<KullaniciModel?> create(Ref ref) {
-    return benimKullaniciProfil(ref);
-  }
+  BenimKullaniciProfil create() => BenimKullaniciProfil();
 }
 
 String _$benimKullaniciProfilHash() =>
-    r'e314797fa190ba15dd6e6a3c0372faab0b413c72';
+    r'abf82c5b432dcdea3faf8baa805e320fef03cebf';
+
+abstract class _$BenimKullaniciProfil extends $AsyncNotifier<KullaniciModel?> {
+  FutureOr<KullaniciModel?> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<KullaniciModel?>, KullaniciModel?>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<KullaniciModel?>, KullaniciModel?>,
+              AsyncValue<KullaniciModel?>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
 
 @ProviderFor(kullaniciBilgi)
 final kullaniciBilgiProvider = KullaniciBilgiFamily._();
@@ -135,7 +140,7 @@ final class ProfilDuzenleProvider
         argument: null,
         retry: null,
         name: r'profilDuzenleProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -156,7 +161,7 @@ final class ProfilDuzenleProvider
   }
 }
 
-String _$profilDuzenleHash() => r'917bdf57e283842dbd0e5c6ed982788f380ad7e9';
+String _$profilDuzenleHash() => r'420ca1c242075cdddf541a97afcbecbd5e833673';
 
 abstract class _$ProfilDuzenle extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();
@@ -187,7 +192,7 @@ final class EngellemeProvider
         argument: null,
         retry: null,
         name: r'engellemeProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -208,7 +213,7 @@ final class EngellemeProvider
   }
 }
 
-String _$engellemeHash() => r'3d815b1ed471ad9df653b13ae8199547a01bbc93';
+String _$engellemeHash() => r'cf5981ce47da153df5fe6598658c1d80ef79525b';
 
 abstract class _$Engelleme extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();
@@ -235,10 +240,10 @@ final class EngellenenlerProvider
     extends
         $FunctionalProvider<
           AsyncValue<List<String>>,
-          AsyncValue<List<String>>,
-          AsyncValue<List<String>>
+          List<String>,
+          FutureOr<List<String>>
         >
-    with $Provider<AsyncValue<List<String>>> {
+    with $FutureModifier<List<String>>, $FutureProvider<List<String>> {
   EngellenenlerProvider._()
     : super(
         from: null,
@@ -255,25 +260,17 @@ final class EngellenenlerProvider
 
   @$internal
   @override
-  $ProviderElement<AsyncValue<List<String>>> $createElement(
+  $FutureProviderElement<List<String>> $createElement(
     $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
+  ) => $FutureProviderElement(pointer);
 
   @override
-  AsyncValue<List<String>> create(Ref ref) {
+  FutureOr<List<String>> create(Ref ref) {
     return engellenenler(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(AsyncValue<List<String>> value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<AsyncValue<List<String>>>(value),
-    );
   }
 }
 
-String _$engellenenlerHash() => r'89a1a45f50240b8744888cf384637843156a8269';
+String _$engellenenlerHash() => r'54b38349b798837581ed179360b7a998171538b7';
 
 @ProviderFor(Sikayet)
 final sikayetProvider = SikayetProvider._();
@@ -307,7 +304,7 @@ final class SikayetProvider
   }
 }
 
-String _$sikayetHash() => r'3785b707a0666b7295f2b8ae01f9e9f7342b6e9b';
+String _$sikayetHash() => r'affc29645692eca9169112a958e4e71c8ecb3920';
 
 abstract class _$Sikayet extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();
@@ -327,31 +324,22 @@ abstract class _$Sikayet extends $Notifier<AsyncValue<void>> {
   }
 }
 
-/// Kullanıcının kendi ilanlarını real-time dinler.
-/// [keepAlive] sayesinde sayfa kapanınca dispose olmaz,
-/// tekrar açılınca Firestore'a yeniden bağlanmaz.
-/// uid null olduğunda (çıkış yapıldığında) provider invalidate edilir.
+/// Kullanıcının kendi ilanlarını getirir.
 
 @ProviderFor(ilanlarim)
 final ilanlarimProvider = IlanlarimProvider._();
 
-/// Kullanıcının kendi ilanlarını real-time dinler.
-/// [keepAlive] sayesinde sayfa kapanınca dispose olmaz,
-/// tekrar açılınca Firestore'a yeniden bağlanmaz.
-/// uid null olduğunda (çıkış yapıldığında) provider invalidate edilir.
+/// Kullanıcının kendi ilanlarını getirir.
 
 final class IlanlarimProvider
     extends
         $FunctionalProvider<
           AsyncValue<List<IlanModel>>,
           List<IlanModel>,
-          Stream<List<IlanModel>>
+          FutureOr<List<IlanModel>>
         >
-    with $FutureModifier<List<IlanModel>>, $StreamProvider<List<IlanModel>> {
-  /// Kullanıcının kendi ilanlarını real-time dinler.
-  /// [keepAlive] sayesinde sayfa kapanınca dispose olmaz,
-  /// tekrar açılınca Firestore'a yeniden bağlanmaz.
-  /// uid null olduğunda (çıkış yapıldığında) provider invalidate edilir.
+    with $FutureModifier<List<IlanModel>>, $FutureProvider<List<IlanModel>> {
+  /// Kullanıcının kendi ilanlarını getirir.
   IlanlarimProvider._()
     : super(
         from: null,
@@ -368,17 +356,17 @@ final class IlanlarimProvider
 
   @$internal
   @override
-  $StreamProviderElement<List<IlanModel>> $createElement(
+  $FutureProviderElement<List<IlanModel>> $createElement(
     $ProviderPointer pointer,
-  ) => $StreamProviderElement(pointer);
+  ) => $FutureProviderElement(pointer);
 
   @override
-  Stream<List<IlanModel>> create(Ref ref) {
+  FutureOr<List<IlanModel>> create(Ref ref) {
     return ilanlarim(ref);
   }
 }
 
-String _$ilanlarimHash() => r'e4590c00e1002eb544b796ca09f105886a89ab59';
+String _$ilanlarimHash() => r'6f3fffc1ddbf19fc9139e13faff780d7f6f08fad';
 
 @ProviderFor(takipciIdleri)
 final takipciIdleriProvider = TakipciIdleriFamily._();
@@ -388,9 +376,9 @@ final class TakipciIdleriProvider
         $FunctionalProvider<
           AsyncValue<List<String>>,
           List<String>,
-          Stream<List<String>>
+          FutureOr<List<String>>
         >
-    with $FutureModifier<List<String>>, $StreamProvider<List<String>> {
+    with $FutureModifier<List<String>>, $FutureProvider<List<String>> {
   TakipciIdleriProvider._({
     required TakipciIdleriFamily super.from,
     required String super.argument,
@@ -414,12 +402,12 @@ final class TakipciIdleriProvider
 
   @$internal
   @override
-  $StreamProviderElement<List<String>> $createElement(
+  $FutureProviderElement<List<String>> $createElement(
     $ProviderPointer pointer,
-  ) => $StreamProviderElement(pointer);
+  ) => $FutureProviderElement(pointer);
 
   @override
-  Stream<List<String>> create(Ref ref) {
+  FutureOr<List<String>> create(Ref ref) {
     final argument = this.argument as String;
     return takipciIdleri(ref, argument);
   }
@@ -435,10 +423,10 @@ final class TakipciIdleriProvider
   }
 }
 
-String _$takipciIdleriHash() => r'ee4fb3be5ef06950b82d857c905c07c083c234f2';
+String _$takipciIdleriHash() => r'd4c3289abe829610dfdee2c48bb6751781dde0ab';
 
 final class TakipciIdleriFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<List<String>>, String> {
+    with $FunctionalFamilyOverride<FutureOr<List<String>>, String> {
   TakipciIdleriFamily._()
     : super(
         retry: null,
@@ -463,9 +451,9 @@ final class TakipEdilenIdleriProvider
         $FunctionalProvider<
           AsyncValue<List<String>>,
           List<String>,
-          Stream<List<String>>
+          FutureOr<List<String>>
         >
-    with $FutureModifier<List<String>>, $StreamProvider<List<String>> {
+    with $FutureModifier<List<String>>, $FutureProvider<List<String>> {
   TakipEdilenIdleriProvider._({
     required TakipEdilenIdleriFamily super.from,
     required String super.argument,
@@ -489,12 +477,12 @@ final class TakipEdilenIdleriProvider
 
   @$internal
   @override
-  $StreamProviderElement<List<String>> $createElement(
+  $FutureProviderElement<List<String>> $createElement(
     $ProviderPointer pointer,
-  ) => $StreamProviderElement(pointer);
+  ) => $FutureProviderElement(pointer);
 
   @override
-  Stream<List<String>> create(Ref ref) {
+  FutureOr<List<String>> create(Ref ref) {
     final argument = this.argument as String;
     return takipEdilenIdleri(ref, argument);
   }
@@ -510,10 +498,10 @@ final class TakipEdilenIdleriProvider
   }
 }
 
-String _$takipEdilenIdleriHash() => r'53515c95005fa69fcff5d987bbcd0189f17deea6';
+String _$takipEdilenIdleriHash() => r'3894948932c43bfc892e358d738a5a7fbe6f8ff6';
 
 final class TakipEdilenIdleriFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<List<String>>, String> {
+    with $FunctionalFamilyOverride<FutureOr<List<String>>, String> {
   TakipEdilenIdleriFamily._()
     : super(
         retry: null,
@@ -542,11 +530,11 @@ final class TakipEdilenTarihleriProvider
         $FunctionalProvider<
           AsyncValue<Map<String, DateTime>>,
           Map<String, DateTime>,
-          Stream<Map<String, DateTime>>
+          FutureOr<Map<String, DateTime>>
         >
     with
         $FutureModifier<Map<String, DateTime>>,
-        $StreamProvider<Map<String, DateTime>> {
+        $FutureProvider<Map<String, DateTime>> {
   /// Takip edilen kullanıcıların id → takip başlangıç tarihi haritası.
   TakipEdilenTarihleriProvider._({
     required TakipEdilenTarihleriFamily super.from,
@@ -571,12 +559,12 @@ final class TakipEdilenTarihleriProvider
 
   @$internal
   @override
-  $StreamProviderElement<Map<String, DateTime>> $createElement(
+  $FutureProviderElement<Map<String, DateTime>> $createElement(
     $ProviderPointer pointer,
-  ) => $StreamProviderElement(pointer);
+  ) => $FutureProviderElement(pointer);
 
   @override
-  Stream<Map<String, DateTime>> create(Ref ref) {
+  FutureOr<Map<String, DateTime>> create(Ref ref) {
     final argument = this.argument as String;
     return takipEdilenTarihleri(ref, argument);
   }
@@ -593,12 +581,12 @@ final class TakipEdilenTarihleriProvider
 }
 
 String _$takipEdilenTarihleriHash() =>
-    r'8dc98645fb42eb5ebb3d2176ccda0fdc177db366';
+    r'da5d2a7956ab46fcc94e7517fc74dd2662cb000d';
 
 /// Takip edilen kullanıcıların id → takip başlangıç tarihi haritası.
 
 final class TakipEdilenTarihleriFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<Map<String, DateTime>>, String> {
+    with $FunctionalFamilyOverride<FutureOr<Map<String, DateTime>>, String> {
   TakipEdilenTarihleriFamily._()
     : super(
         retry: null,
@@ -894,8 +882,8 @@ abstract class _$TakipciDelta extends $Notifier<Map<String, int>> {
 final takipEdiyorMuHamProvider = TakipEdiyorMuHamFamily._();
 
 final class TakipEdiyorMuHamProvider
-    extends $FunctionalProvider<AsyncValue<bool>, bool, Stream<bool>>
-    with $FutureModifier<bool>, $StreamProvider<bool> {
+    extends $FunctionalProvider<AsyncValue<bool>, bool, FutureOr<bool>>
+    with $FutureModifier<bool>, $FutureProvider<bool> {
   TakipEdiyorMuHamProvider._({
     required TakipEdiyorMuHamFamily super.from,
     required String super.argument,
@@ -919,11 +907,11 @@ final class TakipEdiyorMuHamProvider
 
   @$internal
   @override
-  $StreamProviderElement<bool> $createElement($ProviderPointer pointer) =>
-      $StreamProviderElement(pointer);
+  $FutureProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
 
   @override
-  Stream<bool> create(Ref ref) {
+  FutureOr<bool> create(Ref ref) {
     final argument = this.argument as String;
     return takipEdiyorMuHam(ref, argument);
   }
@@ -939,10 +927,10 @@ final class TakipEdiyorMuHamProvider
   }
 }
 
-String _$takipEdiyorMuHamHash() => r'7eaa332dba2071806b5578f26554aeae1feaa58f';
+String _$takipEdiyorMuHamHash() => r'c868be456f37e6f58999aeb5e21f4db4425aee0e';
 
 final class TakipEdiyorMuHamFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<bool>, String> {
+    with $FunctionalFamilyOverride<FutureOr<bool>, String> {
   TakipEdiyorMuHamFamily._()
     : super(
         retry: null,
@@ -1067,7 +1055,7 @@ final class TakipIslemleriProvider
   }
 }
 
-String _$takipIslemleriHash() => r'54b0dffd0e3a5c7ecf494578761dddf13fd8a034';
+String _$takipIslemleriHash() => r'96e9332c249b104f30d99318bc2068d1e5870dd1';
 
 abstract class _$TakipIslemleri extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();

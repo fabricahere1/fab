@@ -8,6 +8,7 @@ part of 'ilan_model.dart';
 
 _IlanModel _$IlanModelFromJson(Map<String, dynamic> json) => _IlanModel(
   id: json['id'] as String,
+  ilanNo: (json['ilanNo'] as num?)?.toInt() ?? 0,
   tip: json['tip'] as String,
   nereden: json['nereden'] as String,
   nereye: json['nereye'] as String,
@@ -50,6 +51,7 @@ _IlanModel _$IlanModelFromJson(Map<String, dynamic> json) => _IlanModel(
 Map<String, dynamic> _$IlanModelToJson(_IlanModel instance) =>
     <String, dynamic>{
       'id': instance.id,
+      'ilanNo': instance.ilanNo,
       'tip': instance.tip,
       'nereden': instance.nereden,
       'nereye': instance.nereye,

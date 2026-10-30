@@ -55,4 +55,4 @@ final class KullaniciRepositoryProvider
 }
 
 String _$kullaniciRepositoryHash() =>
-    r'bc80f7ce06d6631e88f72d9a1e3df7559b736c62';
+    r'584f62648df464a35d1e8a1976146992d2ebc07b';
